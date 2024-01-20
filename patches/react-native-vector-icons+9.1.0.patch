@@ -1,0 +1,126 @@
+diff --git a/node_modules/react-native-vector-icons/android/build.gradle b/node_modules/react-native-vector-icons/android/build.gradle
+index 3d12e69..4d321d3 100644
+--- a/node_modules/react-native-vector-icons/android/build.gradle
++++ b/node_modules/react-native-vector-icons/android/build.gradle
+@@ -9,7 +9,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-      classpath("com.android.tools.build:gradle:3.5.3")
++      classpath("com.android.tools.build:gradle:7.3.1")
+     }
+   }
+ }
+@@ -22,17 +22,15 @@ def safeExtGet(prop, fallback) {
+ 
+ 
+ android {
+-  compileSdkVersion safeExtGet('compileSdkVersion', 28)
++  compileSdk safeExtGet('compileSdkVersion', 34)
+   
+   defaultConfig {
+-    minSdkVersion safeExtGet('minSdkVersion', 16)
+-    targetSdkVersion safeExtGet('targetSdkVersion', 28)
+-    versionCode 1
+-    versionName "1.0"
+-  }
+-  lintOptions {
+-    abortOnError false
++    minSdkVersion safeExtGet('minSdkVersion', 23)
++    targetSdkVersion safeExtGet('targetSdkVersion', 34)
+   }
++    lint {
++        abortOnError false
++    }
+ }
+ 
+ repositories {
+@@ -45,5 +43,5 @@ repositories {
+ }
+ 
+ dependencies {
+-  implementation "com.facebook.react:react-native:+"
++  implementation "com.facebook.react:react-native:0.68.1"
+ }
+diff --git a/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsModule.java b/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsModule.java
+index 9e666b4..bcb6576 100644
+--- a/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsModule.java
++++ b/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsModule.java
+@@ -9,6 +9,8 @@ import android.graphics.Bitmap;
+ import android.graphics.Bitmap.CompressFormat;
+ import android.util.Log;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.NativeModule;
+ import com.facebook.react.bridge.ReactApplicationContext;
+ import com.facebook.react.bridge.ReactContext;
+@@ -26,14 +28,13 @@ import java.util.Map;
+ 
+ public class VectorIconsModule extends ReactContextBaseJavaModule {
+ 
+-  private static final Map<String, Typeface> sTypefaceCache = new HashMap<String, Typeface>();
+-
+   public static final String REACT_CLASS = "RNVectorIconsModule";
+ 
+   @interface Errors {
+     String E_UNKNOWN_ERROR = "E_UNKNOWN_ERROR";
+   }
+ 
++  @NonNull
+   @Override
+   public String getName() {
+     return REACT_CLASS;
+@@ -43,7 +44,7 @@ public class VectorIconsModule extends ReactContextBaseJavaModule {
+     super(reactContext);
+   }
+ 
+-  protected String createGlyphImagePath(String fontFamily, String glyph, Integer fontSize, Integer color) throws java.io.IOException, FileNotFoundException {
++  protected String createGlyphImagePath(String fontFamily, String glyph, Integer fontSize, Integer color) throws java.io.IOException {
+     Context context = getReactApplicationContext();
+     File cacheFolder = context.getCacheDir();
+     String cacheFolderPath = cacheFolder.getAbsolutePath() + "/";
+@@ -53,7 +54,7 @@ public class VectorIconsModule extends ReactContextBaseJavaModule {
+     int size = Math.round(fontSize*scale);
+     String cacheKey = fontFamily + ":" + glyph + ":" + color;
+     String hash = Integer.toString(cacheKey.hashCode(), 32);
+-    String cacheFilePath = cacheFolderPath + hash + "_" + Integer.toString(fontSize) + scaleSuffix + ".png";
++    String cacheFilePath = cacheFolderPath + hash + "_" + fontSize + scaleSuffix + ".png";
+     String cacheFileUrl = "file://" + cacheFilePath;
+     File cacheFile = new File(cacheFilePath);
+ 
+diff --git a/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsPackage.java b/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsPackage.java
+index 67f4d84..bbc2e28 100644
+--- a/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsPackage.java
++++ b/node_modules/react-native-vector-icons/android/src/main/java/com/oblador/vectoricons/VectorIconsPackage.java
+@@ -1,5 +1,7 @@
+ package com.oblador.vectoricons;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.ReactPackage;
+ import com.facebook.react.bridge.JavaScriptModule;
+ import com.facebook.react.bridge.NativeModule;
+@@ -15,9 +17,10 @@ public class VectorIconsPackage implements ReactPackage {
+ 
+   public VectorIconsPackage() {}
+ 
++  @NonNull
+   @Override
+   public List<NativeModule> createNativeModules(
+-      ReactApplicationContext reactContext) {
++          @NonNull ReactApplicationContext reactContext) {
+     List<NativeModule> modules = new ArrayList<>();
+     modules.add(new VectorIconsModule(reactContext));
+     return modules;
+@@ -27,8 +30,9 @@ public class VectorIconsPackage implements ReactPackage {
+     return Collections.emptyList();
+   }
+ 
++  @NonNull
+   @Override
+-  public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
++  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
+     return Collections.emptyList();
+   }
+ }

@@ -1,0 +1,547 @@
+diff --git a/node_modules/react-native-fs/android/build.gradle b/node_modules/react-native-fs/android/build.gradle
+index ddef857..d446f18 100644
+--- a/node_modules/react-native-fs/android/build.gradle
++++ b/node_modules/react-native-fs/android/build.gradle
+@@ -4,31 +4,32 @@ def safeExtGet(prop, fallback) {
+ 
+ buildscript {
+     repositories {
++        google()
+         mavenCentral()
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:1.5.0'
++        classpath 'com.android.tools.build:gradle:7.3.1'
+     }
+ }
+ 
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion safeExtGet('compileSdkVersion', 26)
+-    buildToolsVersion safeExtGet('buildToolsVersion', '26.0.3')
++    compileSdk safeExtGet('compileSdkVersion', 34)
++    buildToolsVersion safeExtGet('buildToolsVersion', '34.0.0')
+ 
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', 19)
+-        targetSdkVersion safeExtGet('targetSdkVersion', 26)
++        minSdkVersion safeExtGet('minSdkVersion', 23)
++        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+         versionCode 1
+         versionName "1.0"
+     }
+-    lintOptions {
++    lint {
+         abortOnError false
+     }
+ }
+ 
+ dependencies {
+-    implementation 'com.facebook.react:react-native:+'
++    implementation 'com.facebook.react:react-native:0.68.1'
+ }
+diff --git a/node_modules/react-native-fs/android/src/main/java/com/rnfs/Downloader.java b/node_modules/react-native-fs/android/src/main/java/com/rnfs/Downloader.java
+index 4da698e..d46fca3 100644
+--- a/node_modules/react-native-fs/android/src/main/java/com/rnfs/Downloader.java
++++ b/node_modules/react-native-fs/android/src/main/java/com/rnfs/Downloader.java
+@@ -24,15 +24,13 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
+     mParam = params[0];
+     res = new DownloadResult();
+ 
+-    new Thread(new Runnable() {
+-      public void run() {
+-        try {
+-          download(mParam, res);
+-          mParam.onTaskCompleted.onTaskCompleted(res);
+-        } catch (Exception ex) {
+-          res.exception = ex;
+-          mParam.onTaskCompleted.onTaskCompleted(res);
+-        }
++    new Thread(() -> {
++      try {
++        download(mParam, res);
++        mParam.onTaskCompleted.onTaskCompleted(res);
++      } catch (Exception ex) {
++        res.exception = ex;
++        mParam.onTaskCompleted.onTaskCompleted(res);
+       }
+     }).start();
+ 
+@@ -63,13 +61,12 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
+       long lengthOfFile = getContentLength(connection);
+ 
+       boolean isRedirect = (
+-        statusCode != HttpURLConnection.HTTP_OK &&
+-        (
+-          statusCode == HttpURLConnection.HTTP_MOVED_PERM ||
+-          statusCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+-          statusCode == 307 ||
+-          statusCode == 308
+-        )
++              (
++                      statusCode == HttpURLConnection.HTTP_MOVED_PERM ||
++                              statusCode == HttpURLConnection.HTTP_MOVED_TEMP ||
++                              statusCode == 307 ||
++                              statusCode == 308
++              )
+       );
+ 
+       if (isRedirect) {
+@@ -104,7 +101,7 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
+         input = new BufferedInputStream(connection.getInputStream(), 8 * 1024);
+         output = new FileOutputStream(param.dest);
+ 
+-        byte data[] = new byte[8 * 1024];
++        byte[] data = new byte[8 * 1024];
+         long total = 0;
+         int count;
+         double lastProgressValue = 0;
+@@ -129,7 +126,7 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
+               double progress = Math.round(((double) total * 100) / lengthOfFile);
+               if (progress % param.progressDivider == 0) {
+                 if ((progress != lastProgressValue) || (total == lengthOfFile)) {
+-                  Log.d("Downloader", "EMIT: " + String.valueOf(progress) + ", TOTAL:" + String.valueOf(total));
++                  Log.d("Downloader", "EMIT: " + progress + ", TOTAL:" + total);
+                   lastProgressValue = progress;
+                   publishProgress(new long[]{lengthOfFile, total});
+                 }
+diff --git a/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSManager.java b/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSManager.java
+index 351ac06..75c8c23 100644
+--- a/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSManager.java
++++ b/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSManager.java
+@@ -1,5 +1,6 @@
+ package com.rnfs;
+ 
++import android.annotation.SuppressLint;
+ import android.content.res.AssetFileDescriptor;
+ import android.content.res.AssetManager;
+ import android.database.Cursor;
+@@ -12,6 +13,8 @@ import android.util.Base64;
+ import android.util.SparseArray;
+ import android.media.MediaScannerConnection;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.Arguments;
+ import com.facebook.react.bridge.Promise;
+ import com.facebook.react.bridge.ReactApplicationContext;
+@@ -38,6 +41,7 @@ import java.security.MessageDigest;
+ import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.Map;
++import java.util.Objects;
+ 
+ @ReactModule(name = RNFSManager.MODULE_NAME)
+ public class RNFSManager extends ReactContextBaseJavaModule {
+@@ -67,6 +71,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     this.reactContext = reactContext;
+   }
+ 
++  @NonNull
+   @Override
+   public String getName() {
+     return MODULE_NAME;
+@@ -85,8 +90,8 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     return uri;
+   }
+ 
+-  private String getOriginalFilepath(String filepath, boolean isDirectoryAllowed) throws IORejectionException {
+-    Uri uri = getFileUri(filepath, isDirectoryAllowed);
++  private String getOriginalFilepath(String filepath) throws IORejectionException {
++    Uri uri = getFileUri(filepath, true);
+     String originalFilepath = filepath;
+     if (uri.getScheme().equals("content")) {
+       try {
+@@ -310,7 +315,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+   private int getResIdentifier(String filename) {
+     String suffix = filename.substring(filename.lastIndexOf(".") + 1);
+     String name = filename.substring(0, filename.lastIndexOf("."));
+-    Boolean isImage = suffix.equals("png") || suffix.equals("jpg") || suffix.equals("jpeg") || suffix.equals("bmp") || suffix.equals("gif") || suffix.equals("webp") || suffix.equals("psd") || suffix.equals("svg") || suffix.equals("tiff");
++    boolean isImage = suffix.equals("png") || suffix.equals("jpg") || suffix.equals("jpeg") || suffix.equals("bmp") || suffix.equals("gif") || suffix.equals("webp") || suffix.equals("psd") || suffix.equals("svg") || suffix.equals("tiff");
+     return getReactApplicationContext().getResources().getIdentifier(name, isImage ? "drawable" : "raw", getReactApplicationContext().getPackageName());
+   }
+ 
+@@ -340,7 +345,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+         return;
+       }
+ 
+-      MessageDigest md = MessageDigest.getInstance(algorithms.get(algorithm));
++      MessageDigest md = MessageDigest.getInstance(Objects.requireNonNull(algorithms.get(algorithm)));
+ 
+       FileInputStream inputStream = new FileInputStream(filepath);
+       byte[] buffer = new byte[1024 * 10]; // 10 KB Buffer
+@@ -361,6 +366,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     }
+   }
+ 
++  @SuppressLint("StaticFieldLeak")
+   @ReactMethod
+   public void moveFile(final String filepath, String destPath, ReadableMap options, final Promise promise) {
+     try {
+@@ -388,6 +394,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     }
+   }
+ 
++  @SuppressLint("StaticFieldLeak")
+   @ReactMethod
+   public void copyFile(final String filepath, final String destPath, ReadableMap options, final Promise promise) {
+     new CopyFileTask() {
+@@ -403,6 +410,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     }.execute(filepath, destPath);
+   }
+ 
++  @SuppressLint("StaticFieldLeak")
+   private class CopyFileTask extends AsyncTask<String, Void, Exception> {
+     protected Exception doInBackground(String... paths) {
+       try {
+@@ -438,6 +446,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+ 
+       WritableArray fileMaps = Arguments.createArray();
+ 
++      assert files != null;
+       for (File childFile : files) {
+         WritableMap fileMap = Arguments.createMap();
+ 
+@@ -481,7 +490,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+           }
+         } catch (IOException ex) {
+           //.. ah.. is a directory or a compressed file?
+-          isDirectory = !ex.getMessage().contains("compressed");
++          isDirectory = !Objects.requireNonNull(ex.getMessage()).contains("compressed");
+         }
+         fileMap.putInt("size", length);
+         fileMap.putInt("type", isDirectory ? 1 : 0); // if 0, probably a folder..
+@@ -534,19 +543,10 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+       }
+ 
+       // Attempt to open file (win = exists)
+-      InputStream fileStream = null;
+-      try {
+-        fileStream = assetManager.open(filepath);
++      try (InputStream fileStream = assetManager.open(filepath)) {
+         promise.resolve(true);
+       } catch (Exception ex) {
+         promise.resolve(false); // don't throw an error, resolve false
+-      } finally {
+-        if (fileStream != null) {
+-          try {
+-            fileStream.close();
+-          } catch (Exception ignored) {
+-          }
+-        }
+       }
+     } catch (Exception ex) {
+       ex.printStackTrace();
+@@ -578,9 +578,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+    * @param promise     React Callback
+    */
+   private void copyInputStream(InputStream in, String source, String destination, Promise promise) {
+-    OutputStream out = null;
+-    try {
+-      out = getOutputStream(destination, false);
++    try (OutputStream out = getOutputStream(destination, false)) {
+ 
+       byte[] buffer = new byte[1024 * 10]; // 10k buffer
+       int read;
+@@ -599,12 +597,6 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+         } catch (IOException ignored) {
+         }
+       }
+-      if (out != null) {
+-        try {
+-          out.close();
+-        } catch (IOException ignored) {
+-        }
+-      }
+     }
+   }
+ 
+@@ -627,7 +619,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+   @ReactMethod
+   public void stat(String filepath, Promise promise) {
+     try {
+-      String originalFilepath = getOriginalFilepath(filepath, true);
++      String originalFilepath = getOriginalFilepath(filepath);
+       File file = new File(originalFilepath);
+ 
+       if (!file.exists()) throw new Exception("File does not exist");
+@@ -664,7 +656,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+ 
+   private void DeleteRecursive(File fileOrDirectory) {
+     if (fileOrDirectory.isDirectory()) {
+-      for (File child : fileOrDirectory.listFiles()) {
++      for (File child : Objects.requireNonNull(fileOrDirectory.listFiles())) {
+         DeleteRecursive(child);
+       }
+     }
+@@ -699,7 +691,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+   @ReactMethod
+   public void downloadFile(final ReadableMap options, final Promise promise) {
+     try {
+-      File file = new File(options.getString("toFile"));
++      File file = new File(Objects.requireNonNull(options.getString("toFile")));
+       URL url = new URL(options.getString("fromUrl"));
+       final int jobId = options.getInt("jobId");
+       ReadableMap headers = options.getMap("headers");
+@@ -720,54 +712,48 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+       params.readTimeout = readTimeout;
+       params.connectionTimeout = connectionTimeout;
+ 
+-      params.onTaskCompleted = new DownloadParams.OnTaskCompleted() {
+-        public void onTaskCompleted(DownloadResult res) {
+-          if (res.exception == null) {
+-            WritableMap infoMap = Arguments.createMap();
++      params.onTaskCompleted = res -> {
++        if (res.exception == null) {
++          WritableMap infoMap = Arguments.createMap();
+ 
+-            infoMap.putInt("jobId", jobId);
+-            infoMap.putInt("statusCode", res.statusCode);
+-            infoMap.putDouble("bytesWritten", (double)res.bytesWritten);
++          infoMap.putInt("jobId", jobId);
++          infoMap.putInt("statusCode", res.statusCode);
++          infoMap.putDouble("bytesWritten", (double)res.bytesWritten);
+ 
+-            promise.resolve(infoMap);
+-          } else {
+-            reject(promise, options.getString("toFile"), res.exception);
+-          }
++          promise.resolve(infoMap);
++        } else {
++          reject(promise, options.getString("toFile"), res.exception);
+         }
+       };
+ 
+       if (hasBeginCallback) {
+-        params.onDownloadBegin = new DownloadParams.OnDownloadBegin() {
+-          public void onDownloadBegin(int statusCode, long contentLength, Map<String, String> headers) {
+-            WritableMap headersMap = Arguments.createMap();
++        params.onDownloadBegin = (statusCode, contentLength, headers1) -> {
++          WritableMap headersMap = Arguments.createMap();
+ 
+-            for (Map.Entry<String, String> entry : headers.entrySet()) {
+-              headersMap.putString(entry.getKey(), entry.getValue());
+-            }
++          for (Map.Entry<String, String> entry : headers1.entrySet()) {
++            headersMap.putString(entry.getKey(), entry.getValue());
++          }
+ 
+-            WritableMap data = Arguments.createMap();
++          WritableMap data = Arguments.createMap();
+ 
+-            data.putInt("jobId", jobId);
+-            data.putInt("statusCode", statusCode);
+-            data.putDouble("contentLength", (double)contentLength);
+-            data.putMap("headers", headersMap);
++          data.putInt("jobId", jobId);
++          data.putInt("statusCode", statusCode);
++          data.putDouble("contentLength", (double)contentLength);
++          data.putMap("headers", headersMap);
+ 
+-            sendEvent(getReactApplicationContext(), "DownloadBegin", data);
+-          }
++          sendEvent(getReactApplicationContext(), "DownloadBegin", data);
+         };
+       }
+ 
+       if (hasProgressCallback) {
+-        params.onDownloadProgress = new DownloadParams.OnDownloadProgress() {
+-          public void onDownloadProgress(long contentLength, long bytesWritten) {
+-            WritableMap data = Arguments.createMap();
++        params.onDownloadProgress = (contentLength, bytesWritten) -> {
++          WritableMap data = Arguments.createMap();
+ 
+-            data.putInt("jobId", jobId);
+-            data.putDouble("contentLength", (double)contentLength);
+-            data.putDouble("bytesWritten", (double)bytesWritten);
++          data.putInt("jobId", jobId);
++          data.putDouble("contentLength", (double)contentLength);
++          data.putDouble("bytesWritten", (double)bytesWritten);
+ 
+-            sendEvent(getReactApplicationContext(), "DownloadProgress", data);
+-          }
++          sendEvent(getReactApplicationContext(), "DownloadProgress", data);
+         };
+       }
+ 
+@@ -894,18 +880,12 @@ public class RNFSManager extends ReactContextBaseJavaModule {
+     StatFs statEx = new StatFs(Environment.getExternalStorageDirectory().getPath());
+     long totalSpace;
+     long freeSpace;
+-    long totalSpaceEx = 0;
+-    long freeSpaceEx = 0;
+-    if (android.os.Build.VERSION.SDK_INT >= 18) {
+-      totalSpace = stat.getTotalBytes();
+-      freeSpace = stat.getFreeBytes();
+-      totalSpaceEx = statEx.getTotalBytes();
+-      freeSpaceEx = statEx.getFreeBytes();
+-    } else {
+-      long blockSize = stat.getBlockSize();
+-      totalSpace = blockSize * stat.getBlockCount();
+-      freeSpace = blockSize * stat.getAvailableBlocks();
+-    }
++    long totalSpaceEx;
++    long freeSpaceEx;
++    totalSpace = stat.getTotalBytes();
++    freeSpace = stat.getFreeBytes();
++    totalSpaceEx = statEx.getTotalBytes();
++    freeSpaceEx = statEx.getFreeBytes();
+     WritableMap info = Arguments.createMap();
+     info.putDouble("totalSpace", (double) totalSpace);   // Int32 too small, must use Double
+     info.putDouble("freeSpace", (double) freeSpace);
+diff --git a/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSPackage.java b/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSPackage.java
+index f9a27a0..a53ef03 100644
+--- a/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSPackage.java
++++ b/node_modules/react-native-fs/android/src/main/java/com/rnfs/RNFSPackage.java
+@@ -1,5 +1,7 @@
+ package com.rnfs;
+ 
++import androidx.annotation.NonNull;
++
+ import java.util.*;
+ 
+ import com.facebook.react.ReactPackage;
+@@ -10,8 +12,9 @@ import com.facebook.react.uimanager.ViewManager;
+ 
+ public class RNFSPackage implements ReactPackage {
+ 
++  @NonNull
+   @Override
+-  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
++  public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
+     List<NativeModule> modules = new ArrayList<>();
+     modules.add(new RNFSManager(reactContext));
+     return modules;
+@@ -22,9 +25,10 @@ public class RNFSPackage implements ReactPackage {
+      return Collections.emptyList();		
+   }
+ 
++  @NonNull
+   @Override
+-  public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+-    return Arrays.<ViewManager>asList();
++  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
++    return Collections.emptyList();
+   }
+   
+ }
+diff --git a/node_modules/react-native-fs/android/src/main/java/com/rnfs/Uploader.java b/node_modules/react-native-fs/android/src/main/java/com/rnfs/Uploader.java
+index 5b2e594..4a3be06 100644
+--- a/node_modules/react-native-fs/android/src/main/java/com/rnfs/Uploader.java
++++ b/node_modules/react-native-fs/android/src/main/java/com/rnfs/Uploader.java
+@@ -21,6 +21,7 @@ import java.nio.channels.FileChannel;
+ import java.nio.channels.WritableByteChannel;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Objects;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ 
+ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+@@ -32,16 +33,13 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+     protected UploadResult doInBackground(UploadParams... uploadParams) {
+         mParams = uploadParams[0];
+         res = new UploadResult();
+-        new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                try {
+-                    upload(mParams, res);
+-                    mParams.onUploadComplete.onUploadComplete(res);
+-                } catch (Exception e) {
+-                    res.exception = e;
+-                    mParams.onUploadComplete.onUploadComplete(res);
+-                }
++        new Thread(() -> {
++            try {
++                upload(mParams, res);
++                mParams.onUploadComplete.onUploadComplete(res);
++            } catch (Exception e) {
++                res.exception = e;
++                mParams.onUploadComplete.onUploadComplete(res);
+             }
+         }).start();
+         return res;
+@@ -54,7 +52,8 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+         String twoHyphens = "--";
+         String boundary = "*****";
+         String tail = crlf + twoHyphens + boundary + twoHyphens + crlf;
+-        String metaData = "", stringData = "";
++        StringBuilder metaData = new StringBuilder();
++        StringBuilder stringData = new StringBuilder();
+         String[] fileHeader;
+         int statusCode, byteSentTotal;
+         int fileCount = 0;
+@@ -84,9 +83,9 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+             while (fieldsIterator.hasNextKey()) {
+                 String key = fieldsIterator.nextKey();
+                 String value = params.fields.getString(key);
+-                metaData += twoHyphens + boundary + crlf + "Content-Disposition: form-data; name=\"" + key + "\"" + crlf + crlf + value +crlf;
++                metaData.append(twoHyphens).append(boundary).append(crlf).append("Content-Disposition: form-data; name=\"").append(key).append("\"").append(crlf).append(crlf).append(value).append(crlf);
+             }
+-            stringData += metaData;
++            stringData.append(metaData);
+             fileHeader = new String[files.length];
+             for (ReadableMap map : params.files) {
+                 try {
+@@ -98,21 +97,20 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+                     filename = map.getString("filename");
+                     filetype = getMimeType(map.getString("filepath"));
+                 }
+-                File file = new File(map.getString("filepath"));
++                File file = new File(Objects.requireNonNull(map.getString("filepath")));
+                 long fileLength = file.length();
+                 totalFileLength += fileLength;
+                 if (!binaryStreamOnly) {
+                     String fileHeaderType = twoHyphens + boundary + crlf +
+                             "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"" + crlf +
+                             "Content-Type: " + filetype + crlf;
+-                    ;
+                     if (files.length - 1 == fileCount){
+                         totalFileLength += tail.length();
+                     }
+ 
+                     String fileLengthHeader = "Content-length: " + fileLength + crlf;
+                     fileHeader[fileCount] = fileHeaderType + fileLengthHeader + crlf;
+-                    stringData += fileHeaderType + fileLengthHeader + crlf;
++                    stringData.append(fileHeaderType).append(fileLengthHeader).append(crlf);
+                 }
+                 fileCount++;
+             }
+@@ -122,7 +120,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+             }
+             if (!binaryStreamOnly) {
+                 long requestLength = totalFileLength;
+-                requestLength += stringData.length() + files.length * crlf.length();
++                requestLength += stringData.length() + (long) files.length * crlf.length();
+                 connection.setRequestProperty("Content-length", "" +(int) requestLength);
+                 connection.setFixedLengthStreamingMode((int)requestLength);
+             }
+@@ -132,7 +130,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+             WritableByteChannel requestChannel = Channels.newChannel(request);
+ 
+             if (!binaryStreamOnly) {
+-                request.writeBytes(metaData);
++                request.writeBytes(metaData.toString());
+             }
+ 
+             byteSentTotal = 0;
+@@ -142,7 +140,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+                     request.writeBytes(fileHeader[fileCount]);
+                 }
+ 
+-                File file = new File(map.getString("filepath"));
++                File file = new File(Objects.requireNonNull(map.getString("filepath")));
+ 
+                 long fileLength = file.length();
+                 long bufferSize = (long) Math.ceil(fileLength / 100.f);
+@@ -184,7 +182,7 @@ public class Uploader extends AsyncTask<UploadParams, int[], UploadResult> {
+                 responseHeaders.putString(entry.getKey(), entry.getValue().get(count));
+             }
+             StringBuilder stringBuilder = new StringBuilder();
+-            String line = "";
++            String line;
+ 
+             while ((line = responseStreamReader.readLine()) != null) {
+                 stringBuilder.append(line).append("\n");

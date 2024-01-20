@@ -1,0 +1,13 @@
+diff --git a/node_modules/@react-native-firebase/messaging/android/build.gradle b/node_modules/@react-native-firebase/messaging/android/build.gradle
+index a42c5b6..9ac78a1 100644
+--- a/node_modules/@react-native-firebase/messaging/android/build.gradle
++++ b/node_modules/@react-native-firebase/messaging/android/build.gradle
+@@ -11,7 +11,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-      classpath("com.android.tools.build:gradle:7.0.4")
++      classpath("com.android.tools.build:gradle:7.3.1")
+     }
+   }
+ }

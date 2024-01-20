@@ -1,0 +1,474 @@
+diff --git a/node_modules/react-native-yamap/android/build.gradle b/node_modules/react-native-yamap/android/build.gradle
+index 01aa0d9..07088dd 100644
+--- a/node_modules/react-native-yamap/android/build.gradle
++++ b/node_modules/react-native-yamap/android/build.gradle
+@@ -1,38 +1,37 @@
+ 
+ buildscript {
+     repositories {
+-        jcenter()
++        google()
+         mavenCentral()
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:1.3.1'
++        classpath 'com.android.tools.build:gradle:7.3.1'
+     }
+ }
+ 
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion 28
+-    buildToolsVersion "28.0.3"
++    compileSdk 34
++    buildToolsVersion "34.0.0"
+ 
+     defaultConfig {
+-        minSdkVersion 16
+-        targetSdkVersion 28
+-        versionCode 1
+-        versionName "1.0"
++        minSdkVersion 23
++        targetSdkVersion 34
+     }
+-    lintOptions {
++    lint {
+         abortOnError false
+     }
+ }
+ 
+ repositories {
++    google()
+     mavenCentral()
+ }
+ 
+ dependencies {
+-    implementation 'com.google.android.gms:play-services-location:16.0.0'
+-    implementation 'com.facebook.react:react-native:+'
+-    implementation 'com.yandex.android:maps.mobile:4.0.0-full'
++    implementation 'com.google.android.gms:play-services-location:20.0.0'
++    implementation 'com.facebook.react:react-native:0.68.1'
++    implementation 'com.yandex.android:maps.mobile:4.2.2-full'
+ }
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/RNYamapModule.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/RNYamapModule.java
+index ac774fe..87ae265 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/RNYamapModule.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/RNYamapModule.java
+@@ -11,7 +11,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
+ import com.yandex.mapkit.MapKitFactory;
+ import com.yandex.mapkit.transport.TransportFactory;
+ import com.yandex.runtime.i18n.I18nManagerFactory;
+-import com.yandex.runtime.i18n.LocaleListener;
++//import com.yandex.runtime.i18n.LocaleListener;
+ 
+ import java.util.HashMap;
+ import java.util.Map;
+@@ -34,6 +34,7 @@ public class RNYamapModule extends ReactContextBaseJavaModule {
+         reactContext = context;
+     }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+@@ -46,51 +47,32 @@ public class RNYamapModule extends ReactContextBaseJavaModule {
+ 
+     @ReactMethod
+     public void init(final String apiKey) {
+-        runOnUiThread(new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                MapKitFactory.setApiKey(apiKey);
+-                MapKitFactory.initialize(reactContext);
+-                TransportFactory.initialize(reactContext);
+-                MapKitFactory.getInstance().onStart();
+-            }
++        runOnUiThread(new Thread(() -> {
++            MapKitFactory.setApiKey(apiKey);
++            MapKitFactory.initialize(reactContext);
++            TransportFactory.initialize(reactContext);
++            MapKitFactory.getInstance().onStart();
+         }));
+     }
+ 
+     @ReactMethod
+     public void setLocale(final String locale, final Callback successCb, final Callback errorCb) {
+-        runOnUiThread(new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                I18nManagerFactory.setLocale(locale);
+-                successCb.invoke();
+-            }
++        runOnUiThread(new Thread(() -> {
++            I18nManagerFactory.setLocale(locale);
++            successCb.invoke();
+         }));
+     }
+ 
+     @ReactMethod
+     public void getLocale(final Callback successCb, final Callback errorCb) {
+-        runOnUiThread(new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                I18nManagerFactory.getLocale(new LocaleListener() {
+-                    @Override
+-                    public void onLocaleReceived(@NonNull String s) {
+-                        successCb.invoke(s);
+-                    }
+-                });
+-            }
+-        }));
++        runOnUiThread(new Thread(I18nManagerFactory::getLocale));
+     }
+ 
+     @ReactMethod
+     public void resetLocale(final Callback successCb, final Callback errorCb) {
+-        runOnUiThread(new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                I18nManagerFactory.setLocale(null);
+-                successCb.invoke(null);
+-            }
++        runOnUiThread(new Thread(() -> {
++            I18nManagerFactory.setLocale(null);
++            successCb.invoke((Object) null);
+         }));
+     }
+ 
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.java
+index 6bbeaaa..0461b0b 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.java
+@@ -1,5 +1,7 @@
+ package ru.vvdev.yamap;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.common.MapBuilder;
+ import com.facebook.react.uimanager.ThemedReactContext;
+@@ -18,6 +20,7 @@ public class YamapCircleManager extends ViewGroupManager<YamapCircle> {
+ 
+     YamapCircleManager() { }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapMarkerManager.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapMarkerManager.java
+index f1beb4b..61b0eff 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapMarkerManager.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapMarkerManager.java
+@@ -3,6 +3,8 @@ package ru.vvdev.yamap;
+ import android.graphics.PointF;
+ import android.view.View;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.common.MapBuilder;
+ import com.facebook.react.uimanager.ThemedReactContext;
+@@ -21,6 +23,7 @@ public class YamapMarkerManager extends ViewGroupManager<YamapMarker> {
+ 
+     YamapMarkerManager() {}
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolygonManager.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolygonManager.java
+index 37494bb..45a786b 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolygonManager.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolygonManager.java
+@@ -2,6 +2,8 @@ package ru.vvdev.yamap;
+ 
+ import android.view.View;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.ReadableArray;
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.common.MapBuilder;
+@@ -22,6 +24,7 @@ public class YamapPolygonManager extends ViewGroupManager<YamapPolygon> {
+ 
+     YamapPolygonManager() { }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+@@ -56,12 +59,10 @@ public class YamapPolygonManager extends ViewGroupManager<YamapPolygon> {
+             ArrayList<Point> parsed = new ArrayList<>();
+             for (int i = 0; i < points.size(); ++i) {
+                 ReadableMap markerMap = points.getMap(i);
+-                if (markerMap != null) {
+-                    double lon = markerMap.getDouble("lon");
+-                    double lat = markerMap.getDouble("lat");
+-                    Point point = new Point(lat, lon);
+-                    parsed.add(point);
+-                }
++                double lon = markerMap.getDouble("lon");
++                double lat = markerMap.getDouble("lat");
++                Point point = new Point(lat, lon);
++                parsed.add(point);
+             }
+             castToPolygonView(view).setPolygonPoints(parsed);
+         }
+@@ -73,19 +74,15 @@ public class YamapPolygonManager extends ViewGroupManager<YamapPolygon> {
+         if (_rings != null) {
+             for (int j = 0; j < _rings.size(); ++j) {
+                 ReadableArray points = _rings.getArray(j);
+-                if (points != null) {
+-                    ArrayList<Point> parsed = new ArrayList<>();
+-                    for (int i = 0; i < points.size(); ++i) {
+-                        ReadableMap markerMap = points.getMap(i);
+-                        if (markerMap != null) {
+-                            double lon = markerMap.getDouble("lon");
+-                            double lat = markerMap.getDouble("lat");
+-                            Point point = new Point(lat, lon);
+-                            parsed.add(point);
+-                        }
+-                    }
+-                    rings.add(parsed);
++                ArrayList<Point> parsed = new ArrayList<>();
++                for (int i = 0; i < points.size(); ++i) {
++                    ReadableMap markerMap = points.getMap(i);
++                    double lon = markerMap.getDouble("lon");
++                    double lat = markerMap.getDouble("lat");
++                    Point point = new Point(lat, lon);
++                    parsed.add(point);
+                 }
++                rings.add(parsed);
+             }
+         }
+         castToPolygonView(view).setInnerRings(rings);
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolylineManager.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolylineManager.java
+index e002b6e..6e66799 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolylineManager.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapPolylineManager.java
+@@ -2,6 +2,8 @@ package ru.vvdev.yamap;
+ 
+ import android.view.View;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.bridge.ReadableArray;
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.common.MapBuilder;
+@@ -23,6 +25,7 @@ public class YamapPolylineManager extends ViewGroupManager<YamapPolyline> {
+     YamapPolylineManager() {
+     }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+@@ -57,12 +60,10 @@ public class YamapPolylineManager extends ViewGroupManager<YamapPolyline> {
+             ArrayList<Point> parsed = new ArrayList<>();
+             for (int i = 0; i < points.size(); ++i) {
+                 ReadableMap markerMap = points.getMap(i);
+-                if (markerMap != null) {
+-                    double lon = markerMap.getDouble("lon");
+-                    double lat = markerMap.getDouble("lat");
+-                    Point point = new Point(lat, lon);
+-                    parsed.add(point);
+-                }
++                double lon = markerMap.getDouble("lon");
++                double lat = markerMap.getDouble("lat");
++                Point point = new Point(lat, lon);
++                parsed.add(point);
+             }
+             castToPolylineView(view).setPolygonPoints(parsed);
+         }
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.java
+index eead12b..08d2960 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.java
+@@ -37,6 +37,7 @@ public class YamapViewManager extends ViewGroupManager<YamapView> {
+     YamapViewManager() {
+     }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return REACT_CLASS;
+@@ -87,6 +88,7 @@ public class YamapViewManager extends ViewGroupManager<YamapView> {
+         Assertions.assertNotNull(args);
+         switch (commandType) {
+             case "setCenter":
++                assert args != null;
+                 setCenter(castToYaMapView(view), args.getMap(0), (float) args.getDouble(1), (float) args.getDouble(2), (float) args.getDouble(3), (float) args.getDouble(4), args.getInt(5));
+                 return;
+             case "fitAllMarkers":
+@@ -155,9 +157,7 @@ public class YamapViewManager extends ViewGroupManager<YamapView> {
+             ArrayList<Point> points = new ArrayList<>();
+             for (int i = 0; i < jsPoints.size(); ++i) {
+                 ReadableMap point = jsPoints.getMap(i);
+-                if (point != null) {
+-                    points.add(new Point(point.getDouble("lat"), point.getDouble("lon")));
+-                }
++                points.add(new Point(point.getDouble("lat"), point.getDouble("lon")));
+             }
+             ArrayList<String> vehicles = new ArrayList<>();
+             if (jsVehicles != null) {
+@@ -204,22 +204,22 @@ public class YamapViewManager extends ViewGroupManager<YamapView> {
+ 
+     @ReactProp(name = "scrollGesturesEnabled")
+     public void setScrollGesturesEnabled(View view, Boolean scrollGesturesEnabled) {
+-        castToYaMapView(view).setScrollGesturesEnabled(scrollGesturesEnabled == true);
++        castToYaMapView(view).setScrollGesturesEnabled(scrollGesturesEnabled);
+     }
+ 
+     @ReactProp(name = "rotateGesturesEnabled")
+     public void setRotateGesturesEnabled(View view, Boolean rotateGesturesEnabled) {
+-        castToYaMapView(view).setRotateGesturesEnabled(rotateGesturesEnabled == true);
++        castToYaMapView(view).setRotateGesturesEnabled(rotateGesturesEnabled);
+     }
+ 
+     @ReactProp(name = "zoomGesturesEnabled")
+     public void setZoomGesturesEnabled(View view, Boolean zoomGesturesEnabled) {
+-        castToYaMapView(view).setZoomGesturesEnabled(zoomGesturesEnabled == true);
++        castToYaMapView(view).setZoomGesturesEnabled(zoomGesturesEnabled);
+     }
+ 
+     @ReactProp(name = "tiltGesturesEnabled")
+     public void setTiltGesturesEnabled(View view, Boolean tiltGesturesEnabled) {
+-        castToYaMapView(view).setTiltGesturesEnabled(tiltGesturesEnabled == true);
++        castToYaMapView(view).setTiltGesturesEnabled(tiltGesturesEnabled);
+     }
+ 
+     @ReactProp(name = "mapStyle")
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestModule.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestModule.java
+index 5f60fa2..6c71f5a 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestModule.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestModule.java
+@@ -2,6 +2,7 @@ package ru.vvdev.yamap.suggest;
+ 
+ import android.content.Context;
+ 
++import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+ 
+ import com.facebook.react.bridge.Promise;
+@@ -28,6 +29,7 @@ public class RNYandexSuggestModule extends ReactContextBaseJavaModule {
+         super(reactContext);
+     }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return "YamapSuggests";
+@@ -39,34 +41,14 @@ public class RNYandexSuggestModule extends ReactContextBaseJavaModule {
+             promise.reject(ERR_NO_REQUEST_ARG, "suggest request: text arg is not provided");
+             return;
+         }
+-        runOnUiThread(new Runnable() {
+-            @Override
+-            public void run() {
+-                getSuggestClient(getReactApplicationContext()).suggest(text,
+-                        new Callback<List<MapSuggestItem>>() {
+-                            @Override
+-                            public void invoke(List<MapSuggestItem> result) {
+-                                promise.resolve(argsHelper.createSuggestsMapFrom(result));
+-                            }
+-                        },
+-                        new Callback<Throwable>() {
+-                            @Override
+-                            public void invoke(Throwable e) {
+-                                promise.reject(ERR_SUGGEST_FAILED, "suggest request: " + e.getMessage());
+-                            }
+-                        });
+-            }
+-        });
++        runOnUiThread(() -> getSuggestClient(getReactApplicationContext()).suggest(text,
++                result -> promise.resolve(argsHelper.createSuggestsMapFrom(result)),
++                e -> promise.reject(ERR_SUGGEST_FAILED, "suggest request: " + e.getMessage())));
+     }
+ 
+     @ReactMethod
+     void reset() {
+-        runOnUiThread(new Runnable() {
+-            @Override
+-            public void run() {
+-                getSuggestClient(getReactApplicationContext()).resetSuggest();
+-            }
+-        });
++        runOnUiThread(() -> getSuggestClient(getReactApplicationContext()).resetSuggest());
+     }
+ 
+     private MapSuggestClient getSuggestClient(Context context) {
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestPackage.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestPackage.java
+index c6840e1..39a6c32 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestPackage.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/suggest/RNYandexSuggestPackage.java
+@@ -15,13 +15,13 @@ public class RNYandexSuggestPackage implements ReactPackage {
+ 
+     @NonNull
+     @Override
+-    public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
+-        return Arrays.<NativeModule>asList(new RNYandexSuggestModule(reactContext));
++    public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
++        return Collections.singletonList(new RNYandexSuggestModule(reactContext));
+     }
+ 
+     @NonNull
+     @Override
+-    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
++    public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
+         return Collections.emptyList();
+     }
+ }
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/utils/ImageLoader.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/utils/ImageLoader.java
+index d813950..3258165 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/utils/ImageLoader.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/utils/ImageLoader.java
+@@ -48,12 +48,7 @@ public class ImageLoader {
+                 try {
+                     final Bitmap bitmap = getBitmap(context, url);
+                     if (bitmap != null) {
+-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+-                            @Override
+-                            public void run() {
+-                                cb.invoke(bitmap);
+-                            }
+-                        });
++                        new Handler(Looper.getMainLooper()).post(() -> cb.invoke(bitmap));
+                     }
+                 } catch (Exception e) {
+                     e.printStackTrace();
+diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.java b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.java
+index c2f911f..e34bf14 100644
+--- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.java
++++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.java
+@@ -40,7 +40,7 @@ import com.yandex.mapkit.map.PolylineMapObject;
+ import com.yandex.mapkit.map.VisibleRegion;
+ import com.yandex.mapkit.mapview.MapView;
+ import com.yandex.mapkit.transport.TransportFactory;
+-import com.yandex.mapkit.transport.masstransit.MasstransitOptions;
++//import com.yandex.mapkit.transport.masstransit.MasstransitOptions;
+ import com.yandex.mapkit.transport.masstransit.MasstransitRouter;
+ import com.yandex.mapkit.transport.masstransit.PedestrianRouter;
+ import com.yandex.mapkit.transport.masstransit.Route;
+@@ -255,8 +255,8 @@ public class YamapView extends MapView implements UserLocationObjectListener, Ca
+             pedestrianRouter.requestRoutes(_points, new TimeOptions(), listener);
+             return;
+         }
+-        MasstransitOptions masstransitOptions = new MasstransitOptions(new ArrayList<String>(), vehicles, new TimeOptions());
+-        masstransitRouter.requestRoutes(_points, masstransitOptions, listener);
++        /*MasstransitOptions masstransitOptions = new MasstransitOptions(new ArrayList<String>(), vehicles, new TimeOptions());
++        masstransitRouter.requestRoutes(_points, masstransitOptions, listener);*/
+     }
+ 
+     public void fitAllMarkers() {
+@@ -398,7 +398,8 @@ public class YamapView extends MapView implements UserLocationObjectListener, Ca
+         routeMetadata.putInt("routeIndex", routeIndex);
+         final WritableArray stops = new WritableNativeArray();
+         for (RouteStop stop : section.getStops()) {
+-            stops.pushString(stop.getStop().getName());
++//            stops.pushString(stop.getStop().getName());
++            stops.pushString(stop.toString());
+         }
+         routeMetadata.putArray("stops", stops);
+         if (data.getTransports() != null) {

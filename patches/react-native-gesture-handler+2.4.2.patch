@@ -1,0 +1,661 @@
+diff --git a/node_modules/react-native-gesture-handler/android/build.gradle b/node_modules/react-native-gesture-handler/android/build.gradle
+index ad5845e..8bd3a7c 100644
+--- a/node_modules/react-native-gesture-handler/android/build.gradle
++++ b/node_modules/react-native-gesture-handler/android/build.gradle
+@@ -13,6 +13,11 @@ buildscript {
+     }
+ }
+ 
++plugins{
++    id('com.android.library')
++    id('org.jetbrains.kotlin.android')
++    }
++
+ def isNewArchitectureEnabled() {
+     // To opt-in for the New Architecture, you can either:
+     // - Set `newArchEnabled` to true inside the `gradle.properties` file
+@@ -38,8 +43,6 @@ def findNodeModulePath(baseDir, packageName) {
+ if (isNewArchitectureEnabled()) {
+     apply plugin: 'com.facebook.react'
+ }
+-apply plugin: 'com.android.library'
+-apply plugin: 'kotlin-android'
+ 
+ def safeExtGet(prop, fallback) {
+     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+@@ -47,7 +50,7 @@ def safeExtGet(prop, fallback) {
+ 
+ // Check whether Reanimated 2.3 or higher is installed alongside Gesture Handler
+ def shouldUseCommonInterfaceFromReanimated() {
+-    def reanimated = rootProject.subprojects.find { it.name == 'react-native-reanimated' };
++    def reanimated = rootProject.subprojects.find { it.name == 'react-native-reanimated' }
+     if (reanimated != null) {
+         def inputFile = new File(reanimated.projectDir, '../package.json')
+         def json = new JsonSlurper().parseText(inputFile.text)
+@@ -64,7 +67,7 @@ repositories {
+ }
+ 
+ android {
+-    compileSdkVersion safeExtGet("compileSdkVersion", 28)
++    compileSdk safeExtGet("compileSdkVersion", 33)
+ 
+     // Used to override the NDK path/version on internal CI or by allowing
+     // users to customize the NDK path/version from their root project (e.g. for M1 support)
+@@ -76,8 +79,8 @@ android {
+     }
+ 
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', 16)
+-        targetSdkVersion safeExtGet('targetSdkVersion', 28)
++        minSdkVersion safeExtGet('minSdkVersion', 23)
++        targetSdkVersion safeExtGet('targetSdkVersion', 33)
+         versionCode 1
+         versionName "1.0"
+         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+@@ -155,7 +158,7 @@ dependencies {
+     if (isNewArchitectureEnabled()) {
+         implementation project(':ReactAndroid')
+     } else {
+-        implementation 'com.facebook.react:react-native:+'
++        implementation 'com.facebook.react:react-native:0.68.1'
+     }
+ 
+     if (shouldUseCommonInterfaceFromReanimated()) {
+@@ -165,8 +168,8 @@ dependencies {
+         }
+     }
+ 
+-    implementation 'androidx.appcompat:appcompat:1.2.0'
+-    implementation "androidx.core:core-ktx:1.6.0"
++    implementation 'androidx.appcompat:appcompat:1.5.1'
++    implementation "androidx.core:core-ktx:1.9.0"
+     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+ }
+ 
+diff --git a/node_modules/react-native-gesture-handler/android/gradle.properties b/node_modules/react-native-gesture-handler/android/gradle.properties
+index 323af3e..83af222 100644
+--- a/node_modules/react-native-gesture-handler/android/gradle.properties
++++ b/node_modules/react-native-gesture-handler/android/gradle.properties
+@@ -16,4 +16,4 @@ org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryErro
+ # This option should only be used with decoupled projects. More details, visit
+ # http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+ # org.gradle.parallel=true
+-RNGH_kotlinVersion=1.5.20
++RNGH_kotlinVersion=1.8.20
+diff --git a/node_modules/react-native-gesture-handler/android/lib/build.gradle b/node_modules/react-native-gesture-handler/android/lib/build.gradle
+index 4b7cffc..ee5384d 100644
+--- a/node_modules/react-native-gesture-handler/android/lib/build.gradle
++++ b/node_modules/react-native-gesture-handler/android/lib/build.gradle
+@@ -5,12 +5,12 @@ repositories {
+ }
+ 
+ android {
+-    compileSdkVersion 23
+-    buildToolsVersion '25.0.0'
++    compileSdk 34
++    buildToolsVersion '34.0.0'
+ 
+     defaultConfig {
+-        minSdkVersion 16
+-        targetSdkVersion 23
++        minSdkVersion 23
++        targetSdkVersion 34
+         versionCode 1
+         versionName "1.0"
+     }
+@@ -23,6 +23,9 @@ android {
+ }
+ 
+ dependencies {
+-    testCompile 'junit:junit:4.12'
+-    compile 'com.android.support:appcompat-v7:23.4.0'
++    def supportLibVersion = safeExtGet('supportLibVersion', '28.0.0')
++    def supportLibMajorVersion = supportLibVersion.split('\\.')[0] as int
++    def appCompatLibName =  (supportLibMajorVersion < 20) ? "androidx.appcompat:appcompat" : "com.android.support:appcompat-v7"
++    testImplementation 'junit:junit:4.13.2'
++    implementation "$appCompatLibName:$supportLibVersion"
+ }
+diff --git a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/GestureHandler.kt b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/GestureHandler.kt
+index 8235673..a74253f 100644
+--- a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/GestureHandler.kt
++++ b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/GestureHandler.kt
+@@ -9,6 +9,7 @@ import android.view.MotionEvent.PointerCoords
+ import android.view.MotionEvent.PointerProperties
+ import android.view.View
+ import android.view.Window
++import com.facebook.react.BuildConfig
+ import com.facebook.react.bridge.Arguments
+ import com.facebook.react.bridge.UiThreadUtil
+ import com.facebook.react.bridge.WritableArray
+@@ -26,20 +27,16 @@ open class GestureHandler<ConcreteGestureHandlerT : GestureHandler<ConcreteGestu
+     private set
+   var state = STATE_UNDETERMINED
+     private set
+-  var x = 0f
+-    private set
+-  var y = 0f
+-    private set
++  private var x = 0f
++  private var y = 0f
+   var isWithinBounds = false
+     private set
+   var isEnabled = true
+     private set
+   var actionType = 0
+ 
+-  var changedTouchesPayload: WritableArray? = null
+-    private set
+-  var allTouchesPayload: WritableArray? = null
+-    private set
++  private var changedTouchesPayload: WritableArray? = null
++  private var allTouchesPayload: WritableArray? = null
+   var touchEventType = RNGestureHandlerTouchEvent.EVENT_UNDETERMINED
+     private set
+   var trackedPointersCount = 0
+@@ -51,10 +48,8 @@ open class GestureHandler<ConcreteGestureHandlerT : GestureHandler<ConcreteGestu
+   private var hitSlop: FloatArray? = null
+   var eventCoalescingKey: Short = 0
+     private set
+-  var lastAbsolutePositionX = 0f
+-    private set
+-  var lastAbsolutePositionY = 0f
+-    private set
++  private var lastAbsolutePositionX = 0f
++  private var lastAbsolutePositionY = 0f
+ 
+   private var manualActivation = false
+ 
+@@ -70,7 +65,7 @@ open class GestureHandler<ConcreteGestureHandlerT : GestureHandler<ConcreteGestu
+   @Suppress("UNCHECKED_CAST")
+   protected fun self(): ConcreteGestureHandlerT = this as ConcreteGestureHandlerT
+ 
+-  protected inline fun applySelf(block: ConcreteGestureHandlerT.() -> Unit): ConcreteGestureHandlerT =
++  private inline fun applySelf(block: ConcreteGestureHandlerT.() -> Unit): ConcreteGestureHandlerT =
+     self().apply { block() }
+ 
+   // properties set and accessed only by the orchestrator
+@@ -319,7 +314,7 @@ open class GestureHandler<ConcreteGestureHandlerT : GestureHandler<ConcreteGestu
+     trackedPointersCount: ${handler.trackedPointersIDsCount}
+     trackedPointers: ${handler.trackedPointerIDs.joinToString(separator = ", ")}
+     while handling event: $event
+-  """.trimIndent(), e) {}
++  """.trimIndent(), e)
+ 
+   fun handle(origEvent: MotionEvent) {
+     if (!isEnabled
+@@ -439,14 +434,18 @@ open class GestureHandler<ConcreteGestureHandlerT : GestureHandler<ConcreteGestu
+   }
+ 
+   fun updatePointerData(event: MotionEvent) {
+-    if (event.actionMasked == MotionEvent.ACTION_DOWN || event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
+-      dispatchTouchDownEvent(event)
+-      dispatchTouchMoveEvent(event)
+-    } else if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_POINTER_UP) {
+-      dispatchTouchMoveEvent(event)
+-      dispatchTouchUpEvent(event)
+-    } else if (event.actionMasked == MotionEvent.ACTION_MOVE) {
+-      dispatchTouchMoveEvent(event)
++    when (event.actionMasked) {
++        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
++          dispatchTouchDownEvent(event)
++          dispatchTouchMoveEvent(event)
++        }
++        MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
++          dispatchTouchMoveEvent(event)
++          dispatchTouchUpEvent(event)
++        }
++        MotionEvent.ACTION_MOVE -> {
++          dispatchTouchMoveEvent(event)
++        }
+     }
+   }
+ 
+diff --git a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/NativeViewGestureHandler.kt b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/NativeViewGestureHandler.kt
+index b24aaf7..0436b9b 100644
+--- a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/NativeViewGestureHandler.kt
++++ b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/NativeViewGestureHandler.kt
+@@ -4,7 +4,6 @@ import android.os.SystemClock
+ import android.view.MotionEvent
+ import android.view.View
+ import android.view.ViewGroup
+-import com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+ 
+ class NativeViewGestureHandler : GestureHandler<NativeViewGestureHandler>() {
+   private var shouldActivateOnStart = false
+@@ -39,8 +38,7 @@ class NativeViewGestureHandler : GestureHandler<NativeViewGestureHandler>() {
+       // For the `disallowInterruption` to work correctly we need to check the property when
+       // accessed as a peer, because simultaneous recognizers can be set on either side of the
+       // connection.
+-      val nativeWrapper = handler
+-      if (nativeWrapper.state == STATE_ACTIVE && nativeWrapper.disallowInterruption) {
++      if (handler.state == STATE_ACTIVE && handler.disallowInterruption) {
+         // other handler is active and it disallows interruption, we don't want to get into its way
+         return false
+       }
+diff --git a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
+index 382934f..9ba0085 100644
+--- a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
++++ b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
+@@ -17,7 +17,7 @@ class PanGestureHandler(context: Context?) : GestureHandler<PanGestureHandler>()
+   val translationY: Float
+     get() = lastY - startY + offsetY
+ 
+-  private val defaultMinDistSq: Float
++  private var defaultMinDistSq: Float = 0.0f
+   private var minDistSq = MAX_VALUE_IGNORE
+   private var activeOffsetXStart = MIN_VALUE_IGNORE
+   private var activeOffsetXEnd = MAX_VALUE_IGNORE
+@@ -54,9 +54,11 @@ class PanGestureHandler(context: Context?) : GestureHandler<PanGestureHandler>()
+    * position of all the fingers will remain still while doing a rotation gesture.
+    */
+   init {
+-    val vc = ViewConfiguration.get(context)
+-    val touchSlop = vc.scaledTouchSlop
+-    defaultMinDistSq = (touchSlop * touchSlop).toFloat()
++    val vc = context?.let { ViewConfiguration.get(it) }
++    val touchSlop = vc?.scaledTouchSlop
++    if (touchSlop != null) {
++      defaultMinDistSq = (touchSlop * touchSlop).toFloat()
++    }
+     minDistSq = defaultMinDistSq
+   }
+ 
+diff --git a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/ScaleGestureDetector.java b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/ScaleGestureDetector.java
+index 32c2663..311fdaa 100644
+--- a/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/ScaleGestureDetector.java
++++ b/node_modules/react-native-gesture-handler/android/lib/src/main/java/com/swmansion/gesturehandler/ScaleGestureDetector.java
+@@ -61,7 +61,7 @@ public class ScaleGestureDetector {
+          *          only wants to update scaling factors if the change is
+          *          greater than 0.01.
+          */
+-        public boolean onScale(ScaleGestureDetector detector);
++        boolean onScale(ScaleGestureDetector detector);
+ 
+         /**
+          * Responds to the beginning of a scaling gesture. Reported by
+@@ -75,7 +75,7 @@ public class ScaleGestureDetector {
+          *          sense, onScaleBegin() may return false to ignore the
+          *          rest of the gesture.
+          */
+-        public boolean onScaleBegin(ScaleGestureDetector detector);
++        boolean onScaleBegin(ScaleGestureDetector detector);
+ 
+         /**
+          * Responds to the end of a scale gesture. Reported by existing
+@@ -88,7 +88,7 @@ public class ScaleGestureDetector {
+          * @param detector The detector reporting the event - use this to
+          *          retrieve extended info about event state.
+          */
+-        public void onScaleEnd(ScaleGestureDetector detector);
++        void onScaleEnd(ScaleGestureDetector detector);
+     }
+ 
+     /**
+@@ -135,8 +135,8 @@ public class ScaleGestureDetector {
+     private long mCurrTime;
+     private long mPrevTime;
+     private boolean mInProgress;
+-    private int mSpanSlop;
+-    private int mMinSpan;
++    private final int mSpanSlop;
++    private final int mMinSpan;
+ 
+     private final Handler mHandler;
+ 
+@@ -144,7 +144,7 @@ public class ScaleGestureDetector {
+     private float mAnchoredScaleStartY;
+     private int mAnchoredScaleMode = ANCHORED_SCALE_MODE_NONE;
+ 
+-    private static final long TOUCH_STABILIZE_TIME = 128; // ms
++    // ms
+     private static final float SCALE_FACTOR = .5f;
+     private static final int ANCHORED_SCALE_MODE_NONE = 0;
+     private static final int ANCHORED_SCALE_MODE_DOUBLE_TAP = 1;
+@@ -222,8 +222,10 @@ public class ScaleGestureDetector {
+         }
+ 
+         final int count = event.getPointerCount();
+-        final boolean isStylusButtonDown =
+-                (event.getButtonState() & MotionEvent.BUTTON_STYLUS_PRIMARY) != 0;
++        boolean isStylusButtonDown = false;
++        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
++            isStylusButtonDown = (event.getButtonState() & MotionEvent.BUTTON_STYLUS_PRIMARY) != 0;
++        }
+ 
+         final boolean anchoredScaleCancelled =
+                 mAnchoredScaleMode == ANCHORED_SCALE_MODE_STYLUS && !isStylusButtonDown;
+@@ -240,7 +242,6 @@ public class ScaleGestureDetector {
+                 mInitialSpan = 0;
+                 mAnchoredScaleMode = ANCHORED_SCALE_MODE_NONE;
+             } else if (inAnchoredScaleMode() && streamComplete) {
+-                mInProgress = false;
+                 mInitialSpan = 0;
+                 mAnchoredScaleMode = ANCHORED_SCALE_MODE_NONE;
+             }
+@@ -250,8 +251,7 @@ public class ScaleGestureDetector {
+             }
+         }
+ 
+-        if (!mInProgress && mStylusScaleEnabled && !inAnchoredScaleMode()
+-                && !streamComplete && isStylusButtonDown) {
++        if (!mInProgress && mStylusScaleEnabled && !inAnchoredScaleMode() && isStylusButtonDown) {
+             // Start of a button scale gesture
+             mAnchoredScaleStartX = event.getX();
+             mAnchoredScaleStartY = event.getY();
+@@ -259,9 +259,7 @@ public class ScaleGestureDetector {
+             mInitialSpan = 0;
+         }
+ 
+-        final boolean configChanged = action == MotionEvent.ACTION_DOWN ||
+-                action == MotionEvent.ACTION_POINTER_UP ||
+-                action == MotionEvent.ACTION_POINTER_DOWN || anchoredScaleCancelled;
++        final boolean configChanged = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_POINTER_DOWN;
+ 
+         final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+         final int skipIndex = pointerUp ? event.getActionIndex() : -1;
+@@ -276,11 +274,7 @@ public class ScaleGestureDetector {
+             // or button down gesture started
+             focusX = mAnchoredScaleStartX;
+             focusY = mAnchoredScaleStartY;
+-            if (event.getY() < focusY) {
+-                mEventBeforeOrAboveStartingGestureEvent = true;
+-            } else {
+-                mEventBeforeOrAboveStartingGestureEvent = false;
+-            }
++            mEventBeforeOrAboveStartingGestureEvent = event.getY() < focusY;
+         } else {
+             for (int i = 0; i < count; i++) {
+                 if (skipIndex == i) continue;
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt
+index 63ee79f..0047085 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt
+@@ -1,7 +1,6 @@
+ package com.swmansion.gesturehandler.react
+ 
+ import android.annotation.SuppressLint
+-import android.annotation.TargetApi
+ import android.content.Context
+ import android.content.res.ColorStateList
+ import android.graphics.Color
+@@ -18,11 +17,7 @@ import android.view.ViewGroup
+ import androidx.core.view.children
+ import com.facebook.react.bridge.SoftAssertions
+ import com.facebook.react.module.annotations.ReactModule
+-import com.facebook.react.uimanager.PixelUtil
+-import com.facebook.react.uimanager.ThemedReactContext
+-import com.facebook.react.uimanager.ViewGroupManager
+-import com.facebook.react.uimanager.ViewManagerDelegate
+-import com.facebook.react.uimanager.ViewProps
++import com.facebook.react.uimanager.*
+ import com.facebook.react.uimanager.annotations.ReactProp
+ import com.facebook.react.viewmanagers.RNGestureHandlerButtonManagerDelegate
+ import com.facebook.react.viewmanagers.RNGestureHandlerButtonManagerInterface
+@@ -34,14 +29,13 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+   private val mDelegate: ViewManagerDelegate<ButtonViewGroup>
+ 
+   init {
+-      mDelegate = RNGestureHandlerButtonManagerDelegate<ButtonViewGroup, RNGestureHandlerButtonViewManager>(this)
++      mDelegate = RNGestureHandlerButtonManagerDelegate(this)
+   }
+ 
+   override fun getName() = REACT_CLASS
+ 
+   public override fun createViewInstance(context: ThemedReactContext) = ButtonViewGroup(context)
+ 
+-  @TargetApi(Build.VERSION_CODES.M)
+   @ReactProp(name = "foreground")
+   override fun setForeground(view: ButtonViewGroup, useDrawableOnForeground: Boolean) {
+     view.useDrawableOnForeground = useDrawableOnForeground
+@@ -81,7 +75,7 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+     view.updateBackground()
+   }
+ 
+-  override fun getDelegate(): ViewManagerDelegate<ButtonViewGroup>? {
++  override fun getDelegate(): ViewManagerDelegate<ButtonViewGroup> {
+     return mDelegate
+   }
+ 
+@@ -134,7 +128,7 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+ 
+     private fun applyRippleEffectWhenNeeded(selectable: Drawable): Drawable {
+       val rippleColor = rippleColor
+-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && selectable is RippleDrawable) {
++      if (selectable is RippleDrawable) {
+         val states = arrayOf(intArrayOf(android.R.attr.state_enabled))
+         val colorStateList = if (rippleColor != null) {
+           val colors = intArrayOf(rippleColor)
+@@ -150,8 +144,10 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+       }
+ 
+       val rippleRadius = rippleRadius
+-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && rippleRadius != null && selectable is RippleDrawable) {
+-        selectable.radius = PixelUtil.toPixelFromDIP(rippleRadius.toFloat()).toInt()
++      if (rippleRadius != null && selectable is RippleDrawable) {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
++          selectable.radius = PixelUtil.toPixelFromDIP(rippleRadius.toFloat()).toInt()
++        }
+       }
+       return selectable
+     }
+@@ -206,12 +202,14 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+         // reset background
+         background = null
+       }
++      // reset foreground
+       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+-        // reset foreground
+         foreground = null
+       }
+-      if (useDrawableOnForeground && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+-        foreground = applyRippleEffectWhenNeeded(createSelectableDrawable())
++      if (useDrawableOnForeground) {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
++          foreground = applyRippleEffectWhenNeeded(createSelectableDrawable())
++        }
+         if (_backgroundColor != Color.TRANSPARENT) {
+           setBackgroundColor(_backgroundColor)
+         }
+@@ -229,8 +227,7 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+           // 1. ReactViewManager is not a generic class with a possibility to handle another ViewGroup
+           // 2. There's no way to force native behavior of ReactViewGroup's superclass's onTouchEvent
+           colorDrawable.setCornerRadius(borderRadius)
+-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+-            && selectable is RippleDrawable) {
++          if (selectable is RippleDrawable) {
+             val mask = PaintDrawable(Color.WHITE)
+             mask.setCornerRadius(borderRadius)
+             selectable.setDrawableByLayerId(android.R.id.mask, mask)
+@@ -242,6 +239,7 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+       }
+     }
+ 
++    @SuppressLint("UseCompatLoadingForDrawables")
+     private fun createSelectableDrawable(): Drawable {
+       val version = Build.VERSION.SDK_INT
+       val identifier = if (useBorderlessDrawable && version >= 21) SELECTABLE_ITEM_BACKGROUND_BORDERLESS else SELECTABLE_ITEM_BACKGROUND
+@@ -351,7 +349,6 @@ class RNGestureHandlerButtonViewManager : ViewGroupManager<ButtonViewGroup>(), R
+       var responder: ButtonViewGroup? = null
+       var dummyClickListener = OnClickListener { }
+ 
+-      @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+       private fun getAttrId(context: Context, attr: String): Int {
+         SoftAssertions.assertNotNull(attr)
+         return when (attr) {
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEnabledRootView.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEnabledRootView.kt
+index 471ce31..7babaea 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEnabledRootView.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEnabledRootView.kt
+@@ -10,10 +10,10 @@ import java.lang.Exception
+ 
+ @Deprecated(message = "Use <GestureHandlerRootView /> component instead. Check gesture handler installation instructions in documentation for more information.")
+ class RNGestureHandlerEnabledRootView : ReactRootView {
+-  constructor(context: Context?) : super(context) {}
+-  constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {}
++  constructor(context: Context?) : super(context)
++    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
+ 
+-  init {
++    init {
+       throw UnsupportedOperationException("Your application is configured to use RNGestureHandlerEnabledRootView which is no longer supported. You can see how to migrate to <GestureHandlerRootView /> here: https://docs.swmansion.com/react-native-gesture-handler/docs/guides/migrating-off-rnghenabledroot")
+   }
+ }
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEvent.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEvent.kt
+index 10ca971..7ff1619 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEvent.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerEvent.kt
+@@ -36,6 +36,7 @@ class RNGestureHandlerEvent private constructor() : Event<RNGestureHandlerEvent>
+ 
+   override fun getCoalescingKey() = coalescingKey
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+     rctEventEmitter.receiveEvent(viewTag, EVENT_NAME, extraData)
+   }
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerModule.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerModule.kt
+index 939fbac..5c21777 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerModule.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerModule.kt
+@@ -453,6 +453,7 @@ class RNGestureHandlerModule(reactContext: ReactApplicationContext?)
+     )
+   }
+ 
++  @Deprecated("Deprecated in Java")
+   override fun onCatalystInstanceDestroy() {
+     registry.dropAllHandlers()
+     interactionManager.reset()
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerRootViewManager.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerRootViewManager.kt
+index e310c04..b6cc95e 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerRootViewManager.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerRootViewManager.kt
+@@ -18,7 +18,7 @@ class RNGestureHandlerRootViewManager : ViewGroupManager<RNGestureHandlerRootVie
+   private val mDelegate: ViewManagerDelegate<RNGestureHandlerRootView>
+ 
+   init {
+-    mDelegate = RNGestureHandlerRootViewManagerDelegate<RNGestureHandlerRootView, RNGestureHandlerRootViewManager>(this)
++    mDelegate = RNGestureHandlerRootViewManagerDelegate(this)
+   }
+ 
+   override fun getDelegate(): ViewManagerDelegate<RNGestureHandlerRootView> {
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerStateChangeEvent.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerStateChangeEvent.kt
+index 90aff46..9fc7652 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerStateChangeEvent.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerStateChangeEvent.kt
+@@ -38,6 +38,7 @@ class RNGestureHandlerStateChangeEvent private constructor() : Event<RNGestureHa
+   // TODO: coalescing
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+     rctEventEmitter.receiveEvent(viewTag, EVENT_NAME, extraData)
+   }
+diff --git a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerTouchEvent.kt b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerTouchEvent.kt
+index 88f0ece..42692a9 100644
+--- a/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerTouchEvent.kt
++++ b/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerTouchEvent.kt
+@@ -27,6 +27,7 @@ class RNGestureHandlerTouchEvent private constructor() : Event<RNGestureHandlerT
+ 
+   override fun getCoalescingKey() = coalescingKey
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+     rctEventEmitter.receiveEvent(viewTag, EVENT_NAME, extraData)
+   }
+@@ -47,7 +48,7 @@ class RNGestureHandlerTouchEvent private constructor() : Event<RNGestureHandlerT
+           init(handler)
+         }
+ 
+-    fun <T: GestureHandler<T>> createEventData(handler: T,): WritableMap = Arguments.createMap().apply {
++    fun <T: GestureHandler<T>> createEventData(handler: T): WritableMap = Arguments.createMap().apply {
+       putInt("handlerTag", handler.tag)
+       putInt("state", handler.state)
+       putInt("numberOfTouches", handler.trackedPointersCount)
+diff --git a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerDelegate.java b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerDelegate.java
+index 4cd163f..1558045 100644
+--- a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerDelegate.java
++++ b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerDelegate.java
+@@ -1,12 +1,3 @@
+-/**
+-* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
+-*
+-* Do not edit this file as changes may cause incorrect behavior and will be lost
+-* once the code is regenerated.
+-*
+-* @generated by codegen project: GeneratePropsJavaDelegate.js
+-*/
+-
+ package com.facebook.react.viewmanagers;
+ 
+ import android.view.View;
+@@ -23,16 +14,16 @@ public class RNGestureHandlerButtonManagerDelegate<T extends View, U extends Bas
+   public void setProperty(T view, String propName, @Nullable Object value) {
+     switch (propName) {
+       case "exclusive":
+-        mViewManager.setExclusive(view, value == null ? false : (boolean) value);
++        mViewManager.setExclusive(view, value != null && (boolean) value);
+         break;
+       case "foreground":
+-        mViewManager.setForeground(view, value == null ? false : (boolean) value);
++        mViewManager.setForeground(view, value != null && (boolean) value);
+         break;
+       case "borderless":
+-        mViewManager.setBorderless(view, value == null ? false : (boolean) value);
++        mViewManager.setBorderless(view, value != null && (boolean) value);
+         break;
+       case "enabled":
+-        mViewManager.setEnabled(view, value == null ? false : (boolean) value);
++        mViewManager.setEnabled(view, value != null && (boolean) value);
+         break;
+       case "rippleColor":
+         mViewManager.setRippleColor(view, ColorPropConverter.getColor(value, view.getContext()));
+diff --git a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerInterface.java b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerInterface.java
+index 5fdd424..6db2a66 100644
+--- a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerInterface.java
++++ b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerButtonManagerInterface.java
+@@ -1,12 +1,3 @@
+-/**
+-* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
+-*
+-* Do not edit this file as changes may cause incorrect behavior and will be lost
+-* once the code is regenerated.
+-*
+-* @generated by codegen project: GeneratePropsJavaInterface.js
+-*/
+-
+ package com.facebook.react.viewmanagers;
+ 
+ import android.view.View;
+diff --git a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerDelegate.java b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerDelegate.java
+index d7d7222..ac51495 100644
+--- a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerDelegate.java
++++ b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerDelegate.java
+@@ -1,12 +1,3 @@
+-/**
+-* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
+-*
+-* Do not edit this file as changes may cause incorrect behavior and will be lost
+-* once the code is regenerated.
+-*
+-* @generated by codegen project: GeneratePropsJavaDelegate.js
+-*/
+-
+ package com.facebook.react.viewmanagers;
+ 
+ import android.view.View;
+diff --git a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerInterface.java b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerInterface.java
+index d82d5a0..b593014 100644
+--- a/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerInterface.java
++++ b/node_modules/react-native-gesture-handler/android/src/paper/java/com/facebook/react/viewmanagers/RNGestureHandlerRootViewManagerInterface.java
+@@ -1,12 +1,3 @@
+-/**
+-* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
+-*
+-* Do not edit this file as changes may cause incorrect behavior and will be lost
+-* once the code is regenerated.
+-*
+-* @generated by codegen project: GeneratePropsJavaInterface.js
+-*/
+-
+ package com.facebook.react.viewmanagers;
+ 
+ import android.view.View;

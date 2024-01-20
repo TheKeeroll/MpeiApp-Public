@@ -1,0 +1,695 @@
+diff --git a/node_modules/react-native-webview/android/build.gradle b/node_modules/react-native-webview/android/build.gradle
+index fbede17..68c3054 100644
+--- a/node_modules/react-native-webview/android/build.gradle
++++ b/node_modules/react-native-webview/android/build.gradle
+@@ -13,8 +13,8 @@ buildscript {
+     }
+ 
+     dependencies {
+-      classpath("com.android.tools.build:gradle:3.6.0")
+-      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}")
++      classpath("com.android.tools.build:gradle:7.3.1")
++      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.20")
+     }
+   } else {
+     repositories {
+@@ -22,7 +22,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}")
++      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.20")
+     }
+   }
+ }
+@@ -35,7 +35,7 @@ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+ 
+ android {
+-  compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
++  compileSdk getExtOrIntegerDefault('compileSdkVersion')
+   defaultConfig {
+     minSdkVersion getExtOrIntegerDefault('minSdkVersion')
+     targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
+@@ -47,7 +47,7 @@ android {
+       minifyEnabled false
+     }
+   }
+-  lintOptions {
++  lint {
+     disable 'GradleCompatible'
+   }
+   compileOptions {
+@@ -131,7 +131,7 @@ def webkit_version = getExtOrDefault('webkitVersion')
+ 
+ dependencies {
+   //noinspection GradleDynamicVersion
+-  implementation 'com.facebook.react:react-native:+'
+-  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
++  implementation 'com.facebook.react:react-native:0.68.1'
++  implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.20"
+   implementation "androidx.webkit:webkit:$webkit_version"
+ }
+diff --git a/node_modules/react-native-webview/android/gradle.properties b/node_modules/react-native-webview/android/gradle.properties
+index e6f0f5e..22a2988 100644
+--- a/node_modules/react-native-webview/android/gradle.properties
++++ b/node_modules/react-native-webview/android/gradle.properties
+@@ -1,6 +1,6 @@
+-ReactNativeWebView_kotlinVersion=1.6.0
++ReactNativeWebView_kotlinVersion=1.8.20
+ ReactNativeWebView_webkitVersion=1.4.0
+-ReactNativeWebView_compileSdkVersion=29
+-ReactNativeWebView_buildToolsVersion=29.0.3
+-ReactNativeWebView_targetSdkVersion=28
+-ReactNativeWebView_minSdkVersion=21
++ReactNativeWebView_compileSdkVersion=34
++ReactNativeWebView_buildToolsVersion=34.0.0
++ReactNativeWebView_targetSdkVersion=34
++ReactNativeWebView_minSdkVersion=23
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java
+index c285684..c0d8ee9 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java
+@@ -95,12 +95,14 @@ import java.lang.IllegalArgumentException;
+ import java.net.MalformedURLException;
+ import java.net.URL;
+ import java.net.URLEncoder;
++import java.nio.charset.StandardCharsets;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
++import java.util.Objects;
+ import java.util.concurrent.atomic.AtomicReference;
+ 
+ /**
+@@ -167,9 +169,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+   protected @Nullable String mLackPermissionToDownloadMessage = null;
+ 
+   public RNCWebViewManager() {
+-    mWebViewConfig = new WebViewConfig() {
+-      public void configWebView(WebView webView) {
+-      }
++    mWebViewConfig = webView -> {
+     };
+   }
+ 
+@@ -177,6 +177,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+     mWebViewConfig = webViewConfig;
+   }
+ 
++  @NonNull
+   @Override
+   public String getName() {
+     return REACT_CLASS;
+@@ -186,9 +187,10 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+     return new RNCWebView(reactContext);
+   }
+ 
++  @NonNull
+   @Override
+   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+-  protected WebView createViewInstance(ThemedReactContext reactContext) {
++  protected WebView createViewInstance(@NonNull ThemedReactContext reactContext) {
+     RNCWebView webView = createRNCWebViewInstance(reactContext);
+     setupWebChromeClient(reactContext, webView);
+     reactContext.addLifecycleEventListener(webView);
+@@ -216,47 +218,45 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+       WebView.setWebContentsDebuggingEnabled(true);
+     }
+ 
+-    webView.setDownloadListener(new DownloadListener() {
+-      public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+-        webView.setIgnoreErrFailedForThisURL(url);
++    webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
++      webView.setIgnoreErrFailedForThisURL(url);
+ 
+-        RNCWebViewModule module = getModule(reactContext);
++      RNCWebViewModule module = getModule(reactContext);
+ 
+-        DownloadManager.Request request;
+-        try {
+-          request = new DownloadManager.Request(Uri.parse(url));
+-        } catch (IllegalArgumentException e) {
+-          Log.w(TAG, "Unsupported URI, aborting download", e);
+-          return;
+-        }
++      DownloadManager.Request request;
++      try {
++        request = new DownloadManager.Request(Uri.parse(url));
++      } catch (IllegalArgumentException e) {
++        Log.w(TAG, "Unsupported URI, aborting download", e);
++        return;
++      }
+ 
+-        String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+-        String downloadMessage = "Downloading " + fileName;
++      String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
++      String downloadMessage = "Downloading " + fileName;
+ 
+-        //Attempt to add cookie, if it exists
+-        URL urlObj = null;
+-        try {
+-          urlObj = new URL(url);
+-          String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
+-          String cookie = CookieManager.getInstance().getCookie(baseUrl);
+-          request.addRequestHeader("Cookie", cookie);
+-        } catch (MalformedURLException e) {
+-          Log.w(TAG, "Error getting cookie for DownloadManager", e);
+-        }
++      //Attempt to add cookie, if it exists
++      URL urlObj;
++      try {
++        urlObj = new URL(url);
++        String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
++        String cookie = CookieManager.getInstance().getCookie(baseUrl);
++        request.addRequestHeader("Cookie", cookie);
++      } catch (MalformedURLException e) {
++        Log.w(TAG, "Error getting cookie for DownloadManager", e);
++      }
+ 
+-        //Finish setting up request
+-        request.addRequestHeader("User-Agent", userAgent);
+-        request.setTitle(fileName);
+-        request.setDescription(downloadMessage);
+-        request.allowScanningByMediaScanner();
+-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
++      //Finish setting up request
++      request.addRequestHeader("User-Agent", userAgent);
++      request.setTitle(fileName);
++      request.setDescription(downloadMessage);
++      request.allowScanningByMediaScanner();
++      request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
++      request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+ 
+-        module.setDownloadRequest(request);
++      module.setDownloadRequest(request);
+ 
+-        if (module.grantFileDownloaderPermissions(getDownloadingMessage(), getLackPermissionToDownloadMessage())) {
+-          module.downloadFile(getDownloadingMessage());
+-        }
++      if (module.grantFileDownloaderPermissions(getDownloadingMessage(), getLackPermissionToDownloadMessage())) {
++        module.downloadFile(getDownloadingMessage());
+       }
+     });
+ 
+@@ -325,7 +325,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+ 
+   @ReactProp(name = "cacheMode")
+   public void setCacheMode(WebView view, String cacheModeString) {
+-    Integer cacheMode;
++    int cacheMode;
+     switch (cacheModeString) {
+       case "LOAD_CACHE_ONLY":
+         cacheMode = WebSettings.LOAD_CACHE_ONLY;
+@@ -368,7 +368,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+ 
+   @ReactProp(name = "overScrollMode")
+   public void setOverScrollMode(WebView view, String overScrollModeString) {
+-    Integer overScrollMode;
++    int overScrollMode;
+     switch (overScrollModeString) {
+       case "never":
+         overScrollMode = View.OVER_SCROLL_NEVER;
+@@ -414,11 +414,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+ 
+   @ReactProp(name = "userAgent")
+   public void setUserAgent(WebView view, @Nullable String userAgent) {
+-    if (userAgent != null) {
+-      mUserAgent = userAgent;
+-    } else {
+-      mUserAgent = null;
+-    }
++    mUserAgent = userAgent;
+     this.setUserAgentString(view);
+   }
+ 
+@@ -544,15 +540,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         }
+         if (source.hasKey("method")) {
+           String method = source.getString("method");
+-          if (method.equalsIgnoreCase(HTTP_METHOD_POST)) {
++          if (Objects.requireNonNull(method).equalsIgnoreCase(HTTP_METHOD_POST)) {
+             byte[] postData = null;
+             if (source.hasKey("body")) {
+               String body = source.getString("body");
+-              try {
+-                postData = body.getBytes("UTF-8");
+-              } catch (UnsupportedEncodingException e) {
+-                postData = body.getBytes();
+-              }
++              postData = Objects.requireNonNull(body).getBytes(StandardCharsets.UTF_8);
+             }
+             if (postData == null) {
+               postData = new byte[0];
+@@ -564,7 +556,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         HashMap<String, String> headerMap = new HashMap<>();
+         if (source.hasKey("headers")) {
+           ReadableMap headers = source.getMap("headers");
+-          ReadableMapKeySetIterator iter = headers.keySetIterator();
++          ReadableMapKeySetIterator iter = Objects.requireNonNull(headers).keySetIterator();
+           while (iter.hasNextKey()) {
+             String key = iter.nextKey();
+             if ("user-agent".equals(key.toLowerCase(Locale.ENGLISH))) {
+@@ -678,7 +670,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+   }
+ 
+   @Override
+-  protected void addEventEmitters(ThemedReactContext reactContext, WebView view) {
++  protected void addEventEmitters(@NonNull ThemedReactContext reactContext, WebView view) {
+     // Do not register default touch emitter and let WebView implementation handle touches
+     view.setWebViewClient(new RNCWebViewClient());
+   }
+@@ -741,10 +733,10 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         try {
+           RNCWebView reactWebView = (RNCWebView) root;
+           JSONObject eventInitDict = new JSONObject();
+-          eventInitDict.put("data", args.getString(0));
++          eventInitDict.put("data", Objects.requireNonNull(args).getString(0));
+           reactWebView.evaluateJavascriptWithFallback("(function () {" +
+             "var event;" +
+-            "var data = " + eventInitDict.toString() + ";" +
++            "var data = " + eventInitDict + ";" +
+             "try {" +
+             "event = new MessageEvent('message', data);" +
+             "} catch (e) {" +
+@@ -759,7 +751,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         break;
+       case "injectJavaScript":
+         RNCWebView reactWebView = (RNCWebView) root;
+-        reactWebView.evaluateJavascriptWithFallback(args.getString(0));
++        reactWebView.evaluateJavascriptWithFallback(Objects.requireNonNull(args).getString(0));
+         break;
+       case "loadUrl":
+         if (args == null) {
+@@ -786,7 +778,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+   }
+ 
+   @Override
+-  public void onDropViewInstance(WebView webView) {
++  public void onDropViewInstance(@NonNull WebView webView) {
+     super.onDropViewInstance(webView);
+     ((ThemedReactContext) webView.getContext()).removeLifecycleEventListener((RNCWebView) webView);
+     ((RNCWebView) webView).cleanupCallbacksAndDestroy();
+@@ -883,7 +875,6 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         }
+       };
+ 
+-      webView.setWebChromeClient(mWebChromeClient);
+     } else {
+       if (mWebChromeClient != null) {
+         mWebChromeClient.onHideCustomView();
+@@ -896,8 +887,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         }
+       };
+ 
+-      webView.setWebChromeClient(mWebChromeClient);
+     }
++    webView.setWebChromeClient(mWebChromeClient);
+   }
+ 
+   protected static class RNCWebViewClient extends WebViewClient {
+@@ -1031,7 +1022,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+         }
+ 
+         int code = error.getPrimaryError();
+-        String description = "";
++        String description;
+         String descriptionPrefix = "SSL error: ";
+ 
+         // https://developer.android.com/reference/android/net/http/SslError.html
+@@ -1076,10 +1067,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+       String description,
+       String failingUrl) {
+ 
+-      if (ignoreErrFailedForThisURL != null
+-          && failingUrl.equals(ignoreErrFailedForThisURL)
+-          && errorCode == -1
+-          && description.equals("net::ERR_FAILED")) {
++      if (failingUrl.equals(ignoreErrFailedForThisURL)
++        && errorCode == -1
++        && description.equals("net::ERR_FAILED")) {
+ 
+         // This is a workaround for a bug in the WebView.
+         // See these chromium issues for more context:
+@@ -1290,12 +1280,16 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+       for (String requestedResource : request.getResources()) {
+         String androidPermission = null;
+ 
+-        if (requestedResource.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+-          androidPermission = Manifest.permission.RECORD_AUDIO;
+-        } else if (requestedResource.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+-          androidPermission = Manifest.permission.CAMERA;
+-        } else if(requestedResource.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
+-          androidPermission = PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID;
++        switch (requestedResource) {
++          case PermissionRequest.RESOURCE_AUDIO_CAPTURE:
++            androidPermission = Manifest.permission.RECORD_AUDIO;
++            break;
++          case PermissionRequest.RESOURCE_VIDEO_CAPTURE:
++            androidPermission = Manifest.permission.CAMERA;
++            break;
++          case PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID:
++            androidPermission = PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID;
++            break;
+         }
+         // TODO: RESOURCE_MIDI_SYSEX, RESOURCE_PROTECTED_MEDIA_ID.
+ 
+@@ -1380,7 +1374,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+ 
+ 
+     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+-    private PermissionListener webviewPermissionsListener = (requestCode, permissions, grantResults) -> {
++    private final PermissionListener webviewPermissionsListener = (requestCode, permissions, grantResults) -> {
+ 
+       permissionsRequestShown = false;
+ 
+@@ -1399,11 +1393,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+           && geolocationPermissionCallback != null
+           && geolocationPermissionOrigin != null) {
+ 
+-          if (granted) {
+-            geolocationPermissionCallback.invoke(geolocationPermissionOrigin, true, false);
+-          } else {
+-            geolocationPermissionCallback.invoke(geolocationPermissionOrigin, false, false);
+-          }
++          geolocationPermissionCallback.invoke(geolocationPermissionOrigin, granted, false);
+ 
+           geolocationPermissionCallback = null;
+           geolocationPermissionOrigin = null;
+@@ -1481,7 +1471,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+     public void onHostDestroy() { }
+ 
+     protected ViewGroup getRootView() {
+-      return (ViewGroup) mReactContext.getCurrentActivity().findViewById(android.R.id.content);
++      return Objects.requireNonNull(mReactContext.getCurrentActivity()).findViewById(android.R.id.content);
+     }
+ 
+     public void setProgressChangedFilter(RNCWebView.ProgressChangedFilter filter) {
+@@ -1532,11 +1522,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+     }
+ 
+     public void setIgnoreErrFailedForThisURL(String url) {
+-      mRNCWebViewClient.setIgnoreErrFailedForThisURL(url);
++      Objects.requireNonNull(mRNCWebViewClient).setIgnoreErrFailedForThisURL(url);
+     }
+ 
+     public void setBasicAuthCredential(BasicAuthCredential credential) {
+-      mRNCWebViewClient.setBasicAuthCredential(credential);
++      Objects.requireNonNull(mRNCWebViewClient).setBasicAuthCredential(credential);
+     }
+ 
+     public void setSendContentSizeChangeEvents(boolean sendContentSizeChangeEvents) {
+@@ -1657,7 +1647,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+       }
+     }
+ 
+-    public void setMessagingModuleName(String moduleName) {
++    public void setMessagingModuleName(@Nullable String moduleName) {
+       messagingModuleName = moduleName;
+     }
+ 
+@@ -1697,20 +1687,17 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+ 
+       if (mRNCWebViewClient != null) {
+         WebView webView = this;
+-        webView.post(new Runnable() {
+-          @Override
+-          public void run() {
+-            if (mRNCWebViewClient == null) {
+-              return;
+-            }
+-            WritableMap data = mRNCWebViewClient.createWebViewEvent(webView, webView.getUrl());
+-            data.putString("data", message);
++        webView.post(() -> {
++          if (mRNCWebViewClient == null) {
++            return;
++          }
++          WritableMap data = mRNCWebViewClient.createWebViewEvent(webView, webView.getUrl());
++          data.putString("data", message);
+ 
+-            if (mCatalystInstance != null) {
+-              mContext.sendDirectMessage("onMessage", data);
+-            } else {
+-              dispatchEvent(webView, new TopMessageEvent(webView.getId(), data));
+-            }
++          if (mCatalystInstance != null) {
++            mContext.sendDirectMessage("onMessage", data);
++          } else {
++            dispatchEvent(webView, new TopMessageEvent(webView.getId(), data));
+           }
+         });
+       } else {
+@@ -1732,7 +1719,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+       WritableNativeArray params = new WritableNativeArray();
+       params.pushMap(event);
+ 
+-      mCatalystInstance.callFunction(messagingModuleName, method, params);
++      Objects.requireNonNull(mCatalystInstance).callFunction(messagingModuleName, method, params);
+     }
+ 
+     protected void onScrollChanged(int x, int y, int oldX, int oldY) {
+@@ -1766,7 +1753,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
+     protected void dispatchEvent(WebView webView, Event event) {
+       ReactContext reactContext = (ReactContext) webView.getContext();
+       EventDispatcher eventDispatcher =
+-        reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
++        Objects.requireNonNull(reactContext.getNativeModule(UIManagerModule.class)).getEventDispatcher();
+       eventDispatcher.dispatchEvent(event);
+     }
+ 
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewModule.java b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewModule.java
+index bd276c1..ecd9ea1 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewModule.java
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewModule.java
+@@ -12,6 +12,7 @@ import android.os.Environment;
+ import android.os.Parcelable;
+ import android.provider.MediaStore;
+ 
++import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+ import androidx.annotation.RequiresApi;
+ import androidx.core.content.ContextCompat;
+@@ -38,6 +39,7 @@ import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.HashMap;
++import java.util.Objects;
+ import java.util.concurrent.atomic.AtomicReference;
+ 
+ import static android.app.Activity.RESULT_OK;
+@@ -96,24 +98,18 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+   }
+ 
+   private PermissionListener getWebviewFileDownloaderPermissionListener(String downloadingMessage, String lackPermissionToDownloadMessage) {
+-    return new PermissionListener() {
+-      @Override
+-      public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+-        switch (requestCode) {
+-          case FILE_DOWNLOAD_PERMISSION_REQUEST: {
+-            // If request is cancelled, the result arrays are empty.
+-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+-              if (downloadRequest != null) {
+-                downloadFile(downloadingMessage);
+-              }
+-            } else {
+-              Toast.makeText(getCurrentActivity().getApplicationContext(), lackPermissionToDownloadMessage, Toast.LENGTH_LONG).show();
+-            }
+-            return true;
++    return (requestCode, permissions, grantResults) -> {
++      if (requestCode == FILE_DOWNLOAD_PERMISSION_REQUEST) {// If request is cancelled, the result arrays are empty.
++        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++          if (downloadRequest != null) {
++            downloadFile(downloadingMessage);
+           }
++        } else {
++          Toast.makeText(Objects.requireNonNull(getCurrentActivity()).getApplicationContext(), lackPermissionToDownloadMessage, Toast.LENGTH_LONG).show();
+         }
+-        return false;
++        return true;
+       }
++      return false;
+     };
+   }
+ 
+@@ -122,6 +118,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+     reactContext.addActivityEventListener(this);
+   }
+ 
++  @NonNull
+   @Override
+   public String getName() {
+     return MODULE_NAME;
+@@ -129,7 +126,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+ 
+   @ReactMethod
+   public void isFileUploadSupported(final Promise promise) {
+-    Boolean result = false;
++    boolean result = false;
+     int current = Build.VERSION.SDK_INT;
+     if (current >= Build.VERSION_CODES.LOLLIPOP) {
+       result = true;
+@@ -182,7 +179,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+           } else if (videoTaken) {
+             filePathCallback.onReceiveValue(new Uri[]{getOutputUri(outputVideo)});
+           } else {
+-            filePathCallback.onReceiveValue(this.getSelectedFiles(data, resultCode));
++            Objects.requireNonNull(filePathCallback).onReceiveValue(this.getSelectedFiles(data, resultCode));
+           }
+         }
+         break;
+@@ -262,7 +259,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+     }
+     chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toArray(new Parcelable[]{}));
+ 
+-    if (chooserIntent.resolveActivity(getCurrentActivity().getPackageManager()) != null) {
++    if (chooserIntent.resolveActivity(Objects.requireNonNull(getCurrentActivity()).getPackageManager()) != null) {
+       getCurrentActivity().startActivityForResult(chooserIntent, PICKER_LEGACY);
+     } else {
+       Log.w("RNCWebViewModule", "there is no Activity to handle this Intent");
+@@ -295,7 +292,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+     chooserIntent.putExtra(Intent.EXTRA_INTENT, fileSelectionIntent);
+     chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toArray(new Parcelable[]{}));
+ 
+-    if (chooserIntent.resolveActivity(getCurrentActivity().getPackageManager()) != null) {
++    if (chooserIntent.resolveActivity(Objects.requireNonNull(getCurrentActivity()).getPackageManager()) != null) {
+       getCurrentActivity().startActivityForResult(chooserIntent, PICKER);
+     } else {
+       Log.w("RNCWebViewModule", "there is no Activity to handle this Intent");
+@@ -309,7 +306,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+   }
+ 
+   public void downloadFile(String downloadingMessage) {
+-    DownloadManager dm = (DownloadManager) getCurrentActivity().getBaseContext().getSystemService(Context.DOWNLOAD_SERVICE);
++    DownloadManager dm = (DownloadManager) Objects.requireNonNull(getCurrentActivity()).getBaseContext().getSystemService(Context.DOWNLOAD_SERVICE);
+ 
+     try {
+       dm.enqueue(this.downloadRequest);
+@@ -327,7 +324,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+       return true;
+     }
+ 
+-    boolean result = ContextCompat.checkSelfPermission(getCurrentActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
++    boolean result = ContextCompat.checkSelfPermission(Objects.requireNonNull(getCurrentActivity()), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+     if (!result && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+       PermissionAwareActivity activity = getPermissionAwareActivity();
+       activity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, FILE_DOWNLOAD_PERMISSION_REQUEST, getWebviewFileDownloaderPermissionListener(downloadingMessage, lackPermissionToDownloadMessage));
+@@ -339,7 +336,7 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+   protected boolean needsCameraPermission() {
+     boolean needed = false;
+ 
+-    PackageManager packageManager = getCurrentActivity().getPackageManager();
++    PackageManager packageManager = Objects.requireNonNull(getCurrentActivity()).getPackageManager();
+     try {
+       String[] requestedPermissions = packageManager.getPackageInfo(getReactApplicationContext().getPackageName(), PackageManager.GET_PERMISSIONS).requestedPermissions;
+       if (Arrays.asList(requestedPermissions).contains(Manifest.permission.CAMERA)
+@@ -513,8 +510,8 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
+         break;
+     }
+ 
+-    String filename = prefix + String.valueOf(System.currentTimeMillis()) + suffix;
+-    File outputFile = null;
++    String filename = prefix + System.currentTimeMillis() + suffix;
++    File outputFile;
+ 
+     // for versions below 6.0 (23) we use the old File creation & permissions model
+     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt
+index 15aa089..8d4c985 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt
+@@ -19,6 +19,7 @@ class TopHttpErrorEvent(viewId: Int, private val mEventData: WritableMap) :
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ 
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt
+index 7f5096d..c1bfada 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt
+@@ -19,6 +19,7 @@ class TopLoadingErrorEvent(viewId: Int, private val mEventData: WritableMap) :
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ 
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt
+index 20da841..b07bcc3 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt
+@@ -19,6 +19,7 @@ class TopLoadingFinishEvent(viewId: Int, private val mEventData: WritableMap) :
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ }
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt
+index 0d46970..7a5c892 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt
+@@ -19,6 +19,7 @@ class TopLoadingProgressEvent(viewId: Int, private val mEventData: WritableMap)
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ }
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt
+index cac21a2..c6a2497 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt
+@@ -19,6 +19,7 @@ class TopLoadingStartEvent(viewId: Int, private val mEventData: WritableMap) :
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ 
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt
+index c53837d..a9432b5 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt
+@@ -18,6 +18,7 @@ class TopMessageEvent(viewId: Int, private val mEventData: WritableMap) : Event<
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+     rctEventEmitter.receiveEvent(viewTag, EVENT_NAME, mEventData)
+   }
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt
+index b87f4fa..d028cd2 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt
+@@ -20,6 +20,7 @@ class TopRenderProcessGoneEvent(viewId: Int, private val mEventData: WritableMap
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, eventName, mEventData)
+ 
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt
+index da4eb96..f99c744 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt
+@@ -24,6 +24,7 @@ class TopShouldStartLoadWithRequestEvent(viewId: Int, private val mData: Writabl
+ 
+   override fun getCoalescingKey(): Short = 0
+ 
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) =
+     rctEventEmitter.receiveEvent(viewTag, EVENT_NAME, mData)
+ }

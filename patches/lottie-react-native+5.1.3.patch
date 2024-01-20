@@ -1,0 +1,510 @@
+diff --git a/node_modules/lottie-react-native/build.gradle b/node_modules/lottie-react-native/build.gradle
+index 184fdbf..ef3b1c7 100644
+--- a/node_modules/lottie-react-native/build.gradle
++++ b/node_modules/lottie-react-native/build.gradle
+@@ -1,31 +1,26 @@
+-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+-
+-buildscript {
+-  repositories {
+-    google()
+-    jcenter()
+-  }
+-  dependencies {
+-    classpath 'com.android.tools.build:gradle:7.0.0'
+-  }
++def safeExtGet(prop, fallback) {
++    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+ }
+ 
+-allprojects {
+-  repositories {
+-    mavenLocal()
+-    google()
+-    jcenter()
+-    maven {
+-      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+-      url("$rootDir/node_modules/react-native/android")
+-    }
+-    maven {
+-      // Android JSC is installed from npm
+-      url("$rootDir/node_modules/jsc-android/dist")
+-    }
++apply plugin: 'com.android.library'
++apply from: 'gradle-maven-push.gradle'
++
++//def DEFAULT_ANDROID_SUPPORT_LIB_VERSION = "1.0.0"
++
++android {
++  compileSdkVersion safeExtGet('compileSdkVersion', 33)
++
++  defaultConfig {
++    minSdkVersion safeExtGet('minSdkVersion', 23)
++    targetSdkVersion safeExtGet('targetSdkVersion', 33)
+   }
++    lint {
++        disable 'InvalidPackage'
++    }
++
+ }
+ 
+-task clean(type: Delete) {
+-  delete rootProject.buildDir
++dependencies {
++  implementation "com.facebook.react:react-native:0.68.1"
++  implementation 'com.airbnb.android:lottie:4.0.0'
+ }
+diff --git a/node_modules/lottie-react-native/gradle-maven-push.gradle b/node_modules/lottie-react-native/gradle-maven-push.gradle
+new file mode 100644
+index 0000000..a501f0e
+--- /dev/null
++++ b/node_modules/lottie-react-native/gradle-maven-push.gradle
+@@ -0,0 +1,121 @@
++/*
++ * Copyright 2013 Chris Banes
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++apply plugin: 'maven-publish'
++apply plugin: 'signing'
++
++def isReleaseBuild() {
++  return !VERSION_NAME.contains("SNAPSHOT")
++}
++
++def getReleaseRepositoryUrl() {
++  return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
++      : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
++}
++
++def getSnapshotRepositoryUrl() {
++  return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
++      : "https://oss.sonatype.org/content/repositories/snapshots/"
++}
++
++def getRepositoryUsername() {
++  return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
++}
++
++def getRepositoryPassword() {
++  return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
++}
++
++afterEvaluate { project ->
++  publishing {
++    publications {
++      mavenJava(MavenPublication) {
++        groupId = GROUP
++        artifactId = POM_ARTIFACT_ID
++        version = VERSION_NAME
++
++        pom {
++          name = POM_NAME
++          packaging = POM_PACKAGING
++          description = POM_DESCRIPTION
++          url = POM_URL
++
++          scm {
++            url = POM_SCM_URL
++            connection = POM_SCM_CONNECTION
++            developerConnection = POM_SCM_DEV_CONNECTION
++          }
++
++          licenses {
++            license {
++              name = POM_LICENSE_NAME
++              url = POM_LICENSE_URL
++              distribution = POM_LICENSE_DIST
++            }
++          }
++
++          developers {
++            developer {
++              id = POM_DEVELOPER_ID
++              name = POM_DEVELOPER_NAME
++            }
++          }
++          scm {
++            connection = 'scm:git:git://github.com/lottie-react-native/lottie-react-native.git'
++            developerConnection = 'scm:git:ssh://github.com/lottie-react-native/lottie-react-native.git'
++            url = 'https://github.com/lottie-react-native/lottie-react-native'
++          }
++        }
++      }
++    }
++    repositories {
++      maven {
++        url = isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
++
++        credentials {
++          username = getRepositoryUsername()
++          password = getRepositoryPassword()
++        }
++      }
++    }
++  }
++
++
++  signing {
++    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
++    sign publishing.publications.mavenJava
++  }
++
++  task androidJavadocs(type: Javadoc) {
++    source = android.sourceSets.main.java.srcDirs
++    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
++  }
++
++  task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
++    classifier = 'javadoc'
++    from androidJavadocs.destinationDir
++  }
++
++  task androidSourcesJar(type: Jar) {
++    classifier = 'sources'
++    from android.sourceSets.main.java.sourceFiles
++  }
++
++  artifacts {
++    archives androidSourcesJar
++    archives androidJavadocsJar
++  }
++}
+\ No newline at end of file
+diff --git a/node_modules/lottie-react-native/gradle.properties b/node_modules/lottie-react-native/gradle.properties
+index cdb4c21..bbf3b14 100644
+--- a/node_modules/lottie-react-native/gradle.properties
++++ b/node_modules/lottie-react-native/gradle.properties
+@@ -1,28 +1,18 @@
+-# Project-wide Gradle settings.
++VERSION_CODE=4
++VERSION_NAME=1.2.0
++GROUP=com.airbnb.android
+ 
+-# IDE (e.g. Android Studio) users:
+-# Gradle settings configured through the IDE *will override*
+-# any settings specified in this file.
++POM_DESCRIPTION=Lottie Animation Component for React Native
++POM_URL=https://github.com/airbnb/lottie-react-native/tree/new-scv
++POM_SCM_URL=https://github.com/airbnb/lottie-react-native/tree/new-scv
++POM_SCM_CONNECTION=scm:git@github.com:airbnb/lottie-react-native.git
++POM_SCM_DEV_CONNECTION=scm:git@github.com:airbnb/lottie-react-native.git
++POM_LICENSE_NAME=MIT
++POM_LICENSE_URL=https://github.com/airbnb/lottie-react-native/blob/master/LICENSE
++POM_LICENSE_DIST=repo
++POM_DEVELOPER_ID=airbnb
++POM_DEVELOPER_NAME=Leland Richardson
+ 
+-# For more details on how to configure your build environment visit
+-# http://www.gradle.org/docs/current/userguide/build_environment.html
+-
+-# Specifies the JVM arguments used for the daemon process.
+-# The setting is particularly useful for tweaking memory settings.
+-# Default value: -Xmx10248m -XX:MaxPermSize=256m
+-# org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+-
+-# When configured, Gradle will run in incubating parallel mode.
+-# This option should only be used with decoupled projects. More details, visit
+-# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+-# org.gradle.parallel=true
+-
+-# AndroidX package structure to make it clearer which packages are bundled with the
+-# Android operating system, and which are packaged with your app's APK
+-# https://developer.android.com/topic/libraries/support-library/androidx-rn
+-android.useAndroidX=true
+-# Automatically convert third-party libraries to use AndroidX
+-android.enableJetifier=true
+-
+-# Version of flipper SDK to use with React Native
+-FLIPPER_VERSION=0.99.0
++POM_NAME=Lottie React Native
++POM_ARTIFACT_ID=lottie-react-native
++POM_PACKAGING=aar
+\ No newline at end of file
+diff --git a/node_modules/lottie-react-native/src/android/build.gradle b/node_modules/lottie-react-native/src/android/build.gradle
+index 2d63065..b6ef54b 100644
+--- a/node_modules/lottie-react-native/src/android/build.gradle
++++ b/node_modules/lottie-react-native/src/android/build.gradle
+@@ -8,19 +8,19 @@ apply from: 'gradle-maven-push.gradle'
+ //def DEFAULT_ANDROID_SUPPORT_LIB_VERSION = "1.0.0"
+ 
+ android {
+-  compileSdkVersion safeExtGet('compileSdkVersion', 30)
++  compileSdk safeExtGet('compileSdkVersion', 34)
+ 
+   defaultConfig {
+-    minSdkVersion safeExtGet('minSdkVersion', 21)
+-    targetSdkVersion safeExtGet('targetSdkVersion', 30)
++    minSdkVersion safeExtGet('minSdkVersion', 23)
++    targetSdkVersion safeExtGet('targetSdkVersion', 34)
+   }
+ 
+-  lintOptions {
++  lint {
+     disable 'InvalidPackage'
+   }
+ }
+ 
+ dependencies {
+-  implementation "com.facebook.react:react-native:+"
++  implementation "com.facebook.react:react-native:0.68.1"
+   implementation 'com.airbnb.android:lottie:5.1.1'
+ }
+diff --git a/node_modules/lottie-react-native/src/android/gradle-maven-push.gradle b/node_modules/lottie-react-native/src/android/gradle-maven-push.gradle
+index 6c97bcf..0dabd73 100644
+--- a/node_modules/lottie-react-native/src/android/gradle-maven-push.gradle
++++ b/node_modules/lottie-react-native/src/android/gradle-maven-push.gradle
+@@ -18,7 +18,7 @@ apply plugin: 'maven-publish'
+ apply plugin: 'signing'
+ 
+ def isReleaseBuild() {
+-  return VERSION_NAME.contains("SNAPSHOT") == false
++  return !VERSION_NAME.contains("SNAPSHOT")
+ }
+ 
+ def getReleaseRepositoryUrl() {
+diff --git a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewManager.java b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewManager.java
+index ee51976..88501e3 100644
+--- a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewManager.java
++++ b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewManager.java
+@@ -5,6 +5,8 @@ import android.content.Context;
+ import android.content.ContextWrapper;
+ import android.os.Handler;
+ import android.os.Looper;
++
++import androidx.annotation.NonNull;
+ import androidx.core.view.ViewCompat;
+ import android.widget.ImageView;
+ import android.view.View.OnAttachStateChangeListener;
+@@ -24,9 +26,6 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
+ 
+ import java.util.Map;
+ import java.util.WeakHashMap;
+-import java.net.URL;
+-import java.io.BufferedReader;
+-import java.io.InputStreamReader;
+ 
+ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView> {
+   private static final String TAG = LottieAnimationViewManager.class.getSimpleName();
+@@ -46,11 +45,13 @@ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView>
+         .build();
+   }
+ 
++  @NonNull
+   @Override public String getName() {
+     return REACT_CLASS;
+   }
+ 
+-  @Override public LottieAnimationView createViewInstance(ThemedReactContext context) {
++  @NonNull
++  @Override public LottieAnimationView createViewInstance(@NonNull ThemedReactContext context) {
+     final LottieAnimationView view = new LottieAnimationView(context);
+     view.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+     view.addAnimatorListener(new Animator.AnimatorListener() {
+@@ -113,7 +114,7 @@ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView>
+   }
+ 
+   @Override
+-  public void receiveCommand(final LottieAnimationView view, int commandId, final ReadableArray args) {
++  public void receiveCommand(@NonNull final LottieAnimationView view, int commandId, final ReadableArray args) {
+     switch (commandId) {
+       case COMMAND_PLAY: {
+         new Handler(Looper.getMainLooper()).post(new Runnable() {
+@@ -157,34 +158,26 @@ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView>
+       }
+       break;
+       case COMMAND_RESET: {
+-        new Handler(Looper.getMainLooper()).post(new Runnable() {
+-          @Override public void run() {
+-            if (ViewCompat.isAttachedToWindow(view)) {
+-              view.cancelAnimation();
+-              view.setProgress(0f);
+-            }
++        new Handler(Looper.getMainLooper()).post(() -> {
++          if (ViewCompat.isAttachedToWindow(view)) {
++            view.cancelAnimation();
++            view.setProgress(0f);
+           }
+         });
+       }
+       break;
+       case COMMAND_PAUSE: {
+-        new Handler(Looper.getMainLooper()).post(new Runnable() {
+-            @Override
+-            public void run() {
+-            if (ViewCompat.isAttachedToWindow(view)) {
+-                view.pauseAnimation();
+-            }
+-            }
++        new Handler(Looper.getMainLooper()).post(() -> {
++        if (ViewCompat.isAttachedToWindow(view)) {
++            view.pauseAnimation();
++        }
+         });
+       }
+       break;
+       case COMMAND_RESUME: {
+-        new Handler(Looper.getMainLooper()).post(new Runnable() {
+-          @Override
+-          public void run() {
+-            if (ViewCompat.isAttachedToWindow(view)) {
+-              view.resumeAnimation();
+-            }
++        new Handler(Looper.getMainLooper()).post(() -> {
++          if (ViewCompat.isAttachedToWindow(view)) {
++            view.resumeAnimation();
+           }
+         });
+       }
+@@ -210,42 +203,6 @@ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView>
+     getOrCreatePropertyManager(view).setAnimationJson(json);
+   }
+ 
+-  @ReactProp(name = "sourceURL")
+-  public void setSourceURL(LottieAnimationView view, String urlString) {
+-
+-    final String finalUrlString = urlString;
+-    final LottieAnimationView finalView = view;
+-
+-    Thread thread = new Thread(new Runnable() {
+-        @Override
+-        public void run() {
+-            try  {
+-              BufferedReader in = new BufferedReader(new InputStreamReader(new URL(finalUrlString).openStream()));
+-              String inputLine;
+-              String json = "";
+-
+-              while ((inputLine = in.readLine()) != null)
+-                  json += inputLine;
+-
+-              in.close();
+-
+-              final String js = json;
+-
+-              new Handler(Looper.getMainLooper()).post(new Runnable() {
+-                @Override public void run() {
+-                  getOrCreatePropertyManager(finalView).setAnimationJson(js);
+-                  getOrCreatePropertyManager(finalView).commitChanges();
+-                }
+-              });
+-            } catch (Exception e) {
+-              System.out.println("Error loading animation from URL: " + e);
+-            }
+-        }
+-    });
+-
+-    thread.start();
+-  }
+-
+   @ReactProp(name = "cacheComposition")
+   public void setCacheComposition(LottieAnimationView view, boolean cacheComposition) {
+     view.setCacheComposition(cacheComposition);
+@@ -307,13 +264,8 @@ class LottieAnimationViewManager extends SimpleViewManager<LottieAnimationView>
+     getOrCreatePropertyManager(view).setColorFilters(colorFilters);
+   }
+ 
+-  @ReactProp(name = "textFiltersAndroid")
+-  public void setTextFilters(LottieAnimationView view, ReadableArray textFilters) {
+-    getOrCreatePropertyManager(view).setTextFilters(textFilters);
+-  }
+-
+   @Override
+-  protected void onAfterUpdateTransaction(LottieAnimationView view) {
++  protected void onAfterUpdateTransaction(@NonNull LottieAnimationView view) {
+     super.onAfterUpdateTransaction(view);
+     getOrCreatePropertyManager(view).commitChanges();
+   }
+diff --git a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewPropertyManager.java b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewPropertyManager.java
+index 78cf20f..c5d1966 100644
+--- a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewPropertyManager.java
++++ b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottieAnimationViewPropertyManager.java
+@@ -7,7 +7,6 @@ import com.airbnb.lottie.LottieAnimationView;
+ import com.airbnb.lottie.LottieDrawable;
+ import com.airbnb.lottie.LottieProperty;
+ import com.airbnb.lottie.RenderMode;
+-import com.airbnb.lottie.TextDelegate;
+ import com.airbnb.lottie.SimpleColorFilter;
+ import com.airbnb.lottie.model.KeyPath;
+ import com.airbnb.lottie.value.LottieValueCallback;
+@@ -45,7 +44,6 @@ public class LottieAnimationViewPropertyManager {
+   private String imageAssetsFolder;
+   private Boolean enableMergePaths;
+   private ReadableArray colorFilters;
+-  private ReadableArray textFilters;
+   private RenderMode renderMode;
+ 
+   public LottieAnimationViewPropertyManager(LottieAnimationView view) {
+@@ -93,10 +91,6 @@ public class LottieAnimationViewPropertyManager {
+     this.colorFilters = colorFilters;
+   }
+ 
+-  public void setTextFilters(ReadableArray textFilters) {
+-    this.textFilters = textFilters;
+-  }
+-
+   /**
+    * Updates the view with changed fields.
+    * Majority of the properties here are independent so they are has to be reset to null
+@@ -112,17 +106,6 @@ public class LottieAnimationViewPropertyManager {
+       return;
+     }
+ 
+-    if (textFilters != null && textFilters.size() > 0) {
+-      TextDelegate textDelegate = new TextDelegate(view);
+-      for (int i = 0; i < textFilters.size(); i++) {
+-        ReadableMap current = textFilters.getMap(i);
+-        String searchText = current.getString("find");
+-        String replacementText = current.getString("replace");
+-        textDelegate.setText(searchText, replacementText);
+-      }
+-      view.setTextDelegate(textDelegate);
+-    }
+-
+     if (animationJson != null) {
+       view.setAnimationFromJson(animationJson, Integer.toString(animationJson.hashCode()));
+       animationJson = null;
+diff --git a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottiePackage.java b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottiePackage.java
+index 96745c3..4d47b69 100644
+--- a/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottiePackage.java
++++ b/node_modules/lottie-react-native/src/android/src/main/java/com/airbnb/android/react/lottie/LottiePackage.java
+@@ -1,5 +1,7 @@
+ package com.airbnb.android.react.lottie;
+ 
++import androidx.annotation.NonNull;
++
+ import com.facebook.react.ReactPackage;
+ import com.facebook.react.bridge.JavaScriptModule;
+ import com.facebook.react.bridge.NativeModule;
+@@ -11,7 +13,8 @@ import java.util.List;
+ 
+ @SuppressWarnings("unused")
+ public class LottiePackage implements ReactPackage {
+-  @Override public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
++  @NonNull
++  @Override public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
+     return Collections.emptyList();
+   }
+ 
+@@ -20,8 +23,9 @@ public class LottiePackage implements ReactPackage {
+     return Collections.emptyList();
+   }
+ 
++  @NonNull
+   @SuppressWarnings("rawtypes") @Override
+-  public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+-    return Collections.<ViewManager>singletonList(new LottieAnimationViewManager());
++  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
++    return Collections.singletonList(new LottieAnimationViewManager());
+   }
+ }

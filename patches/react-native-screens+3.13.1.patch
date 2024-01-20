@@ -1,0 +1,399 @@
+diff --git a/node_modules/react-native-screens/android/build.gradle b/node_modules/react-native-screens/android/build.gradle
+index 5097a1a..f544f9f 100644
+--- a/node_modules/react-native-screens/android/build.gradle
++++ b/node_modules/react-native-screens/android/build.gradle
+@@ -7,12 +7,19 @@ buildscript {
+         mavenCentral()
+     }
+     dependencies {
+-        classpath('com.android.tools.build:gradle:4.2.2')
+-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${safeExtGet('kotlinVersion', '1.4.10')}"
+-        classpath "com.diffplug.spotless:spotless-plugin-gradle:5.15.0"
++        classpath('com.android.tools.build:gradle:7.3.1')
++        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20"
++        classpath "com.diffplug.spotless:spotless-plugin-gradle:6.6.1"
+     }
+ }
+ 
++plugins{
++
++    id('com.android.library')
++    id('org.jetbrains.kotlin.android')
++
++}
++
+ def isNewArchitectureEnabled() {
+     // To opt-in for the New Architecture, you can either:
+     // - Set `newArchEnabled` to true inside the `gradle.properties` file
+@@ -29,17 +36,13 @@ if (project == rootProject) {
+ if (isNewArchitectureEnabled()) {
+     apply plugin: "com.facebook.react"
+ }
+-apply plugin: 'com.android.library'
+-apply plugin: 'kotlin-android'
+ 
+ android {
+-    compileSdkVersion safeExtGet('compileSdkVersion', 28)
++    compileSdk safeExtGet('compileSdkVersion', 34)
+ 
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', 16)
+-        targetSdkVersion safeExtGet('targetSdkVersion', 22)
+-        versionCode 1
+-        versionName "1.0"
++        minSdkVersion safeExtGet('minSdkVersion', 23)
++        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+         if (isNewArchitectureEnabled()) {
+             var appProject = rootProject.allprojects.find {it.plugins.hasPlugin('com.android.application')}
+@@ -59,13 +62,15 @@ android {
+             }
+         }
+     }
+-    lintOptions {
+-        abortOnError false
+-    }
+     compileOptions {
+         sourceCompatibility JavaVersion.VERSION_1_8
+         targetCompatibility JavaVersion.VERSION_1_8
+     }
++    packagingOptions {
++        jniLibs {
++            excludes += ['**/libreact_render*.so']
++        }
++    }
+     if (isNewArchitectureEnabled()) {
+         externalNativeBuild {
+             ndkBuild {
+@@ -73,13 +78,6 @@ android {
+             }
+         }
+     }
+-    packagingOptions {
+-        // For some reason gradle only complains about the duplicated version of libreact_render libraries
+-        // while there are more libraries copied in intermediates folder of the lib build directory, we exlude
+-        // only the ones that make the build fail (ideally we should only include librnscreens_modules but we
+-        // are only allowed to specify exlude patterns)
+-        exclude "**/libreact_render*.so"
+-    }
+     sourceSets.main {
+         java {
+             if (isNewArchitectureEnabled()) {
+@@ -95,6 +93,9 @@ android {
+ 
+         }
+     }
++    lint {
++        abortOnError false
++    }
+ }
+ 
+ repositories {
+@@ -113,14 +114,14 @@ dependencies {
+     if (isNewArchitectureEnabled()) {
+         implementation project(":ReactAndroid")
+     } else {
+-        implementation 'com.facebook.react:react-native:+'
++        implementation 'com.facebook.react:react-native:0.68.1'
+     }
+-    implementation 'androidx.appcompat:appcompat:1.1.0'
+-    implementation 'androidx.fragment:fragment:1.2.1'
+-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
+-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'
+-    implementation 'com.google.android.material:material:1.1.0'
+-    implementation "androidx.core:core-ktx:1.5.0"
++    implementation 'androidx.appcompat:appcompat:1.5.1'
++    implementation 'androidx.fragment:fragment-ktx:1.5.5'
++    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
++    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
++    implementation 'com.google.android.material:material:1.7.0'
++    implementation "androidx.core:core-ktx:1.9.0"
+ }
+ 
+ if (isNewArchitectureEnabled()) {
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt
+index d363350..3adb211 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt
+@@ -15,7 +15,7 @@ class RNScreensPackage : ReactPackage {
+             // This should no longer be needed if RN's autolink mechanism has Fabric support
+             SoLoader.loadLibrary("rnscreens_modules")
+         }
+-        return emptyList<NativeModule>()
++        return emptyList()
+     }
+ 
+     override fun createViewManagers(reactContext: ReactApplicationContext) =
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt
+index cfc8ee6..e5f59df 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt
+@@ -171,7 +171,7 @@ open class ScreenContainer<T : ScreenFragment>(context: Context?) : ViewGroup(co
+     }
+ 
+     protected fun createTransaction(): FragmentTransaction {
+-        val fragmentManager = requireNotNull(mFragmentManager, { "mFragmentManager is null when creating transaction" })
++        val fragmentManager = requireNotNull(mFragmentManager) { "mFragmentManager is null when creating transaction" }
+         val transaction = fragmentManager.beginTransaction()
+         transaction.setReorderingAllowed(true)
+         return transaction
+@@ -303,7 +303,7 @@ open class ScreenContainer<T : ScreenFragment>(context: Context?) : ViewGroup(co
+     open fun onUpdate() {
+         createTransaction().let {
+             // detach screens that are no longer active
+-            val orphaned: MutableSet<Fragment> = HashSet(requireNotNull(mFragmentManager, { "mFragmentManager is null when performing update in ScreenContainer" }).fragments)
++            val orphaned: MutableSet<Fragment> = HashSet(requireNotNull(mFragmentManager) { "mFragmentManager is null when performing update in ScreenContainer" }.fragments)
+             for (screenFragment in mScreenFragments) {
+                 if (getActivityState(screenFragment) === ActivityState.INACTIVE &&
+                     screenFragment.isAdded
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt
+index a9f3db8..ba8711c 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt
+@@ -301,7 +301,7 @@ class ScreenStack(context: Context?) : ScreenContainer<ScreenStackFragment>(cont
+     }
+ 
+     private fun performDraw(op: DrawingOp) {
+-        super.drawChild(op.canvas, op.child, op.drawingTime)
++        op.canvas?.let { super.drawChild(it, op.child, op.drawingTime) }
+     }
+ 
+     private fun obtainDrawingOp(): DrawingOp {
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
+index d9d32d7..dc8e95b 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt
+@@ -124,11 +124,13 @@ class ScreenStackFragment : ScreenFragment {
+         return view
+     }
+ 
++    @Deprecated("Deprecated in Java")
+     override fun onPrepareOptionsMenu(menu: Menu) {
+         updateToolbarMenu(menu)
+         return super.onPrepareOptionsMenu(menu)
+     }
+ 
++    @Deprecated("Deprecated in Java")
+     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+         updateToolbarMenu(menu)
+         return super.onCreateOptionsMenu(menu, inflater)
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
+index 28761b1..3dc9366 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
+@@ -14,6 +14,7 @@ import android.widget.TextView
+ import androidx.appcompat.app.AppCompatActivity
+ import androidx.appcompat.widget.Toolbar
+ import androidx.fragment.app.Fragment
++import com.facebook.react.BuildConfig
+ import com.facebook.react.ReactApplication
+ import com.facebook.react.bridge.JSApplicationIllegalArgumentException
+ import com.facebook.react.bridge.ReactContext
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
+index cad5603..2dcc3b5 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt
+@@ -18,7 +18,7 @@ class ScreenStackHeaderConfigViewManager : ViewGroupManager<ScreenStackHeaderCon
+     private val mDelegate: ViewManagerDelegate<ScreenStackHeaderConfig>
+ 
+     init {
+-        mDelegate = RNSScreenStackHeaderConfigManagerDelegate<ScreenStackHeaderConfig, ScreenStackHeaderConfigViewManager>(this)
++        mDelegate = RNSScreenStackHeaderConfigManagerDelegate(this)
+     }
+ 
+     override fun getName(): String {
+@@ -149,7 +149,7 @@ class ScreenStackHeaderConfigViewManager : ViewGroupManager<ScreenStackHeaderCon
+             .build()
+     }
+ 
+-    protected override fun getDelegate(): ViewManagerDelegate<ScreenStackHeaderConfig> {
++    override fun getDelegate(): ViewManagerDelegate<ScreenStackHeaderConfig> {
+         return mDelegate
+     }
+ 
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubviewManager.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubviewManager.kt
+index 9afa781..868a437 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubviewManager.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderSubviewManager.kt
+@@ -14,7 +14,7 @@ class ScreenStackHeaderSubviewManager : ViewGroupManager<ScreenStackHeaderSubvie
+     private val mDelegate: ViewManagerDelegate<ScreenStackHeaderSubview>
+ 
+     init {
+-        mDelegate = RNSScreenStackHeaderSubviewManagerDelegate<ScreenStackHeaderSubview, ScreenStackHeaderSubviewManager>(this)
++        mDelegate = RNSScreenStackHeaderSubviewManagerDelegate(this)
+     }
+ 
+     override fun getName(): String {
+@@ -37,7 +37,7 @@ class ScreenStackHeaderSubviewManager : ViewGroupManager<ScreenStackHeaderSubvie
+         }
+     }
+ 
+-    protected override fun getDelegate(): ViewManagerDelegate<ScreenStackHeaderSubview> {
++    override fun getDelegate(): ViewManagerDelegate<ScreenStackHeaderSubview> {
+         return mDelegate
+     }
+ 
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt
+index 245c43a..1eb193a 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt
+@@ -16,7 +16,7 @@ class ScreenStackViewManager : ViewGroupManager<ScreenStack>(), RNSScreenStackMa
+     private val mDelegate: ViewManagerDelegate<ScreenStack>
+ 
+     init {
+-        mDelegate = RNSScreenStackManagerDelegate<ScreenStack, ScreenStackViewManager>(this)
++        mDelegate = RNSScreenStackManagerDelegate(this)
+     }
+ 
+     override fun getName(): String {
+@@ -77,7 +77,7 @@ class ScreenStackViewManager : ViewGroupManager<ScreenStack>(), RNSScreenStackMa
+         return true
+     }
+ 
+-    protected override fun getDelegate(): ViewManagerDelegate<ScreenStack> {
++    override fun getDelegate(): ViewManagerDelegate<ScreenStack> {
+         return mDelegate
+     }
+ 
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt
+index d89f963..4cfd945 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt
+@@ -27,7 +27,7 @@ class ScreenViewManager : ViewGroupManager<Screen>(), RNSScreenManagerInterface<
+     private val mDelegate: ViewManagerDelegate<Screen>
+ 
+     init {
+-        mDelegate = RNSScreenManagerDelegate<Screen, ScreenViewManager>(this)
++        mDelegate = RNSScreenManagerDelegate(this)
+     }
+ 
+     override fun getName(): String {
+@@ -165,7 +165,7 @@ class ScreenViewManager : ViewGroupManager<Screen>(), RNSScreenManagerInterface<
+         return map
+     }
+ 
+-    protected override fun getDelegate(): ViewManagerDelegate<Screen> {
++    override fun getDelegate(): ViewManagerDelegate<Screen> {
+         return mDelegate
+     }
+ 
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/HeaderBackButtonClickedEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/HeaderBackButtonClickedEvent.kt
+index 1d1ffba..9c5ea02 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/HeaderBackButtonClickedEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/HeaderBackButtonClickedEvent.kt
+@@ -14,6 +14,11 @@ class HeaderBackButtonClickedEvent(viewId: Int) : Event<ScreenAppearEvent>(viewI
+         return 0
+     }
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenAppearEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenAppearEvent.kt
+index 2c7ef2f..cfe0a95 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenAppearEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenAppearEvent.kt
+@@ -10,6 +10,11 @@ class ScreenAppearEvent(viewId: Int) : Event<ScreenAppearEvent>(viewId) {
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDisappearEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDisappearEvent.kt
+index a53b309..02350a2 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDisappearEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDisappearEvent.kt
+@@ -10,6 +10,11 @@ class ScreenDisappearEvent(viewId: Int) : Event<ScreenDisappearEvent>(viewId) {
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDismissedEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDismissedEvent.kt
+index 533c3e4..02e5059 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDismissedEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenDismissedEvent.kt
+@@ -10,6 +10,7 @@ class ScreenDismissedEvent(viewId: Int) : Event<ScreenDismissedEvent>(viewId) {
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java")
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         val args = Arguments.createMap()
+         // on Android we always dismiss one screen at a time
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenTransitionProgressEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenTransitionProgressEvent.kt
+index b047fcc..4484c79 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenTransitionProgressEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenTransitionProgressEvent.kt
+@@ -19,6 +19,7 @@ class ScreenTransitionProgressEvent(
+         return mCoalescingKey
+     }
+ 
++    @Deprecated("Deprecated in Java")
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         val map = Arguments.createMap()
+         map.putDouble("progress", mProgress.toDouble())
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillAppearEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillAppearEvent.kt
+index c29abc2..526bd1c 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillAppearEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillAppearEvent.kt
+@@ -10,6 +10,11 @@ class ScreenWillAppearEvent(viewId: Int) : Event<ScreenWillAppearEvent>(viewId)
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillDisappearEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillDisappearEvent.kt
+index 4304a9d..67d02c7 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillDisappearEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/ScreenWillDisappearEvent.kt
+@@ -10,6 +10,11 @@ class ScreenWillDisappearEvent(viewId: Int) : Event<ScreenWillDisappearEvent>(vi
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }
+diff --git a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/StackFinishTransitioningEvent.kt b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/StackFinishTransitioningEvent.kt
+index af1d6de..0ad0e7e 100644
+--- a/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/StackFinishTransitioningEvent.kt
++++ b/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/events/StackFinishTransitioningEvent.kt
+@@ -10,6 +10,11 @@ class StackFinishTransitioningEvent(viewId: Int) : Event<StackFinishTransitionin
+     // All events for a given view can be coalesced.
+     override fun getCoalescingKey(): Short = 0
+ 
++    @Deprecated("Deprecated in Java", ReplaceWith(
++        "rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())",
++        "com.facebook.react.bridge.Arguments"
++    )
++    )
+     override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+         rctEventEmitter.receiveEvent(viewTag, eventName, Arguments.createMap())
+     }

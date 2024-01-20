@@ -1,0 +1,476 @@
+diff --git a/node_modules/react-native-push-notification/android/build.gradle b/node_modules/react-native-push-notification/android/build.gradle
+index d6019f6..57e473f 100644
+--- a/node_modules/react-native-push-notification/android/build.gradle
++++ b/node_modules/react-native-push-notification/android/build.gradle
+@@ -1,19 +1,17 @@
+ buildscript {
+     repositories {
+-        mavenCentral()
+         google()
+-        jcenter()
++        mavenCentral()
+     }
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:3.2.0'
++        classpath 'com.android.tools.build:gradle:7.3.1'
+     }
+ }
+ 
+ allprojects {
+     repositories {
+-        mavenCentral()
+         google()
+-        jcenter()
++        mavenCentral()
+     }
+ }
+ 
+@@ -24,8 +22,8 @@ def safeExtGet(prop, fallback) {
+ }
+ 
+ android {
+-    compileSdkVersion safeExtGet('compileSdkVersion', 28)
+-    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
++    compileSdk safeExtGet('compileSdkVersion', 34)
++    buildToolsVersion safeExtGet('buildToolsVersion', '34.0.0')
+ 
+     compileOptions {
+         sourceCompatibility JavaVersion.VERSION_1_8
+@@ -33,8 +31,8 @@ android {
+     }
+ 
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', 16)
+-        targetSdkVersion safeExtGet('targetSdkVersion', 28)
++        minSdkVersion safeExtGet('minSdkVersion', 23)
++        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+         versionCode 1
+         versionName "1.0"
+         ndk {
+@@ -51,14 +49,14 @@ android {
+ 
+ dependencies {
+     // Use either AndroidX library names or old/support library names based on major version of support lib
+-    def supportLibVersion = safeExtGet('supportLibVersion', '27.1.1')
++    def supportLibVersion = safeExtGet('supportLibVersion', '28.0.0')
+     def supportLibMajorVersion = supportLibVersion.split('\\.')[0] as int
+     def appCompatLibName =  (supportLibMajorVersion < 20) ? "androidx.appcompat:appcompat" : "com.android.support:appcompat-v7"
+ 
+     implementation fileTree(dir: 'libs', include: ['*.jar'])
+-    testImplementation 'junit:junit:4.12'
++    testImplementation 'junit:junit:4.13.2'
+     implementation "$appCompatLibName:$supportLibVersion"
+-    implementation 'com.facebook.react:react-native:+'
++    implementation 'com.facebook.react:react-native:0.68.1'
+     implementation 'me.leolin:ShortcutBadger:1.1.22@aar'
+-    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '21.1.0')}"
++    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '23.1.1')}"
+ }
+diff --git a/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml b/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml
+index 85ef0b3..2496984 100644
+--- a/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml
+@@ -1,4 +1,6 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     package="com.dieam.reactnativepushnotification">
+ 
++    <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
++    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+ </manifest>
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/ReactNativePushNotificationPackage.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/ReactNativePushNotificationPackage.java
+index 0cd610a..612e44b 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/ReactNativePushNotificationPackage.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/ReactNativePushNotificationPackage.java
+@@ -1,5 +1,7 @@
+ package com.dieam.reactnativepushnotification;
+ 
++import androidx.annotation.NonNull;
++
+ import com.dieam.reactnativepushnotification.modules.RNPushNotification;
+ import com.facebook.react.ReactPackage;
+ import com.facebook.react.bridge.JavaScriptModule;
+@@ -11,9 +13,10 @@ import java.util.Collections;
+ import java.util.List;
+ 
+ public class ReactNativePushNotificationPackage implements ReactPackage {
++    @NonNull
+     @Override
+     public List<NativeModule> createNativeModules(
+-            ReactApplicationContext reactContext) {
++            @NonNull ReactApplicationContext reactContext) {
+         return Collections.<NativeModule>singletonList(new RNPushNotification(reactContext));
+     }
+ 
+@@ -21,8 +24,9 @@ public class ReactNativePushNotificationPackage implements ReactPackage {
+         return Collections.emptyList();
+     }
+ 
++    @NonNull
+     @Override
+-    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
++    public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
+         return Collections.emptyList();
+     }
+ }
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotification.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotification.java
+index d162680..330414a 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotification.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotification.java
+@@ -7,9 +7,11 @@ import android.content.BroadcastReceiver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
++import android.os.Build;
+ import android.os.Bundle;
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
++import androidx.annotation.RequiresApi;
+ import androidx.core.app.NotificationManagerCompat;
+ 
+ import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
+@@ -68,6 +70,7 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
+         mJsDelivery = new RNPushNotificationJsDelivery(reactContext);
+     }
+ 
++    @NonNull
+     @Override
+     public String getName() {
+         return "ReactNativePushNotification";
+@@ -75,9 +78,8 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
+ 
+     @Override
+     public Map<String, Object> getConstants() {
+-        final Map<String, Object> constants = new HashMap<>();
+ 
+-        return constants;
++        return new HashMap<>();
+     }
+ 
+     private Bundle getBundleFromIntent(Intent intent) {
+@@ -250,6 +252,7 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
+       mRNPushNotificationHelper.clearNotifications();
+     }
+ 
++    @RequiresApi(api = Build.VERSION_CODES.M)
+     @ReactMethod
+     /**
+      * Returns a list of all notifications currently in the Notification Center
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationActions.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationActions.java
+index ada9603..f7387ea 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationActions.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationActions.java
+@@ -30,17 +30,15 @@ public class RNPushNotificationActions extends BroadcastReceiver {
+       }
+ 
+       final Bundle bundle = intent.getBundleExtra("notification");
+-      Bundle remoteInput = null;
++      Bundle remoteInput;
+ 
+-      if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH){
+-          remoteInput = RemoteInput.getResultsFromIntent(intent);
+-      }
+-      if (remoteInput != null) {
++        remoteInput = RemoteInput.getResultsFromIntent(intent);
++        if (remoteInput != null) {
+           // Add to reply_text the text written by the user in the notification
+           bundle.putCharSequence("reply_text", remoteInput.getCharSequence(KEY_TEXT_REPLY));
+       }
+       // Dismiss the notification popup.
+-      NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
++      NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+       int notificationID = Integer.parseInt(bundle.getString("id"));
+ 
+       boolean autoCancel = bundle.getBoolean("autoCancel", true);
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationAttributes.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationAttributes.java
+index 1602daa..7e04eae 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationAttributes.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationAttributes.java
+@@ -144,8 +144,8 @@ public class RNPushNotificationAttributes {
+             fireDate = jsonObject.has(FIRE_DATE) ? jsonObject.getDouble(FIRE_DATE) : 0.0;
+             title = jsonObject.has(TITLE) ? jsonObject.getString(TITLE) : null;
+             ticker = jsonObject.has(TICKER) ? jsonObject.getString(TICKER) : null;
+-            showWhen = jsonObject.has(SHOW_WHEN) ? jsonObject.getBoolean(SHOW_WHEN) : true;
+-            autoCancel = jsonObject.has(AUTO_CANCEL) ? jsonObject.getBoolean(AUTO_CANCEL) : true;
++            showWhen = !jsonObject.has(SHOW_WHEN) || jsonObject.getBoolean(SHOW_WHEN);
++            autoCancel = !jsonObject.has(AUTO_CANCEL) || jsonObject.getBoolean(AUTO_CANCEL);
+             largeIcon = jsonObject.has(LARGE_ICON) ? jsonObject.getString(LARGE_ICON) : null;
+             largeIconUrl = jsonObject.has(LARGE_ICON_URL) ? jsonObject.getString(LARGE_ICON_URL) : null;
+             smallIcon = jsonObject.has(SMALL_ICON) ? jsonObject.getString(SMALL_ICON) : null;
+@@ -158,25 +158,25 @@ public class RNPushNotificationAttributes {
+             sound = jsonObject.has(SOUND) ? jsonObject.getString(SOUND) : null;
+             color = jsonObject.has(COLOR) ? jsonObject.getString(COLOR) : null;
+             group = jsonObject.has(GROUP) ? jsonObject.getString(GROUP) : null;
+-            groupSummary = jsonObject.has(GROUP_SUMMARY) ? jsonObject.getBoolean(GROUP_SUMMARY) : false;
++            groupSummary = jsonObject.has(GROUP_SUMMARY) && jsonObject.getBoolean(GROUP_SUMMARY);
+             messageId = jsonObject.has(MESSAGE_ID) ? jsonObject.getString(MESSAGE_ID) : null;
+-            playSound = jsonObject.has(PLAY_SOUND) ? jsonObject.getBoolean(PLAY_SOUND) : true;
+-            vibrate = jsonObject.has(VIBRATE) ? jsonObject.getBoolean(VIBRATE) : true;
++            playSound = !jsonObject.has(PLAY_SOUND) || jsonObject.getBoolean(PLAY_SOUND);
++            vibrate = !jsonObject.has(VIBRATE) || jsonObject.getBoolean(VIBRATE);
+             vibration = jsonObject.has(VIBRATION) ? jsonObject.getDouble(VIBRATION) : 1000;
+             actions = jsonObject.has(ACTIONS) ? jsonObject.getString(ACTIONS) : null;
+-            invokeApp = jsonObject.has(INVOKE_APP) ? jsonObject.getBoolean(INVOKE_APP) : true;
++            invokeApp = !jsonObject.has(INVOKE_APP) || jsonObject.getBoolean(INVOKE_APP);
+             tag = jsonObject.has(TAG) ? jsonObject.getString(TAG) : null;
+             repeatType = jsonObject.has(REPEAT_TYPE) ? jsonObject.getString(REPEAT_TYPE) : null;
+             repeatTime = jsonObject.has(REPEAT_TIME) ? jsonObject.getDouble(REPEAT_TIME) : 0.0;
+             when = jsonObject.has(WHEN) ? jsonObject.getDouble(WHEN) : -1;
+-            usesChronometer = jsonObject.has(USES_CHRONOMETER) ? jsonObject.getBoolean(USES_CHRONOMETER) : false;
++            usesChronometer = jsonObject.has(USES_CHRONOMETER) && jsonObject.getBoolean(USES_CHRONOMETER);
+             timeoutAfter = jsonObject.has(TIMEOUT_AFTER) ? jsonObject.getDouble(TIMEOUT_AFTER) : -1;
+-            onlyAlertOnce = jsonObject.has(ONLY_ALERT_ONCE) ? jsonObject.getBoolean(ONLY_ALERT_ONCE) : false;
+-            ongoing = jsonObject.has(ONGOING) ? jsonObject.getBoolean(ONGOING) : false;
++            onlyAlertOnce = jsonObject.has(ONLY_ALERT_ONCE) && jsonObject.getBoolean(ONLY_ALERT_ONCE);
++            ongoing = jsonObject.has(ONGOING) && jsonObject.getBoolean(ONGOING);
+             reply_button_text = jsonObject.has(REPLY_BUTTON_TEXT) ? jsonObject.getString(REPLY_BUTTON_TEXT) : null;
+             reply_placeholder_text = jsonObject.has(REPLAY_PLACEHOLDER_TEXT) ? jsonObject.getString(REPLAY_PLACEHOLDER_TEXT) : null;
+-            allowWhileIdle = jsonObject.has(ALLOW_WHILE_IDLE) ? jsonObject.getBoolean(ALLOW_WHILE_IDLE) : false;
+-            ignoreInForeground = jsonObject.has(IGNORE_IN_FOREGROUND) ? jsonObject.getBoolean(IGNORE_IN_FOREGROUND) : false;
++            allowWhileIdle = jsonObject.has(ALLOW_WHILE_IDLE) && jsonObject.getBoolean(ALLOW_WHILE_IDLE);
++            ignoreInForeground = jsonObject.has(IGNORE_IN_FOREGROUND) && jsonObject.getBoolean(IGNORE_IN_FOREGROUND);
+             userInfo = jsonObject.has(USER_INFO) ? jsonObject.getString(USER_INFO) : null;
+         } catch (JSONException e) {
+             throw new IllegalStateException("Exception while initializing RNPushNotificationAttributes from JSON", e);
+@@ -284,6 +284,7 @@ public class RNPushNotificationAttributes {
+         return jsonObject;
+     }
+ 
++    @NonNull
+     @Override
+     // For debugging
+     public String toString() {
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationHelper.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationHelper.java
+index 248ff08..720c2e7 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationHelper.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationHelper.java
+@@ -53,8 +53,8 @@ public class RNPushNotificationHelper {
+     public static final String PREFERENCES_KEY = "rn_push_notification";
+     private static final long DEFAULT_VIBRATION = 300L;
+ 
+-    private Context context;
+-    private RNPushNotificationConfig config;
++    private final Context context;
++    private final RNPushNotificationConfig config;
+     private final SharedPreferences scheduledNotificationsPersistence;
+ 
+     public RNPushNotificationHelper(Application context) {
+@@ -97,7 +97,6 @@ public class RNPushNotificationHelper {
+             context.startActivity(activityIntent);
+         } catch(Exception e) {
+             Log.e(LOG_TAG, "Class not found", e);
+-            return;
+         }
+     }
+ 
+@@ -172,7 +171,7 @@ public class RNPushNotificationHelper {
+         }
+ 
+         Log.d(LOG_TAG, String.format("Setting a notification with id %s at time %s",
+-                bundle.getString("id"), Long.toString(fireDate)));
++                bundle.getString("id"), fireDate));
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+             if (allowWhileIdle && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                 getAlarmManager().setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireDate, pendingIntent);
+@@ -186,11 +185,7 @@ public class RNPushNotificationHelper {
+ 
+ 
+     public void sendToNotificationCentre(final Bundle bundle) {
+-      RNPushNotificationPicturesAggregator aggregator = new RNPushNotificationPicturesAggregator(new RNPushNotificationPicturesAggregator.Callback() {
+-        public void call(Bitmap largeIconImage, Bitmap bigPictureImage, Bitmap bigLargeIconImage) {
+-          sendToNotificationCentreWithPicture(bundle, largeIconImage, bigPictureImage, bigLargeIconImage);
+-        }
+-      });
++      RNPushNotificationPicturesAggregator aggregator = new RNPushNotificationPicturesAggregator((largeIconImage, bigPictureImage, bigLargeIconImage) -> sendToNotificationCentreWithPicture(bundle, largeIconImage, bigPictureImage, bigLargeIconImage));
+ 
+       aggregator.setLargeIconUrl(context, bundle.getString("largeIconUrl"));
+       aggregator.setBigLargeIconUrl(context, bundle.getString("bigLargeIconUrl"));
+@@ -380,7 +375,7 @@ public class RNPushNotificationHelper {
+ 
+               // Big large icon
+               if(bigLargeIconBitmap == null) {
+-                  int bigLargeIconResId = 0;
++                  int bigLargeIconResId;
+ 
+                   String bigLargeIcon = bundle.getString("bigLargeIcon");
+ 
+@@ -460,7 +455,7 @@ public class RNPushNotificationHelper {
+ 
+             NotificationManager notificationManager = notificationManager();
+ 
+-            long[] vibratePattern = new long[]{0};
++            long[] vibratePattern;
+ 
+             if (!bundle.containsKey("vibrate") || bundle.getBoolean("vibrate")) {
+                 long vibration = bundle.containsKey("vibration") ? (long) bundle.getDouble("vibration") : DEFAULT_VIBRATION;
+@@ -480,16 +475,16 @@ public class RNPushNotificationHelper {
+                 notification.setShortcutId(shortcutId);
+               }
+  
+-              Long timeoutAfter = (long) bundle.getDouble("timeoutAfter");
++              long timeoutAfter = (long) bundle.getDouble("timeoutAfter");
+   
+-              if (timeoutAfter != null && timeoutAfter >= 0) {
++              if (timeoutAfter >= 0) {
+                 notification.setTimeoutAfter(timeoutAfter);
+               }
+             }
+ 
+-            Long when = (long) bundle.getDouble("when");
++            long when = (long) bundle.getDouble("when");
+   
+-            if (when != null && when >= 0) {
++            if (when >= 0) {
+               notification.setWhen(when);
+             }
+ 
+@@ -643,7 +638,7 @@ public class RNPushNotificationHelper {
+             // Sanity check, should never happen
+             if (newFireDate != 0) {
+                 Log.d(LOG_TAG, String.format("Repeating notification with id %s at time %s",
+-                        bundle.getString("id"), Long.toString(newFireDate)));
++                        bundle.getString("id"), newFireDate));
+                 bundle.putDouble("fireDate", newFireDate);
+                 this.sendNotificationScheduled(bundle);
+             }
+@@ -676,12 +671,10 @@ public class RNPushNotificationHelper {
+             // The reason is to make the iOS and android javascript interfaces compatible
+ 
+             int resId;
+-            if (context.getResources().getIdentifier(soundName, "raw", context.getPackageName()) != 0) {
+-                resId = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
+-            } else {
++            if (context.getResources().getIdentifier(soundName, "raw", context.getPackageName()) == 0) {
+                 soundName = soundName.substring(0, soundName.lastIndexOf('.'));
+-                resId = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
+             }
++            resId = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
+ 
+             return Uri.parse("android.resource://" + context.getPackageName() + "/" + resId);
+         }
+@@ -723,7 +716,7 @@ public class RNPushNotificationHelper {
+       }
+ 
+       NotificationManager notificationManager = notificationManager();
+-      StatusBarNotification delivered[] = notificationManager.getActiveNotifications();
++      StatusBarNotification[] delivered = notificationManager.getActiveNotifications();
+       Log.i(LOG_TAG, "Found " + delivered.length + " delivered notifications");
+       /*
+         * stay consistent to the return structure in
+@@ -892,7 +885,7 @@ public class RNPushNotificationHelper {
+           channel == null && channel_name != null && channel_description != null ||
+           channel != null &&
+           (
+-            channel_name != null && !channel_name.equals(channel.getName()) ||
++            channel_name != null && !channel_name.contentEquals(channel.getName()) ||
+             channel_description != null && !channel_description.equals(channel.getDescription())
+           )
+         ) {
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationListenerService.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationListenerService.java
+index ca78c03..1386248 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationListenerService.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationListenerService.java
+@@ -16,6 +16,8 @@ import com.facebook.react.bridge.WritableMap;
+ 
+ import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
+ 
++import androidx.annotation.NonNull;
++
+ public class RNPushNotificationListenerService extends FirebaseMessagingService {
+ 
+     private RNReceivedMessageHandler mMessageReceivedHandler;
+@@ -33,7 +35,7 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService
+     }
+ 
+     @Override
+-    public void onNewToken(String token) {
++    public void onNewToken(@NonNull String token) {
+         final String deviceToken = token;
+         final FirebaseMessagingService serviceRef = (this.mFirebaseServiceDelegate == null) ? this : this.mFirebaseServiceDelegate;
+         Log.d(LOG_TAG, "Refreshed token: " + deviceToken);
+@@ -73,7 +75,7 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService
+     }
+ 
+     @Override
+-    public void onMessageReceived(RemoteMessage message) {
++    public void onMessageReceived(@NonNull RemoteMessage message) {
+         mMessageReceivedHandler.handleReceivedMessage(message);
+     }
+ }
+diff --git a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationPicturesAggregator.java b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationPicturesAggregator.java
+index 733bcbe..6bb4212 100644
+--- a/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationPicturesAggregator.java
++++ b/node_modules/react-native-push-notification/android/src/main/java/com/dieam/reactnativepushnotification/modules/RNPushNotificationPicturesAggregator.java
+@@ -1,5 +1,6 @@
+ package com.dieam.reactnativepushnotification.modules;
+ 
++import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
+ import com.facebook.common.executors.CallerThreadExecutor;
+ import com.facebook.common.references.CloseableReference;
+@@ -22,10 +23,10 @@ import static com.dieam.reactnativepushnotification.modules.RNPushNotification.L
+ 
+ public class RNPushNotificationPicturesAggregator {
+   interface Callback {
+-    public void call(Bitmap largeIconImage, Bitmap bigPictureImage, Bitmap bigLargeIconImage);
++    void call(Bitmap largeIconImage, Bitmap bigPictureImage, Bitmap bigLargeIconImage);
+   }
+ 
+-  private AtomicInteger count = new AtomicInteger(0);
++  private final AtomicInteger count = new AtomicInteger(0);
+ 
+   private Bitmap largeIconImage;
+   private Bitmap bigPictureImage;
+@@ -48,7 +49,7 @@ public class RNPushNotificationPicturesAggregator {
+       return;
+     }
+ 
+-    Uri uri = null;
++    Uri uri;
+ 
+     try {
+       uri = Uri.parse(url);
+@@ -67,7 +68,7 @@ public class RNPushNotificationPicturesAggregator {
+       }
+ 
+       @Override
+-      public void onFailureImpl(DataSource dataSource) {
++      public void onFailureImpl(@NonNull DataSource dataSource) {
+         aggregator.setBigPicture(null);
+       }
+     });
+@@ -84,7 +85,7 @@ public class RNPushNotificationPicturesAggregator {
+       return;
+     }
+ 
+-    Uri uri = null;
++    Uri uri;
+ 
+     try {
+       uri = Uri.parse(url);
+@@ -103,7 +104,7 @@ public class RNPushNotificationPicturesAggregator {
+       }
+ 
+       @Override
+-      public void onFailureImpl(DataSource dataSource) {
++      public void onFailureImpl(@NonNull DataSource dataSource) {
+         aggregator.setLargeIcon(null);
+       }
+     });
+@@ -120,7 +121,7 @@ public class RNPushNotificationPicturesAggregator {
+       return;
+     }
+ 
+-    Uri uri = null;
++    Uri uri;
+ 
+     try {
+       uri = Uri.parse(url);
+@@ -139,7 +140,7 @@ public class RNPushNotificationPicturesAggregator {
+       }
+ 
+       @Override
+-      public void onFailureImpl(DataSource dataSource) {
++      public void onFailureImpl(@NonNull DataSource dataSource) {
+         aggregator.setBigLargeIcon(null);
+       }
+     });

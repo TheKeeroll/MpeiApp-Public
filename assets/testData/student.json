@@ -1,0 +1,16 @@
+{
+  "name": "name",
+  "surname": "surname",
+  "middleName": "middle name",
+  "mail": "mailmail@mpei.ru",
+  "indexBook": "0000000000",
+  "group": "AA-99-99",
+  "course": "5",
+  "qualification": "бакалавр",
+  "direction": "11.03.01",
+  "educationForm": "",
+  "status": "Обучается",
+  "rating": "100",
+  "id": "null",
+  "headman": false
+}

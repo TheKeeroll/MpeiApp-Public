@@ -1,0 +1,63 @@
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+platform :ios, '13.0'
+install! 'cocoapods', :deterministic_uuids => false
+
+target 'MpeiApp' do
+  config = use_native_modules!
+
+  # Flags change depending on the env values.
+  flags = get_default_flags()
+#  use_frameworks!()
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # to enable hermes on iOS, change `false` to `true` and then install pods
+    :hermes_enabled => true,
+    :fabric_enabled => flags[:fabric_enabled],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+  #pod 'mailcore2-ios'
+
+  pod 'RNScreens', :path => '../node_modules/react-native-screens'
+
+  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated'
+
+  pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler'
+
+  pod 'lottie-ios', :path => '../node_modules/lottie-ios'
+
+  pod 'react-native-change-icon', :path => '../node_modules/react-native-change-icon'
+
+  pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
+  pod 'RNYamap', :path => '../node_modules/react-native-yamap'
+
+  #pod 'react-native-mail', :path => '../node_modules/react-native-mail'
+
+  pod 'Firebase', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  #pod 'FirebaseCoreExtension'#, :modular_headers => true 
+  #pod 'FirebaseAppCheckInterop'#, :modular_headers => true
+  #pod 'FirebaseAuthInterop'#, :modular_headers => true
+  #pod 'FirebaseMessagingInterop'#, :modular_headers => true
+  #pod 'GTMSessionFetcher'#, :modular_headers => true
+
+  target 'MpeiAppTests' do
+    inherit! :complete
+    # Pods for testing
+  end
+
+  # Enables Flipper.
+  #
+  # Note that if you have use_frameworks! enabled, Flipper will not work and
+  # you should disable the next line.
+  # use_flipper!()
+
+  post_install do |installer|
+    react_native_post_install(installer)
+    __apply_Xcode_12_5_M1_post_install_workaround(installer)
+  end
+end

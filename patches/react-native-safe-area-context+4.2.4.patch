@@ -1,0 +1,114 @@
+diff --git a/node_modules/react-native-safe-area-context/android/build.gradle b/node_modules/react-native-safe-area-context/android/build.gradle
+index fd6d976..dbe30d0 100644
+--- a/node_modules/react-native-safe-area-context/android/build.gradle
++++ b/node_modules/react-native-safe-area-context/android/build.gradle
+@@ -30,11 +30,11 @@ if (isNewArchitectureEnabled()) {
+ }
+ 
+ android {
+-    compileSdkVersion getExtOrDefault('compileSdkVersion', 30)
++    compileSdk getExtOrDefault('compileSdkVersion', 34)
+ 
+     defaultConfig {
+-        minSdkVersion getExtOrDefault('minSdkVersion', 16)
+-        targetSdkVersion getExtOrDefault('targetSdkVersion', 28)
++        minSdkVersion getExtOrDefault('minSdkVersion', 23)
++        targetSdkVersion getExtOrDefault('targetSdkVersion', 34)
+         versionCode 1
+         versionName "1.0"
+         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+@@ -108,9 +108,9 @@ dependencies {
+     if (isNewArchitectureEnabled()) {
+         implementation project(":ReactAndroid")
+     } else {
+-        implementation 'com.facebook.react:react-native:+'
++        implementation 'com.facebook.react:react-native:0.68.1'
+     }
+-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
++    implementation "org.jetbrains.kotlin:kotlin-stdlib:$RNSAC_kotlinVersion"
+ }
+ 
+ if (isNewArchitectureEnabled()) {
+diff --git a/node_modules/react-native-safe-area-context/android/gradle.properties b/node_modules/react-native-safe-area-context/android/gradle.properties
+index 366e7ad..440b04f 100644
+--- a/node_modules/react-native-safe-area-context/android/gradle.properties
++++ b/node_modules/react-native-safe-area-context/android/gradle.properties
+@@ -1 +1 @@
+-RNSAC_kotlinVersion=1.6.10
++RNSAC_kotlinVersion=1.8.20
+diff --git a/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaUtils.kt b/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaUtils.kt
+index 0203be6..5f3b506 100644
+--- a/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaUtils.kt
++++ b/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaUtils.kt
+@@ -24,11 +24,14 @@ private fun getRootWindowInsetsCompatR(rootView: View): EdgeInsets? {
+       left = insets.left.toFloat())
+ }
+ 
+-@RequiresApi(Build.VERSION_CODES.M)
+ @Suppress("DEPRECATION")
+ private fun getRootWindowInsetsCompatM(rootView: View): EdgeInsets? {
+-  val insets = rootView.rootWindowInsets ?: return null
+-  return EdgeInsets(
++  val insets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
++      rootView.rootWindowInsets ?: return null
++  } else {
++      TODO("VERSION.SDK_INT < M")
++  }
++    return EdgeInsets(
+       top = insets.systemWindowInsetTop.toFloat(),
+       right = insets.systemWindowInsetRight.toFloat(),
+       // System insets are more reliable to account for notches but the
+@@ -40,7 +43,7 @@ private fun getRootWindowInsetsCompatM(rootView: View): EdgeInsets? {
+       left = insets.systemWindowInsetLeft.toFloat())
+ }
+ 
+-private fun getRootWindowInsetsCompatBase(rootView: View): EdgeInsets? {
++private fun getRootWindowInsetsCompatBase(rootView: View): EdgeInsets {
+   val visibleRect = android.graphics.Rect()
+   rootView.getWindowVisibleDisplayFrame(visibleRect)
+   return EdgeInsets(
+@@ -53,8 +56,7 @@ private fun getRootWindowInsetsCompatBase(rootView: View): EdgeInsets? {
+ private fun getRootWindowInsetsCompat(rootView: View): EdgeInsets? {
+   return when {
+     Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> getRootWindowInsetsCompatR(rootView)
+-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> getRootWindowInsetsCompatM(rootView)
+-    else -> getRootWindowInsetsCompatBase(rootView)
++    else -> getRootWindowInsetsCompatM(rootView)
+   }
+ }
+ 
+diff --git a/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/InsetsChangeEvent.kt b/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/InsetsChangeEvent.kt
+index ac3b588..07c7c81 100644
+--- a/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/InsetsChangeEvent.kt
++++ b/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/InsetsChangeEvent.kt
+@@ -16,6 +16,7 @@ internal class InsetsChangeEvent(
+   override fun getEventName() = EVENT_NAME
+ 
+   // TODO: Migrate to getEventData when dropping support for RN 0.64.
++  @Deprecated("Deprecated in Java")
+   override fun dispatch(rctEventEmitter: RCTEventEmitter) {
+     val event = Arguments.createMap()
+     event.putMap("insets", edgeInsetsToJsMap(mInsets))
+diff --git a/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/NativeSafeAreaContextSpec.java b/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/NativeSafeAreaContextSpec.java
+index 369ea81..6195782 100644
+--- a/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/NativeSafeAreaContextSpec.java
++++ b/node_modules/react-native-safe-area-context/android/src/paper/java/com/th3rdwave/safeareacontext/NativeSafeAreaContextSpec.java
+@@ -20,6 +20,7 @@ import com.facebook.react.bridge.ReactModuleWithSpec;
+ import com.facebook.react.common.build.ReactBuildConfig;
+ import com.facebook.react.turbomodule.core.interfaces.TurboModule;
+ import java.util.Arrays;
++import java.util.Collections;
+ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Set;
+@@ -38,8 +39,8 @@ public abstract class NativeSafeAreaContextSpec extends ReactContextBaseJavaModu
+     Map<String, Object> constants = getTypedExportedConstants();
+     if (ReactBuildConfig.DEBUG || ReactBuildConfig.IS_INTERNAL_BUILD) {
+       Set<String> obligatoryFlowConstants = new HashSet<>();
+-      Set<String> optionalFlowConstants = new HashSet<>(Arrays.asList(
+-          "initialWindowMetrics"
++      Set<String> optionalFlowConstants = new HashSet<>(Collections.singletonList(
++              "initialWindowMetrics"
+       ));
+       Set<String> undeclaredConstants = new HashSet<>(constants.keySet());
+       undeclaredConstants.removeAll(obligatoryFlowConstants);

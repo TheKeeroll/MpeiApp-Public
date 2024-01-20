@@ -1,0 +1,95 @@
+diff --git a/node_modules/react-native-change-icon/android/build.gradle b/node_modules/react-native-change-icon/android/build.gradle
+index 4f89093..6e00dff 100644
+--- a/node_modules/react-native-change-icon/android/build.gradle
++++ b/node_modules/react-native-change-icon/android/build.gradle
+@@ -5,7 +5,7 @@ buildscript {
+   }
+ 
+   dependencies {
+-    classpath 'com.android.tools.build:gradle:3.5.3'
++    classpath 'com.android.tools.build:gradle:7.3.1'
+   }
+ }
+ 
+@@ -28,7 +28,7 @@ def getExtOrIntegerDefault(name) {
+ }
+ 
+ android {
+-  compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
++  compileSdk getExtOrIntegerDefault('compileSdkVersion')
+ 
+   defaultConfig {
+     minSdkVersion getExtOrIntegerDefault('minSdkVersion')
+@@ -124,7 +124,7 @@ repositories {
+ 
+ dependencies {
+     //noinspection GradleDynamicVersion
+-  implementation "com.facebook.react:react-native:+"
++  implementation "com.facebook.react:react-native:0.68.1"
+ // From node_modules
+ }
+ 
+diff --git a/node_modules/react-native-change-icon/android/gradle.properties b/node_modules/react-native-change-icon/android/gradle.properties
+index ea49d0e..55e1fff 100644
+--- a/node_modules/react-native-change-icon/android/gradle.properties
++++ b/node_modules/react-native-change-icon/android/gradle.properties
+@@ -1,5 +1,5 @@
+-ChangeIcon_kotlinVersion=1.7.0
+-ChangeIcon_minSdkVersion=21
+-ChangeIcon_targetSdkVersion=31
+-ChangeIcon_compileSdkVersion=31
++ChangeIcon_kotlinVersion=1.8.20
++ChangeIcon_minSdkVersion=23
++ChangeIcon_targetSdkVersion=34
++ChangeIcon_compileSdkVersion=34
+ ChangeIcon_ndkversion=21.4.7075529
+diff --git a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java b/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
+index 07402bc..b6dfa1c 100644
+--- a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
++++ b/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
+@@ -6,6 +6,7 @@ import android.app.Activity;
+ import android.app.Application;
+ import android.content.pm.PackageManager;
+ import android.content.ComponentName;
++import android.os.Build;
+ import android.os.Bundle;
+ 
+ import com.facebook.react.bridge.Promise;
+@@ -47,8 +48,16 @@ public class ChangeIconModule extends ReactContextBaseJavaModule implements Appl
+         if (this.componentClass.isEmpty()) {
+             this.componentClass = activity.getComponentName().getClassName();
+         }
+-        String currentIcon = this.componentClass.split("MainActivity")[1];
+-        promise.resolve(currentIcon.isEmpty() ? "default" : currentIcon);
++        try
++        {
++            String currentIcon = this.componentClass.split("MainActivity")[1];
++            promise.resolve(currentIcon.isEmpty() ? "default" : currentIcon);
++        }
++        catch(Exception ex)
++        {
++            System.out.println("\n" + ex.toString());
++            promise.resolve("default");
++        }
+         return;
+     }
+ 
+@@ -92,11 +101,13 @@ public class ChangeIconModule extends ReactContextBaseJavaModule implements Appl
+         if (!iconChanged) return;
+         final Activity activity = getCurrentActivity();
+         if (activity == null) return;
+-        classesToKill.forEach((cls) -> activity.getPackageManager().setComponentEnabledSetting(
+-            new ComponentName(this.packageName, cls),
+-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+-            PackageManager.DONT_KILL_APP
+-        ));
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
++            classesToKill.forEach((cls) -> activity.getPackageManager().setComponentEnabledSetting(
++                new ComponentName(this.packageName, cls),
++                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
++                PackageManager.DONT_KILL_APP
++            ));
++        }
+         classesToKill.clear();
+         iconChanged = false;
+     }

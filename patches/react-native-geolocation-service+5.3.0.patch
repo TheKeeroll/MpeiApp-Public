@@ -1,0 +1,322 @@
+diff --git a/node_modules/react-native-geolocation-service/android/build.gradle b/node_modules/react-native-geolocation-service/android/build.gradle
+index cf167cf..86da848 100644
+--- a/node_modules/react-native-geolocation-service/android/build.gradle
++++ b/node_modules/react-native-geolocation-service/android/build.gradle
+@@ -1,17 +1,17 @@
+ apply plugin: 'com.android.library'
+ 
+-def DEFAULT_COMPILE_SDK_VERSION          = 29
+-def DEFAULT_BUILD_TOOLS_VERSION          = "29.0.2"
+-def DEFAULT_MIN_SDK_VERSION              = 16
+-def DEFAULT_TARGET_SDK_VERSION           = 29
+-def DEFAULT_GOOGLE_PLAY_SERVICES_VERSION = "18.0.0"
++def DEFAULT_COMPILE_SDK_VERSION          = 34
++def DEFAULT_BUILD_TOOLS_VERSION          = "34.0.0"
++def DEFAULT_MIN_SDK_VERSION              = 23
++def DEFAULT_TARGET_SDK_VERSION           = 34
++def DEFAULT_GOOGLE_PLAY_SERVICES_VERSION = "20.0.0"
+ 
+ def safeExtGet(prop, fallback) {
+   rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+ }
+ 
+ android {
+-  compileSdkVersion safeExtGet('compileSdkVersion', DEFAULT_COMPILE_SDK_VERSION)
++  compileSdk safeExtGet('compileSdkVersion', DEFAULT_COMPILE_SDK_VERSION)
+   buildToolsVersion safeExtGet('buildToolsVersion', DEFAULT_BUILD_TOOLS_VERSION)
+ 
+   defaultConfig {
+@@ -19,7 +19,7 @@ android {
+     targetSdkVersion safeExtGet('targetSdkVersion', DEFAULT_TARGET_SDK_VERSION)
+   }
+ 
+-  lintOptions {
++  lint {
+     abortOnError false
+   }
+ }
+@@ -29,7 +29,7 @@ dependencies {
+   googlePlayServicesVersion = safeExtGet('playServicesVersion', googlePlayServicesVersion)
+   googlePlayServicesVersion = safeExtGet('playServicesLocationVersion', googlePlayServicesVersion)
+ 
+-  implementation "com.facebook.react:react-native:+"
+-  implementation 'androidx.appcompat:appcompat:1.0.2'
++  implementation "com.facebook.react:react-native:0.68.1"
++  implementation 'androidx.appcompat:appcompat:1.5.1'
+   implementation "com.google.android.gms:play-services-location:$googlePlayServicesVersion"
+ }
+diff --git a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/FusedLocationProvider.java b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/FusedLocationProvider.java
+index e502919..916cab8 100644
+--- a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/FusedLocationProvider.java
++++ b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/FusedLocationProvider.java
+@@ -95,26 +95,18 @@ public class FusedLocationProvider implements LocationProvider {
+     this.locationRequest = buildLocationRequest(locationOptions);
+ 
+     fusedLocationProviderClient.getLastLocation()
+-      .addOnSuccessListener(new OnSuccessListener<Location>() {
+-        @Override
+-        public void onSuccess(Location location) {
+-          if (location != null &&
+-            LocationUtils.getLocationAge(location) < locationOptions.getMaximumAge()
+-          ) {
+-            Log.i(RNFusedLocationModule.TAG, "returning cached location.");
+-            locationChangeListener.onLocationChange(FusedLocationProvider.this, location);
+-            return;
+-          }
+-
+-          checkLocationSettings();
++      .addOnSuccessListener(location -> {
++        if (location != null &&
++          LocationUtils.getLocationAge(location) < locationOptions.getMaximumAge()
++        ) {
++          Log.i(RNFusedLocationModule.TAG, "returning cached location.");
++          locationChangeListener.onLocationChange(FusedLocationProvider.this, location);
++          return;
+         }
++
++        checkLocationSettings();
+       })
+-      .addOnFailureListener(new OnFailureListener() {
+-        @Override
+-        public void onFailure(@NonNull Exception e) {
+-          checkLocationSettings();
+-        }
+-      });
++      .addOnFailureListener(e -> checkLocationSettings());
+   }
+ 
+   @Override
+@@ -175,76 +167,68 @@ public class FusedLocationProvider implements LocationProvider {
+     LocationSettingsRequest locationSettingsRequest = builder.build();
+ 
+     settingsClient.checkLocationSettings(locationSettingsRequest)
+-      .addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+-        @Override
+-        public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+-          startLocationUpdates();
+-        }
+-      })
+-      .addOnFailureListener(new OnFailureListener() {
+-        @Override
+-        public void onFailure(@NonNull Exception e) {
+-          ApiException exception = (ApiException) e;
+-
+-          switch (exception.getStatusCode()) {
+-            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+-              boolean showLocationDialog = locationOptions.isShowLocationDialog();
+-              boolean forceRequestLocation = locationOptions.isForceRequestLocation();
+-              boolean locationEnabled = LocationUtils.isLocationEnabled(context);
+-
+-              if (!showLocationDialog) {
+-                if (forceRequestLocation && locationEnabled) {
+-                  startLocationUpdates();
+-                } else {
+-                  locationChangeListener.onLocationError(
+-                    FusedLocationProvider.this,
+-                    locationEnabled ? LocationError.SETTINGS_NOT_SATISFIED : LocationError.POSITION_UNAVAILABLE,
+-                    null
+-                  );
+-                }
+-
+-                break;
+-              }
+-
+-              try {
+-                ResolvableApiException resolvable = (ResolvableApiException) exception;
+-                Activity activity = context.getCurrentActivity();
+-
+-                if (activity == null) {
+-                  locationChangeListener.onLocationError(
+-                    FusedLocationProvider.this,
+-                    LocationError.INTERNAL_ERROR,
+-                    "Tried to open location dialog while not attached to an Activity."
+-                  );
+-                  break;
+-                }
+-
+-                activityRequestCode = getActivityRequestCode();
+-                resolvable.startResolutionForResult(activity, activityRequestCode);
+-              } catch (IntentSender.SendIntentException | ClassCastException sie) {
++      .addOnSuccessListener(locationSettingsResponse -> startLocationUpdates())
++      .addOnFailureListener(e -> {
++        ApiException exception = (ApiException) e;
++
++        switch (exception.getStatusCode()) {
++          case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
++            boolean showLocationDialog = locationOptions.isShowLocationDialog();
++            boolean forceRequestLocation = locationOptions.isForceRequestLocation();
++            boolean locationEnabled = LocationUtils.isLocationEnabled(context);
++
++            if (!showLocationDialog) {
++              if (forceRequestLocation && locationEnabled) {
++                startLocationUpdates();
++              } else {
+                 locationChangeListener.onLocationError(
+                   FusedLocationProvider.this,
+-                  LocationError.INTERNAL_ERROR,
++                  locationEnabled ? LocationError.SETTINGS_NOT_SATISFIED : LocationError.POSITION_UNAVAILABLE,
+                   null
+                 );
+               }
+ 
+               break;
+-            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+-              if (LocationUtils.isOnAirplaneMode(context) &&
+-                LocationUtils.isProviderEnabled(context, LocationManager.GPS_PROVIDER)
+-              ) {
+-                startLocationUpdates();
++            }
++
++            try {
++              ResolvableApiException resolvable = (ResolvableApiException) exception;
++              Activity activity = context.getCurrentActivity();
++
++              if (activity == null) {
++                locationChangeListener.onLocationError(
++                  FusedLocationProvider.this,
++                  LocationError.INTERNAL_ERROR,
++                  "Tried to open location dialog while not attached to an Activity."
++                );
+                 break;
+               }
+-            default:
++
++              activityRequestCode = getActivityRequestCode();
++              resolvable.startResolutionForResult(activity, activityRequestCode);
++            } catch (IntentSender.SendIntentException | ClassCastException sie) {
+               locationChangeListener.onLocationError(
+                 FusedLocationProvider.this,
+-                LocationError.SETTINGS_NOT_SATISFIED,
++                LocationError.INTERNAL_ERROR,
+                 null
+               );
++            }
++
++            break;
++          case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
++            if (LocationUtils.isOnAirplaneMode(context) &&
++              LocationUtils.isProviderEnabled(context, LocationManager.GPS_PROVIDER)
++            ) {
++              startLocationUpdates();
+               break;
+-          }
++            }
++          default:
++            locationChangeListener.onLocationError(
++              FusedLocationProvider.this,
++              LocationError.SETTINGS_NOT_SATISFIED,
++              null
++            );
++            break;
+         }
+       });
+   }
+diff --git a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/LocationUtils.java b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/LocationUtils.java
+index 266e68d..a15a0e2 100644
+--- a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/LocationUtils.java
++++ b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/LocationUtils.java
+@@ -25,19 +25,16 @@ public class LocationUtils {
+    * Calculates the age of a location fix in milliseconds
+    */
+   public static long getLocationAge(Location location) {
+-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+-      return (SystemClock.elapsedRealtimeNanos() - location.getElapsedRealtimeNanos()) / 1000000;
+-    }
++    return (SystemClock.elapsedRealtimeNanos() - location.getElapsedRealtimeNanos()) / 1000000;
+ 
+-    return System.currentTimeMillis() - location.getTime();
+   }
+ 
+   /**
+    * Check if location permissions are granted.
+    */
+   public static boolean hasLocationPermission(Context context) {
+-    return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+-      ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
++    return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
++            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
+   }
+ 
+   /**
+@@ -53,15 +50,11 @@ public class LocationUtils {
+   /**
+    * Check if airplane mode is on/off
+    */
+-  @SuppressWarnings("deprecation")
+   public static boolean isOnAirplaneMode(Context context) {
+     ContentResolver contentResolver = context.getContentResolver();
+ 
+-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+-      return Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+-    }
++    return Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+ 
+-    return Settings.System.getInt(contentResolver, Settings.System.AIRPLANE_MODE_ON, 0) != 0;
+   }
+ 
+   /**
+@@ -69,16 +62,6 @@ public class LocationUtils {
+    * https://androidx.tech/artifacts/core/core/1.8.0-alpha02-source/androidx/core/location/LocationManagerCompat.java.html
+    */
+   public static boolean isLocationEnabled(Context context) {
+-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+-      return !TextUtils.isEmpty(
+-        Settings.Secure.getString(context.getContentResolver(),
+-          Settings.Secure.LOCATION_PROVIDERS_ALLOWED));
+-    }
+-
+-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+-      return Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE,
+-        Settings.Secure.LOCATION_MODE_OFF) != Settings.Secure.LOCATION_MODE_OFF;
+-    }
+ 
+     LocationManager locationManager;
+ 
+@@ -144,9 +127,7 @@ public class LocationUtils {
+     map.putString("provider", location.getProvider());
+     map.putDouble("timestamp", location.getTime());
+ 
+-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+-      map.putBoolean("mocked", location.isFromMockProvider());
+-    }
++    map.putBoolean("mocked", location.isFromMockProvider());
+ 
+     return map;
+   }
+diff --git a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationModule.java b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationModule.java
+index 414e2be..f824495 100644
+--- a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationModule.java
++++ b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationModule.java
+@@ -100,7 +100,7 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule implements
+   public void getCurrentPosition(ReadableMap options, final Callback success, final Callback error) {
+     ReactApplicationContext context = getContext();
+ 
+-    if (!LocationUtils.hasLocationPermission(context)) {
++    if (LocationUtils.hasLocationPermission(context)) {
+       error.invoke(LocationUtils.buildError(LocationError.PERMISSION_DENIED, null));
+       return;
+     }
+@@ -116,7 +116,7 @@ public class RNFusedLocationModule extends ReactContextBaseJavaModule implements
+   public void startObserving(ReadableMap options) {
+     ReactApplicationContext context = getContext();
+ 
+-    if (!LocationUtils.hasLocationPermission(context)) {
++    if (LocationUtils.hasLocationPermission(context)) {
+       emitEvent(
+         "geolocationError",
+         LocationUtils.buildError(LocationError.PERMISSION_DENIED, null)
+diff --git a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationPackage.java b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationPackage.java
+index e4ea68d..f2e9120 100644
+--- a/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationPackage.java
++++ b/node_modules/react-native-geolocation-service/android/src/main/java/com/agontuk/RNFusedLocation/RNFusedLocationPackage.java
+@@ -26,8 +26,8 @@ public class RNFusedLocationPackage implements ReactPackage {
+   @NonNull
+   @Override
+   public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
+-    return Arrays.<NativeModule>asList(
+-      new RNFusedLocationModule(reactContext)
++    return Collections.singletonList(
++            new RNFusedLocationModule(reactContext)
+     );
+   }
+ }

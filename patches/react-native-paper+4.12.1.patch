@@ -1,0 +1,32 @@
+diff --git a/node_modules/react-native-paper/src/styles/DefaultTheme.tsx b/node_modules/react-native-paper/src/styles/DefaultTheme.tsx
+index aa4967e..569d6a0 100644
+--- a/node_modules/react-native-paper/src/styles/DefaultTheme.tsx
++++ b/node_modules/react-native-paper/src/styles/DefaultTheme.tsx
+@@ -11,6 +11,7 @@ const DefaultTheme: Theme = {
+     accent: '#03dac4',
+     background: '#f6f6f6',
+     surface: white,
++    warning: '#F7CE46',
+     error: '#B00020',
+     text: black,
+     onSurface: '#000000',
+diff --git a/node_modules/react-native-paper/src/types.tsx b/node_modules/react-native-paper/src/types.tsx
+index 6b1a900..9efaf3c 100644
+--- a/node_modules/react-native-paper/src/types.tsx
++++ b/node_modules/react-native-paper/src/types.tsx
+@@ -33,6 +33,7 @@ export type Theme = {
+     primary: string;
+     background: string;
+     surface: string;
++    warning: string;
+     accent: string;
+     error: string;
+     text: string;
+@@ -84,6 +85,7 @@ declare global {
+       background: string;
+       surface: string;
+       accent: string;
++      warning: string;
+       error: string;
+       text: string;
+       onSurface: string;

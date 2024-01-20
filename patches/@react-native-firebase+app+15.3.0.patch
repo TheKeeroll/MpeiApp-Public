@@ -1,0 +1,23 @@
+diff --git a/node_modules/@react-native-firebase/app/android/build.gradle b/node_modules/@react-native-firebase/app/android/build.gradle
+index feb152f..5a3d9e9 100644
+--- a/node_modules/@react-native-firebase/app/android/build.gradle
++++ b/node_modules/@react-native-firebase/app/android/build.gradle
+@@ -11,7 +11,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-      classpath("com.android.tools.build:gradle:7.0.4")
++      classpath("com.android.tools.build:gradle:7.3.1")
+     }
+   }
+ }
+diff --git a/node_modules/@react-native-firebase/app/android/firebase-json.gradle b/node_modules/@react-native-firebase/app/android/firebase-json.gradle
+index 73593aa..5f3105c 100644
+--- a/node_modules/@react-native-firebase/app/android/firebase-json.gradle
++++ b/node_modules/@react-native-firebase/app/android/firebase-json.gradle
+@@ -1,4 +1,4 @@
+-/* groovylint-disable CatchException, CompileStatic, DuplicateStringLiteral, JavaIoPackageAccess */
++/* groovy lint-disable CatchException, CompileStatic, DuplicateStringLiteral, JavaIoPackageAccess */
+ import groovy.json.JsonOutput
+ import groovy.json.JsonSlurper
+ 
