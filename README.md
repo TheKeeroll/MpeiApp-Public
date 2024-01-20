@@ -1,13 +1,13 @@
 # MpeiApp - кросплатформенное бесплатное приложение для студентов МЭИ
 Иконка | Иконка
 --- | ---
-<img src=https://github.com/TheKeeroll/MpeiApp/blob/R1U/assets/images/dragons.png width=200/> | <img src=https://github.com/TheKeeroll/MpeiApp/blob/R1U/assets/images/cool.png width=200/>
+<img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/dragons/playstore.png width=200/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/cool/playstore.png width=200/>
 
 ## Ключевые оссобенности
 - Доступно как для Android, так и для IOS
 - Основные функции работают и без интернета
 - В наличии все значимые разделы БАРС
-- Интерактивная 3D-карта с важными точками, фильтрами по их категориям и <strike>построением маршрутов</strike> <sub>*(только на Android)*</sub> - [интеграция сервиса Яндекс.Карты](https://github.com/volga-volga/react-native-yamap)
+- Интерактивная 3D-карта с важными точками, фильтрами по их категориям <strike>и построением маршрутов</strike> - [интеграция сервиса Яндекс.Карты](https://github.com/volga-volga/react-native-yamap)
 - Автоматический подсчёт и систематизация пропусков
 - Просмотр расписания как собственного, так и любой другой группы/преподавателя
 - Анализ КМ после закрытия БАРС - "Все КМ сданы" / "Долг!"
@@ -16,15 +16,15 @@
 ## Скриншоты
 Страница первичного входа | Страница оценок | Выбор раздела БАРС | Страница пропусков
 --- | --- | --- | ---
-<img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/a25e1356-357d-42e7-b9d0-82b79fc6850d width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/63ea4bb6-f0af-43b9-9bc5-b8f901b01b9a width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/bfaa94ab-e55b-40d2-8a86-79017b33b02b width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/b80ef6b0-dff6-41d2-b147-8df7cc2725f5 width=220/> 
+<img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/083e8333-f820-4910-b82d-a1477547d051 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/2a300c69-4e2d-428b-82db-7eac4ccb26fe width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/51396534-5dbe-465f-ad56-806b1df74f25 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/fa5192d3-fa9d-48a4-9711-1f2d1cd69722 width=220/> 
 
 Карта-общий вид | Выбор маршрута | Карта(светлая тема) | Категории(светлая тема)
 --- | --- | --- | ---
-<img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/22a1e5d1-acd8-4c29-90c0-9765b7ae4318 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/8e4593da-84f1-43bb-bfa5-95e7de280c49 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/bf756c47-d54d-4e42-8b19-e18a3adf88df width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/000a447c-495e-4afd-acee-66f59b88c62e width=220/>
+<img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/c8fe703f-38f0-42a9-b2fc-c13bc0f50768 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/e35e9366-17f6-47c4-aee7-4e1ddd65b270 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/8ae7685d-d243-4f39-ac63-dc6be1ff613b width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/9305924b-87f8-43c1-99c4-6a2b7640eec3 width=220/>
 
-Расписание преподавателя | Стипендии | Расписание(светлая тема) | Приказы(светлая тема)
+Расписание преподавателя | Стипендии | Расписание(светлая тема) | ЗК(светлая тема)
 --- | --- | --- | ---
-<img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/821ec38e-7821-4988-aee9-1b324f40087d width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/47322328-c2c1-4cf7-8751-7a393186df62 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/f77a69af-e66d-4dc3-b8a5-3276b2aa833d width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp/assets/77333497/f68b0c78-ceb9-480e-8245-92b0e6405d28 width=220/>
+<img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/23f441b5-220a-4d1b-9746-8c90d9ba7a57 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/de41b23a-5fe0-4504-975e-09fe5200a119 width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/77c88d60-33d8-42a5-b8ba-577bf54fbe3b width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/8a98c4c4-51c8-4656-b974-ffa4bbfc0533 width=220/>
 
 ## Disclaimer
 **MpeiApp - неофициальное приложение.**
@@ -33,8 +33,8 @@
 
 Приложение предоставляется **as it is**.
 
-## Связь с разработчиком
-Если вы столкнулись с какой-либо проблемой при использовании MpeiApp, у вас есть вопросы/предложения/пожелания или вы хотите как-то помочь:
+## Обратная связь
+Если вы столкнулись с проблемой при использовании MpeiApp, у вас есть вопросы/предложения/пожелания или вы хотите как-то помочь:
 - [Сообщество ВК](https://vk.com/mpeiapp)
-- [Мой личный Telegram](https://t.me/DragonSavA)
-- [Мой личный ВК](https://vk.com/dragonsava)
+- [Личный Telegram разработчика(DragonSavA)](https://t.me/DragonSavA)
+- [Личный ВК разработчика(DragonSavA)](https://vk.com/dragonsava)
