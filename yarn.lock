@@ -6617,10 +6617,10 @@ react-native-webview@^11.23.0:
     escape-string-regexp "2.0.0"
     invariant "2.2.4"
 
-react-native-yamap@4.1.18:
-  version "4.1.18"
-  resolved "https://registry.yarnpkg.com/react-native-yamap/-/react-native-yamap-4.1.18.tgz#a5648c61e038694b1be1101294ffc62304309c58"
-  integrity sha512-GpodjYOU7gmnU11+jsFxLL9X9YV4pQUqWKNYRwyz6k/6ZMybDtlAFEGxna7c0lSJddP52+W4BzfNfuyPKtsMZw==
+react-native-yamap@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/react-native-yamap/-/react-native-yamap-4.0.3.tgz#9dbfea01d0e7ef8766f24a2f78fe7a9653c970fb"
+  integrity sha512-W1we88yjahx21ir2MVx5axwCeClEDseDBb0BfZ/WDZayZI2tkQzg5BSQCy2hlq3+4lwyOWz+1rBlx2W//iE4VQ==
 
 react-native@0.68.1:
   version "0.68.1"

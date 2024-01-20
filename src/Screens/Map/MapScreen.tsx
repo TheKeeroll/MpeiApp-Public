@@ -166,7 +166,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             point={{lat: props.place.lat, lon: props.place.lon}}
             source={GetRequire()}
             onPress={props.onPress.bind(this, props.place)}
-            scale={(Platform.OS === 'ios') ? .55 : .30}
+            scale={(Platform.OS === 'ios') ? .45 : .30}
           />
         ) : null;
     }
@@ -183,9 +183,8 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                           <Text style={{padding: 5, color: colors.text}}>Проложить маршрут</Text>
                       </TouchableOpacity>
                     }
-
                     {
-                      props.place?.howToGet &&
+                      (Platform.OS === 'ios') && props.place?.howToGet &&
                       <Text numberOfLines={2} adjustsFontSizeToFit style={{padding: 5, color: colors.textUnderline, fontWeight: 'bold', marginBottom: 10}}>{props.place.howToGet}</Text>
                     }
                 </View>
@@ -379,14 +378,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const GetRoutes = (place: Place) => {
         Geolocation.getCurrentPosition((pos)=>{
             map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event)=>{
-                setTimeout(() => {
-                    console.log("Timeout ended.")
-                    setShowRoutes(event.nativeEvent.routes)
-                    setRoutes(event.nativeEvent.routes)
-                    setModalShown(null)
-                    setTargetPlace(place)
-                }, 650)
-
+                setShowRoutes(event.nativeEvent.routes)
+                setRoutes(event.nativeEvent.routes)
+                setModalShown(null)
+                setTargetPlace(place)
             })
         },(e)=>console.warn(e))
     }
@@ -400,11 +395,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         <YaMap
             ref={map}
             nightMode={dark}
-            initialRegion={{lat: 55.754706,
-                lon: 37.707985,
-                zoom: 15,
-                azimuth: 80,
-                tilt: 100}}
+
             style={{ flex: 1, width: '100%'}}
         >
             {
