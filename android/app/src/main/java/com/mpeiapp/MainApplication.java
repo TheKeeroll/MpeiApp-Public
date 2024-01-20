@@ -5,21 +5,18 @@ import android.content.Context;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
-//import com.transistorsoft.rnbackgroundfetch.RNBackgroundFetchPackage;
-import com.thekeeroll.reactnativemail.RNMailPackage;
-import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
+//import com.thekeeroll.reactnativemail.RNMailPackage;
+/*import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
 import ru.vvdev.yamap.RNYamapPackage;
-import com.swmansion.rnscreens.BuildConfig;
 import com.swmansion.rnscreens.RNScreensPackage;
 import com.reactnativechangeicon.ChangeIconPackage;
 import com.oblador.vectoricons.VectorIconsPackage;
-import ru.vvdev.yamap.RNYamapPackage;
 import com.reactnativechangeicon.ChangeIconPackage;
 import com.swmansion.gesturehandler.RNGestureHandlerPackage;
 import com.swmansion.reanimated.ReanimatedPackage;
-import com.swmansion.rnscreens.RNScreensPackage;
+import com.swmansion.rnscreens.RNScreensPackage;*/
+import com.swmansion.rnscreens.BuildConfig;
 import com.swmansion.reanimated.ReanimatedJSIModulePackage;
-//import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
