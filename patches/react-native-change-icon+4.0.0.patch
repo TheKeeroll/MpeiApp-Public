@@ -30,7 +30,7 @@ index 4f89093..6e00dff 100644
  }
  
 diff --git a/node_modules/react-native-change-icon/android/gradle.properties b/node_modules/react-native-change-icon/android/gradle.properties
-index ea49d0e..55e1fff 100644
+index ea49d0e..acd1abb 100644
 --- a/node_modules/react-native-change-icon/android/gradle.properties
 +++ b/node_modules/react-native-change-icon/android/gradle.properties
 @@ -1,5 +1,5 @@
@@ -38,11 +38,12 @@ index ea49d0e..55e1fff 100644
 -ChangeIcon_minSdkVersion=21
 -ChangeIcon_targetSdkVersion=31
 -ChangeIcon_compileSdkVersion=31
+-ChangeIcon_ndkversion=21.4.7075529
 +ChangeIcon_kotlinVersion=1.8.20
 +ChangeIcon_minSdkVersion=23
 +ChangeIcon_targetSdkVersion=34
 +ChangeIcon_compileSdkVersion=34
- ChangeIcon_ndkversion=21.4.7075529
++ChangeIcon_ndkversion=26.1.10909125
 diff --git a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java b/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
 index 07402bc..b6dfa1c 100644
 --- a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
