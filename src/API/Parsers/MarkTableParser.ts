@@ -46,9 +46,11 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
     } return false
   }
 
+  const disciplines: BARSDiscipline[] = []
+  let semId = ''
+
   try{
     const $ = parse(raw)
-    let semId = ''
     $.querySelector('.ddl_StudyFilterSemester')!.querySelectorAll('option').forEach((v)=>{
       if (v.attrs['selected'] == 'selected'){
         semId = v.attrs['value']
@@ -61,9 +63,6 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
       if(v.id.includes('s_ss'))
         $b.push(v)
     })
-
-
-    const disciplines: BARSDiscipline[] = []
 
     for(let i = 0; i < $h.length; i++){
       const headerRaw = $h[i].text.trim()
@@ -231,7 +230,15 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
         semesterID: semId
       } as BARSMarks
     } catch (e: any){
-      if(isBARSError(e)) return e
-      return CreateBARSError('MARK_TABLE_PARSER_FAIL', e)
+      try {
+        return {
+          disciplines,
+          semesterName: " ",
+          semesterID: semId
+        } as BARSMarks
+      }catch (e) {
+        if(isBARSError(e)) return e
+        return CreateBARSError('MARK_TABLE_PARSER_FAIL')
+      }
   }
 }
