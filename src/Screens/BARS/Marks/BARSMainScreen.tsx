@@ -127,7 +127,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                         }}
                         disabled={'-' == '-'}
                         style={[Styles.teacherBtn,{backgroundColor: colors.primary}]}>
-                        <Text style={{color: colors.textUnderline}}>
+                        <Text adjustsFontSizeToFit={true} numberOfLines={3} style={{color: colors.textUnderline}}>
                             {props.discipline.teacher.name.length ? (props.discipline.teacher.name.includes('руководитель') ? props.discipline.teacher.name.replace('(руководитель - ', '\n(рук.') : props.discipline.teacher.name) : '-'}
                         </Text>
                     </TouchableOpacity>
@@ -180,8 +180,16 @@ const Body: React.FC<{navigation: any}> = (props)=>{
         useEffect(() => {
 
             BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters![0].id)
-              .then(() => setRefreshing(false))
+              .then()
+              .catch(e=>{
+                  console.warn(' useEffect: ' + e.toString())
+            })
         }, [])
+
+        if (refreshing){
+            setRefreshing(false)
+        }
+
     }
     switch (marks.status){
         case "FAILED": return <FetchFailed/>
@@ -258,7 +266,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                                         Styles.weekViewText,
                                         {color: weekDColor}
                                     ]}>
-                                    {weekDemoModified ? weekDemonstration : (BARSAPI.Week + ' неделя')}
+                                    {weekDemoModified ? weekDemonstration : (BARSAPI.Week == '-' ? " " : BARSAPI.Week + ' неделя')}
                                 </Text>
                             </View>
                         </View>
