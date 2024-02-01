@@ -913,7 +913,7 @@ export default class BARS{
 
   public FetchQuestionnaires(): Promise<void>{
     console.log('Fetching questionnaires')
-    return fetch(URLS.BARS_QUESTIONNAIRES + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return fetch(URLS.BARS_QUESTIONNAIRES + this.mCurrentData.student!.id + '&query=%7B%22ID%22%3Anull%2C%22State%22%3Anull%2C%22SortOrder%22%3A%22EditEndDate%20desc%2CQuestionnaire.Name%22%2C%22Page%22%3A%221%22%2C%22PageSize%22%3A%22500%22%2C%22SearchText%22%3A%22%22%7D&_=1706828837554', {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const questionnaires = QuestionnairesParser(response)
@@ -1015,9 +1015,10 @@ export default class BARS{
             const markTableRaw = this.mStorage.getString(STORAGE_KEYS.MARKS)
             if(typeof markTableRaw == 'undefined'){
               Store.dispatch(updateMarkTable({status: "FAILED", data: null}))
-              console.warn(marks);
-              throw marks;
+              console.warn(marks)
+              throw marks
             } else {
+              console.warn('updateMarkTable - status: "OFFLINE", data: ' + markTableRaw)
               Store.dispatch(updateMarkTable({status: "OFFLINE", data: JSON.parse(markTableRaw)}))
             }
           } else {
