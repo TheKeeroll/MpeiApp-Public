@@ -16,7 +16,7 @@ const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => 
   const {colors} = useTheme()
   let dates = ''
   let text_color = colors.warning
-  if (item.completed.includes(':')){
+  if (item.status.includes('завершено')){
     dates = 'Заполнена ' + item.completed
     text_color = colors.accent
   }else if (item.fill_until.length > 1){
