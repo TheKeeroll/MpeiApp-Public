@@ -1,26 +1,18 @@
-import React, {Fragment, useRef, useState} from "react";
+import React, { Fragment, useRef, useState } from "react";
 import { TextInput, useTheme } from "react-native-paper";
-import {
-    Alert,
-    FlatList,
-    LayoutAnimation,
-    SafeAreaView,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import {NavigationHeader} from "../CommonComponents/DrawerHeader";
-import {useSelector} from "react-redux";
-import {RootState} from "../../API/Redux/Store";
-import {BARSSchedule, BARSScheduleCell, BARSScheduleLesson, Teacher} from "../../API/DataTypes";
+import { Alert, FlatList, LayoutAnimation, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { NavigationHeader } from "../CommonComponents/DrawerHeader";
+import { useSelector } from "react-redux";
+import { RootState } from "../../API/Redux/Store";
+import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson, Teacher } from "../../API/DataTypes";
 import moment from "moment";
-import {withOpacity} from "../../Themes/Themes";
-import {SCREEN_SIZE} from "../../Common/Constants";
+import { withOpacity } from "../../Themes/Themes";
+import { SCREEN_SIZE } from "../../Common/Constants";
 import LottieView from "lottie-react-native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import BARSAPI from "../../Common/Globals";
 import FetchFailed from "../CommonComponents/FetchFailed";
-import {isBARSError} from "../../API/Error/Error";
+import { isBARSError } from "../../API/Error/Error";
 import Holidays from "../CommonComponents/Holidays";
 import { Button } from "../Login/LoginScreen";
 
@@ -116,9 +108,11 @@ const DateCell: React.FC<{item: BARSScheduleCell, index: number, selectedIndex: 
 }
 
 const DateSelector: React.FC<{days: BARSScheduleCell[], selectedIndex: number, initScrollIndex: number, onDateSelect:(index: number)=>void}> = (props) => {
+    const dateSelectFlatListRef = useRef<FlatList | null>(null)
     return(
         <View style={{width: '100%', marginTop: 10, height: 80}}>
             <FlatList
+                ref={dateSelectFlatListRef}
                 data={props.days}
                 renderItem={({item,index}:{item:BARSScheduleCell, index: number})=>
                     <DateCell item={item} index={index} selectedIndex={props.selectedIndex} onPress={props.onDateSelect}/>
@@ -127,6 +121,16 @@ const DateSelector: React.FC<{days: BARSScheduleCell[], selectedIndex: number, i
                 showsHorizontalScrollIndicator={false}
                 ItemSeparatorComponent={()=><View style={{width: 10}}/>}
                 initialScrollIndex={props.initScrollIndex}
+                getItemLayout={(data, index) => (
+                  { length: 100, offset: 100 * index, index }
+                )}
+                onScrollToIndexFailed={(info) => {
+                    // Обработка ошибки прокрутки к индексу
+                    console.warn("Failed to scroll to index!")
+                    const wait = new Promise(resolve => setTimeout(resolve, 500))
+                    wait.then(() => {
+                        dateSelectFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
+                }}
             />
         </View>
     )
@@ -288,7 +292,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const EmptyDay = () => (
         <View style={{width: '100%', alignSelf: 'stretch', flex: 1, alignItems: 'center', justifyContent :'center'}}>
-            <Text style={{fontSize: 25, color: withOpacity(colors.text, 70)}}>Сегодня пар нет !</Text>
+            <Text style={{fontSize: 25, color: withOpacity(colors.text, 70)}}> </Text>
         </View>
     )
 
@@ -343,31 +347,48 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             case "ERROR": return  <></>
             case "OK": {
                 console.log("Teachers` schedule: ", teacherSchedule.current!.days[selectedDate])
-            return (
-                <Fragment>
-                    <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-                    <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                        <NavigationHeader backable {...props} title={teacherSchedule.current!.fullTeacherName!}/>
-                        <DateSelector days={teacherSchedule.current!.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
-                        {typeof teacherSchedule.current!.days[selectedDate] != 'undefined' ?
-                            <FlatList
-                                style={{width: '100%', marginTop: 10}}
-                                contentContainerStyle={{alignItems: 'center'}}
-                                data={teacherSchedule.current!.days[selectedDate].lessons}
-                                renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
-                                    <LessonCell requestMode {...props} item={item} index={index} isToday={IsToday()}/>
-                                }
-                                ItemSeparatorComponent={()=><View style={{height: 10}}/>}
-                                getItemLayout={(data, index) => (
+                // const flatListRef = useRef<FlatList | null>(null)
+                return (
+                      <Fragment>
+                          <SafeAreaView style={{ flex: 0, backgroundColor: colors.backdrop }} />
+                          <SafeAreaView style={[{
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flex: 1,
+                              backgroundColor: colors.background
+                          }]}>
+                              <NavigationHeader backable {...props} title={teacherSchedule.current!.fullTeacherName!} />
+                              <DateSelector days={teacherSchedule.current!.days} selectedIndex={selectedDate}
+                                            onDateSelect={setSelectedDate.bind(this)}
+                                            initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate} />
+                              {typeof teacherSchedule.current!.days[selectedDate] != 'undefined' ?
+                                <FlatList
+                                  // ref={flatListRef}
+                                  style={{ width: '100%', marginTop: 10 }}
+                                  contentContainerStyle={{ alignItems: 'center' }}
+                                  data={teacherSchedule.current!.days[selectedDate].lessons}
+                                  renderItem={({ item, index }: { item: BARSScheduleLesson, index: number }) =>
+                                    <LessonCell requestMode {...props} item={item} index={index} isToday={IsToday()} />
+                                  }
+                                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                                  getItemLayout={(data, index) => (
                                     { length: 100, offset: 100 * index, index }
-                                )}
-                            />
-                            : <EmptyDay/>}
-                    </SafeAreaView>
-                </Fragment>
+                                  )}
+                                  /*onScrollToIndexFailed={(info) => {
+                                      // Обработка ошибки прокрутки к индексу
+                                      console.warn("Failed to scroll to index!")
+                                      const wait = new Promise(resolve => setTimeout(resolve, 500))
+                                      wait.then(() => {
+                                          flatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
+                                  }}*/
+                                />
+                                : <EmptyDay />}
+                          </SafeAreaView>
+                      </Fragment>
 
-            )}
-        }
+                    )
+                }
+            }
     }
 
     switch(schedule.status){
@@ -386,11 +407,12 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             let unlistedDateIndex = schedule.data!.days.findIndex(item => item.date.includes('29.02'))
 
             let editableScheduleData = schedule.data!
-            if (unlistedDateIndex >= 0){
+            if ((unlistedDateIndex >= 0) && (new Date().getFullYear() % 4 !== 0)){
                 editableScheduleData.days = editableScheduleData.days.filter(item => !item.date.includes('29.02'))
                 console.log("Unlisted date filtered out!")
             }
 
+            const lastFlatListRef = useRef<FlatList | null>(null)
             return (
                 <Fragment>
                     <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
@@ -422,6 +444,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <DateSelector days={editableScheduleData?.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
                         {typeof schedule.data!.days[selectedDate] != 'undefined' ?
                             <FlatList
+                                ref={lastFlatListRef}
                                 style={{width: '100%', marginTop: 10}}
                                 contentContainerStyle={{alignItems: 'center'}}
                                 data={editableScheduleData.days[selectedDate].lessons}
@@ -429,6 +452,16 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                     <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
                                 }
                                 ItemSeparatorComponent={()=><View style={{height: 10}}/>}
+                                getItemLayout={(data, index) => (
+                                  { length: 100, offset: 100 * index, index }
+                                )}
+                                onScrollToIndexFailed={(info) => {
+                                    // Обработка ошибки прокрутки к индексу
+                                    console.warn("Failed to scroll to index!")
+                                    const wait = new Promise(resolve => setTimeout(resolve, 500))
+                                    wait.then(() => {
+                                        lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
+                                }}
                             />
                             : <EmptyDay/>}
                     </SafeAreaView>
