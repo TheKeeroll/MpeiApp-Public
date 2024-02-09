@@ -12,11 +12,22 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
       .querySelector('div')!
       .querySelector('div')!
   let _FIO : string
+  let _middleName: string
+  let _group: string
   try {
      _FIO = firstPart.childNodes[1].querySelector('span')!.text.trim()
+    if (_FIO.split(' ')[2].includes('№ЗК')){
+      _middleName = ' '
+      _group = _FIO.split(' ')[5]
+    } else {
+      _middleName = _FIO.split(' ')[2]
+      _group = _FIO.split(' ')[6]
+    }
   }catch (e) {
     console.warn("on _FIO: " + e);
     _FIO = 'ФИО (не распарсилось!)'
+    _middleName = ' '
+    _group = ' '
   }
   let _course: string
   try {
@@ -86,10 +97,10 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
     const studentInfo: BARSStudentInfo = {
       name: _FIO.split(' ')[1],
       surname: _FIO.split(' ')[0],
-      middleName: _FIO.split(' ')[2],
+      middleName: _middleName,
       mail: _mail,
       indexBook: _FIO.split(' - ')[1].split(') ')[0],
-      group: _FIO.split(' ')[6],
+      group: _group,
       course: _course,
       qualification: _qualification,
       direction: _direction,
