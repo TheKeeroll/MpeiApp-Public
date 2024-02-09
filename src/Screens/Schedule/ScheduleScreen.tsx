@@ -122,7 +122,7 @@ const DateSelector: React.FC<{days: BARSScheduleCell[], selectedIndex: number, i
                 ItemSeparatorComponent={()=><View style={{width: 10}}/>}
                 initialScrollIndex={props.initScrollIndex}
                 getItemLayout={(data, index) => (
-                  { length: 100, offset: 100 * index, index }
+                  { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
                 )}
                 onScrollToIndexFailed={(info) => {
                     // Обработка ошибки прокрутки к индексу
@@ -372,7 +372,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                   }
                                   ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
                                   getItemLayout={(data, index) => (
-                                    { length: 100, offset: 100 * index, index }
+                                    { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
                                   )}
                                   /*onScrollToIndexFailed={(info) => {
                                       // Обработка ошибки прокрутки к индексу
@@ -453,7 +453,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 }
                                 ItemSeparatorComponent={()=><View style={{height: 10}}/>}
                                 getItemLayout={(data, index) => (
-                                  { length: 100, offset: 100 * index, index }
+                                  { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
                                 )}
                                 onScrollToIndexFailed={(info) => {
                                     // Обработка ошибки прокрутки к индексу
