@@ -4,7 +4,7 @@
 <img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/dragons/playstore.png width=200/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/cool/playstore.png width=200/>
 
 ## Ключевые оссобенности
-- Доступно как для Android, так и для IOS
+- Доступно как для [Android](https://play.google.com/store/apps/details?id=com.mpeiapp), так и для [IOS](https://apps.apple.com/ru/app/mpeiapp/id1618910681)
 - Основные функции работают и без интернета
 - В наличии все значимые разделы БАРС
 - Интерактивная 3D-карта с важными точками, фильтрами по их категориям <strike>и построением маршрутов</strike> - [интеграция сервиса Яндекс.Карты](https://github.com/volga-volga/react-native-yamap)
