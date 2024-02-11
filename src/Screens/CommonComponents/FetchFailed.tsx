@@ -8,7 +8,7 @@ const FetchFailed: React.FC = () => {
         <Fragment>
             <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
             <SafeAreaView style={{flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center'}}>
-                <Text numberOfLines={1} adjustsFontSizeToFit style={{color: colors.text, fontSize: 20, fontWeight: '700'}}>Не удалось обработать ответ БАРСа!</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{color: colors.text, fontSize: 20, fontWeight: '700'}}>Не удалось обработать ответ БАРС!</Text>
             </SafeAreaView>
         </Fragment>
     )
