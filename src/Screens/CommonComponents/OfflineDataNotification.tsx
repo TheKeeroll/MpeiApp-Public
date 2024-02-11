@@ -19,7 +19,7 @@ const OfflineDataNotification: React.FC = () => {
                 }
                     } style={[Styles.main, {backgroundColor: colors.primary}]}>
                     <Text style={{paddingHorizontal: 5, color: colors.text, fontWeight: '700'}}>
-                        Проблемы с сетью или на стороне БАРСа. Демонстрируется последняя загруженная версия, данные могли устареть!
+                        Проблемы с сетью или на стороне БАРС. Демонстрируется последняя загруженная версия, данные могли устареть!
                     </Text>
                 </TouchableOpacity>
             }

@@ -455,7 +455,7 @@ export default class BARS{
           } else {
             console.log("Data download time exceeded!", e)
             if (firstStart) {
-              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - слабое/нестабильное интернет-соединение, или проблемы со стороны БАРСа! Проверьте качество сети и попробуйте ещё раз."))
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - слабое/нестабильное интернет-соединение, или проблемы со стороны БАРС! Проверьте качество сети и попробуйте ещё раз."))
             }
             else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           }
