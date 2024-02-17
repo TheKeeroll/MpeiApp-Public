@@ -171,9 +171,16 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
           if (kmName.includes("(критерии)")){
             kmName = kmName.replace("   (критерии)", "")
           }
+          let kmWeight = "-"
+          try {
+            kmWeight = k.childNodes[3].text
+          } catch (e:any){
+            console.warn('kmWeight trouble! ' + e.toString())
+          }
           const km: KM = {
             marks:[],
             week: kmWeek,
+            weight: kmWeight,
             name: kmName
           }
           let rawKmMark = ' '

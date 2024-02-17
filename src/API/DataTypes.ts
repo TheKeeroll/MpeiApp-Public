@@ -49,6 +49,7 @@ export interface Mark{
 export interface KM {
   name: string
   week: string
+  weight: string
   marks: Mark[]
 }
 
