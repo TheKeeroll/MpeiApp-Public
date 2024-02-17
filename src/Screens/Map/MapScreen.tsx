@@ -85,12 +85,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             case "Еда": name = 'fast-food'; break;
             case "Кафедры": name = 'school'; break;
             case "Точки интереса": name = 'star'; break;
+            case "Корпуса": name = "business"; break;
         }
-        return (
-          props.category == 'Корпуса' ?
-            <FA5Icon.default name={'school'} color={colors.text} size={25}/>
-            :<IonIcon.default name={name} color={colors.text} size={25}/>
-        )
+
+        return <IonIcon.default name={name} color={colors.text} size={25} />
     }
 
     const GetUniqueFoodIcon: ImageSource = (place: Place) => {
@@ -274,32 +272,36 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 setExpanded(true)
             }}
             style={[Styles.searchCollapsed, { backgroundColor: colors.primary}]}>
-              <Text style={{ fontSize: 18, color: colors.text}}>Что ищем ?</Text>
+              <Text style={{ fontSize: 20, color: colors.text}}>Что ищем?</Text>
           </TouchableOpacity>
         )
         const Expanded = () => (
-          <View
-            style={[Styles.searchExpanded, {backgroundColor: colors.surface}]}>
-              {
-                  <ScrollView style={{marginTop: 5}} contentContainerStyle={{alignItems: 'center'}}>
-                      {
-                          selectedCategory == 'main' ?
-                            CATEGORIES.map((val, key)=><Category key={key} category={val} onPress={setSelectedCategory}/>)
-                            : PLACES.get(selectedCategory)!.map((val, key)=><CategoryDetail key={key} place={val} onPress={OnNavigateWrap.bind(this)}/>)
-                      }
-                  </ScrollView>
-              }
-              <TouchableOpacity onPress={()=> {
-                  if(selectedCategory == 'main'){
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                      setExpanded(false)
-                  } else {
-                      setSelectedCategory('main')
-                  }
-              }} style={{marginVertical: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
-                  <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
-                  <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>{selectedCategory != 'main' ? 'Назад' : 'Свернуть'}</Text>
-              </TouchableOpacity>
+          <View style={[Styles.searchExpanded, {backgroundColor: colors.surface}]}>
+            {
+                <ScrollView>
+                    {
+                        selectedCategory == 'main' ? 
+                            CATEGORIES.map((val, key)=> 
+                                <Category key={key} category={val} onPress={setSelectedCategory}/>
+                            )
+                        :
+                            PLACES.get(selectedCategory)!.map((val, key)=> 
+                                <CategoryDetail key={key} place={val} onPress={OnNavigateWrap.bind(this)}/>
+                            )
+                    }
+                </ScrollView>
+            }
+            <TouchableOpacity onPress={()=> {
+                if(selectedCategory == 'main'){
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                    setExpanded(false)
+                } else {
+                    setSelectedCategory('main')
+                }
+            }} style={{marginVertical: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
+                <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
+                <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>{selectedCategory != 'main' ? 'Назад' : 'Свернуть'}</Text>
+            </TouchableOpacity>
 
           </View>
         )
@@ -315,27 +317,30 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const Category: React.FC<{category: PlaceCategory, onPress:(category: PlaceCategory)=>void}> = (props) => {
         const {colors} = useTheme()
         const isCategoryVisible = isShowCategory[props.category];
+        
         return (
-          <View style={{flexDirection: 'row', maxWidth:SCREEN_SIZE.width * .75}}>
-              <TouchableOpacity onPress={()=>{
-                  props.onPress(props.category)
-                  if(!isCategoryVisible){
-                      handleCategoryToggle.bind(this, props.category)}
-              }}
-                                style={[Styles.category,{backgroundColor: colors.primary}]}>
-                  <View style={{height: '100%', flex: .15, alignItems: 'center', justifyContent: 'center'}}>
-                      <GetCategoryIcon category={props.category}/>
-                  </View>
-                  <Text numberOfLines={1} adjustsFontSizeToFit={true} style={[Styles.categoryText, {color: colors.text}]}>{props.category}</Text>
-              </TouchableOpacity>
-              <Switch
-                  value={isCategoryVisible}
-                  onValueChange={handleCategoryToggle.bind(this, props.category)}
-                  color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
-                  style={{alignItems: 'center', justifyContent: 'center'}}
-              />
-          </View>
-        )
+            <View style={{ maxWidth:SCREEN_SIZE.width * .75}}>
+                <TouchableOpacity onPress={()=>{
+                    props.onPress(props.category)
+                    if(!isCategoryVisible) {
+                        handleCategoryToggle.bind(this, props.category)
+                    }
+                }} style={[Styles.category,{backgroundColor: colors.primary, borderColor: colors.surface}]}>
+                    <View style={{ borderRadius: 4, backgroundColor: colors.surface, padding: 6 }}>
+                        <GetCategoryIcon category={props.category}/>
+                    </View>
+
+                    <Text numberOfLines={1} adjustsFontSizeToFit={true} style={[Styles.categoryText, {color: colors.text}]}>{props.category}</Text>
+                    
+                    <Switch
+                        value={isCategoryVisible}
+                        onValueChange={handleCategoryToggle.bind(this, props.category)}
+                        color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
+                        style={{ marginLeft: "auto" }}
+                    />
+                </TouchableOpacity>  
+            </View>
+        );
     }
 
     const CategoryDetail: React.FC<{place: Place, onPress:(place: Place)=>void}> = (props) => {
@@ -504,7 +509,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 />
             }
             {
-                routes != [] &&
+                routes.length != 0 &&
                 <RouteSelector routes={routes} onRouteSelect={(route)=>{
                     setRoutes([])
                     setShowHowToGet(true)
@@ -549,24 +554,25 @@ const Styles = StyleSheet.create({
         position: 'absolute',
     },
     searchExpanded:{
-        width: '80%',
-        height: '70%',
-        borderRadius: 10,
+        borderRadius: 0,
+        borderStyle: "solid",
+        borderTopRightRadius: 8,
+        borderBottomWidth: 0,
+        borderLeftWidth: 0,
+        borderWidth: 1,
+        padding: "2.5%",
         alignItems:'center',
         justifyContent: 'center',
-        marginLeft: 5,
-        marginBottom: 5,
         bottom: FROM_LOGIN ? 80 : 0,
         position: 'absolute'
     },
     category:{
-        width: SCREEN_SIZE.width * .55,
-        height: 50,
+        width: SCREEN_SIZE.width * .75,
         backgroundColor: 'red',
         marginVertical: 5,
-        borderRadius: 5,
+        padding: "2.5%",
+        borderRadius: 8,
         alignItems: 'center',
-        justifyContent: 'center',
         flexDirection: 'row'
     },
     detailedCategory:{
@@ -574,13 +580,15 @@ const Styles = StyleSheet.create({
         height: 50,
         backgroundColor: 'red',
         marginVertical: 5,
+        padding: "2.5%",
         borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row'
     },
     categoryText:{
-        paddingLeft: 5,
+        marginLeft: 8,
+        fontSize: 16,
         alignSelf: 'center',
         flex: .85
     }

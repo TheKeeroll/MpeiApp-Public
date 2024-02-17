@@ -21,6 +21,7 @@ import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import Moment from "moment";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import { APP_CONFIG } from "../../../Common/Config";
 const Stack = createStackNavigator()
 
 let weekDemonstration = "";
@@ -46,7 +47,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     const GetMainMark = () => {
         const m = props.discipline.resultMarks[props.discipline.resultMarks.length - 1].mark
         //console.log(m == '-' ? props.discipline.sredBall : typeof m == 'undefined' ? '-' : m)
-        //if(APP_CONFIG.TEST_MODE) return '-'
+        if(APP_CONFIG.TEST_MODE) return '-'
         return m == '-' ? props.discipline.sredBall : typeof m == 'undefined' ? '-' : m
 
     }
