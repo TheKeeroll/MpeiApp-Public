@@ -32,11 +32,12 @@ const App: React.FC = () =>{
 
 
 const AppEntry: React.FC = () => {
-    const [theme, setTheme] = useState(BARSAPI.Theme)
+    const [theme, setTheme] = useState(BARSAPI.Theme);
     DeviceEventEmitter.addListener('SET_THEME', (themeName: string)=>{
         console.log("Theme set")
         setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
     })
+
     return (
         <NavigationContainer>
             <ReduxProvider store={Store}>

@@ -15,6 +15,7 @@ const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                 <ScrollView style={{width: '90%'}}>
                     <ListAvatarItem title={'TheKeeroll'} link={'https://vk.com/dead_inside_0x41'} textStyle={{fontWeight: 'bold'}} image={require('../../../assets/images/DevAvatars/Z.png')}/>
                     <ListAvatarItem title={'DragonSavA'} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.png')}/>
+                    <ListAvatarItem title={'Doogls'} link={'https://vk.com/doogls'} textStyle={{fontWeight: 'bold'}} image={require('../../../assets/images/Gratitudies/Doogls.jpg')}/>
                 </ScrollView>
             </SafeAreaView>
         </Fragment>

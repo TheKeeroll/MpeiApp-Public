@@ -12,11 +12,6 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Что нового ?'}/>
                 <ScrollView style={{width: '90%'}}>
-                    <WhatsNewLogo title={'Первые хотфиксы релиза'} version={'1.0.1 - 1.0.3'}/>
-                    <WhatsNewChange title={'Исправлена некорректная начальная прокрутка расписания'}/>
-                    <WhatsNewChange title={'Адаптация получения данных для случая отсутствия отчества у студента'}/>
-                    <WhatsNewChange title={'Коррекция авторизации для редкого состояния личных кабинетов'}/>
-                    <WhatsNewChange title={'Реализован показ веса каждого КМ'}/>
 
                     <WhatsNewLogo title={'Долгожданный релиз!'} version={'1.0.0'}/>
                     <WhatsNewChange title={'Приложение полноценно выпущено в Google Play и App Store!'}/>
@@ -76,11 +71,11 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <WhatsNewChange title={'Визуальные и другие улучшения'}/>
 
                     <WhatsNewLogo title={'Что, первые фиксы года прямо на сессии?! Да!'} version={'0.4.3-alpha - 0.4.4-alpha'}/>
-                    <WhatsNewChange title={'Корректное отображение БАРС почти у всех пользователей!'}/>
+                    <WhatsNewChange title={'Корректное отображение БАРСа почти у всех пользователей!'}/>
                     <WhatsNewChange title={'Мелкие исправления и улучшения'}/>
 
                     <WhatsNewLogo title={'Новогоднее обновление!'} version={'0.4.2-alpha'} />
-                    <WhatsNewChange title={'Анализ КМ после закрытия БАРС!("Все КМ сданы"/"Долг !")'}/>
+                    <WhatsNewChange title={'Анализ КМ после закрытия БАРСа!("Все КМ сданы"/"Долг !")'}/>
                     <WhatsNewChange title={'Исправление получения текущей учебной недели (снова)'}/>
                     <WhatsNewChange title={'Долгожданный выпуск большинства последних изменений под IOS!'}/>
                     <WhatsNewChange title={'Всех с наступающим (или уже с наступившем) !'}/>

@@ -28,12 +28,10 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Максим'} link={'https://vk.com/m.nistratov'} image={require('../../../assets/images/Gratitudies/Maksim.png')}/>
                     <ListAvatarItem title={'Анастасия'} link={'https://vk.com/nikelkatalizator'} image={require('../../../assets/images/Gratitudies/Anastasia.png')}/>
                     <ListAvatarItem title={'Екатерина'} link={'https://vk.com/s_kat27'} image={require('../../../assets/images/Gratitudies/Katya.png')}/>
-                    <ListAvatarItem title={'Степан'} link={'https://vk.com/vvvizg'} image={require('../../../assets/images/Gratitudies/Adam.png')}/>
+                    <ListAvatarItem title={'Адам'} link={'https://vk.com/adamborsh'} image={require('../../../assets/images/Gratitudies/Adam.png')}/>
                     <ListAvatarItem title={'Александр'} link={'https://vk.com/morbiuse'} image={require('../../../assets/images/Gratitudies/shabanin.png')}/>
                     <ListAvatarItem title={'Богдан Потапкин'} link={'https://vk.com/bodyapotapkin'} image={require('../../../assets/images/Gratitudies/BogdanPotapkin.png')}/>
                     <ListAvatarItem title={'Андрей Кошеваров'} link={'https://vk.com/drewshiiiiish'} image={require('../../../assets/images/Gratitudies/AndreyKoshevarov.png')}/>
-                    <ListAvatarItem title={'Лилияна Рожница'} link={'https://vk.com/lovlycherry'} image={require('../../../assets/images/Gratitudies/Lilia.png')}/>
-                    <ListAvatarItem title={'Артём Темнышев'} link={'https://vk.com/begun1ok'} image={require('../../../assets/images/Gratitudies/ArtemTemn.png')}/>
                     <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.png')}/>
 
                     <ListSeparator title={'Наполнение/уточнение карты'}/>
@@ -44,6 +42,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
 
                     <ListSeparator title={'Дизайн'}/>
                     <ListAvatarItem title={'Максим Крайнов'} link={'https://vk.com/id240979343'} image={require('../../../assets/images/Gratitudies/MaxKryanov.png')}/>
+                    <ListAvatarItem title={'Алексей Давыденок'} link={'https://vk.com/doogls'} image={require('../../../assets/images/Gratitudies/Doogls.jpg')}/>
 
                     <ListSeparator title={'Альтернативные иконки'}/>
                     <ListAvatarItem title={"Алиса 'Alnijen' Балашова"} link={'https://vk.com/alnijen'} image={require('../../../assets/images/Gratitudies/alnijen.png')}/>

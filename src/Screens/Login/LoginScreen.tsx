@@ -66,11 +66,11 @@ const LoginScreen: React.FC = () => {
     return (
         <Fragment>
             <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
-            <SafeAreaView style={{flex: 1, backgroundColor: colors.background, alignItems: 'center'}}>
-                <View style={{width: '85%'}}>
-                    <Text style={{fontWeight: 'bold', fontSize: 48, marginBottom: '5%', color: withOpacity(colors.text, 90)}}>Mpei App</Text>
+            <SafeAreaView style={{flex: 1, backgroundColor: colors.background, alignItems: 'center' }}>
+                <View style={{width: '85%', marginTop: "30%"}}>
+                    <Text style={{fontWeight: 'bold', fontSize: 48, marginBottom: '5%', color: withOpacity(colors.text, 90)}}>MPEI App</Text>
                     <View style={{width: '100%', flexDirection: 'row'}}>
-                        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Кросплатформенный </Text>
+                        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Мобильный </Text>
                         <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>БАРС</Text>
                     </View>
                     <View style={{width: '100%', flexDirection: 'row'}}>
@@ -85,7 +85,7 @@ const LoginScreen: React.FC = () => {
                     </View>
                 </View>
                 {showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
-                    <View style={{width: '90%', marginTop: '10%'}}>
+                    <View style={{width: '90%', marginTop: '5%'}}>
                         <TextInput
                             onChangeText={t=>setLogin(t)}
                             placeholder={'Логин'}
@@ -104,11 +104,11 @@ const LoginScreen: React.FC = () => {
                             placeholderTextColor={withOpacity(colors.text, 40)}
                             underlineColor={colors.text}
                             activeUnderlineColor={colors.textUnderline}
-                            style={{backgroundColor: colors.background, borderRadius: 0}}
+                            style={{backgroundColor: colors.background, borderRadius: 5}}
                             theme={{colors}}
                         />
-                        <View style={{height: '7%'}}/>
-                        <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
+                        <View style={{height: '7.5%'}}/>
+                        <View style={{marginBottom: '5%', flexDirection: 'row', alignSelf: 'center', justifyContent: 'space-between'}}>
                             <Button title={'Войти'} onPress={()=>{
                                 LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                 setShowLoading(true)
@@ -124,15 +124,15 @@ const LoginScreen: React.FC = () => {
                                         Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
                                         DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
                                 }), 900)
-                            }} style={{ width: '60%', aspectRatio: 4.8}}/>
-                            <Button title={'?'} onPress={shHCb} style={{ width: '12.5%', aspectRatio: 1}}/>
+                            }} style={{ width: '100%', aspectRatio: 4.8 }}/>
+                        </View>
+                        <View style={{marginBottom: '2.5%', flexDirection: 'row', alignSelf: 'center', justifyContent: 'space-between'}}>
+                            <Button title={'Поддержка'} onPress={()=>Linking.openURL('https://vk.com/mpeiapp')} style={{ width: '65%', aspectRatio: 4.25}}/>
+                            <Button title={'?'} onPress={shHCb} style={{ marginLeft: "2.5%", width: "15%", aspectRatio: 1}}/>
                             <Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
                                 //@ts-ignore
                                 navigator.navigate('mapLogin', {fromLoginScreen: true})
-                            }} style={{ width: '12.5%', aspectRatio: 1}}/>
-                        </View>
-                        <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
-                            <Button title={'Поддержка'} onPress={()=>Linking.openURL('https://vk.com/mpeiapp')} style={{ width: '60%', aspectRatio: 4.8}}/>
+                            }} style={{ marginLeft: "2.5%", width: "15%", aspectRatio: 1}}/>
                         </View>
                         <View style={{flexDirection: 'row'}}>
                             <Text style={{color: withOpacity(colors.text, 30)}}>Версия: </Text>

@@ -61,7 +61,7 @@ const DrawerHeader: React.FC = () => {
     }
 
     return (
-        <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
+        <View style={{width: '90%', alignSelf: 'center', padding: '2.5%', borderRadius: 8, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface, shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 2, width: 0}}}>
             <View style={{width: '100%', flexDirection: 'row'}}>
                 <View style={{flex: .7}}>
                     <View style={{width: '100%', flexDirection: 'row'}}>
@@ -106,11 +106,11 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
         }
     }
     return (
-        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, borderRadius: 5, height: 45, backgroundColor: isFocused ? colors.highlight : colors.surface}}>
-            <View style={{width: '12.5%', alignItems: 'center', justifyContent: 'center', borderRadius: 5, height: 35, marginHorizontal: 5, backgroundColor: colors.surface}}>
+        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, borderRadius: 8, padding: 8, backgroundColor: isFocused ? colors.highlight : colors.surface, shadowOpacity: .2, shadowColor: '#00000040', shadowOffset: {height: 1, width: 0}}}>
+            <View style={{alignItems: 'center', justifyContent: 'center', borderRadius: 4, backgroundColor: colors.surface, padding: 6}}>
                 {props.iconComponent}
             </View>
-            <Text style={{fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
+            <Text style={{ marginLeft: 12, fontWeight: '600', fontSize: 16, color: isFocused ? "#fff" : colors.text }}>{props.title}</Text>
         </TouchableOpacity>
     )
 }

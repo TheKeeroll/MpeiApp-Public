@@ -21,6 +21,7 @@ import {APP_CONFIG} from "../../Common/Config"
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors, dark} = useTheme()
     const [isDark, setDark] = useState(dark)
+    const [ isOld, setOld ] = useState(BARSAPI.DesignStyle);
 
     const onThemeChange = (value: boolean) => {
         setDark(p=>!p)
@@ -39,9 +40,16 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     } title={'Тема'} value={isDark} onPress={onThemeChange.bind(this)}/>
                     <IconSelector items={[]}
                         icon={
-                            <IonIcon.default name={'square'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
+                            <MtIcon.default name={'public'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'Иконка'}
                     />
+                    <ListSwitch icon={
+                        <MtIcon.default name={'architecture'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
+                    } title={'Старый дизайн'} value={isOld} onPress={ (val) => { 
+                        setOld(val);
+                        BARSAPI.SetDesignStyle(val)
+                    }}/>
+
                     <ListSeparator title={'Прочее'}/>
                     <ListButton icon={
                         <EnIcon.default name={'new'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
@@ -52,7 +60,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     }
                         title={'Разработчики'} onPress={()=>props.navigation.navigate('devs')}/>
                     <ListButton icon={
-                        <McIcon.default name={'robot-love'} adjustsFontSizeToFit size={30} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                        <McIcon.default name={'heart'} adjustsFontSizeToFit size={30} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
                                 title={'Спасибо'} onPress={()=>props.navigation.navigate('gratuities')}/>
                     <ListButton icon={

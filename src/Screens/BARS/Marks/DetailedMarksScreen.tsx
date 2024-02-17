@@ -46,10 +46,8 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
     const mark = SortMarksByDate(props.item.marks)[props.item.marks.length - 1];
 
     let week_color = colors.textUnderline
-    let week_font: "normal" | "bold" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | undefined = "normal"
     if (parseInt(props.item.week.trim().split(' (')[0]) == parseInt(BARSAPI.mCurrentWeek)){
         week_color = colors.notification
-        week_font = "bold"
     }
     return (
         <View style={[Styles.cellView, {backgroundColor: colors.surface}]}>
@@ -61,18 +59,11 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
                         {props.item.name.trim()}
                     </Text>
                 </View>
-                <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                    <Text
-                      numberOfLines={1}
-                      style={{color: withOpacity(week_color, 60), fontWeight: week_font, marginTop: 2}}>
-                        {'Неделя ' + props.item.week.trim().split(' (')[0]}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{color: withOpacity(colors.text, 60), marginTop: 2}}>
-                        {props.item.weight.trim() + '%'}
-                    </Text>
-                </View>
+                <Text
+                    numberOfLines={1}
+                    style={{color: withOpacity(week_color, 60), marginTop: 2}}>
+                    {'Неделя ' + props.item.week.trim().split(' (')[0]}
+                </Text>
             </View>
 
             <TouchableOpacity

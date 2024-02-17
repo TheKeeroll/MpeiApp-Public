@@ -138,6 +138,23 @@ export default class BARS{
     }
   }
 
+  public get DesignStyle(){
+    const themeRaw = this.mStorage.getBoolean(STORAGE_KEYS.DESGNOLD)
+    if(typeof themeRaw == 'undefined' && themeRaw != ''){
+      this.mStorage.set(STORAGE_KEYS.DESGNOLD, false)
+      return false
+    } else {
+      try{
+        return themeRaw
+      } catch (e){
+        return false
+      }
+    }
+  }
+  public SetDesignStyle(val: boolean){
+    this.mStorage.set(STORAGE_KEYS.DESGNOLD, val)
+    DeviceEventEmitter.emit('SET_OLD', val)
+  }
 
 
   public get Theme(){
@@ -383,21 +400,8 @@ export default class BARS{
             }).then(r => r.text()).then((response) => {
               const $ = cheerio.load(response);
               const last = $("#tbl__PartialListStudent > tbody").find("tr").length;
-              let target_acc = last
-              let acc_status = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(5)`)[0].children[0].data
-              if (acc_status.includes('отчислен')){
-                console.log('The status is "Expelled" in the last account! An attempt to find a valid one...')
-                for (let i = (last - 1); i >= 1; i--) {
-                  let textForCheck = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${i}) > td:nth-child(5)`)[0].children[0].data
-                  if (!textForCheck.includes("отчислен")) {
-                    target_acc = i
-                    console.log('An active account has been detected! Authorization has been redirected to it.')
-                    break
-                  }
-                }
-              }
-              const id = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${target_acc}) > td:nth-child(1) > a`).attr("href").trim()
-              const link = URLS.BARS_MAIN + id.replace("/bars_web/", "")
+              const id = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(1) > a`).attr("href").trim();
+              const link = URLS.BARS_MAIN + id.replace("/bars_web/", "");
 
               return fetch(link, {
                 method: "GET",
@@ -455,7 +459,7 @@ export default class BARS{
           } else {
             console.log("Data download time exceeded!", e)
             if (firstStart) {
-              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - слабое/нестабильное интернет-соединение, или проблемы со стороны БАРС! Проверьте качество сети и попробуйте ещё раз."))
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - слабое/нестабильное интернет-соединение, или проблемы со стороны БАРСа! Проверьте качество сети и попробуйте ещё раз."))
             }
             else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           }
@@ -610,8 +614,13 @@ export default class BARS{
     console.log('Fetching schedule')
     const group = this.mCurrentData.student!.group
     const g = new Date();
-    g.substractDays(APP_CONFIG.DATE_RANGE);
+    
+    g.setDate(g.getDate() - (g.getDay() + 6) % 7); // прошлый понедельник
+    //g.substractDays(7);
     const dateStart = moment(g, 'DD.MM.YYYY');
+
+    console.log(dateStart.format('YYYY.MM.DD'))
+
     g.addDays(APP_CONFIG.DATE_RANGE * 4)
     const dateEnd = moment(g, 'DD.MM.YYYY');
 
@@ -638,6 +647,7 @@ export default class BARS{
           todayIndex: -1
         }
         let grouped = groupBy(r, 'date');
+        console.log(grouped)
         for(const [key, value] of Object.entries(grouped)){
           const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
           const day: BARSScheduleCell = {

@@ -7,6 +7,7 @@ import BARSDrawer from "./BARS/BARSDrawer";
 import ScheduleStack from "./Schedule/ScheduleStack";
 import {useTheme} from "react-native-paper";
 import SettingsStack from "./Settings/SettingsStack";
+import BARSAPI from "../Common/Globals";
 
 const Stack = createBottomTabNavigator()
 
@@ -14,9 +15,11 @@ const Stack = createBottomTabNavigator()
 const Navigator:React.FC = () => {
     const {colors} = useTheme()
 
+    console.log(BARSAPI.DesignStyle, "sdsd")
+
     return (
         <Stack.Navigator initialRouteName={'main'} screenOptions={{headerShown: false,
-          tabBarStyle:{borderTopWidth: 0, backgroundColor: colors.backdrop}}}
+          tabBarStyle:{borderTopWidth: 1, backgroundColor: colors.backdrop}}}
         >
           <Stack.Screen
             name={'map'}

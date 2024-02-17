@@ -162,12 +162,6 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
           } catch (e:any){
             console.warn('kmWeek trouble! ' + e.toString())
           }
-          let kmWeight = "-"
-          try {
-            kmWeight = k.childNodes[3].text
-          } catch (e:any){
-            console.warn('kmWeight trouble! ' + e.toString())
-          }
           let kmName = " "
           try {
             kmName = k.childNodes[1].text
@@ -180,7 +174,6 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
           const km: KM = {
             marks:[],
             week: kmWeek,
-            weight: kmWeight,
             name: kmName
           }
           let rawKmMark = ' '
