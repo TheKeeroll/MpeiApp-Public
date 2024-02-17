@@ -31,7 +31,7 @@ export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value
                 <Switch
                     value={props.value}
                     onValueChange={props.onPress.bind(this)}
-                    color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
+                    color={Platform.OS == 'ios' ? colors.switch : colors.text}
                 />
             </View>
         </View>

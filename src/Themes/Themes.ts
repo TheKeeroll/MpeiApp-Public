@@ -39,6 +39,7 @@ export const AverageScoreToColor = (ball: string) => {
 declare global {
   namespace ReactNativePaper {
     interface ThemeColors {
+      switch: string
       marks:{
         '5':        string
         '4':        string
@@ -74,6 +75,7 @@ export const THEME_DARK = {
     // highlight: '#747474',
     highlight: '#8e7cc3',
     textUnderline: '#BB86FC',
+    switch: "#4CD964",
     marks:{
       '5':'#03C04AE0',
       '4':'#7BB302',
@@ -107,6 +109,7 @@ export const THEME_LIGHT = {
     notification: '#E07A5F',
     highlight: '#1E90FF',
     textUnderline: '#5788E7',
+    switch: "#4CD964",
     marks:{
       '5':'#94FF92',
       '4':'#BDFF00',

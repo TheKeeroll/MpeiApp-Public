@@ -298,9 +298,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 } else {
                     setSelectedCategory('main')
                 }
-            }} style={{marginVertical: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
+            }} style={{marginVertical: 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', borderRadius: 8, backgroundColor: colors.primary}}>
                 <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
-                <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>{selectedCategory != 'main' ? 'Назад' : 'Свернуть'}</Text>
+                <Text style={{marginRight: 15, color: colors.text, fontSize: 18}}>{selectedCategory != 'main' ? 'Назад' : 'Свернуть'}</Text>
             </TouchableOpacity>
 
           </View>
@@ -332,10 +332,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
                     <Text numberOfLines={1} adjustsFontSizeToFit={true} style={[Styles.categoryText, {color: colors.text}]}>{props.category}</Text>
                     
-                    <Switch
+                    <Switch 
                         value={isCategoryVisible}
                         onValueChange={handleCategoryToggle.bind(this, props.category)}
-                        color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
+                        color={Platform.OS == 'ios' ? colors.switch : colors.text}
                         style={{ marginLeft: "auto" }}
                     />
                 </TouchableOpacity>  
@@ -458,6 +458,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     }
                 </Fragment>
             }
+
             {FROM_LOGIN &&
                 <TouchableOpacity onPress={()=>props.navigation.goBack()}
                     style={{height: 40, width: 90, borderRadius: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', top: insets.top, left: 5}}>
@@ -465,24 +466,29 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>Назад</Text>
                 </TouchableOpacity>
             }
+
             <Search onNavigate={NavigateToPoint.bind(this)}/>
+
             <TouchableOpacity disabled={!locationAccess} onPress={FocusOnUser} style={[Styles.focusOnUserBtn, {backgroundColor: colors.primary, opacity: !locationAccess ? .3 : 1}]}>
                 <FIcon.default name={'navigation'} size={30} adjustsFontSizeToFit color={colors.text}/>
             </TouchableOpacity>
+
             <TouchableOpacity onPress={()=>{
                 map.current!.getCameraPosition((camPos)=>{
                     map.current!.setZoom(++camPos.zoom, .3)
                 })
-            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 175 : 170, backgroundColor: colors.primary}]}>
+            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 255 : 230, backgroundColor: colors.primary}]}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{fontWeight: 'bold', fontSize: 30, color: colors.text}}>+</Text>
             </TouchableOpacity>
+
             <TouchableOpacity onPress={()=>{
                 map.current!.getCameraPosition((camPos)=>{
                     map.current!.setZoom(--camPos.zoom, .3)
                 })
-            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 125 : 105, backgroundColor: colors.primary}]}>
+            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 185 : 165, backgroundColor: colors.primary}]}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{fontWeight: 'bold', fontSize: 30, color: colors.text}}>-</Text>
             </TouchableOpacity>
+
             {modalShown &&
                 <DetailPlaceModal
                     place={modalShown}
@@ -534,22 +540,24 @@ const Styles = StyleSheet.create({
     focusOnUserBtn:{
         aspectRatio:1,
         height: 60,
-        borderRadius: 10,
+        borderWidth: 1,
+        borderRadius: 8,
         alignItems:'center',
         justifyContent: 'center',
-        marginRight: 5,
-        bottom: FROM_LOGIN ? 80 : 40,
+        marginRight: 20,
+        marginBottom: 20,
+        bottom: FROM_LOGIN ? 180 : 100,
         right: 0,
         position: 'absolute',
     },
     searchCollapsed:{
-        width: '30%',
-        height: 50,
-        borderRadius: 10,
+        padding: "2.5%",
+        borderWidth: 1,
+        borderRadius: 8,
         alignItems:'center',
         justifyContent: 'center',
-        marginLeft: 5,
-        marginBottom: 5,
+        marginLeft: 20,
+        marginBottom: 20,
         bottom: FROM_LOGIN ? 80 : 0,
         position: 'absolute',
     },
@@ -567,7 +575,7 @@ const Styles = StyleSheet.create({
         position: 'absolute'
     },
     category:{
-        width: SCREEN_SIZE.width * .75,
+        width: SCREEN_SIZE.width * .7,
         backgroundColor: 'red',
         marginVertical: 5,
         padding: "2.5%",
@@ -576,14 +584,12 @@ const Styles = StyleSheet.create({
         flexDirection: 'row'
     },
     detailedCategory:{
-        width: SCREEN_SIZE.width * .75,
-        height: 50,
+        width: SCREEN_SIZE.width * .7,
         backgroundColor: 'red',
         marginVertical: 5,
         padding: "2.5%",
-        borderRadius: 5,
+        borderRadius: 8,
         alignItems: 'center',
-        justifyContent: 'center',
         flexDirection: 'row'
     },
     categoryText:{
