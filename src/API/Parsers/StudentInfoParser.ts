@@ -23,6 +23,14 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
       _middleName = _FIO.split(' ')[2]
       _group = _FIO.split(' ')[6]
     }
+    if ((typeof _group == 'undefined') || (_group.includes('002'))){
+      try {
+        _group = _FIO.split(') ')[1]
+      }catch (e) {
+        console.warn("on _FIO, _group: " + e)
+        _group = ' '
+      }
+    }
   }catch (e) {
     console.warn("on _FIO: " + e);
     _FIO = 'ФИО (не распарсилось!)'
@@ -86,9 +94,6 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
     console.warn("on _complex_rating: " + e);
     _complex_rating = '(не распарсилось!)'
   }
-
-
-
 
   console.timeEnd('FHT ' + Platform.OS)
 
