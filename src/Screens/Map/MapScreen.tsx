@@ -103,6 +103,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             "1&2": require('../../../assets/images/MapMarkers/1&2.png'),
             "manga": require('../../../assets/images/MapMarkers/Manga.png'),
             "harvard": require('../../../assets/images/MapMarkers/Harvard.png'),
+            "subway": require('../../../assets/images/MapMarkers/Subway.png'),
             "bk": require('../../../assets/images/MapMarkers/Burger_King.png'),
             "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.png'),
             "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.png'),
@@ -111,6 +112,8 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.png'),
             "olen": require('../../../assets/images/MapMarkers/Tayojny.png'),
             "terem": require('../../../assets/images/MapMarkers/teremok.png'),
+            "imonutsa": require('../../../assets/images/MapMarkers/Imonutsa.png'),
+            "ilum": require('../../../assets/images/MapMarkers/Illuminator.png'),
             "yakit": require('../../../assets/images/MapMarkers/Yakitoria.png'),
         }
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.png')
@@ -142,10 +145,16 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             "kl": require('../../../assets/images/MapMarkers/kl.png'),
             "m": require('../../../assets/images/MapMarkers/m.png'),
             "n": require('../../../assets/images/MapMarkers/n.png'),
+            "o": require('../../../assets/images/MapMarkers/o.png'),
+            "p": require('../../../assets/images/MapMarkers/p.png'),
             "r": require('../../../assets/images/MapMarkers/r.png'),
             "s": require('../../../assets/images/MapMarkers/s.png'),
             "t": require('../../../assets/images/MapMarkers/t.png'),
             "f": require('../../../assets/images/MapMarkers/f.png'),
+            "ha": require('../../../assets/images/MapMarkers/ha.png'),
+            "ce": require('../../../assets/images/MapMarkers/ce.png'),
+            "ch": require('../../../assets/images/MapMarkers/ch.png'),
+            "sch": require('../../../assets/images/MapMarkers/sch.png')
         }
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.png')
     }

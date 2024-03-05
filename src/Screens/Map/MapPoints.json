@@ -48,6 +48,18 @@
     "uniqueIcon": "n"
   },
   {
+    "lat":55.756788, "lon":37.709108,
+    "category": "Корпуса",
+    "name": "Корпус О, Опытный завод МЭИ",
+    "uniqueIcon": "o"
+  },
+  {
+    "lat":55.756011, "lon": 37.708256,
+    "category": "Корпуса",
+    "name": "Корпус П",
+    "uniqueIcon": "p"
+  },
+  {
     "lat":55.753724, "lon":37.706880,
     "category": "Корпуса",
     "name": "Корпус Р",
@@ -70,6 +82,30 @@
     "category": "Корпуса",
     "name": "Корпус Ф",
     "uniqueIcon": "f"
+  },
+  {
+    "lat":55.757133, "lon":37.709658,
+    "category": "Корпуса",
+    "name": "Корпус Х",
+    "uniqueIcon": "ha"
+  },
+  {
+    "lat":55.755422, "lon":37.709670,
+    "category": "Корпуса",
+    "name": "Корпус Ц",
+    "uniqueIcon": "ce"
+  },
+  {
+    "lat":55.754976, "lon":37.709002,
+    "category": "Корпуса",
+    "name": "Корпус Ч",
+    "uniqueIcon": "ch"
+  },
+  {
+    "lat":55.756360, "lon":37.711069,
+    "category": "Корпуса",
+    "name": "Корпус Ш, Опытный завод МЭИ",
+    "uniqueIcon": "sch"
   },
   {
     "lat":55.758299, "lon":37.704715,
@@ -312,16 +348,16 @@
     "uniqueIcon": "bbcc"
   },
   {
-    "lat":55.764577, "lon":37.700793,
-    "category": "Еда",
-    "name": "Pub Daddy",
-    "uniqueIcon": "pubdaddy"
-  },
-  {
     "lat":55.752827, "lon":37.716034,
     "category": "Еда",
     "name": "One and Double",
     "uniqueIcon": "1&2"
+  },
+  {
+    "lat":55.764577, "lon":37.700793,
+    "category": "Еда",
+    "name": "Pub Daddy",
+    "uniqueIcon": "pubdaddy"
   },
   {
     "lat":55.753981, "lon":37.715291,
@@ -335,10 +371,21 @@
     "uniqueIcon": "rostics"
   },
   {
+    "lat":55.755563, "lon":37.705745,
+    "category": "Еда",
+    "name": "Subway",
+    "uniqueIcon": "subway"
+  },
+  {
     "lat":55.753420, "lon":37.716662,
     "category": "Еда",
     "name": "Бургер Кинг",
     "uniqueIcon": "bk"
+  },
+  {
+    "lat":55.755891, "lon":37.704932,
+    "category": "Еда",
+    "name": "Буханка"
   },
   {
     "lat":55.755883, "lon":37.704254,
@@ -357,6 +404,19 @@
     "category": "Еда",
     "name": "Домино Пицца",
     "uniqueIcon": "domino"
+  },
+  {
+    "lat":55.759035, "lon":37.704305,
+    "category": "Еда",
+    "name": "Иллюминатор",
+    "howToGet":"Обойти вдоль забора, зайти на территорию.",
+    "uniqueIcon": "ilum"
+  },
+  {
+    "lat":55.758782, "lon":37.709421,
+    "category": "Еда",
+    "name": "Имонуца",
+    "uniqueIcon": "imonutsa"
   },
   {
     "lat":55.754005, "lon":37.709890,
