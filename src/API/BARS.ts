@@ -16,7 +16,7 @@ import { ParseStudentInfo } from "./Parsers/StudentInfoParser";
 import ParsMarkTable from "./Parsers/MarkTableParser";
 import SkippedClassesParser from "./Parsers/SkippedClassesParser";
 import ReportsParser from "./Parsers/ReportsParser";
-import { Alert, DeviceEventEmitter, LayoutAnimation } from "react-native";
+import { Alert, DeviceEventEmitter, LayoutAnimation, Platform } from "react-native";
 import { APP_CONFIG } from "../Common/Config";
 import RecordBookParser from "./Parsers/RecordBookParser";
 import { TEST_DATA } from "./TestCurrentData";
@@ -43,6 +43,15 @@ import StipendsParser from "./Parsers/StipendsParser";
 import OrdersParser from "./Parsers/OrdersParser";
 
 export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
+
+function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks> {
+  return new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      reject(new Error("timeout"))
+    }, ms);
+    promise.then(resolve, reject)
+  })
+}
 
 const GetAvailableSemesters = (raw: string): Semester[] => {
   const $ = parse(raw).querySelector('#ddl_StudyFilterSemester')!
@@ -158,6 +167,18 @@ export default class BARS{
     DeviceEventEmitter.emit('SET_THEME', name)
   }
 
+  public GetCreds(){
+    let user_creds: BARSCredentials
+    user_creds = {login: '', password: ''}
+    try {
+      user_creds = JSON.parse(<string>this.mStorage.getString(STORAGE_KEYS.CREDENTIALS))
+    } catch (e) {
+      user_creds.login = ''
+      user_creds.password = ''
+    }
+    return user_creds
+}
+
   public ClearStorage(){
     for(const k of this.mStorage.getAllKeys()){
       this.mStorage.delete(k)
@@ -182,26 +203,31 @@ export default class BARS{
   }
 
   private FetchCurrentWeek(){
-    return fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
+    console.time('CurrentWeek ' + Platform.OS)
+    return Timeout(1500, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
       try{
         this.mCurrentWeek = parse(r).querySelector('#ctl00_g_06da9461_ac13_4827_a73a_ec9ca4dd6498 > div > div')!.text
+        console.timeEnd('CurrentWeek ' + Platform.OS)
       } catch (e: any){
         this.mCurrentWeek = '?'
         console.warn("Failed to get current week")
+        console.timeEnd('CurrentWeek ' + Platform.OS)
       } finally {
         return Promise.resolve();
       }
+    })).catch(e => {
+      this.mCurrentWeek = '?'
+      console.warn("Data download time exceeded on current week!", e)
     })
   }
 
-  public LoadOnlineData(): Promise<void> {
+  public LoadOnlineData(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     if (APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, this.mCredentials)) {
       this.mCurrentData = TEST_DATA
       return Promise.resolve();
     }
 
     return this.FetchCurrentWeek().finally(
-        () => this.FetchCurrentWeek().finally(
             () => this.FetchMarkTable().finally(()=>{
 
               const Con = () => this.FetchSchedule().finally(
@@ -241,7 +267,7 @@ export default class BARS{
                 return Con();
               }
 
-            })))
+            }))
         .catch(() => {
           const current_month = parseInt(moment().format("M"))
           if ((current_month > 2 && current_month < 6) ?? ( current_month > 8)) {
@@ -298,7 +324,7 @@ export default class BARS{
   }
   public get TestMode(){return this.mTestMode}
 
-  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | void>{
+  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks>{
     let isIncorrectLoginPassword = false
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
       Alert.alert('Info', 'Entered test mode.')
@@ -320,22 +346,14 @@ export default class BARS{
       return NetInfo.fetch()
     }
 
-    function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" | void> {
-      return new Promise(function(resolve, reject) {
-        setTimeout(function() {
-          reject(new Error("timeout"))
-        }, ms);
-        promise.then(resolve, reject)
-      })
-    }
-
     return CheckInternet().then((response)=> {
       if (!(response.isConnected) && firstStart)
         return Promise.reject(CreateBARSError('LOGIN_FAIL', 'Нет подключения к интернету!'))
       else if (!(response.isConnected)) {
-        return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
+        return Promise.resolve<'ONLINE' | 'OFFLINE' | BARSMarks | void>('OFFLINE')
       }
-      return Timeout(5500, fetch(URLS.BARS_MAIN, {
+      console.time('Login&StudentInfoParser')
+      return Timeout(4000, fetch(URLS.BARS_MAIN, {
         method: 'POST',
         headers: {
           'User-Agent': 'iPhone',
@@ -411,6 +429,8 @@ export default class BARS{
 
                 this.mCurrentData.availableSemesters = GetAvailableSemesters(response);
                 this.mCurrentData.student = result as BARSStudentInfo;
+                console.timeEnd('Login&StudentInfoParser')
+                console.log(this.mCurrentData.student);
                 this.mCurrentData.student.headman = isHeadman;
 
                 this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds));
@@ -429,6 +449,7 @@ export default class BARS{
 
             this.mCurrentData.availableSemesters = GetAvailableSemesters(response);
             this.mCurrentData.student = result as BARSStudentInfo;
+            console.timeEnd('Login&StudentInfoParser')
             console.log(this.mCurrentData.student);
             this.mCurrentData.student.headman = false;
             this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds));
@@ -453,7 +474,7 @@ export default class BARS{
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
           } else {
-            console.log("Data download time exceeded!", e)
+            console.warn("Data download time exceeded!", e)
             if (firstStart) {
               return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - слабое/нестабильное интернет-соединение, или проблемы со стороны БАРС! Проверьте качество сети и попробуйте ещё раз."))
             }
@@ -487,6 +508,7 @@ export default class BARS{
     } else {
       console.log('Parsing offline student info...')
       this.mCurrentData.student = JSON.parse(student)
+      console.log(this.mCurrentData.student)
     }
     if (typeof schedule == 'undefined'){
       Store.dispatch(updateSchedule({status: "FAILED", data: typeof schedule != 'undefined' ? JSON.parse(schedule) : null}))
@@ -605,9 +627,10 @@ export default class BARS{
     })
   }
 
-  public FetchSchedule(): Promise<void>{
+  public FetchSchedule(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
 
     console.log('Fetching schedule')
+    console.time('ScheduleParser')
     const group = this.mCurrentData.student!.group
     const g = new Date();
     g.substractDays(APP_CONFIG.DATE_RANGE);
@@ -616,7 +639,7 @@ export default class BARS{
     const dateEnd = moment(g, 'DD.MM.YYYY');
 
     const linkSearch = 'http://ts.mpei.ru/api/search?term=' + encodeURI(group) + `&type=group`
-    return fetch(linkSearch,{
+    return Timeout(2500, fetch(linkSearch,{
       method: 'GET',
       headers: {},
       credentials: 'include'
@@ -743,6 +766,7 @@ export default class BARS{
         //  }
         //}
         //console.log(result)
+        console.timeEnd('ScheduleParser')
         return Promise.resolve(result)
       })
     }).then((result)=>{
@@ -767,14 +791,25 @@ export default class BARS{
         Store.dispatch(updateSchedule({status: "OFFLINE", data: JSON.parse(scheduleRaw)}))
         DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
       }
+    })).catch(e =>{
+      console.warn('Data download time exceeded on Schedule!', e)
+      const scheduleRaw = this.mStorage.getString(STORAGE_KEYS.SCHEDULE)
+      if(typeof scheduleRaw == 'undefined'){
+        Store.dispatch(updateSchedule({status: "FAILED", data: null}))
+        console.warn(e)
+        throw e;
+      } else {
+        Store.dispatch(updateSchedule({status: "OFFLINE", data: JSON.parse(scheduleRaw)}))
+        DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+      }
     })
   }
 
 
-  public FetchRecordBook(): Promise<void>{
+  public FetchRecordBook(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching record book')
     const link = URLS.BARS_RECORD_BOOK + this.mCurrentData.student!.id
-    return fetch(link, {
+    return Timeout(5000, fetch(link, {
       method: 'GET',
       headers: COMMON_HTTP_HEADER
     }).then(r=>r.text())
@@ -817,10 +852,19 @@ export default class BARS{
         }
 
       })
+    })).catch(e => {
+      console.warn("Data download time exceeded on record book! ", e)
+      const recordBookRaw = this.mStorage.getString(STORAGE_KEYS.RECORD_BOOK)
+      if(typeof recordBookRaw == 'undefined'){
+        Store.dispatch(updateRecordBook({status: "FAILED", data: null}))
+        throw e
+      } else {
+        Store.dispatch(updateRecordBook({ status: "OFFLINE", data: JSON.parse(recordBookRaw) }))
+      }
     })
   }
 
-  public FetchSkippedClasses(): Promise<void>{
+  public FetchSkippedClasses(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching skipped classes')
     let link = encodeURI( //TODO Забирать не 10 а все
       URLS.BARS_SKIPPED_CLASSES +  this.mCurrentData.student!.id +'&query=' +
@@ -831,7 +875,7 @@ export default class BARS{
           'FilterSemester': {'value': this.mCurrentData.availableSemesters![0].id}
         })
     )
-    return fetch(link,{
+    return Timeout(2500, fetch(link,{
       method: 'GET',
       headers: {
         'Accept': `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
@@ -869,12 +913,21 @@ export default class BARS{
         Store.dispatch(updateSkippedClasses({status: "LOADED", data: skippedClasses}))
         console.log('Fetched skipped classes')
       }
+    })).catch(e =>{
+      console.warn("Data download time exceeded on skipped classes! ", e)
+      const skippedClassesRaw = this.mStorage.getString(STORAGE_KEYS.SKIPPED_CLASSES)
+      if(typeof skippedClassesRaw == 'undefined'){
+        Store.dispatch(updateSkippedClasses({status: "FAILED", data: null}))
+        throw e
+      } else {
+        Store.dispatch(updateSkippedClasses({status: "OFFLINE", data: JSON.parse(skippedClassesRaw)}))
+      }
     })
   }
 
-  public FetchReports(): Promise<void>{
+  public FetchReports(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching reports')
-    return fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(1500, fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const reports = ReportsParser(response)
@@ -895,12 +948,21 @@ export default class BARS{
           }
         }).catch(()=>{
         return Promise.resolve()
-      })
+      })).catch(e => {
+      console.warn("Data download time exceeded on reports! ", e)
+      const reportsRaw = this.mStorage.getString(STORAGE_KEYS.REPORTS)
+      if(typeof reportsRaw == 'undefined'){
+        Store.dispatch(updateReports({status: "FAILED", data: null}))
+        throw e
+      } else {
+        Store.dispatch(updateReports({status: "OFFLINE", data: JSON.parse(reportsRaw)}))
+      }
+    })
   }
 
-  public FetchTasks(): Promise<void>{
+  public FetchTasks(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching tasks')
-    return fetch(URLS.BARS_TASKS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2000, fetch(URLS.BARS_TASKS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const tasks = TasksParser(response)
@@ -921,12 +983,21 @@ export default class BARS{
           }
         }).catch(()=>{
         return Promise.resolve()
-      })
+      })).catch(e => {
+        console.warn("Data download time exceeded on tasks! ", e)
+        const tasksRaw = this.mStorage.getString(STORAGE_KEYS.TASKS)
+        if(typeof tasksRaw == 'undefined'){
+          Store.dispatch(updateTasks({status: "FAILED", data: null}))
+          throw e
+        } else {
+          Store.dispatch(updateTasks({status: "OFFLINE", data: JSON.parse(tasksRaw)}))
+        }
+    })
   }
 
-  public FetchQuestionnaires(): Promise<void>{
+  public FetchQuestionnaires(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching questionnaires')
-    return fetch(URLS.BARS_QUESTIONNAIRES + this.mCurrentData.student!.id + '&query=%7B%22ID%22%3Anull%2C%22State%22%3Anull%2C%22SortOrder%22%3A%22EditEndDate%20desc%2CQuestionnaire.Name%22%2C%22Page%22%3A%221%22%2C%22PageSize%22%3A%22500%22%2C%22SearchText%22%3A%22%22%7D&_=1706828837554', {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(3000, fetch(URLS.BARS_QUESTIONNAIRES + this.mCurrentData.student!.id + '&query=%7B%22ID%22%3Anull%2C%22State%22%3Anull%2C%22SortOrder%22%3A%22EditEndDate%20desc%2CQuestionnaire.Name%22%2C%22Page%22%3A%221%22%2C%22PageSize%22%3A%22500%22%2C%22SearchText%22%3A%22%22%7D&_=1706828837554', {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const questionnaires = QuestionnairesParser(response)
@@ -947,12 +1018,21 @@ export default class BARS{
           }
         }).catch(()=>{
         return Promise.resolve()
-      })
+      })).catch(e => {
+        console.warn("Data download time exceeded on questionnaires! ", e)
+        const questionnairesRaw = this.mStorage.getString(STORAGE_KEYS.QUESTIONNAIRES)
+        if(typeof questionnairesRaw == 'undefined'){
+          Store.dispatch(updateQuestionnaires({status: "FAILED", data: null}))
+          throw e
+        } else {
+          Store.dispatch(updateQuestionnaires({status: "OFFLINE", data: JSON.parse(questionnairesRaw)}))
+        }
+    })
   }
 
-  public FetchStipends(): Promise<void>{
+  public FetchStipends(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching stipends')
-    return fetch(URLS.BARS_STIPENDS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2500, fetch(URLS.BARS_STIPENDS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const stipends = StipendsParser(response)
@@ -973,12 +1053,21 @@ export default class BARS{
           }
         }).catch(()=>{
         return Promise.resolve()
-      })
+      })).catch(e => {
+        console.warn("Data download time exceeded on stipends! ", e)
+        const stipendsRaw = this.mStorage.getString(STORAGE_KEYS.STIPENDS)
+        if(typeof stipendsRaw == 'undefined'){
+          Store.dispatch(updateStipends({status: "FAILED", data: null}))
+          throw e
+        } else {
+          Store.dispatch(updateStipends({status: "OFFLINE", data: JSON.parse(stipendsRaw)}))
+        }
+    })
   }
 
-  public FetchOrders(): Promise<void>{
+  public FetchOrders(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching orders')
-    return fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2000, fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const orders = OrdersParser(response)
@@ -999,7 +1088,16 @@ export default class BARS{
           }
         }).catch(()=>{
         return Promise.resolve()
-      })
+      })).catch(e => {
+        console.warn("Data download time exceeded on orders! ", e)
+        const ordersRaw = this.mStorage.getString(STORAGE_KEYS.ORDERS)
+        if(typeof ordersRaw == 'undefined'){
+          Store.dispatch(updateOrders({status: "FAILED", data: null}))
+          throw e
+        } else {
+          Store.dispatch(updateOrders({status: "OFFLINE", data: JSON.parse(ordersRaw)}))
+        }
+    })
   }
 
   public FetchMarkTable(semesterID?: string, forPast: boolean = false): Promise<void | BARSMarks>{
