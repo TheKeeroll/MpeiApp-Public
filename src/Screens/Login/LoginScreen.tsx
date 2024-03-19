@@ -1,10 +1,10 @@
 import {
     Alert,
     DeviceEventEmitter,
-    LayoutAnimation, Linking, SafeAreaView,
+    LayoutAnimation, SafeAreaView,
     Text,
     TouchableOpacity,
-    View, ViewStyle
+    View, ViewStyle,
 } from "react-native";
 import React, {Fragment, useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
@@ -17,6 +17,8 @@ import {isBARSError} from "../../API/Error/Error";
 import {createStackNavigator} from "@react-navigation/stack";
 import MapScreen from "../Map/MapScreen";
 import {useNavigation} from "@react-navigation/native";
+import {openSupportChat} from "../Settings/Components";
+
 const Stack = createStackNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress:()=>void, style: ViewStyle}> = (props) => {
     const {colors} = useTheme()
@@ -132,7 +134,7 @@ const LoginScreen: React.FC = () => {
                             }} style={{ width: '12.5%', aspectRatio: 1}}/>
                         </View>
                         <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
-                            <Button title={'Поддержка'} onPress={()=>Linking.openURL('https://vk.com/mpeiapp')} style={{ width: '60%', aspectRatio: 4.8}}/>
+                            <Button title={'Поддержка'} onPress={openSupportChat} style={{ width: '60%', aspectRatio: 4.8}}/>
                         </View>
                         <View style={{flexDirection: 'row'}}>
                             <Text style={{color: withOpacity(colors.text, 30)}}>Версия: </Text>
