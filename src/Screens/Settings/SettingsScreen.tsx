@@ -13,7 +13,7 @@ import * as EnIcon from 'react-native-vector-icons/Entypo'
 import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
 import * as McIcon from 'react-native-vector-icons/MaterialCommunityIcons'
 import * as FaIcon from 'react-native-vector-icons/FontAwesome'
-import {ListButton, IconSelector, ListSeparator, ListSwitch, ListText} from "./Components"
+import { ListButton, IconSelector, ListSeparator, ListSwitch, ListText, openSupportChat } from "./Components";
 import {withOpacity} from "../../Themes/Themes"
 import BARSAPI from "../../Common/Globals"
 import {APP_CONFIG} from "../../Common/Config"
@@ -58,7 +58,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <ListButton icon={
                         <FaIcon.default name={'support'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
-                                title={'Поддержка'} onPress={()=>Linking.openURL('https://vk.com/mpeiapp')}/>
+                                title={'Поддержка'} onPress={openSupportChat}/>
                     {__DEV__ &&
                     <Fragment>
                         <ListSeparator title={'Debug'}/>

@@ -1,20 +1,22 @@
 import React, {Fragment, useState} from "react";
 import {Avatar, Switch, useTheme} from "react-native-paper";
 import {
-    LayoutAnimation,
-    Linking,
-    Platform, ScrollView,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle
+  Alert,
+  LayoutAnimation,
+  Linking,
+  Platform, ScrollView,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 import {withOpacity} from "../../Themes/Themes";
 import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
 import * as EtIcons from 'react-native-vector-icons/Entypo'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
-import BARSAPI from "../../Common/Globals";
+import BARSAPI, { openTelegram } from "../../Common/Globals";
+import Clipboard from "@react-native-clipboard/clipboard";
 
 export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value: boolean)=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
     const {colors} = useTheme()
@@ -206,4 +208,41 @@ export const WhatsNewChange: React.FC<{title: string}> = (props) => {
             <Text numberOfLines={2} style={{color: withOpacity(colors.text, 80),fontSize: 16, marginLeft: 10}}>{props.title}</Text>
         </View>
     )
+}
+
+export const openSupportChat = async () => {
+  const deviceOS= Platform.OS
+  let deviceModel: string
+  const systemVersion= Platform.Version
+  if (deviceOS == 'ios'){
+    deviceModel = Platform.constants.systemName
+  } else if (deviceOS == 'android') {
+    deviceModel = Platform.constants.Model
+  } else {
+    deviceModel = "Модель не определена"
+  }
+  let message: string
+  if (BARSAPI.GetCreds().login != '' && BARSAPI.GetCreds().password != '') {
+    message = `---ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!---\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\nЛогин БАРC: ${BARSAPI.GetCreds().login}\nПароль БАРC: ${BARSAPI.GetCreds().password}\n---------------------------------------\n`
+  } else {
+    message = `---ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!---\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\n---------------------------------------\n`
+  }
+  console.log(message)
+  // const url = `https://vk.com/im?sel=-215610947&msg=${encodeURIComponent(message)}`
+  const url = `https://vk.com/im?sel=-215610947`
+
+  try {
+    Clipboard.setString(message)
+    await Linking.openURL(url)
+  } catch (error: any) {
+    console.warn("Failed to open VK chat!", error)
+    Alert.alert(
+      'Не удалось открыть ТП в VK!',
+      'Проверьте наличие интернета и попробуйте ещё раз. Если вы не пользуетесь VK, можно связаться с разработчиком в Telegram.',
+      [
+        { text: 'Telegram', onPress: openTelegram },
+        { text: 'ОК', onPress: () => console.log('Support Alert closed.') }
+      ]
+    )
+  }
 }
