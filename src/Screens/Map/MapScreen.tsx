@@ -137,7 +137,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
         const ICONS = {
             "gk": require('../../../assets/images/MapMarkers/gk.png'),
-            "a": require('../../../assets/images/MapMarkers/a.png'),
+            "a": require('../../../assets/images/MapMarkers/a.webp'),
             "e": require('../../../assets/images/MapMarkers/e.png'),
             "jz": require('../../../assets/images/MapMarkers/jz.png'),
             "i": require('../../../assets/images/MapMarkers/i.png'),
