@@ -15,7 +15,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                 <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>
 
                     <ListSeparator title={'Тестеры версий pre-alpha'}/>
-                    <ListAvatarItem title={'Гэсэр Петрунин'} link={'https://vk.com/g.petrunin'} image={require('../../../assets/images/Gratitudies/GAS.png')}/>
+                    <ListAvatarItem title={'Гэсэр Петрунин'} link={'https://vk.com/g.petrunin'} image={require('../../../assets/images/Gratitudies/GAS.webp')}/>
                     <ListAvatarItem title={'Александр Ерёмичев'} link={'https://vk.com/micke259'} image={require('../../../assets/images/Gratitudies/San.png')}/>
                     <ListAvatarItem title={'Сергей Выскиль'} link={'https://vk.com/seeeergey'} image={require('../../../assets/images/Gratitudies/Sergey.png')}/>
                     <ListAvatarItem title={'Егор Гаврилов'} link={'https://vk.com/nxce16'} image={require('../../../assets/images/Gratitudies/Egor.png')}/>
