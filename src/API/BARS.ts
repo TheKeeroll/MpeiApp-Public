@@ -24,12 +24,15 @@ import { parse } from "node-html-parser";
 import { MMKV } from "react-native-mmkv";
 import { Store } from "./Redux/Store";
 import {
-  updateMarkTable, updateOrders,
+  updateMarkTable,
+  updateOrders,
   updateQuestionnaires,
   updateRecordBook,
   updateReports,
   updateSchedule,
-  updateSkippedClasses, updateStipends, updateTasks,
+  updateSkippedClasses,
+  updateStipends,
+  updateTasks,
 } from "./Redux/Slices";
 import { THEME_DARK, THEME_LIGHT } from "../Themes/Themes";
 import { CreateBARSError, isBARSError } from "./Error/Error";
@@ -51,6 +54,55 @@ function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" 
     }, ms);
     promise.then(resolve, reject)
   })
+}
+
+const DealWithMeal = (schedule: BARSSchedule) : BARSSchedule => {
+  for(let i = 0; i < schedule.days.length; i++){
+    for(let j = 0; j < schedule.days[i].lessons.length; j++){
+      if(schedule.days[i].lessons[j].lessonIndex == '11:10-12:45'){
+        try {
+          if (schedule.days[i].lessons[j + 1].lessonIndex == '11:10-12:45') {
+            //@ts-ignore
+            schedule.days[i].lessons.splice(j + 2, 0, { type: 'DINNER' })
+          } else {
+            //@ts-ignore
+            schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
+          }
+        } catch (e) {
+          //@ts-ignore
+          schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
+        }
+        j++
+        break
+      }
+
+    }
+
+  }
+  for(let i = 0; i < schedule.days.length; i++) {
+    if(schedule.days[i].isEmpty) {
+      continue;
+    }
+    if(schedule.days[i].lessons[schedule.days[i].lessons.length -1].type == 'DINNER'){
+      schedule.days[i].lessons.pop()
+    }
+  }
+  return schedule
+}
+
+const DealWithRepeated = (schedule: BARSSchedule) : BARSSchedule => {
+  for(let i = 0; i < schedule.days.length; i++) {
+    for (let j = 0; j < schedule.days[i].lessons.length; j++) {
+      try {
+        if (schedule.days[i].lessons[j].name == schedule.days[i].lessons[j - 1].name && schedule.days[i].lessons[j].lessonType == schedule.days[i].lessons[j - 1].lessonType && schedule.days[i].lessons[j].cabinet == schedule.days[i].lessons[j - 1].cabinet && schedule.days[i].lessons[j].lessonIndex == schedule.days[i].lessons[j - 1].lessonIndex) {
+          schedule.days[i].lessons.splice(j, 1)
+          j--
+        }
+      } catch (e) {
+      }
+    }
+  }
+  return schedule
 }
 
 const GetAvailableSemesters = (raw: string): Semester[] => {
@@ -620,7 +672,7 @@ export default class BARS{
 
             }
 
-            return res
+            return DealWithMeal(DealWithRepeated(res))
           })
         })
       }
@@ -736,38 +788,10 @@ export default class BARS{
           }
         }
 
-        for(let i = 0; i < result.days.length; i++){
-          for(let j = 0; j < result.days[i].lessons.length; j++){
-            if(result.days[i].lessons[j].lessonIndex == '11:10-12:45'){
-              //@ts-ignore
-              result.days[i].lessons.splice(j+1, 0, {type: 'DINNER'})
-              j++;
-              break;
-            }
+        const scheduleWithDinner = DealWithMeal(result)
 
-          }
-
-        }
-        for(let i = 0; i < result.days.length; i++) {
-          if(result.days[i].isEmpty) {
-            continue;
-          }
-          if(result.days[i].lessons[result.days[i].lessons.length -1].type == 'DINNER'){
-            result.days[i].lessons.pop()
-          }
-        }
-
-        //for(let i = 0; i < result.days.length; i++) {
-        //  if(result.days[i].isEmpty) {
-        //    continue;
-        //  }
-        //  if(result.days[i].lessons[result.days[i].lessons.length -1].type == 'DINNER'){
-        //    result.days[i].lessons.pop()
-        //  }
-        //}
-        //console.log(result)
         console.timeEnd('ScheduleParser')
-        return Promise.resolve(result)
+        return Promise.resolve(scheduleWithDinner)
       })
     }).then((result)=>{
       Store.dispatch(updateSchedule({status: "LOADED", data: result}))
