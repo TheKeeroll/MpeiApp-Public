@@ -115,7 +115,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                 <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
             <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
-                <Avatar.Image  source={icon == 'dragons' ? require(`../../../assets/images/dragons.png`) : ( icon == 'simple' ? require(`../../../assets/images/simple.png`) : ( icon == 'matterial' ? require(`../../../assets/images/matterial.png`) : ( icon == 'gold' ? require(`../../../assets/images/gold.png`) : require(`../../../assets/images/cool.png`))))} style={{borderRadius: 4 }} size={40}/>
+                <Avatar.Image source={icon == 'dragons' ? require(`../../../assets/images/dragons.webp`) : ( icon == 'simple' ? require(`../../../assets/images/simple.webp`) : ( icon == 'matterial' ? require(`../../../assets/images/matterial.webp`) : ( icon == 'gold' ? require(`../../../assets/images/gold.webp`) : require(`../../../assets/images/cool.webp`))))} style={{borderRadius: 4 }} size={40}/>
             </View>
         </TouchableOpacity>
     )
@@ -137,7 +137,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                         setExpanded(false)
                     }}
                     style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                    <Avatar.Image  source={require(`../../../assets/images/cool.png`)} style={{borderRadius: 50 }} size={80}/>
+                    <Avatar.Image  source={require(`../../../assets/images/cool.webp`)} style={{borderRadius: 50 }} size={80}/>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={()=>{
@@ -147,7 +147,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                         setExpanded(false)
                     }}
                     style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                    <Avatar.Image  source={require(`../../../assets/images/dragons.png`)} style={{borderRadius: 50 }} size={80}/>
+                    <Avatar.Image  source={require(`../../../assets/images/dragons.webp`)} style={{borderRadius: 50 }} size={80}/>
                 </TouchableOpacity>
                     <Fragment>
                         <TouchableOpacity
@@ -158,7 +158,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                                 setExpanded(false)
                             }}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/simple.png`)} style={{borderRadius: 50 }} size={80}/>
+                            <Avatar.Image  source={require(`../../../assets/images/simple.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={()=>{
@@ -168,7 +168,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                                 setExpanded(false)
                             }}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/matterial.png`)} style={{borderRadius: 50 }} size={80}/>
+                            <Avatar.Image  source={require(`../../../assets/images/matterial.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={()=>{
@@ -178,7 +178,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                                 setExpanded(false)
                             }}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/gold.png`)} style={{borderRadius: 50 }} size={80}/>
+                            <Avatar.Image  source={require(`../../../assets/images/gold.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                     </Fragment>
             </ScrollView>
@@ -223,9 +223,9 @@ export const openSupportChat = async () => {
   }
   let message: string
   if (BARSAPI.GetCreds().login != '' && BARSAPI.GetCreds().password != '') {
-    message = `---ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!---\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\nЛогин БАРC: ${BARSAPI.GetCreds().login}\nПароль БАРC: ${BARSAPI.GetCreds().password}\n---------------------------------------\n`
+    message = `-ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\nЛогин БАРC: ${BARSAPI.GetCreds().login}\nПароль БАРC: ${BARSAPI.GetCreds().password}\n-------------------------------------\n`
   } else {
-    message = `---ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!---\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\n---------------------------------------\n`
+    message = `-ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\n-------------------------------------\n`
   }
   console.log(message)
   // const url = `https://vk.com/im?sel=-215610947&msg=${encodeURIComponent(message)}`
