@@ -13,8 +13,8 @@ const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
             <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Разработчики'}/>
                 <ScrollView style={{width: '90%'}}>
-                    <ListAvatarItem title={'TheKeeroll'} link={'https://vk.com/dead_inside_0x41'} textStyle={{fontWeight: 'bold'}} image={require('../../../assets/images/DevAvatars/Z.png')}/>
-                    <ListAvatarItem title={'DragonSavA'} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.png')}/>
+                    <ListAvatarItem title={'TheKeeroll'} link={'https://vk.com/dead_inside_0x41'} textStyle={{fontWeight: 'bold'}} image={require('../../../assets/images/DevAvatars/Z.webp')}/>
+                    <ListAvatarItem title={'DragonSavA'} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.webp')}/>
                 </ScrollView>
             </SafeAreaView>
         </Fragment>

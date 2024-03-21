@@ -97,66 +97,67 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         if(place.category != 'Еда') throw new Error('GetUniqueFoodIcon: passed non food')
 
         const ICONS = {
-            "taras": require('../../../assets/images/MapMarkers/Taras_Bulba.png'),
-            "rostics": require('../../../assets/images/MapMarkers/Rostics.png'),
-            "bbcc": require('../../../assets/images/MapMarkers/Big_Black_Cup_coffee.png'),
-            "1&2": require('../../../assets/images/MapMarkers/1&2.png'),
-            "manga": require('../../../assets/images/MapMarkers/Manga.png'),
-            "harvard": require('../../../assets/images/MapMarkers/Harvard.png'),
-            "subway": require('../../../assets/images/MapMarkers/Subway.png'),
-            "bk": require('../../../assets/images/MapMarkers/Burger_King.png'),
-            "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.png'),
-            "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.png'),
-            "domino": require('../../../assets/images/MapMarkers/Domino.png'),
-            "trlefortovo": require('../../../assets/images/MapMarkers/TraktirLefortovo.png'),
-            "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.png'),
-            "olen": require('../../../assets/images/MapMarkers/Tayojny.png'),
-            "terem": require('../../../assets/images/MapMarkers/teremok.png'),
-            "imonutsa": require('../../../assets/images/MapMarkers/Imonutsa.png'),
-            "ilum": require('../../../assets/images/MapMarkers/Illuminator.png'),
-            "yakit": require('../../../assets/images/MapMarkers/Yakitoria.png'),
+            "taras": require('../../../assets/images/MapMarkers/Taras_Bulba.webp'),
+            "rostics": require('../../../assets/images/MapMarkers/Rostics.webp'),
+            "bbcc": require('../../../assets/images/MapMarkers/Big_Black_Cup_coffee.webp'),
+            "1&2": require('../../../assets/images/MapMarkers/1&2.webp'),
+            "manga": require('../../../assets/images/MapMarkers/Manga.webp'),
+            "harvard": require('../../../assets/images/MapMarkers/Harvard.webp'),
+            "subway": require('../../../assets/images/MapMarkers/Subway.webp'),
+            "bk": require('../../../assets/images/MapMarkers/Burger_King.webp'),
+            "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.webp'),
+            "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.webp'),
+            "domino": require('../../../assets/images/MapMarkers/Domino.webp'),
+            "trlefortovo": require('../../../assets/images/MapMarkers/TraktirLefortovo.webp'),
+            "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.webp'),
+            "olen": require('../../../assets/images/MapMarkers/Tayojny.webp'),
+            "terem": require('../../../assets/images/MapMarkers/teremok.webp'),
+            "imonutsa": require('../../../assets/images/MapMarkers/Imonutsa.webp'),
+            "ilum": require('../../../assets/images/MapMarkers/Illuminator.webp'),
+            "yakit": require('../../../assets/images/MapMarkers/Yakitoria.webp'),
         }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.png')
+        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.webp')
     }
 
     const GetUniqueInterestsIcon: ImageSource = (place: Place) => {
         if(place.category != 'Точки интереса') throw new Error('GetUniqueInterestsIcon: passed non interests')
 
         const ICONS = {
-            "megaphone": require('../../../assets/images/MapMarkers/megafon.png'),
-            "mts": require('../../../assets/images/MapMarkers/mts.png'),
-            "beeline": require('../../../assets/images/MapMarkers/beeline.png'),
-            "sber": require('../../../assets/images/MapMarkers/sber.png'),
-            "aviation": require('../../../assets/images/MapMarkers/aviation.png'),
+            "megaphone": require('../../../assets/images/MapMarkers/megafon.webp'),
+            "mts": require('../../../assets/images/MapMarkers/mts.webp'),
+            "beeline": require('../../../assets/images/MapMarkers/beeline.webp'),
+            "sber": require('../../../assets/images/MapMarkers/sber.webp'),
+            "aviation": require('../../../assets/images/MapMarkers/aviation.webp'),
         }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/star.png')
+        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/star.webp')
     }
 
     const GetUniqueCorpsIcon: ImageSource = (place: Place) => {
         if(place.category != 'Корпуса') throw new Error('GetUniqueCorpsIcon: passed non corps')
 
         const ICONS = {
-            "gk": require('../../../assets/images/MapMarkers/gk.png'),
+            "gk": require('../../../assets/images/MapMarkers/gk.webp'),
             "a": require('../../../assets/images/MapMarkers/a.webp'),
-            "e": require('../../../assets/images/MapMarkers/e.png'),
-            "jz": require('../../../assets/images/MapMarkers/jz.png'),
-            "i": require('../../../assets/images/MapMarkers/i.png'),
-            "k": require('../../../assets/images/MapMarkers/k.png'),
-            "kl": require('../../../assets/images/MapMarkers/kl.png'),
-            "m": require('../../../assets/images/MapMarkers/m.png'),
-            "n": require('../../../assets/images/MapMarkers/n.png'),
-            "o": require('../../../assets/images/MapMarkers/o.png'),
-            "p": require('../../../assets/images/MapMarkers/p.png'),
-            "r": require('../../../assets/images/MapMarkers/r.png'),
-            "s": require('../../../assets/images/MapMarkers/s.png'),
-            "t": require('../../../assets/images/MapMarkers/t.png'),
-            "f": require('../../../assets/images/MapMarkers/f.png'),
-            "ha": require('../../../assets/images/MapMarkers/ha.png'),
-            "ce": require('../../../assets/images/MapMarkers/ce.png'),
-            "ch": require('../../../assets/images/MapMarkers/ch.png'),
-            "sch": require('../../../assets/images/MapMarkers/sch.png')
+            "e": require('../../../assets/images/MapMarkers/e.webp'),
+            "jz": require('../../../assets/images/MapMarkers/jz.webp'),
+            "i": require('../../../assets/images/MapMarkers/i.webp'),
+            "k": require('../../../assets/images/MapMarkers/k.webp'),
+            "kl": require('../../../assets/images/MapMarkers/kl.webp'),
+            "m": require('../../../assets/images/MapMarkers/m_ie.webp'),
+            "n": require('../../../assets/images/MapMarkers/n.webp'),
+            "o": require('../../../assets/images/MapMarkers/o.webp'),
+            "p": require('../../../assets/images/MapMarkers/p.webp'),
+            "r": require('../../../assets/images/MapMarkers/r.webp'),
+            "s": require('../../../assets/images/MapMarkers/s.webp'),
+            "t": require('../../../assets/images/MapMarkers/t.webp'),
+            "f": require('../../../assets/images/MapMarkers/f.webp'),
+            "ha": require('../../../assets/images/MapMarkers/ha.webp'),
+            "ce": require('../../../assets/images/MapMarkers/ce.webp'),
+            "ch": require('../../../assets/images/MapMarkers/ch.webp'),
+            "sch": require('../../../assets/images/MapMarkers/sch.webp'),
+            "mfc": require('../../../assets/images/MapMarkers/mfc.webp')
         }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.png')
+        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.webp')
     }
 
     const GetPlaceMarker: React.FC<{shown: boolean, place: Place, onPress:(palce: Place)=>void}> = (props) => {
@@ -164,9 +165,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             switch (props.place.category){
                 case "Точки интереса": return GetUniqueInterestsIcon(props.place)
                 case "Еда": return GetUniqueFoodIcon(props.place)
-                case "Общежития": return require('../../../assets/images/MapMarkers/hostel.png')
+                case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp')
                 case "Корпуса": return GetUniqueCorpsIcon(props.place)
-                case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.png')
+                case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp')
             }
         }
 
