@@ -205,7 +205,7 @@ export const WhatsNewChange: React.FC<{title: string}> = (props) => {
     return (
         <View style={{ justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
             <View style={{height: 6, aspectRatio: 1, borderRadius: 50, backgroundColor: colors.text}}/>
-            <Text numberOfLines={2} style={{color: withOpacity(colors.text, 80),fontSize: 16, marginLeft: 10}}>{props.title}</Text>
+            <Text numberOfLines={3} style={{color: withOpacity(colors.text, 80),fontSize: 16, marginLeft: 10}}>{props.title}</Text>
         </View>
     )
 }
