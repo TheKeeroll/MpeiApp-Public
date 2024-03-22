@@ -35,7 +35,7 @@ import {
   updateTasks,
 } from "./Redux/Slices";
 import { THEME_DARK, THEME_LIGHT } from "../Themes/Themes";
-import { CreateBARSError, isBARSError } from "./Error/Error";
+import { CreateBARSError, isBARSError, isTimeout } from "./Error/Error";
 // @ts-ignore
 import { changeIcon, getIcon } from "react-native-change-icon";
 import NetInfo from "@react-native-community/netinfo";
@@ -320,11 +320,11 @@ export default class BARS{
               }
 
             }))
-        .catch(() => {
+        .catch((e:any) => {
           const current_month = parseInt(moment().format("M"))
-          if ((current_month > 2 && current_month < 6) ?? ( current_month > 8)) {
-            Alert.alert("Внимание!", "Во время получения данных возникли " +
-                "проблемы! Возможно отсутствие некоторой информации! Рекомендуем сообщить разработчикам об этом.")
+          if (((current_month > 2 && current_month < 6) ?? ( current_month > 8)) && !(isTimeout(e))) {
+            Alert.alert("Внимание!", "Проблемы при получении данных, " +
+                "возможно отсутствие части информации! Сообщите разработчикам.")
           }
           return Promise.resolve();
         })

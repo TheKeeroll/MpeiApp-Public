@@ -28,6 +28,10 @@ export const isBARSError = (obj: any): obj is BARSError => {
     return obj.BARS_ERROR_IDENTIFIER === 'I_AM_A_BARS_ERROR'
 }
 
+export const isTimeout = (obj: any) => {
+    return obj.toString().includes('timeout')
+}
+
 export const CreateBARSError = (error: BARSErrorCode, message?: string): BARSError => ({
     error,
     message: typeof message != 'undefined' ? message : '',
