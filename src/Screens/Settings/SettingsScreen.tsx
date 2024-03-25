@@ -37,7 +37,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <ListSeparator title={'Оформление'}/>
                     <ListSwitch icon={
                         <IonIcon.default name={'sunny'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
-                    } title={'Тема'} value={isDark} onPress={onThemeChange.bind(this)}/>
+                    } title={'Тёмная тема'} value={isDark} onPress={onThemeChange.bind(this)}/>
                     <IconSelector items={[]}
                         icon={
                             <MtIcon.default name={'public'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>

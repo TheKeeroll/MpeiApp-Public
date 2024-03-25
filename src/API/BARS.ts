@@ -627,12 +627,14 @@ export default class BARS{
     console.log('Fetching schedule')
     const group = this.mCurrentData.student!.group
     const g = new Date();
+    const startDate = new Date();
+    startDate.setDate((g.getDate() - (g.getDay() + 6) % 7) - 7);
     
-    g.setDate(g.getDate() - (g.getDay() + 6) % 7); // прошлый понедельник
+    g.setDate((g.getDate() - (g.getDay() + 6) % 7) - 7); // прошлый понедельник
     //g.substractDays(7);
     const dateStart = moment(g, 'DD.MM.YYYY');
 
-    console.log(dateStart.format('YYYY.MM.DD'))
+    console.log("minakov", dateStart.format('YYYY.MM.DD'))
 
     g.addDays(APP_CONFIG.DATE_RANGE * 4)
     const dateEnd = moment(g, 'DD.MM.YYYY');
@@ -648,28 +650,47 @@ export default class BARS{
         method: 'GET',
         headers: {},
         credentials: 'include'
-      }).then(r=>r.json()).then(r=>{
+      }).then(r => r.json()).then(r => {
         const groupBy = function(xs: any, key: any) {
           return xs.reduce(function(rv: any, x: any) {
             (rv[x[key]] = rv[x[key]] || []).push(x);
             return rv;
           }, {});
         };
+
         let result: BARSSchedule = {
           days: [],
           todayIndex: -1
         }
-        let grouped = groupBy(r, 'date');
-        console.log(grouped)
-        for(const [key, value] of Object.entries(grouped)){
-          const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
+
+        for (let i = 0; i < APP_CONFIG.DATE_RANGE * 4; i++) {
+          const today = moment(startDate, 'YYYY.MM.DD').format('DD.MM.YYYY');
+
           const day: BARSScheduleCell = {
+            date: today,
+            lessons:[],
+            isEmpty: false,
+            isToday: today == moment(new Date()).format('DD.MM.YYYY')
+          }
+          result.days.push(day);
+          startDate.addDays(1)
+        }
+
+        
+        let grouped = groupBy(r, 'date');
+        for (const [key, value] of Object.entries(grouped)){
+          const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
+          /*const day: BARSScheduleCell = {
             date: date_,
             lessons:[],
             isEmpty: false,
             isToday: date_ == moment(new Date()).format('DD.MM.YYYY')
-          }
-          // console.log(date_, moment(new Date()).format('DD.MM.YYYY'))
+          }*/
+          let index = result.days.findIndex(val => val.date == date_);
+          let day = result.days[index];
+          
+          if (!day) continue
+          
           for(let lesson of (value as any)){
 
             const c : BARSScheduleLesson = {
@@ -688,7 +709,7 @@ export default class BARS{
             }
             day.lessons.push(c)
           }
-          result.days.push(day)
+          result.days[index] = day;
         }
 
         for(let i = 1; i < result.days.length; i++){
@@ -746,12 +767,12 @@ export default class BARS{
             }
 
           }
-
         }
+
         for(let i = 0; i < result.days.length; i++) {
-          if(result.days[i].isEmpty) {
+          if(result.days[i].lessons[result.days[i].lessons.length -1] === undefined || result.days[i].isEmpty)
             continue;
-          }
+
           if(result.days[i].lessons[result.days[i].lessons.length -1].type == 'DINNER'){
             result.days[i].lessons.pop()
           }
@@ -769,6 +790,7 @@ export default class BARS{
         return Promise.resolve(result)
       })
     }).then((result)=>{
+      console.log(result)
       Store.dispatch(updateSchedule({status: "LOADED", data: result}))
       this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(result))
       console.log('Fetched schedule')

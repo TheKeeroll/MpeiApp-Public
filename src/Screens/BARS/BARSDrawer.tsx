@@ -24,8 +24,6 @@ import StipendsScreen from "./Stipends/StipendsScreen";
 import OrdersScreen from "./Orders/OrdersScreen";
 const Drawer = createDrawerNavigator()
 
-const SpacingBig = () => (<View style={{height: 25.5, width: '100%'}}/>)
-
 const DrawerHeader: React.FC = () => {
     const student = BARSAPI.CurrentData.student!
     const {colors} = useTheme()
@@ -61,7 +59,7 @@ const DrawerHeader: React.FC = () => {
     }
 
     return (
-        <View style={{width: '90%', alignSelf: 'center', padding: '2.5%', borderRadius: 8, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface, shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 2, width: 0}}}>
+        <View style={{marginBottom: "10%", width: '90%', alignSelf: 'center', padding: '2.5%', borderRadius: 8, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface, shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 2, width: 0}}}>
             <View style={{width: '100%', flexDirection: 'row'}}>
                 <View style={{flex: .7}}>
                     <View style={{width: '100%', flexDirection: 'row'}}>
@@ -124,7 +122,6 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
             <SafeAreaView style={{flex: 1, backgroundColor: colors.background}}>
                 <DrawerContentScrollView>
                     <DrawerHeader/>
-                    <SpacingBig/>
                     <DrawerButton
                         id={0}
                         presserId={pressedId}

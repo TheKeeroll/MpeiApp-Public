@@ -268,7 +268,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const Collapsed = () => (
           <TouchableOpacity
             onPress={()=>{
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                 setExpanded(true)
             }}
             style={[Styles.searchCollapsed, { backgroundColor: colors.primary}]}>
