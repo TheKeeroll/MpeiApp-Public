@@ -2,6 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPrivacyAccessedAPITypes
+</key>
+	<dict>
+		<key>NSPrivacyAccessedAPICategoryUserDefaults</key>
+		<string>1C8F.1</string>
+		<key>NSPrivacyAccessedAPICategorySystemBootTime</key>
+		<string>8FFB.1</string>
+		<key>NSPrivacyAccessedAPICategoryDiskSpace</key>
+		<string>E174.1</string>
+		<key>NSPrivacyAccessedAPICategoryFileTimestamp</key>
+		<string>3B52.1</string>
+	</dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ru</string>
 	<key>CFBundleDisplayName</key>
