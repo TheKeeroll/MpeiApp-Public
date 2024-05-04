@@ -20,6 +20,10 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Сергей Выскиль'} link={'https://vk.com/seeeergey'} image={require('../../../assets/images/Gratitudies/Sergey.webp')}/>
                     <ListAvatarItem title={'Егор Гаврилов'} link={'https://vk.com/nxce16'} image={require('../../../assets/images/Gratitudies/Egor.webp')}/>
 
+                    <ListSeparator title={'Оказали финансовую поддержку'}/>
+                    <ListAvatarItem title={'Егор Клишин'} link={'https://vk.com/astralcheak'} image={require('../../../assets/images/Gratitudies/Klishin.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете поддержать проект!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
+
                     <ListSeparator title={'Предоставили аккаунт БАРС'}/>
                     <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
                     <ListAvatarItem title={'Иван'} link={'https://vk.com/iva_derevo'} image={require('../../../assets/images/Gratitudies/Ivan.webp')}/>
@@ -51,9 +55,6 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={"Алиса 'Alnijen' Балашова"} link={'https://vk.com/alnijen'} image={require('../../../assets/images/Gratitudies/alnijen.webp')}/>
                     <ListAvatarItem title={'Даниил Шеремет'} link={'https://vk.com/sheremetvideo'} image={require('../../../assets/images/Gratitudies/Sheremet.webp')}/>
                     <ListAvatarItem title={'Вы тоже можете предложить свою иконку!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
-
-                    <ListSeparator title={'Оказали финансовую поддержку'}/>
-                    <ListAvatarItem title={'Вы можете стать первым!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
                     <ListSeparator title={''}/>
                 </ScrollView>
             </SafeAreaView>
