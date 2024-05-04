@@ -408,10 +408,19 @@ export default class BARS{
       return Timeout(4000, fetch(URLS.BARS_MAIN, {
         method: 'POST',
         headers: {
-          'User-Agent': 'iPhone',
-          'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*',
-          'Content-Type': 'application/json',
-          'Referer': URLS.BARS_MAIN
+          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'accept-encoding': 'gzip, deflate, br',
+          'accept-language': 'ru,en;q=0.9',
+          'content-type': 'application/json',
+          'dnt': '1',
+          'origin': 'https://bars.mpei.ru',
+          'referer': URLS.BARS_MAIN,
+          'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': `"Windows"`,
+          'sec-fetch-user': '?1',
+          'sec-gpc': '1',
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
         },
         body: JSON.stringify({
           UserName: creds.login,
@@ -429,10 +438,19 @@ export default class BARS{
         } else return fetch(URLS.BARS_MAIN, {
           method: 'POST',
           headers: {
-            'User-Agent': 'iPhone',
-            'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*',
-            'Content-Type': 'application/json',
-            'Referer': URLS.BARS_MAIN
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-encoding': 'gzip, deflate, br',
+            'accept-language': 'ru,en;q=0.9',
+            'content-type': 'application/json',
+            'dnt': '1',
+            'origin': 'https://bars.mpei.ru',
+            'referer': URLS.BARS_MAIN,
+            'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': `"Windows"`,
+            'sec-fetch-user': '?1',
+            'sec-gpc': '1',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
           },
           body: JSON.stringify({
             UserName: creds.login,
