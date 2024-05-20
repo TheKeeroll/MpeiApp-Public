@@ -28,7 +28,6 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
                     <ListAvatarItem title={'Иван'} link={'https://vk.com/iva_derevo'} image={require('../../../assets/images/Gratitudies/Ivan.webp')}/>
                     <ListAvatarItem title={'Алиса'} link={'https://vk.com/space_cat_1'} image={require('../../../assets/images/Gratitudies/Alisa.webp')}/>
-                    <ListAvatarItem title={'Дарья'} link={'https://vk.com/fraudegirl'} image={require('../../../assets/images/Gratitudies/Dasha.webp')}/>
                     <ListAvatarItem title={'Максим'} link={'https://vk.com/m.nistratov'} image={require('../../../assets/images/Gratitudies/Maksim.webp')}/>
                     <ListAvatarItem title={'Анастасия'} link={'https://vk.com/nikelkatalizator'} image={require('../../../assets/images/Gratitudies/Anastasia.webp')}/>
                     <ListAvatarItem title={'Екатерина'} link={'https://vk.com/s_kat27'} image={require('../../../assets/images/Gratitudies/Katya.webp')}/>
