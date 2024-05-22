@@ -61,8 +61,9 @@ export interface BARSDiscipline {
   kms: KM[]
   examMarks: Mark[]
   resultMarks: Mark[]
-  sredBall: string,
+  sredBall: string
   debt?: boolean
+  examAutoId?: string
 }
 
 export interface BARSRecordBookDiscipline{
