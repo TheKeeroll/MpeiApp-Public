@@ -184,7 +184,7 @@ const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => 
                 renderItem={({item, index}: {item: KM, index: number})=><Cell item={item} index={index}/>}
                 ListHeaderComponent={()=>{
                     return (
-                        discipline.examMarks[0].mark != '-' ?
+                      (discipline.examMarks[0].mark != '-' && !(discipline.examMarks[0].mark.includes('П'))) ?
                             <ResultMarks marks={discipline.examMarks}/>
                             : <View style={{height: 20}}/>
                     )
