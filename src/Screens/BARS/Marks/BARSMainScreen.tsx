@@ -6,7 +6,7 @@ import {
     TouchableOpacity,
     View, FlatList, LayoutAnimation, Platform
 } from "react-native";
-import {SCREEN_SIZE} from "../../../Common/Constants";
+import { COMMON_HTTP_HEADER, SCREEN_SIZE } from "../../../Common/Constants";
 import {BARSDiscipline, Mark} from "../../../API/DataTypes";
 import {MarkToColor, AverageScoreToColor, withOpacity} from "../../../Themes/Themes";
 import {createStackNavigator} from "@react-navigation/stack";
@@ -21,12 +21,37 @@ import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import Moment from "moment";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import parse from "node-html-parser";
 const Stack = createStackNavigator()
 
 let weekDemonstration = "";
 let closeBARSDate = new Date(3000, 4, 21);
 let weekDColor = "#DDDDE0";
 let sessionStarted = false;
+
+const CheckFinalMarkAvailability = async (id: string | undefined): Promise<boolean> => {
+    try {
+        const response = await fetch(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
+            method: 'GET',
+            headers: COMMON_HTTP_HEADER,
+        })
+        const text = await response.text();
+        const examAutoPageStrongElements = parse(text).querySelectorAll('strong')
+
+        for (let element of examAutoPageStrongElements) {
+            if (element.toString().includes('согласия не выполнены')) {
+                console.log('FinalMarkAvailability checked: conditions are not met.')
+                return false
+            }
+        }
+
+        console.log('FinalMarkAvailability checked: conditions - OK!')
+        return true
+    } catch (e:any) {
+        console.warn('CheckFinalMarkAvailability : ' + e.toString());
+        return false
+    }
+}
 
 const SortMarksByDate = (marks: Mark[]) => {
     //return  marks.slice().sort((a,b)=> a.mark > b.mark ? 1 : a.mark == b.mark ? 0 : -1);
@@ -42,6 +67,7 @@ export function convertDate(d: string)
 
 const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: number}> =
     (props) => {
+    const marks = useSelector((state: RootState)=>state.MarkTable)
     const {colors, dark} = useTheme()
     const GetMainMark = () => {
         const m = props.discipline.resultMarks[props.discipline.resultMarks.length - 1].mark
@@ -52,13 +78,18 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     }
     closeBARSDate = convertDate(props.discipline.passUpUntil.split('\n')[0].trim())
     let todayDate= convertDate(new Date().getDDMMYY())
-    let discipleText = GetMainMark().includes(',') ? ('Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()) : 'Все КМ сданы'
+
+    const [discipleTextColor, setDiscipleTextColor] = useState<string>('#FFFFFF')
+    const [discipleText, setDiscipleText] = useState<string>('')
+    const [discipleTextSwitcher, setdiscipleTextSwitcher] = useState<boolean>(false)
+
+    let _discipleText = GetMainMark().includes(',') ? ('Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()) : 'Все КМ сданы'
     if (GetMainMark().includes(',')){
     }else if (!(GetMainMark().includes('5') || GetMainMark().includes('4') || GetMainMark().includes('3')) ){
-        discipleText = 'Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()
+        _discipleText = 'Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()
     }
-    if (discipleText.includes('-')) discipleText = ' '
-    let discipleTextColor = discipleText.includes('Все КМ') ? colors.accent : (todayDate >= new Date(closeBARSDate.getFullYear(), (closeBARSDate.getDate() - 7) > 0 ? closeBARSDate.getMonth() : (closeBARSDate.getMonth() - 1),(closeBARSDate.getDate() - 7) > 0 ? (closeBARSDate.getDate() - 7) : 26 )) ? colors.warning : colors.text
+    if (_discipleText.includes('-')) _discipleText = ' '
+    let _discipleTextColor = _discipleText.includes('Все КМ') ? colors.accent : (todayDate >= new Date(closeBARSDate.getFullYear(), (closeBARSDate.getDate() - 7) > 0 ? closeBARSDate.getMonth() : (closeBARSDate.getMonth() - 1),(closeBARSDate.getDate() - 7) > 0 ? (closeBARSDate.getDate() - 7) : 26 )) ? colors.warning : colors.text
     let typeColor : string
     let _type = props.discipline.debt ? 'Долг' : props.discipline.examType.charAt(0).toUpperCase() + props.discipline.examType.slice(1)
     if (_type.includes('без оценки')) typeColor = colors.accent
@@ -66,8 +97,8 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     else if (_type.includes('Долг')) typeColor = colors.highlight
     else typeColor = colors.error
     if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))){
-        discipleText = 'Все КМ сданы'
-        discipleTextColor = colors.accent
+        _discipleText = 'Все КМ сданы'
+        _discipleTextColor = colors.accent
         let breaker = false
          for (let i = 0; i < props.discipline.kms.length; i++){
              // console.log(props.discipline.kms[i])
@@ -80,23 +111,23 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                                  if (parseInt(props.discipline.kms[i].marks[j+1].mark) <= 2 || isNaN(parseInt(props.discipline.kms[i].marks[j+1].mark))){
                                      try {
                                          if (parseInt(props.discipline.kms[i].marks[j+2].mark) <= 2 || isNaN(parseInt(props.discipline.kms[i].marks[j+2].mark))){
-                                             discipleText = 'Долг !'
-                                             discipleTextColor = colors.error
+                                             _discipleText = 'Долг !'
+                                             _discipleTextColor = colors.error
                                              breaker = true
                                              break
                                          }
 
                                      }catch (e: any){
-                                         discipleText = 'Долг !'
-                                         discipleTextColor = colors.error
+                                         _discipleText = 'Долг !'
+                                         _discipleTextColor = colors.error
                                          breaker = true
                                          break
                                      }
                                  }
                              }
                          }catch (e: any){
-                             discipleText = 'Долг !'
-                             discipleTextColor = colors.error
+                             _discipleText = 'Долг !'
+                             _discipleTextColor = colors.error
                              breaker = true
                              break
                          }
@@ -106,15 +137,32 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
              if (breaker) break
          }
     }
+
+    useEffect(() => {
+        const checkAvailability = async () => {
+            if (marks.status !== "OFFLINE" && props.discipline.examAutoId !== '0') {
+                const isAvailable = await CheckFinalMarkAvailability(props.discipline.examAutoId)
+                if (isAvailable) {
+                    setDiscipleTextColor('#33FFFF')
+                    setDiscipleText(_discipleText + ', доступно получение оценки ПА!')
+                    setdiscipleTextSwitcher(true)
+                    console.log('FinalMarkAvailability confirmed - text and color updated accordingly!')
+                }
+            }
+        }
+        checkAvailability()
+    }, [])
     return (
         <View style={[Styles.disciplineView, {backgroundColor: colors.surface}]}>
             <View style={Styles.infoWrapper}>
                 <Text
+                        numberOfLines={2}
                         style={[
                             Styles.passUpText,
-                            {color: withOpacity(discipleTextColor, 80)}
+                            {color: withOpacity((discipleTextSwitcher ? discipleTextColor : _discipleTextColor), 80),
+                             fontWeight: discipleTextSwitcher ? 'bold' : 'normal'}
                         ]}>
-                        {props.discipline.debt ? '' : discipleText}
+                        {props.discipline.debt ? '' : (discipleTextSwitcher ? discipleText : _discipleText)}
                 </Text>
                 <View style={[Styles.disciplineNameView, {backgroundColor: colors.primary}]}>
                     <Text adjustsFontSizeToFit style={{color: colors.text}}>{props.discipline.name}</Text>

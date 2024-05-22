@@ -66,12 +66,18 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
 
     for(let i = 0; i < $h.length; i++){
       const headerRaw = $h[i].text.trim()
+      // console.log('headerRaw = ', headerRaw)
       const name = DisciplineFromHeader(headerRaw)
       if(name == 'NaN'){
         console.warn('No discipline found in: ' + headerRaw);
         return CreateBARSError('MARK_TABLE_PARSER_FAIL', 'No discipline found in ' + headerRaw)
       }
       let examType = ExamTypeFromHeader(headerRaw)
+      // @ts-ignore
+      const examAutoId = headerRaw.includes('получить оценку ПА') ? $h[i].querySelector('[data-ss-exam-auto-id]').getAttribute('data-ss-exam-auto-id') : '0'
+      if (examAutoId !== '0'){
+        console.log('Auto mark possibly available, id = ' + examAutoId)
+      }
       if(examType == 'NaN') examType = '-'
       const puuSplit = headerRaw.split('сдать до')
       const passUpUntil = puuSplit.length > 1 ? puuSplit[1].trim() : '-'
@@ -227,7 +233,8 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
         kms,
         examMarks,
         resultMarks,
-        sredBall
+        sredBall,
+        examAutoId
       })
     }
     console.timeEnd('ParsMarkTable')
