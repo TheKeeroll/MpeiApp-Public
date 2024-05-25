@@ -1,6 +1,7 @@
 import { SkippedClass, SkippedClassManagedBy } from "../DataTypes";
 import {CreateBARSError, BARSError} from "../Error/Error";
 import {parse} from "node-html-parser";
+import { Platform } from "react-native";
 
 const LessonTypeFromHeader = (header: string) => {
   const testFix = [
@@ -54,11 +55,18 @@ export const LessonIndexToTime = (index: string) => {
 
 export default function(raw: string): SkippedClass[] | BARSError{
 
+  const result: SkippedClass[] = []
+  let $
   try{
-    console.time('SkippedClassesParser')
+    console.time('SkippedClassesParser - ' + Platform.OS)
 
-    const $ = parse(raw).querySelector('#tbl__PartialListStudent__LessonSkip > tbody')!.querySelectorAll('tr')!
-    const result: SkippedClass[] = []
+    try {
+      $ = parse(raw).querySelector('#tbl__PartialListStudent__LessonSkip > tbody')!.querySelectorAll('tr')!
+    } catch (e){
+      console.log('SkippedClasses not detected.')
+      console.timeEnd('SkippedClassesParser - ' + Platform.OS)
+      return result
+    }
 
     for(let i of $){
       const isGoodExcuse = i.text.includes('По уважительной причине')
@@ -89,7 +97,7 @@ export default function(raw: string): SkippedClass[] | BARSError{
       result.push(skippedClass)
     }
 
-    console.timeEnd('SkippedClassesParser')
+    console.timeEnd('SkippedClassesParser - ' + Platform.OS)
     return result
   }catch(e: any){
     console.warn('Unhandled error:' + e);
