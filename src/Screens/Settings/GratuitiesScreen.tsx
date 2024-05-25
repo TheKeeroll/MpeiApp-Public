@@ -38,6 +38,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Лилияна Рожница'} link={'https://vk.com/lovlycherry'} image={require('../../../assets/images/Gratitudies/Lilia.webp')}/>
                     <ListAvatarItem title={'Артём Темнышев'} link={'https://vk.com/begun1ok'} image={require('../../../assets/images/Gratitudies/ArtemTemn.webp')}/>
                     <ListAvatarItem title={'Джалал Гусейнов'} link={'https://vk.com/jjjall'} image={require('../../../assets/images/Gratitudies/jjjall.webp')}/>
+                    <ListAvatarItem title={'Сергей Мелихов'} link={'https://vk.com/sergeymelikhov'} image={require('../../../assets/images/Gratitudies/SergeyMelihov.webp')}/>
                     <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
 
                     <ListSeparator title={'Наполнение/уточнение карты'}/>
