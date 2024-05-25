@@ -1,27 +1,28 @@
-import {createDrawerNavigator, DrawerContentScrollView} from "@react-navigation/drawer";
-import React, {Fragment, useState} from "react";
-import BARSMainScreen from "./Marks/BARSMainScreen";
+import { createDrawerNavigator, DrawerContentScrollView } from "@react-navigation/drawer";
+import React, { Fragment, useState } from "react";
+import BARSMainScreen, { convertDate } from "./Marks/BARSMainScreen";
 import RecordBookScreen from "./RecordBook/RecordBookScreen";
 import ReportsScreen from "./Reports/ReportsScreen";
 import SkippedClassesScreen from "./SkippedClasses/SkippedClassesScreen";
-import {SafeAreaView, Text, TouchableOpacity, View} from "react-native";
-import {
-    DrawerActions,
-    getFocusedRouteNameFromRoute,
-    useNavigation
-} from "@react-navigation/native";
-import BARSAPI, {CapitalizeFirstChar} from "../../Common/Globals";
-import {SCREEN_SIZE} from "../../Common/Constants";
-import * as EIcon from 'react-native-vector-icons/Entypo'
-import * as ADIcon from 'react-native-vector-icons/AntDesign'
-import * as FAIcon from 'react-native-vector-icons/FontAwesome'
-import {useTheme} from "react-native-paper";
-import {withOpacity} from "../../Themes/Themes";
-import Clipboard from '@react-native-clipboard/clipboard';
+import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { DrawerActions, getFocusedRouteNameFromRoute, useNavigation } from "@react-navigation/native";
+import BARSAPI from "../../Common/Globals";
+import { CapitalizeFirstChar } from "../../Common/Globals";
+import { SCREEN_SIZE } from "../../Common/Constants";
+import * as EIcon from "react-native-vector-icons/Entypo";
+import * as ADIcon from "react-native-vector-icons/AntDesign";
+import * as FAIcon from "react-native-vector-icons/FontAwesome";
+import { useTheme } from "react-native-paper";
+import { withOpacity } from "../../Themes/Themes";
+import Clipboard from "@react-native-clipboard/clipboard";
 import QuestionnairesScreen from "./Questionnaires/QuestionnairesScreen";
 import TasksScreen from "./Tasks/TasksScreen";
 import StipendsScreen from "./Stipends/StipendsScreen";
 import OrdersScreen from "./Orders/OrdersScreen";
+import { useSelector } from "react-redux";
+import { RootState } from "../../API/Redux/Store";
+import { BARSStipend, SkippedClass } from "../../API/DataTypes";
+
 const Drawer = createDrawerNavigator()
 
 const SpacingBig = () => (<View style={{height: 25.5, width: '100%'}}/>)
@@ -53,10 +54,10 @@ const DrawerHeader: React.FC = () => {
     if (student.status == "завершил обучение"){
         status_color = '#33FFFF'
     }
-    else if (student.status == "временно допущен к обучению"){
+    else if (student.status.includes("временно")){
         status_color = colors.warning
     }
-    else if (student.status == "отчислен"){
+    else if (student.status.includes("отчислен")){
         status_color = colors.error
     }
 
@@ -85,7 +86,7 @@ const DrawerHeader: React.FC = () => {
     )
 }
 
-const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, onPress:()=>void, title: string, routeName: string, iconComponent: JSX.Element}> = (props) => {
+const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, onPress:()=>void, title: string, routeName: string, iconComponent: JSX.Element, counter: number, counterColor: string}> = (props) => {
     const isExit = props.routeName == 'exit'
     const isFocused = props.presserId == props.id || isExit && false
     const {colors} = useTheme()
@@ -111,6 +112,11 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
                 {props.iconComponent}
             </View>
             <Text style={{fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
+            {props.counter > 0 && (
+              <View style={{ marginLeft: 'auto', marginRight: 10, backgroundColor: colors.backdrop, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <Text style={{ color: props.counterColor, fontWeight: 'bold'}}>{props.counter}</Text>
+              </View>
+            )}
         </TouchableOpacity>
     )
 }
@@ -118,6 +124,136 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
 const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     const {colors} = useTheme()
     const [pressedId, setPressedId] = useState(0)
+
+    let todayDate= convertDate(new Date().getDDMMYY())
+
+    let activeStipendsCounter = 0
+    const stipends = useSelector((state: RootState)=>state.Stipends)
+    try {
+        for (let i = 0; i <= (stipends.data!.length - 1); i++) {
+            if (todayDate <= convertDate(stipends.data![i].end_date)){
+                activeStipendsCounter++
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, activeStipendsCounter - ' + e.toString())
+    }
+
+    const skippedClasses = useSelector((state: RootState)=>state.SkippedClasses)
+    let skippedCounter = 0
+    try {
+    let total_skipped = skippedClasses.data!.length * 2
+    const skippedClassesMap: Map<string, SkippedClass[]> = new Map()
+    for(let i of skippedClasses.data!){
+        if(typeof skippedClassesMap.get(i.lesson) == 'undefined') skippedClassesMap.set(i.lesson, [])
+        skippedClassesMap.get(i.lesson)!.push(i)
+    }
+    const skippedClassesArray = Array.from(skippedClassesMap, ([, v])=>v)
+    let goodExcuseCount = 0
+    for(let i of skippedClassesArray)
+        for(let k of i)
+            if(k.goodExcuse)
+                goodExcuseCount++
+    goodExcuseCount *= 2
+
+    skippedCounter = total_skipped - goodExcuseCount
+    } catch (e:any){
+        console.warn('Drawer, skippedCounter - ' + e.toString())
+    }
+    let skippedCounterColor = colors.warning
+    if (skippedCounter >= 20 && skippedCounter <= 40){
+        skippedCounterColor = colors.notification
+    } else if (skippedCounter >= 40){
+        skippedCounterColor = colors.error
+    }
+
+    const tasks = useSelector((state: RootState)=>state.Tasks)
+    let unhandledTasksCounter = 0
+    try {
+        for (let i = 0; i <= (tasks.data!.length - 1); i++) {
+            if (!tasks.data![i].status.includes('ознакомлен')) {
+                unhandledTasksCounter++
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, unhandledTasksCounter - ' + e.toString())
+    }
+
+    const reports = useSelector((state: RootState)=>state.Reports)
+    let unhandledReportsCounter = 0
+    try {
+        for (let i = 0; i <= (reports.data!.length - 1); i++) {
+            if (!reports.data![i].status.includes('завершена')) {
+                unhandledReportsCounter++
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, unhandledReportsCounter - ' + e.toString())
+    }
+
+    const questionnaires = useSelector((state: RootState)=>state.Questionnaires)
+    let unhandledQuestionnairesCounter = 0
+    try {
+        for (let i = 0; i <= (questionnaires.data!.length - 1); i++) {
+            if (!questionnaires.data![i].status.includes('завершено')) {
+                unhandledQuestionnairesCounter++
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, unhandledQuestionnairesCounter - ' + e.toString())
+    }
+
+    const marks = useSelector((state: RootState)=>state.MarkTable)
+    let currentDebtsCounter = 0
+    try {
+        for (let l = 0; l <= (marks.data!.disciplines.length - 1); l++) {
+            let closeBARSDate = convertDate(marks.data!.disciplines[l].passUpUntil.split('\n')[0].trim())
+            if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) {
+                let breaker = false
+                for (let i = 0; i < marks.data!.disciplines[l].kms.length; i++) {
+                    for (let j = 0; j < marks.data!.disciplines[l].kms[i].marks.length; j++) {
+                        if (parseInt(marks.data!.disciplines[l].kms[i].marks[j].mark) <= 2 || isNaN(parseInt(marks.data!.disciplines[l].kms[i].marks[j].mark))) {
+                            if (marks.data!.disciplines[l].kms[i].marks[j].type == 'CURRENT') {
+                                try {
+                                    if (marks.data!.disciplines[l].kms[i].marks[j + 1].type == 'NOT_TAKEN_INTO_ACCOUNT' || marks.data!.disciplines[l].kms[i].marks[j + 1].type == 'RETAKE') {
+                                        if (parseInt(marks.data!.disciplines[l].kms[i].marks[j + 1].mark) <= 2 || isNaN(parseInt(marks.data!.disciplines[l].kms[i].marks[j + 1].mark))) {
+                                            try {
+                                                if (parseInt(marks.data!.disciplines[l].kms[i].marks[j + 2].mark) <= 2 || isNaN(parseInt(marks.data!.disciplines[l].kms[i].marks[j + 2].mark))) {
+                                                    currentDebtsCounter++
+                                                    breaker = true
+                                                    break
+                                                }
+
+                                            } catch (e: any) {
+                                                currentDebtsCounter++
+                                                breaker = true
+                                                break
+                                            }
+                                        }
+                                    }
+                                } catch (e: any) {
+                                    currentDebtsCounter++
+                                    breaker = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    if (breaker) break
+                }
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, currentDebtsCounter - ' + e.toString())
+    }
+    const additional = useSelector((state: RootState)=>state.AdditionalData)
+    let _finalMarkAvailabilityCounter = 0
+    try {
+        _finalMarkAvailabilityCounter = additional.data!.finalMarkAvailabilityCounter
+    } catch (e:any){
+        console.warn('Drawer, finalMarkAvailabilityCounter - ' + e.toString())
+    }
+
     return(
         <Fragment>
             <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
@@ -132,6 +268,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         routeName={'barsMainDrawer'} {...props}
                         title={'Оценки'}
                         iconComponent={<EIcon.default name={'bar-graph'} size={18} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                        counter={_finalMarkAvailabilityCounter > 0 ? _finalMarkAvailabilityCounter : (currentDebtsCounter > 0 ? currentDebtsCounter : (BARSAPI.Debts.length ? BARSAPI.Debts.length : 0))}
+                        counterColor={_finalMarkAvailabilityCounter > 0 ? '#33FFFF' : colors.error }
                     />
                     <DrawerButton
                         id={1}
@@ -140,6 +278,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         routeName={'recordBook'} {...props}
                         title={'Зачётная книжка'}
                         iconComponent={<ADIcon.default name={'book'} size={20} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                        counter={0}
+                        counterColor={colors.text}
                     />
                     <DrawerButton
                         id={2}
@@ -148,6 +288,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         routeName={'skippedClasses'} {...props}
                         title={'Пропуски'}
                         iconComponent={<FAIcon.default name={'calendar'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                        counter={skippedCounter}
+                        counterColor={skippedCounterColor}
                     />
                     <DrawerButton
                       id={3}
@@ -156,6 +298,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       routeName={'tasks'} {...props}
                       title={'Задания'}
                       iconComponent={<FAIcon.default name={'tasks'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                      counter={unhandledTasksCounter}
+                      counterColor={colors.warning}
                     />
                     <DrawerButton
                         id={4}
@@ -164,6 +308,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         routeName={'reports'} {...props}
                         title={'Отчёты'}
                         iconComponent={<FAIcon.default name={'file-text'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                        counter={unhandledReportsCounter}
+                        counterColor={colors.warning}
                     />
                     <DrawerButton
                       id={5}
@@ -172,6 +318,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       routeName={'stipends'} {...props}
                       title={'Стипендии'}
                       iconComponent={<FAIcon.default name={'money'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                      counter={activeStipendsCounter}
+                      counterColor={colors.accent}
                     />
                     <DrawerButton
                       id={6}
@@ -180,6 +328,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       routeName={'orders'} {...props}
                       title={'Приказы'}
                       iconComponent={<FAIcon.default name={'list-alt'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                      counter={0}
+                      counterColor={colors.textUnderline}
                     />
                     <DrawerButton
                       id={7}
@@ -188,11 +338,13 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       routeName={'questionnaires'} {...props}
                       title={'Анкеты'}
                       iconComponent={<ADIcon.default name={'questioncircleo'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                      counter={unhandledQuestionnairesCounter}
+                      counterColor={colors.warning}
                     />
 
                 </DrawerContentScrollView>
-                <DrawerButton {...props} presserId={-1} id={-2} onPress={()=>{}} title={'Выйти'} routeName={'exit'} iconComponent={
-                    <EIcon.default name={'log-out'} color={'#FF8B8B'} adjustsFontSizeToFit size={20}/>
+                <DrawerButton {...props} presserId={-1} id={-2} onPress={()=>{}} title={'Выйти'} routeName={'exit'} counter={0} counterColor={colors.text} iconComponent={
+                    <EIcon.default name={'log-out'} color={colors.notification} adjustsFontSizeToFit size={20}/>
                 }/>
             </SafeAreaView>
         </Fragment>

@@ -182,3 +182,7 @@ export interface BARSCredentials {
   password: string
 }
 
+export interface AdditionalData {
+  finalMarkAvailabilityCounter: number
+}
+

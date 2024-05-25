@@ -52,7 +52,8 @@ export const STORAGE_KEYS = {
   SKIPPED_CLASSES: 'skippedClasses',
   RECORD_BOOK: 'recordBook',
   MAIL_CACHE: 'mailCache',
-  MAIL_USERS_CACHE: 'mailUsers'
+  MAIL_USERS_CACHE: 'mailUsers',
+  ADDITIONAL_DATA: 'additionalData'
 }
 
 export const TEACHER_RANKS: string[] = [
