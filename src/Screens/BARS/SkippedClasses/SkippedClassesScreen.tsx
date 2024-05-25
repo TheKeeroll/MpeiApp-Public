@@ -26,7 +26,7 @@ const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     return (
         <Fragment>
             <View style={{ justifyContent: 'space-evenly', alignItems: 'center', flexDirection: 'row', marginTop: '5%', minWidth: '70%', height: 40, borderRadius: 10, backgroundColor: props.hours >= 40 ? colors.notification : colors.primary}}>
-                <Text adjustsFontSizeToFit numberOfLines={1} style={{fontSize: 14, paddingHorizontal: 2, fontWeight: '700', color: colors.text}}>{`Всего пропущено часов: ${props.hours} (Пар: ${props.hours / 2})`}</Text>
+                <Text adjustsFontSizeToFit numberOfLines={1} style={{fontSize: 14, paddingHorizontal: 2, fontWeight: '700', color: props.hours == 0 ? colors.accent : colors.text}}>{`Всего пропущено часов: ${props.hours} (Пар: ${props.hours / 2})`}</Text>
             </View>
             {props.goodExcuse > 0 &&
             <View style={{ justifyContent: 'space-evenly', alignItems: 'center', flexDirection: 'row', marginTop: '2%', minWidth: '70%', height: 40, borderRadius: 10, backgroundColor: colors.marks["5"]}}>
