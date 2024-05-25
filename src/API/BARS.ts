@@ -1,4 +1,5 @@
 import {
+  AdditionalData,
   BARSCredentials,
   BARSData,
   BARSDiscipline,
@@ -24,6 +25,7 @@ import { parse } from "node-html-parser";
 import { MMKV } from "react-native-mmkv";
 import { Store } from "./Redux/Store";
 import {
+  updateAdditionalData,
   updateMarkTable,
   updateOrders,
   updateQuestionnaires,
@@ -249,6 +251,7 @@ export default class BARS{
     Store.dispatch(updateOrders({status: "LOADING", data: null}))
     Store.dispatch(updateQuestionnaires({status: "LOADING", data: null}))
     Store.dispatch(updateMarkTable({status: "LOADING", data: null}))
+    Store.dispatch(updateAdditionalData({status: "LOADING", data: null}))
     DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN')
     this.mCurrentData = {}
     this.mTestMode = false
@@ -279,13 +282,20 @@ export default class BARS{
       return Promise.resolve();
     }
 
+    let initialAddData: AdditionalData = {
+      finalMarkAvailabilityCounter: 0
+    }
+    Store.dispatch(updateAdditionalData({status: "LOADED", data: initialAddData}))
+    this.mStorage.set(STORAGE_KEYS.ADDITIONAL_DATA, JSON.stringify(initialAddData))
+
+
     return this.FetchCurrentWeek().finally(
             () => this.FetchMarkTable().finally(()=>{
 
               const Con = () => this.FetchSchedule().finally(
                   () => {
                     DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
-                    console.log('Main fetch complete')
+                    console.log('Main fetch completed')
                     return this.FetchSkippedClasses().finally(
                         () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
                             () => this.FetchRecordBook().finally(
@@ -294,7 +304,7 @@ export default class BARS{
                                   () => this.FetchStipends().finally(
                                     () => this.FetchOrders().finally(
                                       () => this.FetchQuestionnaires().finally(
-                                        () => console.log('Extra fetch complete')
+                                        () => console.log('Extra fetch completed')
                                 ))))))))
                   })
 
@@ -309,7 +319,7 @@ export default class BARS{
                     if (new RegExp(/[0-2]/gm).test(mark)) {
                       discipline.debt = true
                       debts.push(discipline);
-                      console.log('Pushed debt', discipline.name, mark)
+                      console.log('Pushed debt: ' + discipline.name + ' - ' + mark)
                     }
                   }
                   this.mDebts = debts
@@ -568,6 +578,7 @@ export default class BARS{
     const orders = this.mStorage.getString(STORAGE_KEYS.ORDERS)
     const questionnaires = this.mStorage.getString(STORAGE_KEYS.QUESTIONNAIRES)
     const student = this.mStorage.getString(STORAGE_KEYS.STUDENT_INFO)
+    const addData = this.mStorage.getString(STORAGE_KEYS.ADDITIONAL_DATA)
 
     //console.warn(schedule,marks,skippedClasses,recordBook,student, reports)
 
@@ -593,6 +604,7 @@ export default class BARS{
     Store.dispatch(updateStipends({status: "OFFLINE", data: typeof stipends != 'undefined' ? JSON.parse(stipends) : null}))
     Store.dispatch(updateOrders({status: "OFFLINE", data: typeof orders != 'undefined' ? JSON.parse(orders) : null}))
     Store.dispatch(updateQuestionnaires({status: "OFFLINE", data: typeof questionnaires != 'undefined' ? JSON.parse(questionnaires) : null}))
+    Store.dispatch(updateAdditionalData({status: "OFFLINE", data: typeof addData != 'undefined' ? JSON.parse(addData) : null}))
     console.log('All offline data dispatched.')
     //DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
   }

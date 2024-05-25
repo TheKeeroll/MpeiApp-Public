@@ -7,13 +7,13 @@ import {
     View, FlatList, LayoutAnimation, Platform
 } from "react-native";
 import { COMMON_HTTP_HEADER, SCREEN_SIZE } from "../../../Common/Constants";
-import {BARSDiscipline, Mark} from "../../../API/DataTypes";
+import { AdditionalData, BARSDiscipline, Mark } from "../../../API/DataTypes";
 import {MarkToColor, AverageScoreToColor, withOpacity} from "../../../Themes/Themes";
 import {createStackNavigator} from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
 import BARSAPI from "../../../Common/Globals";
 import {useSelector} from 'react-redux'
-import {RootState} from "../../../API/Redux/Store";
+import { RootState, Store } from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
 import {useTheme} from "react-native-paper";
 import ScheduleScreen from "../../Schedule/ScheduleScreen";
@@ -22,6 +22,7 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import Moment from "moment";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import parse from "node-html-parser";
+import { updateAdditionalData } from "../../../API/Redux/Slices";
 const Stack = createStackNavigator()
 
 let weekDemonstration = "";
@@ -29,13 +30,15 @@ let closeBARSDate = new Date(3000, 4, 21);
 let weekDColor = "#DDDDE0";
 let sessionStarted = false;
 
+let finalMarkAvailabilityCounter = 0
+
 const CheckFinalMarkAvailability = async (id: string | undefined): Promise<boolean> => {
     try {
         const response = await fetch(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
             method: 'GET',
             headers: COMMON_HTTP_HEADER,
         })
-        const text = await response.text();
+        const text = await response.text()
         const examAutoPageStrongElements = parse(text).querySelectorAll('strong')
 
         for (let element of examAutoPageStrongElements) {
@@ -48,7 +51,7 @@ const CheckFinalMarkAvailability = async (id: string | undefined): Promise<boole
         console.log('FinalMarkAvailability checked: conditions - OK!')
         return true
     } catch (e:any) {
-        console.warn('CheckFinalMarkAvailability : ' + e.toString());
+        console.warn('CheckFinalMarkAvailability : ' + e.toString())
         return false
     }
 }
@@ -146,6 +149,11 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                     setDiscipleTextColor('#33FFFF')
                     setDiscipleText(_discipleText + ', доступно получение оценки ПА!')
                     setdiscipleTextSwitcher(true)
+                    finalMarkAvailabilityCounter++
+                    let add: AdditionalData = {
+                        finalMarkAvailabilityCounter: finalMarkAvailabilityCounter
+                    }
+                    Store.dispatch(updateAdditionalData({status: "LOADED", data: add}))
                     console.log('FinalMarkAvailability confirmed - text and color updated accordingly!')
                 }
             }
@@ -266,7 +274,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                     else {
                         vacationsDate = convertDate('04.07.' + new Date().getFullYear().toString().substring(-2))
                     }
-                    console.warn('vacantions: ' + vacationsDate.getDDMMYY());
+                    console.warn('vacations: ' + vacationsDate.getDDMMYY());
                     if (todayDate >= vacationsDate){
                         weekDemonstration = 'Сессия завершилась'
                         weekDColor = colors.accent
