@@ -32,7 +32,7 @@ let sessionStarted = false;
 
 let finalMarkAvailabilityCounter = 0
 
-const CheckFinalMarkAvailability = async (id: string | undefined): Promise<boolean> => {
+const CheckFinalMarkAvailability = async (id: string | undefined): Promise<string> => {
     try {
         const response = await fetch(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
             method: 'GET',
@@ -44,15 +44,23 @@ const CheckFinalMarkAvailability = async (id: string | undefined): Promise<boole
         for (let element of examAutoPageStrongElements) {
             if (element.toString().includes('согласия не выполнены')) {
                 console.log('FinalMarkAvailability checked: conditions are not met.')
-                return false
+                return 'NO CONDITIONS'
             }
         }
-
         console.log('FinalMarkAvailability checked: conditions - OK!')
-        return true
+        const examAutoPageSpanElements = parse(text).querySelectorAll('span')
+        let finalDate = 'NO DATE'
+        for (let spanElement of examAutoPageSpanElements) {
+            if (spanElement.toString().includes('может быть предоставлено до')) {
+                finalDate = spanElement.toString().split('до ')[1].split('включительно')[0].trim()
+                console.log('FinalDate = ' + finalDate)
+                return finalDate
+            }
+        }
+        return finalDate
     } catch (e:any) {
         console.warn('CheckFinalMarkAvailability : ' + e.toString())
-        return false
+        return 'NO CONDITIONS - CHECKING FAILED!'
     }
 }
 
@@ -99,7 +107,12 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     else if (_type.includes('с оценкой')) typeColor = colors.warning
     else if (_type.includes('Долг')) typeColor = colors.highlight
     else typeColor = colors.error
-    if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))){
+    if (props.discipline.examMarks[0].mark.includes('П')) {
+
+        _discipleText = 'Предоставлено согласие на получение оценки ПА!'
+        _discipleTextColor = colors.accent
+
+    } else if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))){
         _discipleText = 'Все КМ сданы'
         _discipleTextColor = colors.accent
         let breaker = false
@@ -144,17 +157,21 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     useEffect(() => {
         const checkAvailability = async () => {
             if (marks.status !== "OFFLINE" && props.discipline.examAutoId !== '0') {
-                const isAvailable = await CheckFinalMarkAvailability(props.discipline.examAutoId)
-                if (isAvailable) {
+                const finalMarkCheckRes = await CheckFinalMarkAvailability(props.discipline.examAutoId)
+                if (!finalMarkCheckRes.includes('NO CONDITIONS')) {
                     setDiscipleTextColor('#33FFFF')
-                    setDiscipleText(_discipleText + ', доступно получение оценки ПА!')
+                    if (!finalMarkCheckRes.includes('NO')){
+                        setDiscipleText('До '+ finalMarkCheckRes + ' доступно согласие на оценку ПА!')
+                    } else {
+                        setDiscipleText('Доступно согласие на оценку ПА!')
+                    }
                     setdiscipleTextSwitcher(true)
                     finalMarkAvailabilityCounter++
                     let add: AdditionalData = {
                         finalMarkAvailabilityCounter: finalMarkAvailabilityCounter
                     }
                     Store.dispatch(updateAdditionalData({status: "LOADED", data: add}))
-                    console.log('FinalMarkAvailability confirmed - text and color updated accordingly!')
+                    console.log('FinalMarkAvailability confirmed - text and counter updated accordingly!')
                 }
             }
         }
