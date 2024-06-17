@@ -96,11 +96,11 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
 
     let _discipleText = GetMainMark().includes(',') ? ('Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()) : 'Все КМ сданы'
     if (GetMainMark().includes(',')){
-    }else if (!(GetMainMark().includes('5') || GetMainMark().includes('4') || GetMainMark().includes('3')) ){
-        _discipleText = 'Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()
-    }
+    }else if (GetMainMark().includes('5') || GetMainMark().includes('4') || GetMainMark().includes('3')){
+        _discipleText = 'ДИСЦИПЛИНА СДАНА'
+    } else _discipleText = 'Сдать до ' + props.discipline.passUpUntil.split('\n')[0].trim()
     if (_discipleText.includes('-')) _discipleText = ' '
-    let _discipleTextColor = _discipleText.includes('Все КМ') ? colors.accent : (todayDate >= new Date(closeBARSDate.getFullYear(), (closeBARSDate.getDate() - 7) > 0 ? closeBARSDate.getMonth() : (closeBARSDate.getMonth() - 1),(closeBARSDate.getDate() - 7) > 0 ? (closeBARSDate.getDate() - 7) : 26 )) ? colors.warning : colors.text
+    let _discipleTextColor = (_discipleText.includes('Все КМ') || _discipleText.includes('СДАНА')) ? colors.accent : (todayDate >= new Date(closeBARSDate.getFullYear(), (closeBARSDate.getDate() - 7) > 0 ? closeBARSDate.getMonth() : (closeBARSDate.getMonth() - 1),(closeBARSDate.getDate() - 7) > 0 ? (closeBARSDate.getDate() - 7) : 26 )) ? colors.warning : colors.text
     let typeColor : string
     let _type = props.discipline.debt ? 'Долг' : props.discipline.examType.charAt(0).toUpperCase() + props.discipline.examType.slice(1)
     if (_type.includes('без оценки')) typeColor = colors.accent
@@ -113,7 +113,9 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
         _discipleTextColor = colors.accent
 
     } else if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))){
-        _discipleText = 'Все КМ сданы'
+        if ((GetMainMark().includes('5') || GetMainMark().includes('4') || GetMainMark().includes('3')) && !(GetMainMark().includes(','))){
+            _discipleText = 'ДИСЦИПЛИНА СДАНА'
+        } else _discipleText = 'Все КМ сданы'
         _discipleTextColor = colors.accent
         let breaker = false
          for (let i = 0; i < props.discipline.kms.length; i++){
