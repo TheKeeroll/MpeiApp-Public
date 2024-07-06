@@ -11,7 +11,7 @@ import {
   Semester,
   Teacher,
 } from "./DataTypes";
-import { COMMON_HTTP_HEADER, STORAGE_KEYS, URLS } from "../Common/Constants";
+import { COMMON_HTTP_HEADER, LOGIN_HEADER, STORAGE_KEYS, URLS } from "../Common/Constants";
 import { cheerio, Compare } from "../Common/Globals";
 import { ParseStudentInfo } from "./Parsers/StudentInfoParser";
 import ParsMarkTable from "./Parsers/MarkTableParser";
@@ -46,6 +46,8 @@ import QuestionnairesParser from "./Parsers/QuestionnairesParser";
 import TasksParser from "./Parsers/TasksParser";
 import StipendsParser from "./Parsers/StipendsParser";
 import OrdersParser from "./Parsers/OrdersParser";
+// @ts-ignore
+import * as HTMLParser from 'fast-html-parser'
 
 export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
 
@@ -417,21 +419,7 @@ export default class BARS{
       console.time('Login&StudentInfoParser')
       return Timeout(4000, fetch(URLS.BARS_MAIN, {
         method: 'POST',
-        headers: {
-          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-          'accept-encoding': 'gzip, deflate, br',
-          'accept-language': 'ru,en;q=0.9',
-          'content-type': 'application/json',
-          'dnt': '1',
-          'origin': 'https://bars.mpei.ru',
-          'referer': URLS.BARS_MAIN,
-          'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': `"Windows"`,
-          'sec-fetch-user': '?1',
-          'sec-gpc': '1',
-          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
-        },
+        headers: LOGIN_HEADER,
         body: JSON.stringify({
           UserName: creds.login,
           Password: creds.password,
@@ -447,21 +435,7 @@ export default class BARS{
           })
         } else return fetch(URLS.BARS_MAIN, {
           method: 'POST',
-          headers: {
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-encoding': 'gzip, deflate, br',
-            'accept-language': 'ru,en;q=0.9',
-            'content-type': 'application/json',
-            'dnt': '1',
-            'origin': 'https://bars.mpei.ru',
-            'referer': URLS.BARS_MAIN,
-            'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': `"Windows"`,
-            'sec-fetch-user': '?1',
-            'sec-gpc': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
-          },
+          headers: LOGIN_HEADER,
           body: JSON.stringify({
             UserName: creds.login,
             Password: creds.password,
@@ -473,8 +447,8 @@ export default class BARS{
         .then((response) => {
           // throw "ters";
           this.mCurrentData = {}
-          if (response.includes("Студенты")) { //mul acc
-            const isHeadman = response.includes("Студенты") && response.includes("Отчёты");
+          if (response.includes("Студенты")) { //multi-account
+            const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
             return fetch(URLS.BARS_MULTI_ACCOUNT, {
               method: "GET",
               headers: COMMON_HTTP_HEADER,
@@ -501,47 +475,103 @@ export default class BARS{
                 method: "GET",
                 headers: COMMON_HTTP_HEADER,
               }).then(r => r.text()).then((response) => {
-                console.log("Successfully logged in multi-account");
+                if (!(response.includes("Оценки в БАРС"))) {
+                  console.warn("Not main BARS page during multi-account login! An attempt to redirect...")
+                  try {
+                    let studentID = response.split('studentID=')[1].split('"')[0]
+                    console.warn('studentID= ' + studentID)
+                    return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+                      method: "GET",
+                      headers: COMMON_HTTP_HEADER,
+                    }).then(r => r.text()).then((response) => {
+                      console.log("Successfully redirected and logged in multi-account")
+                      const result = ParseStudentInfo(response)
 
-                const result = ParseStudentInfo(response);
+                      if (isBARSError(result)) throw result;
 
-                if (isBARSError(result)) throw result;
+                      this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+                      this.mCurrentData.student = result as BARSStudentInfo;
+                      console.timeEnd('Login&StudentInfoParser')
+                      console.log(this.mCurrentData.student);
+                      this.mCurrentData.student.headman = isHeadman;
 
-                this.mCurrentData.availableSemesters = GetAvailableSemesters(response);
-                this.mCurrentData.student = result as BARSStudentInfo;
+                      this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+                      this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
+
+                      return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+                    })
+                  } catch (e:any) {
+                    console.warn('ERROR: ' + e.toString())
+                    throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+                  }
+                } else {
+                  console.log("Successfully logged in multi-account");
+
+                  const result = ParseStudentInfo(response)
+
+                  if (isBARSError(result)) throw result;
+
+                  this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+                  this.mCurrentData.student = result as BARSStudentInfo;
+                  console.timeEnd('Login&StudentInfoParser')
+                  console.log(this.mCurrentData.student);
+                  this.mCurrentData.student.headman = isHeadman;
+
+                  this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+                  this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
+
+                  return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+                }
+              })
+            })
+          } else if (response.includes("Логин состоит из символов латинского алфавита и")) {
+              isIncorrectLoginPassword = true
+              throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль!")
+          } else if (!(response.includes("Оценки в БАРС"))) {
+            console.warn("Not main BARS page! An attempt to redirect...")
+            try {
+              let studentID = response.split('studentID=')[1].split('"')[0]
+              console.warn('studentID= ' + studentID)
+              return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+                method: "GET",
+                headers: COMMON_HTTP_HEADER,
+              }).then(r => r.text()).then((response) => {
+                console.log("Successfully redirected and logged in")
+                const result = ParseStudentInfo(response)
+                if (isBARSError(result)) {
+                  console.error("BARS error detected!")
+                  throw result;
+                }
+
+                this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+                this.mCurrentData.student = result as BARSStudentInfo
                 console.timeEnd('Login&StudentInfoParser')
                 console.log(this.mCurrentData.student);
-                this.mCurrentData.student.headman = isHeadman;
-
-                this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds));
-                this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-
-                return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE");
-              });
-            });
+                this.mCurrentData.student.headman = false;
+                this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+                this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+                return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+              })
+            } catch (e:any) {
+              console.warn('ERROR: ' + e.toString())
+              throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+            }
           } else if (response.includes("Рейтинг")) {
-            console.log("Successfully logged in");
-            const result = ParseStudentInfo(response);
+            console.log("Successfully logged in")
+            const result = ParseStudentInfo(response)
             if (isBARSError(result)) {
-              console.error("BARS error detected");
+              console.error("BARS error detected!")
               throw result;
             }
 
-            this.mCurrentData.availableSemesters = GetAvailableSemesters(response);
-            this.mCurrentData.student = result as BARSStudentInfo;
+            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+            this.mCurrentData.student = result as BARSStudentInfo
             console.timeEnd('Login&StudentInfoParser')
             console.log(this.mCurrentData.student);
             this.mCurrentData.student.headman = false;
-            this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds));
-            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-            return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE");
-          } else {
-            if (response.includes("Логин состоит из символов латинского алфавита и")) {
-              isIncorrectLoginPassword = true;
-              throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль!");
-            } else {
-              throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз, если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!");
-            }
+            this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+            return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
           }
         }).catch((e: any) => {
           //Оффлайн мод

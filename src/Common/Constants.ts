@@ -38,6 +38,21 @@ export const COMMON_HTTP_HEADER = {
   'y-browser-experiments': 'NjczMTM3LDAsNTA=',
   'credentials': 'include'
 }
+export const LOGIN_HEADER = {
+  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'accept-encoding': 'gzip, deflate, br',
+  'accept-language': 'ru,en;q=0.9',
+  'content-type': 'application/json',
+  'dnt': '1',
+  'origin': 'https://bars.mpei.ru',
+  'referer': URLS.BARS_MAIN,
+  'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': `"Windows"`,
+  'sec-fetch-user': '?1',
+  'sec-gpc': '1',
+  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
+}
 export const STORAGE_KEYS = {
   CREDENTIALS: 'credentials',
   THEME: 'theme',
