@@ -4,7 +4,7 @@ import {
     Text,
     SafeAreaView,
     TouchableOpacity,
-    View, FlatList, LayoutAnimation, Platform
+    View, FlatList, LayoutAnimation, Platform, NativeModules
 } from "react-native";
 import { COMMON_HTTP_HEADER, SCREEN_SIZE } from "../../../Common/Constants";
 import { AdditionalData, BARSDiscipline, Mark } from "../../../API/DataTypes";
@@ -23,7 +23,26 @@ import Moment from "moment";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import parse from "node-html-parser";
 import { updateAdditionalData } from "../../../API/Redux/Slices";
+import SharedGroupPreferences from "react-native-shared-group-preferences";
 const Stack = createStackNavigator()
+
+const group = 'group.schedule'
+
+const SharedStorage = NativeModules.SharedStorage
+
+const FeedWidget = async () => {
+    try {
+        let studentSchedule = useSelector((state: RootState)=>state.Schedule)
+        if(Platform.OS == 'ios'){
+            await SharedGroupPreferences.setItem('widgetKey', studentSchedule.data, group)
+        } else {
+            // Android
+            SharedStorage.set(JSON.stringify({schedule: studentSchedule.data}))
+        }
+    } catch (error:any) {
+        console.warn( 'FeedWidget failed: ' + error.toString())
+    }
+}
 
 let weekDemonstration = "";
 let closeBARSDate = new Date(3000, 4, 21);
@@ -350,6 +369,7 @@ const BARSMainScreen: React.FC<{navigation: any, route: any}> = () => {
 
 const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     const {colors} = useTheme()
+    FeedWidget().then(r => console.log('Schedule provided to widget'))
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
