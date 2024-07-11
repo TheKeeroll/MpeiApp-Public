@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MpeiApp</string>
+    <string name="appwidget_text">Текст</string>
+    <string name="configure">Настройка</string>
+    <string name="add_widget">Добавить виджет</string>
+    <string name="app_widget_description">Виджет расписания MpeiApp</string>
 </resources>

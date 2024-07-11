@@ -241,6 +241,9 @@ android {
             include (*reactNativeArchitectures())
         }
     }
+    buildFeatures {
+        viewBinding true
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
