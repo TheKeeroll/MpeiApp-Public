@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="schedule_subject" type="id" />
+    <item name="schedule_teacher" type="id" />
+</resources>

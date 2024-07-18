@@ -1,19 +1,55 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.MpeiApp.AppWidget.Container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:theme="@style/AppTheme.AppWidgetContainer">
+    android:layout_height="wrap_content"
+    android:padding="10dp">
 
+    <!-- Date selection buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnYesterday"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Yesterday" />
+
+        <Button
+            android:id="@+id/btnToday"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Today" />
+
+        <Button
+            android:id="@+id/btnTomorrow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tomorrow" />
+    </LinearLayout>
+
+    <!-- Schedule details -->
     <TextView
-        android:id="@+id/appwidget_text"
-        style="@style/Widget.MpeiApp.AppWidget.InnerView"
+        android:id="@+id/date_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_margin="8dp"
-        android:contentDescription="@string/appwidget_text"
-        android:text="@string/appwidget_text"
-        android:textSize="24sp"
-        android:textStyle="bold|italic" />
+        android:layout_marginTop="10dp"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/date_text">
+
+        <LinearLayout
+            android:id="@+id/schedule_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
 </RelativeLayout>
