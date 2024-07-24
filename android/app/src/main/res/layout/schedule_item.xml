@@ -5,10 +5,27 @@
     android:orientation="vertical"
     android:padding="5dp">
 
-    <TextView
-        android:id="@+id/schedule_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+	<TextView
+		android:id="@+id/schedule_time"
+		android:layout_width="110dp"
+		android:layout_height="35dp"
+		android:textSize="12sp"
+		android:textStyle="bold"
+		android:text="@string/schedule_time" />
+
+	<TextView
+		android:id="@+id/schedule_subject"
+		android:layout_width="339dp"
+		android:layout_height="41dp"
+		android:textSize="14sp"
+		android:textStyle="bold"
+		android:text="@string/schedule_subject" />
+
+	<TextView
+		android:id="@+id/schedule_teacher"
+		android:layout_width="338dp"
+		android:layout_height="32dp"
+		android:textSize="14sp"
+		android:textStyle="bold"
+		android:text="@string/schedule_teacher" />
 </LinearLayout>

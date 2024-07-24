@@ -16,8 +16,8 @@ import com.mpeiapp.databinding.ScheduleWidgetConfigureBinding;
  */
 public class ScheduleWidgetConfigureActivity extends Activity {
 
-    private static final String PREFS_NAME = "com.mpeiapp.ScheduleWidget";
-    private static final String PREF_PREFIX_KEY = "appwidget_";
+    private final String PREFS_NAME = "com.mpeiapp.ScheduleWidget";
+    private final String PREF_PREFIX_KEY = "appwidget_";
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     EditText mAppWidgetText;
     View.OnClickListener mOnClickListener = new View.OnClickListener() {
@@ -46,7 +46,7 @@ public class ScheduleWidgetConfigureActivity extends Activity {
     }
 
     // Write the prefix to the SharedPreferences object for this widget
-    static void saveTitlePref(Context context, int appWidgetId, String text) {
+    void saveTitlePref(Context context, int appWidgetId, String text) {
         SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
         prefs.putString(PREF_PREFIX_KEY + appWidgetId, text);
         prefs.apply();
@@ -54,7 +54,7 @@ public class ScheduleWidgetConfigureActivity extends Activity {
 
     // Read the prefix from the SharedPreferences object for this widget.
     // If there is no preference saved, get the default from a resource
-    static String loadTitlePref(Context context, int appWidgetId) {
+    String loadTitlePref(Context context, int appWidgetId) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
         String titleValue = prefs.getString(PREF_PREFIX_KEY + appWidgetId, null);
         if (titleValue != null) {
@@ -64,7 +64,7 @@ public class ScheduleWidgetConfigureActivity extends Activity {
         }
     }
 
-    static void deleteTitlePref(Context context, int appWidgetId) {
+    void deleteTitlePref(Context context, int appWidgetId) {
         SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
         prefs.remove(PREF_PREFIX_KEY + appWidgetId);
         prefs.apply();

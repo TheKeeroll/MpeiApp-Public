@@ -4,4 +4,8 @@
     <string name="configure">Настройка</string>
     <string name="add_widget">Добавить виджет</string>
     <string name="app_widget_description">Виджет расписания MpeiApp</string>
+    <string name="date_text">Дата</string>
+    <string name="schedule_time">Время</string>
+    <string name="schedule_subject">Место</string>
+    <string name="schedule_teacher">Преподаватель</string>
 </resources>

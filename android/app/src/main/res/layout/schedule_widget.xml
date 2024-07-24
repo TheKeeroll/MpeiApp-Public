@@ -4,7 +4,9 @@
     android:padding="10dp">
 
     <!-- Date selection buttons -->
+
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -14,42 +16,48 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Yesterday" />
+            android:text="00" />
 
         <Button
             android:id="@+id/btnToday"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Today" />
+            android:text="01" />
 
         <Button
             android:id="@+id/btnTomorrow"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Tomorrow" />
+            android:text="02" />
+
     </LinearLayout>
 
     <!-- Schedule details -->
+
     <TextView
         android:id="@+id/date_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_width="401dp"
+        android:layout_height="66dp"
+        android:layout_below="@+id/linearLayout"
+        android:layout_marginTop="3dp"
         android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+		android:text="@string/date_text" />
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <LinearLayout
+        android:layout_width="402dp"
+        android:layout_height="604dp"
         android:layout_below="@id/date_text">
 
         <LinearLayout
             android:id="@+id/schedule_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
+            android:layout_height="583dp"
+            android:orientation="vertical">
+
+        </LinearLayout>
+    </LinearLayout>
 
 </RelativeLayout>
