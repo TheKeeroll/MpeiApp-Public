@@ -297,6 +297,8 @@ dependencies {
 
     implementation 'androidx.work:work-runtime:2.9.0'
 
+    implementation 'joda-time:joda-time:2.10.14'
+
     debugImplementation("com.facebook.flipper:flipper:0.144.0") {
         exclude group:'com.facebook.fbjni'
     }

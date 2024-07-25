@@ -9,23 +9,37 @@
 		android:id="@+id/schedule_time"
 		android:layout_width="110dp"
 		android:layout_height="35dp"
-		android:textSize="12sp"
+		android:textSize="8sp"
 		android:textStyle="bold"
 		android:text="@string/schedule_time" />
+	<TextView
+		android:id="@+id/schedule_lesson_type"
+		android:layout_width="110dp"
+		android:layout_height="35dp"
+		android:textSize="10sp"
+		android:textStyle="bold"
+		android:text="@string/schedule_lesson_type" />	
+	<TextView
+		android:id="@+id/schedule_cabinet"
+		android:layout_width="110dp"
+		android:layout_height="35dp"
+		android:textSize="10sp"
+		android:textStyle="bold"
+		android:text="@string/schedule_cabinet" />		
 
 	<TextView
-		android:id="@+id/schedule_subject"
+		android:id="@+id/schedule_discipline"
 		android:layout_width="339dp"
 		android:layout_height="41dp"
-		android:textSize="14sp"
+		android:textSize="12sp"
 		android:textStyle="bold"
-		android:text="@string/schedule_subject" />
+		android:text="@string/schedule_discipline" />
 
 	<TextView
 		android:id="@+id/schedule_teacher"
 		android:layout_width="338dp"
 		android:layout_height="32dp"
-		android:textSize="14sp"
+		android:textSize="12sp"
 		android:textStyle="bold"
 		android:text="@string/schedule_teacher" />
 </LinearLayout>

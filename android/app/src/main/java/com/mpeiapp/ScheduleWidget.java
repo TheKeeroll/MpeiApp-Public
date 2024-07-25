@@ -18,6 +18,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import java.util.Locale;
+
 public class ScheduleWidget extends AppWidgetProvider {
 
     private static final String ACTION_YESTERDAY = "com.mpeiapp.ScheduleWidget.ACTION_YESTERDAY";
@@ -49,7 +53,9 @@ public class ScheduleWidget extends AppWidgetProvider {
         for (ScheduleItem item : scheduleItems) {
             RemoteViews itemView = new RemoteViews(context.getPackageName(), R.layout.schedule_item);
             itemView.setTextViewText(R.id.schedule_time, item.getTime());
-            itemView.setTextViewText(R.id.schedule_subject, item.getSubject());
+            itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
+            itemView.setTextViewText(R.id.schedule_lesson_type, item.getLessonType());
+            itemView.setTextViewText(R.id.schedule_discipline, item.getDiscipline());
             itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
 
             views.addView(R.id.schedule_container, itemView);
@@ -118,44 +124,89 @@ public class ScheduleWidget extends AppWidgetProvider {
         }
     }
 
+    private static String formatDate(DateTime dateTime) {
+        String dayOfWeek = dateTime.toString("EEEEE", Locale.forLanguageTag("ru"));
+        String dayMonth = dateTime.toString("dd MMMM", Locale.forLanguageTag("ru"));
+        return dayOfWeek + ", " + dayMonth;
+    }
+
     // Helper methods to get date text and schedule data
     private static String getDateText(String day) {
         // Implement this method to return the date text based on the day
-        return day;
+        // Получение текущей даты
+        DateTime currentDate = new DateTime();
+        String formattedToday = formatDate(currentDate);
+        Log.i("ScheduleWidget", "formattedDate - today: " + formattedToday);
+        DateTime yesterdayDate = currentDate.minusDays(1);
+        String formattedYesterday = formatDate(yesterdayDate);
+        Log.i("ScheduleWidget", "formattedDate - yesterday: " + formattedYesterday);
+        DateTime tomorrowDate = currentDate.plusDays(1);
+        String formattedTomorrow = formatDate(tomorrowDate);
+        Log.i("ScheduleWidget", "formattedDate - tomorrow: " + formattedTomorrow);
+        if (Objects.equals(day, "today")){
+            return formattedToday;
+        } else if (Objects.equals(day, "yesterday")){
+            return formattedYesterday;
+        } else {
+            return formattedTomorrow;
+        }
     }
 
     private static List<ScheduleItem> getScheduleForDay(String day) {
         // Implement this method to return the schedule items for the given day
-        ScheduleItem sch_item = new ScheduleItem("00-00", "Test sub", "Test tea");
-        ScheduleItem sch_item1 = new ScheduleItem("00-01", "Test sub1", "Test tea1");
+        ScheduleItem sch_item = new ScheduleItem("00:00 - 01:00", "Test Lesson type", "Test cabin","Test dis", "Test tea", "test type");
+        ScheduleItem sch_item1 = new ScheduleItem("01:00 - 02:00", "Test Lesson type 1", "Test cabin1","Test dis1", "Test tea1", "test type1");
         List<ScheduleItem> schlist = Collections.emptyList();
         List<ScheduleItem> res = new ArrayList<>(schlist);
-        res.add(sch_item);
-        res.add(sch_item1);
+        if (Objects.equals(day, "today")){
+            res.add(sch_item);
+            res.add(sch_item1);
+        } else if (Objects.equals(day, "yesterday")){
+            res.add(sch_item);
+        } else if (Objects.equals(day, "tomorrow")){
+            res.add(sch_item1);
+        }
+
         return res;
     }
 
     public static class ScheduleItem {
         private String time;
-        private String subject;
+        private String lessonType;
+        private String cabinet;
+        private String discipline;
         private String teacher;
+        private String type;
 
-        public ScheduleItem(String time, String subject, String teacher) {
+        public ScheduleItem(String time, String lessonType, String cabinet, String discipline, String teacher, String type) {
             this.time = time;
-            this.subject = subject;
+            this.lessonType = lessonType;
+            this.cabinet = cabinet;
+            this.discipline = discipline;
             this.teacher = teacher;
+            this.type = type;
         }
 
         public String getTime() {
             return time;
         }
 
-        public String getSubject() {
-            return subject;
+        public String getLessonType() {
+            return lessonType;
         }
+
+        public String getCabinet() {
+            return cabinet;
+        }
+
+        public String getDiscipline() {return discipline; }
 
         public String getTeacher() {
             return teacher;
+        }
+
+        public String getType() {
+            return type;
         }
     }
 }
