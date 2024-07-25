@@ -1,21 +1,25 @@
 import React, { Fragment, useEffect, useState } from "react";
 import {
+    FlatList,
+    LayoutAnimation,
+    NativeModules,
+    Platform,
+    SafeAreaView,
     StyleSheet,
     Text,
-    SafeAreaView,
     TouchableOpacity,
-    View, FlatList, LayoutAnimation, Platform, NativeModules
+    View,
 } from "react-native";
 import { COMMON_HTTP_HEADER, SCREEN_SIZE } from "../../../Common/Constants";
-import { AdditionalData, BARSDiscipline, Mark } from "../../../API/DataTypes";
-import {MarkToColor, AverageScoreToColor, withOpacity} from "../../../Themes/Themes";
-import {createStackNavigator} from "@react-navigation/stack";
+import { AdditionalData, BARSDiscipline, Mark, ScheduleForWidget } from "../../../API/DataTypes";
+import { AverageScoreToColor, MarkToColor, withOpacity } from "../../../Themes/Themes";
+import { createStackNavigator } from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
 import BARSAPI from "../../../Common/Globals";
-import {useSelector} from 'react-redux'
+import { useSelector } from "react-redux";
 import { RootState, Store } from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
-import {useTheme} from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import ScheduleScreen from "../../Schedule/ScheduleScreen";
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import FetchFailed from "../../CommonComponents/FetchFailed";
@@ -24,6 +28,7 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import parse from "node-html-parser";
 import { updateAdditionalData } from "../../../API/Redux/Slices";
 import SharedGroupPreferences from "react-native-shared-group-preferences";
+
 const Stack = createStackNavigator()
 
 const group = 'group.schedule'
@@ -32,12 +37,47 @@ const SharedStorage = NativeModules.SharedStorage
 
 const FeedWidget = async () => {
     try {
+        let YearForFix = String(new Date().getFullYear())
+
         let studentSchedule = useSelector((state: RootState)=>state.Schedule)
+        let today = new Date().getDDMMYY()
+
+        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: false}}
+        try {
+            for (let j = 0; j < studentSchedule.data!.days.length; j++) {
+                let dateYear = studentSchedule.data!.days[j]!.date.split('.')[2]
+                // console.log('dateYear = ' + dateYear)
+                if (parseInt(dateYear) > parseInt(YearForFix)) {
+                    YearForFix = studentSchedule.data!.days[j]!.date.split('.')[2]
+                    console.log('FeedWidget - YearForFix increased to ' + YearForFix)
+                }
+                if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))) {
+                    YearForFix = studentSchedule.data!.days[j]!.date.split('.')[2]
+                    console.log('FeedWidget - YearForFix decreased to ' + YearForFix)
+                }
+
+                if (studentSchedule.data!.days[j]!.date!.includes("2020")) {
+                    studentSchedule.data!.days[j]!.date! = studentSchedule.data!.days[j]!.date!.replace("2020", "" + YearForFix)
+                }
+                if (today == studentSchedule.data!.days[j]!.date!) {
+                    dataForWidget = {
+                        yesterday: studentSchedule.data!.days[j - 1],
+                        today: studentSchedule.data!.days[j],
+                        tomorrow: studentSchedule.data!.days[j + 1]
+                    }
+                    console.log('Today: ' + studentSchedule.data!.days[j]!.date!)
+                    break
+                }
+
+            }
+        } catch (error) {
+            console.warn('preparing dataForWidget failed, empty schedule will be provided! Reason: ' + error)
+        }
         if(Platform.OS == 'ios'){
-            await SharedGroupPreferences.setItem('widgetKey', studentSchedule.data, group)
+            await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)
         } else {
             // Android
-            SharedStorage.set(JSON.stringify({schedule: studentSchedule.data}))
+            SharedStorage.set(JSON.stringify({dataForWidget}))
         }
     } catch (error:any) {
         console.warn( 'FeedWidget failed: ' + error.toString())

@@ -186,3 +186,9 @@ export interface AdditionalData {
   finalMarkAvailabilityCounter: number
 }
 
+export interface ScheduleForWidget {
+  yesterday: BARSScheduleCell
+  today: BARSScheduleCell
+  tomorrow: BARSScheduleCell
+}
+
