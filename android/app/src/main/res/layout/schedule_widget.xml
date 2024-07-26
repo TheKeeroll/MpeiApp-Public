@@ -1,7 +1,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="10dp">
+    android:padding="10dp"
+	android:background="#1F1F1F">
 
     <!-- Date selection buttons -->
 
@@ -9,28 +10,50 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="1dp">
 
         <Button
             android:id="@+id/btnYesterday"
-            android:layout_width="0dp"
+            android:layout_width="1dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
             android:layout_weight="1"
-            android:text="00" />
+            android:background="#464646"
+            android:lines="3"
+            android:minLines="3"
+            android:padding="1dp"
+            android:text="@string/btnYesterday_text"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnToday"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
             android:layout_weight="1"
-            android:text="01" />
+            android:background="#FF5666"
+            android:lines="3"
+            android:minLines="3"
+            android:padding="1dp"
+            android:text="@string/btnToday_text"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnTomorrow"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
             android:layout_weight="1"
-            android:text="02" />
+            android:background="#464646"
+            android:lines="3"
+            android:minLines="3"
+            android:padding="1dp"
+            android:text="@string/btnTomorrow_text"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
@@ -43,6 +66,7 @@
         android:layout_below="@+id/linearLayout"
         android:layout_marginTop="3dp"
         android:text="@string/date_text"
+		android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold" />
 
@@ -54,7 +78,7 @@
         <LinearLayout
             android:id="@+id/schedule_container"
             android:layout_width="match_parent"
-            android:layout_height="615dp"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
         </LinearLayout>

@@ -37,6 +37,15 @@ public class ScheduleWidget extends AppWidgetProvider {
         }catch (Exception e) {
             Log.e("ScheduleWidget", "Obtaining schedule Data failed: ", e);
         }
+        String formattedToday = getDateText("today");
+        String formattedYesterday = getDateText("yesterday");
+        String formattedTomorrow = getDateText("tomorrow");
+        String shortCurrentDate = shortenDateString(formattedToday);
+        String shortYesterdayDate = shortenDateString(formattedYesterday);
+        String shortTomorrowDate = shortenDateString(formattedTomorrow);
+        views.setTextViewText(R.id.btnYesterday, shortYesterdayDate);
+        views.setTextViewText(R.id.btnToday, shortCurrentDate);
+        views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
 
         // Update date text based on the selected day
         String dateText = getDateText(day); // Implement this method to return the date string based on the day
@@ -130,6 +139,82 @@ public class ScheduleWidget extends AppWidgetProvider {
         return dayOfWeek + ", " + dayMonth;
     }
 
+    private static String shortenDateString(String dateString) {
+        // Разделение строки на день недели и дату
+        String[] parts = dateString.split(", ");
+        String dayOfWeek = parts[0];
+        String dayMonth = parts[1];
+
+        // Сокращение дня недели
+        String shortDayOfWeek = shortenDayOfWeek(dayOfWeek);
+
+        // Сокращение месяца
+        String shortDayMonth = shortenDayMonth(dayMonth);
+
+        return shortDayOfWeek + " " + shortDayMonth;
+    }
+
+    private static String shortenDayOfWeek(String dayOfWeek) {
+        switch (dayOfWeek) {
+            case "понедельник": return "Пн";
+            case "вторник": return "Вт";
+            case "среда": return "Ср";
+            case "четверг": return "Чт";
+            case "пятница": return "Пт";
+            case "суббота": return "Сб";
+            case "воскресенье": return "Вс";
+            default: return "";
+        }
+    }
+
+    private static String shortenDayMonth(String dayMonth) {
+        String[] parts = dayMonth.split(" ");
+        String day = parts[0];
+        String month = parts[1];
+
+        String shortMonth;
+        switch (month) {
+            case "января":
+                shortMonth = "Янв";
+                break;
+            case "февраля":
+                shortMonth = "Фев";
+                break;
+            case "марта":
+                shortMonth = "Мар";
+                break;
+            case "апреля":
+                shortMonth = "Апр";
+                break;
+            case "мая":
+                shortMonth = "Мая";
+                break;
+            case "июня":
+                shortMonth = "Июн";
+                break;
+            case "июля":
+                shortMonth = "Июл";
+                break;
+            case "августа":
+                shortMonth = "Авг";
+                break;
+            case "сентября":
+                shortMonth = "Сен";
+                break;
+            case "октября":
+                shortMonth = "Окт";
+                break;
+            case "ноября":
+                shortMonth = "Ноя";
+                break;
+            case "декабря":
+                shortMonth = "Дек";
+                break;
+            default: shortMonth = "";
+        }
+        return day + " " + shortMonth;
+    }
+
     // Helper methods to get date text and schedule data
     private static String getDateText(String day) {
         // Implement this method to return the date text based on the day
@@ -154,7 +239,7 @@ public class ScheduleWidget extends AppWidgetProvider {
 
     private static List<ScheduleItem> getScheduleForDay(String day) {
         // Implement this method to return the schedule items for the given day
-        ScheduleItem sch_item = new ScheduleItem("00:00 - 01:00", "Test Lesson type", "Test cabin","Test dis", "Test tea", "test type");
+        ScheduleItem sch_item = new ScheduleItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.", "test type");
         ScheduleItem sch_item1 = new ScheduleItem("01:00 - 02:00", "Test Lesson type 1", "Test cabin1","Test dis1", "Test tea1", "test type1");
         List<ScheduleItem> schlist = Collections.emptyList();
         List<ScheduleItem> res = new ArrayList<>(schlist);

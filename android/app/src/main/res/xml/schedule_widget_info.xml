@@ -9,7 +9,7 @@
     android:previewImage="@drawable/example_appwidget_preview"
     android:previewLayout="@layout/schedule_widget"
     android:resizeMode="horizontal|vertical"
-    android:targetCellWidth="3"
-    android:targetCellHeight="4"
+    android:targetCellWidth="4"
+    android:targetCellHeight="5"
     android:updatePeriodMillis="86400000"
     android:widgetCategory="home_screen" />
