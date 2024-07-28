@@ -10,17 +10,16 @@ import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 import java.util.Locale;
+
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 
 public class ScheduleWidget extends AppWidgetProvider {
 
@@ -29,10 +28,10 @@ public class ScheduleWidget extends AppWidgetProvider {
     private static final String ACTION_TOMORROW = "com.mpeiapp.ScheduleWidget.ACTION_TOMORROW";
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, String day) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.schedule_widget);
-
+        String scheduleDataString = " ";
         try {
             SharedPreferences sharedPref = context.getSharedPreferences("DATA", Context.MODE_PRIVATE);
-            String scheduleDataString = sharedPref.getString("appData", "{\"schedule\":'no data'}");
+            scheduleDataString = sharedPref.getString("appData", "{\"schedule\":'no data'}");
             Log.i("ScheduleWidget", "Schedule Data: " + scheduleDataString);
         }catch (Exception e) {
             Log.e("ScheduleWidget", "Obtaining schedule Data failed: ", e);
@@ -44,8 +43,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         String shortYesterdayDate = shortenDateString(formattedYesterday);
         String shortTomorrowDate = shortenDateString(formattedTomorrow);
         views.setTextViewText(R.id.btnYesterday, shortYesterdayDate);
-        views.setTextViewText(R.id.btnToday, shortCurrentDate);
         views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
+        views.setTextViewText(R.id.btnToday, shortCurrentDate);
 
         // Update date text based on the selected day
         String dateText = getDateText(day); // Implement this method to return the date string based on the day
@@ -55,11 +54,11 @@ public class ScheduleWidget extends AppWidgetProvider {
         views.removeAllViews(R.id.schedule_container);
 
         // Load schedule data for the selected day
-        List<ScheduleItem> scheduleItems = getScheduleForDay(day); // Implement this method to return a list of schedule items for the day
+        List<WidgetSchItem> widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
 
         // Clear previous schedule items
         views.removeAllViews(R.id.schedule_container);
-        for (ScheduleItem item : scheduleItems) {
+        for (WidgetSchItem item : widgetSchItems) {
             RemoteViews itemView = new RemoteViews(context.getPackageName(), R.layout.schedule_item);
             itemView.setTextViewText(R.id.schedule_time, item.getTime());
             itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
@@ -76,17 +75,122 @@ public class ScheduleWidget extends AppWidgetProvider {
         PendingIntent pendingIntentYesterday = PendingIntent.getBroadcast(context, 0, intentYesterday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         views.setOnClickPendingIntent(R.id.btnYesterday, pendingIntentYesterday);
 
-        Intent intentToday = new Intent(context, ScheduleWidget.class);
-        intentToday.setAction(ACTION_TODAY);
-        PendingIntent pendingIntentToday = PendingIntent.getBroadcast(context, 0, intentToday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        views.setOnClickPendingIntent(R.id.btnToday, pendingIntentToday);
-
         Intent intentTomorrow = new Intent(context, ScheduleWidget.class);
         intentTomorrow.setAction(ACTION_TOMORROW);
         PendingIntent pendingIntentTomorrow = PendingIntent.getBroadcast(context, 0, intentTomorrow, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         views.setOnClickPendingIntent(R.id.btnTomorrow, pendingIntentTomorrow);
 
+        Intent intentToday = new Intent(context, ScheduleWidget.class);
+        intentToday.setAction(ACTION_TODAY);
+        PendingIntent pendingIntentToday = PendingIntent.getBroadcast(context, 0, intentToday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        views.setOnClickPendingIntent(R.id.btnToday, pendingIntentToday);
+
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    // Основной класс, соответствующий корневому объекту JSON
+    class Root {
+        @SerializedName("dataForWidget")
+        private DataForWidget dataForWidget;
+
+        public DataForWidget getDataForWidget() {
+            return dataForWidget;
+        }
+    }
+
+    // Класс, представляющий dataForWidget
+    class DataForWidget {
+        private Day yesterday;
+        private Day today;
+        private Day tomorrow;
+
+        public Day getYesterday() {
+            return yesterday;
+        }
+
+        public Day getToday() {
+            return today;
+        }
+
+        public Day getTomorrow() {
+            return tomorrow;
+        }
+    }
+
+    // Класс, представляющий каждый день
+    class Day {
+        private String date;
+        private List<Lesson> lessons;
+        private boolean isEmpty;
+        private boolean isToday;
+
+        public String getDate() {
+            return date;
+        }
+
+        public List<Lesson> getLessons() {
+            return lessons;
+        }
+
+        public boolean isEmpty() {
+            return isEmpty;
+        }
+
+        public boolean isToday() {
+            return isToday;
+        }
+    }
+
+    class Lesson {
+        private String name;
+        private String lessonIndex;
+        private String lessonType;
+        private String place;
+        private String cabinet;
+        private Teacher teacher;
+        private String group;
+        private String type;
+
+        public String GetName(){
+            return name;
+        }
+        public String GetLessonIndex(){
+            return lessonIndex;
+        }
+        public String GetLessonType(){
+            return lessonType;
+        }
+        public String GetPlace(){
+            return place;
+        }
+        public String GetCabinet(){
+            return cabinet;
+        }
+        public Teacher GetTeacher(){
+            return teacher;
+        }
+        public String GetGroup(){
+            return group;
+        }
+        public String GetType(){
+            return type;
+        }
+    }
+
+    class Teacher {
+        private String name;
+        private String lec_oid;
+        private String fullName;
+
+        public String GetName(){
+            return name;
+        }
+        public String GetLecOID(){
+            return lec_oid;
+        }
+        public String GetFullName(){
+            return fullName;
+        }
     }
 
     @Override
@@ -237,39 +341,64 @@ public class ScheduleWidget extends AppWidgetProvider {
         }
     }
 
-    private static List<ScheduleItem> getScheduleForDay(String day) {
+    private static List<WidgetSchItem> getScheduleForDay(String day, String sch) {
         // Implement this method to return the schedule items for the given day
-        ScheduleItem sch_item = new ScheduleItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.", "test type");
-        ScheduleItem sch_item1 = new ScheduleItem("01:00 - 02:00", "Test Lesson type 1", "Test cabin1","Test dis1", "Test tea1", "test type1");
-        List<ScheduleItem> schlist = Collections.emptyList();
-        List<ScheduleItem> res = new ArrayList<>(schlist);
+
+        // Создание объекта Gson
+        Gson gson = new Gson();
+        // Преобразование JSON строки в объект
+        Root schDataObj = gson.fromJson(sch, Root.class);
+        // Доступ к данным
+        List<Lesson> lessonsTomorrow = schDataObj.getDataForWidget().getTomorrow().getLessons();
+        boolean todayIsToday = schDataObj.getDataForWidget().getToday().isToday();
+        Log.i("ScheduleWidget", "schDataObj - tomorrow lessons: " + lessonsTomorrow.toString());
+        Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
+
+        WidgetSchItem sch_item = new WidgetSchItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.");
+        WidgetSchItem sch_item1 = new WidgetSchItem("01:00 - 02:00", "Test Lesson type 1", "Test cabin1","Test dis1", "Test tea1");
+        // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetTeacher().GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetType());
+        List<WidgetSchItem> schlist = Collections.emptyList();
+        List<WidgetSchItem> res = new ArrayList<>(schlist);
         if (Objects.equals(day, "today")){
             res.add(sch_item);
             res.add(sch_item1);
-        } else if (Objects.equals(day, "yesterday")){
-            res.add(sch_item);
-        } else if (Objects.equals(day, "tomorrow")){
             res.add(sch_item1);
+            res.add(sch_item);
+            res.add(sch_item1);
+        } else if (Objects.equals(day, "yesterday")){
+            if (!schDataObj.getDataForWidget().getYesterday().isEmpty){
+                for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
+                    if (!Objects.equals(sch_les.GetType(), "DINNER")) {
+                        res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                    }
+                }
+            }
+        } else if (Objects.equals(day, "tomorrow")){
+            if (!schDataObj.getDataForWidget().getTomorrow().isEmpty){
+                for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
+                    if (!Objects.equals(sch_les.GetType(), "DINNER")) {
+                        res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                    }
+                }
+            }
         }
 
         return res;
     }
 
-    public static class ScheduleItem {
+    public static class WidgetSchItem {
         private String time;
         private String lessonType;
         private String cabinet;
         private String discipline;
         private String teacher;
-        private String type;
 
-        public ScheduleItem(String time, String lessonType, String cabinet, String discipline, String teacher, String type) {
+        public WidgetSchItem(String time, String lessonType, String cabinet, String discipline, String teacher) {
             this.time = time;
             this.lessonType = lessonType;
             this.cabinet = cabinet;
             this.discipline = discipline;
             this.teacher = teacher;
-            this.type = type;
         }
 
         public String getTime() {
@@ -288,10 +417,6 @@ public class ScheduleWidget extends AppWidgetProvider {
 
         public String getTeacher() {
             return teacher;
-        }
-
-        public String getType() {
-            return type;
         }
     }
 }
