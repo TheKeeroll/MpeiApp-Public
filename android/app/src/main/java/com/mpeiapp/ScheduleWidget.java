@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -46,25 +47,39 @@ public class ScheduleWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
         views.setTextViewText(R.id.btnToday, shortCurrentDate);
 
-        // Update date text based on the selected day
-        String dateText = getDateText(day); // Implement this method to return the date string based on the day
-        views.setTextViewText(R.id.date_text, dateText);
-
         // Clear the existing schedule
         views.removeAllViews(R.id.schedule_container);
 
         // Load schedule data for the selected day
         List<WidgetSchItem> widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
+        // Update date text based on the selected day
+        String lesson_num = widgetSchItems.size() + " пары";
+        if (widgetSchItems.isEmpty()){
+            lesson_num = "пар нет!";
+        } else if (widgetSchItems.size() == 1){
+            lesson_num = "1 пара";
+        } else if (widgetSchItems.size() >= 5){
+            lesson_num = widgetSchItems.size() + " пар";
+        }
+        String dateText = getDateText(day); // Implement this method to return the date string based on the day
+        views.setTextViewText(R.id.date_text, dateText + " - " + lesson_num);
 
         // Clear previous schedule items
         views.removeAllViews(R.id.schedule_container);
         for (WidgetSchItem item : widgetSchItems) {
             RemoteViews itemView = new RemoteViews(context.getPackageName(), R.layout.schedule_item);
+
             itemView.setTextViewText(R.id.schedule_time, item.getTime());
             itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
             itemView.setTextViewText(R.id.schedule_lesson_type, item.getLessonType());
             itemView.setTextViewText(R.id.schedule_discipline, item.getDiscipline());
             itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
+
+            if (item.getLessonType().contains("абот") || item.getLessonType().contains("кзамен") || item.getLessonType().contains("ащита")) {
+                itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#FF0500"));
+            } else if (item.getLessonType().contains("екция")){
+                itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#00FF00"));
+            }
 
             views.addView(R.id.schedule_container, itemView);
         }
@@ -355,16 +370,18 @@ public class ScheduleWidget extends AppWidgetProvider {
         Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
 
         WidgetSchItem sch_item = new WidgetSchItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.");
-        WidgetSchItem sch_item1 = new WidgetSchItem("01:00 - 02:00", "Test Lesson type 1", "Test cabin1","Test dis1", "Test tea1");
+        WidgetSchItem sch_item1 = new WidgetSchItem("01:00 - 02:00", "Test Лекция", "Test cabin1","Test dis1", "Test tea1");
+        WidgetSchItem sch_item2 = new WidgetSchItem("01:00 - 02:00", "Test занятие", "Test cabin1","Test dis1", "Test tea1");
         // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetTeacher().GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetType());
         List<WidgetSchItem> schlist = Collections.emptyList();
         List<WidgetSchItem> res = new ArrayList<>(schlist);
         if (Objects.equals(day, "today")){
             res.add(sch_item);
-            res.add(sch_item1);
-            res.add(sch_item1);
             res.add(sch_item);
             res.add(sch_item1);
+            res.add(sch_item1);
+            res.add(sch_item2);
+            res.add(sch_item2);
         } else if (Objects.equals(day, "yesterday")){
             if (!schDataObj.getDataForWidget().getYesterday().isEmpty){
                 for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
