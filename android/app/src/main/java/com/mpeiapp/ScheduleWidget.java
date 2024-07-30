@@ -47,6 +47,20 @@ public class ScheduleWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
         views.setTextViewText(R.id.btnToday, shortCurrentDate);
 
+        if (Objects.equals(day, "today")){
+            views.setTextColor(R.id.btnToday, Color.parseColor("#6600CC"));
+            views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
+            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
+        } else if (Objects.equals(day, "yesterday")){
+            views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
+            views.setTextColor(R.id.btnYesterday, Color.parseColor("#00FF00"));
+            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
+        } else if (Objects.equals(day, "tomorrow")){
+            views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
+            views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
+            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#00FF00"));
+        }
+
         // Clear the existing schedule
         views.removeAllViews(R.id.schedule_container);
 

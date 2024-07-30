@@ -1,8 +1,14 @@
 <resources>
     <string name="app_name">MpeiApp</string>
     <string name="appwidget_text">Текст</string>
-    <string name="configure">Настройка</string>
-    <string name="add_widget">Добавить виджет</string>
+    <string name="hello">Приветствую!</string>
+    <string name="me">Это я, </string>
+    <string name="dragonsava"> DragonSavA</string>
+    <string name="thanks">Спасибо, что пользуешься MpeiApp, а теперь и созданным мною виджетом расписания!</string>
+    <string name="sizes">Размеры виджета можно настраивать - уменьшать и увеличивать(пригодится, если вдруг все пары не умещаются). Приятного использования!</string>
+    <string name="rating">P.S. Будет здорово, если ты оставишь отзыв о приложении:</string>
+    <string name="rate_app">Оценить MpeiApp в Google Play</string>
+    <string name="add_widget">Понятно, активировать виджет</string>
     <string name="app_widget_description">Виджет расписания MpeiApp</string>
     <string name="btnYesterday_text">Вчера</string>
     <string name="btnToday_text">Сегодня</string>

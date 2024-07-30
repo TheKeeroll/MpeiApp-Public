@@ -5,7 +5,9 @@ import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
@@ -19,18 +21,25 @@ public class ScheduleWidgetConfigureActivity extends Activity {
     private final String PREFS_NAME = "com.mpeiapp.ScheduleWidget";
     private final String PREF_PREFIX_KEY = "appwidget_";
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
-    EditText mAppWidgetText;
+    // EditText mAppWidgetText;
     View.OnClickListener mOnClickListener = new View.OnClickListener() {
         public void onClick(View v) {
             final Context context = ScheduleWidgetConfigureActivity.this;
 
+            if (v.getTag().toString().equals("rateBtn")){
+                Log.i("ScheduleWidgetConfigureActivity", "Rate button clicked");
+                Uri uri = Uri.parse("https://play.google.com/store/apps/details?id=com.mpeiapp");
+                Intent rate_intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(rate_intent);
+                finish();
+            }
             // When the button is clicked, store the string locally
-            String widgetText = mAppWidgetText.getText().toString();
-            saveTitlePref(context, mAppWidgetId, widgetText);
+//            String widgetText = mAppWidgetText.getText().toString();
+//            saveTitlePref(context, mAppWidgetId, widgetText);
 
             // It is the responsibility of the configuration activity to update the app widget
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            ScheduleWidget.updateAppWidget(context, appWidgetManager, mAppWidgetId, widgetText);
+            ScheduleWidget.updateAppWidget(context, appWidgetManager, mAppWidgetId, "today");
 
             // Make sure we pass back the original appWidgetId
             Intent resultValue = new Intent();
@@ -81,8 +90,9 @@ public class ScheduleWidgetConfigureActivity extends Activity {
         binding = ScheduleWidgetConfigureBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        mAppWidgetText = binding.appwidgetText;
+        //mAppWidgetText = binding.appwidgetText;
         binding.addButton.setOnClickListener(mOnClickListener);
+        binding.rateButton.setOnClickListener(mOnClickListener);
 
         // Find the widget id from the intent.
         Intent intent = getIntent();
@@ -98,6 +108,6 @@ public class ScheduleWidgetConfigureActivity extends Activity {
             return;
         }
 
-        mAppWidgetText.setText(loadTitlePref(ScheduleWidgetConfigureActivity.this, mAppWidgetId));
+        //mAppWidgetText.setText(loadTitlePref(ScheduleWidgetConfigureActivity.this, mAppWidgetId));
     }
 }

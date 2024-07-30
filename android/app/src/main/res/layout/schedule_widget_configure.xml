@@ -1,28 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#212121"
+	android:orientation="vertical"
+	android:padding="16dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:labelFor="@id/appwidget_text"
-        android:text="@string/configure" />
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="8dp"
+		android:text="@string/hello"
+		android:textColor="#FFFFFF"
+		android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/appwidget_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="text" />
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		android:padding="1dp">
 
-    <Button
-        android:id="@+id/add_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/add_widget" />
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="5dp"
+			android:layout_marginEnd="1dp"
+			android:layout_marginBottom="5dp"
+			android:text="@string/me"
+			android:textColor="#FFFFFF"
+			android:textStyle="bold" />
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="2dp"
+			android:layout_marginTop="5dp"
+			android:text="@string/dragonsava"
+			android:textColor="#00FF00"
+			android:textStyle="bold" />
+
+	</LinearLayout>
+	
+	<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="5dp"
+			android:layout_marginEnd="1dp"
+			android:layout_marginBottom="5dp"
+			android:text="@string/thanks"
+			android:textColor="#FFFFFF"
+			android:textStyle="bold" />
+			
+	<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="5dp"
+			android:layout_marginEnd="1dp"
+			android:layout_marginBottom="5dp"
+			android:text="@string/sizes"
+			android:textColor="#FFFFFF"
+			android:textStyle="bold" />		
+			
+	<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="5dp"
+			android:layout_marginEnd="1dp"
+			android:layout_marginBottom="5dp"
+			android:text="@string/rating"
+			android:textColor="#FFFFFF"
+			android:textStyle="bold" />		
+
+	<Button
+		android:id="@+id/rate_button"
+		android:tag="rateBtn"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="8dp"
+		android:background="@drawable/app_widget_rounded_corner"
+		android:text="@string/rate_app"
+		android:textColor="#BB86FC" />
+
+	<Button
+		android:id="@+id/add_button"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="38dp"
+		android:background="@drawable/app_widget_rounded_corner"
+		android:tag="addBtn"
+		android:text="@string/add_widget"
+		android:textColor="#BB86FC" />
 
 </LinearLayout>
