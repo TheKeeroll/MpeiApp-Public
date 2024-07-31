@@ -1,3 +1,9 @@
 -keep class com.facebook.hermes.unicode.** {*;}
 -keep class com.facebook.jni.** {*;}
 -keep class **BackgroundFetchHeadlessTask { *; }
+-keep class java.util.** { *; }
+-keep class org.joda.** {*;}
+-keep class org.joda.time.** {*;}
+-keep class org.joda.convert.** {*;}
+-keep class com.google.gson.** {*;}
+-keep class com.google.gson.annotations.** {*;}

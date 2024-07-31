@@ -4,12 +4,12 @@ import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+// import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
+// import android.widget.EditText;
 
 import com.mpeiapp.databinding.ScheduleWidgetConfigureBinding;
 
@@ -18,96 +18,102 @@ import com.mpeiapp.databinding.ScheduleWidgetConfigureBinding;
  */
 public class ScheduleWidgetConfigureActivity extends Activity {
 
-    private final String PREFS_NAME = "com.mpeiapp.ScheduleWidget";
-    private final String PREF_PREFIX_KEY = "appwidget_";
+    // private final String PREFS_NAME = "com.mpeiapp.ScheduleWidget";
+    // private final String PREF_PREFIX_KEY = "appwidget_";
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     // EditText mAppWidgetText;
-    View.OnClickListener mOnClickListener = new View.OnClickListener() {
-        public void onClick(View v) {
-            final Context context = ScheduleWidgetConfigureActivity.this;
 
-            if (v.getTag().toString().equals("rateBtn")){
-                Log.i("ScheduleWidgetConfigureActivity", "Rate button clicked");
-                Uri uri = Uri.parse("https://play.google.com/store/apps/details?id=com.mpeiapp");
-                Intent rate_intent = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(rate_intent);
-                finish();
-            }
-            // When the button is clicked, store the string locally
+    View.OnClickListener rateOnClickListener = v -> {
+        Log.i("ScheduleWidgetConfigureActivity", "Rate button clicked");
+        Uri uri = Uri.parse("https://play.google.com/store/apps/details?id=com.mpeiapp");
+        Intent rate_intent = new Intent(Intent.ACTION_VIEW, uri);
+        startActivity(rate_intent);
+    };
+
+    View.OnClickListener mOnClickListener = v -> {
+        final Context context = ScheduleWidgetConfigureActivity.this;
+        // When the button is clicked, store the string locally
 //            String widgetText = mAppWidgetText.getText().toString();
 //            saveTitlePref(context, mAppWidgetId, widgetText);
 
-            // It is the responsibility of the configuration activity to update the app widget
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            ScheduleWidget.updateAppWidget(context, appWidgetManager, mAppWidgetId, "today");
+        // It is the responsibility of the configuration activity to update the app widget
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        ScheduleWidget.updateAppWidget(context, appWidgetManager, mAppWidgetId, "today");
 
-            // Make sure we pass back the original appWidgetId
-            Intent resultValue = new Intent();
-            resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);
-            setResult(RESULT_OK, resultValue);
-            finish();
-        }
+        // Make sure we pass back the original appWidgetId
+        Intent resultValue = new Intent();
+        resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);
+        setResult(RESULT_OK, resultValue);
+        finish();
     };
-    private ScheduleWidgetConfigureBinding binding;
 
     public ScheduleWidgetConfigureActivity() {
         super();
     }
 
     // Write the prefix to the SharedPreferences object for this widget
-    void saveTitlePref(Context context, int appWidgetId, String text) {
-        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
-        prefs.putString(PREF_PREFIX_KEY + appWidgetId, text);
-        prefs.apply();
-    }
+//    void saveTitlePref(Context context, int appWidgetId, String text) {
+//        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
+//        prefs.putString(PREF_PREFIX_KEY + appWidgetId, text);
+//        prefs.apply();
+//    }
 
     // Read the prefix from the SharedPreferences object for this widget.
     // If there is no preference saved, get the default from a resource
-    String loadTitlePref(Context context, int appWidgetId) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
-        String titleValue = prefs.getString(PREF_PREFIX_KEY + appWidgetId, null);
-        if (titleValue != null) {
-            return titleValue;
-        } else {
-            return context.getString(R.string.appwidget_text);
-        }
-    }
-
-    void deleteTitlePref(Context context, int appWidgetId) {
-        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
-        prefs.remove(PREF_PREFIX_KEY + appWidgetId);
-        prefs.apply();
-    }
+//    String loadTitlePref(Context context, int appWidgetId) {
+//        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+//        String titleValue = prefs.getString(PREF_PREFIX_KEY + appWidgetId, null);
+//        if (titleValue != null) {
+//            return titleValue;
+//        } else {
+//            return context.getString(R.string.appwidget_text);
+//        }
+//    }
+//
+//    void deleteTitlePref(Context context, int appWidgetId) {
+//        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
+//        prefs.remove(PREF_PREFIX_KEY + appWidgetId);
+//        prefs.apply();
+//    }
 
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        try {
+            // Set the result to CANCELED.  This will cause the widget host to cancel
+            // out of the widget placement if the user presses the back button.
+            setResult(RESULT_CANCELED);
+        } catch (Exception e) {
+            Log.e("ScheduleWidgetConfigureActivity","setResult failed: ", e);
+        }
+        try {
+            com.mpeiapp.databinding.ScheduleWidgetConfigureBinding binding = ScheduleWidgetConfigureBinding.inflate(getLayoutInflater());
+            setContentView(binding.getRoot());
 
-        // Set the result to CANCELED.  This will cause the widget host to cancel
-        // out of the widget placement if the user presses the back button.
-        setResult(RESULT_CANCELED);
-
-        binding = ScheduleWidgetConfigureBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        //mAppWidgetText = binding.appwidgetText;
-        binding.addButton.setOnClickListener(mOnClickListener);
-        binding.rateButton.setOnClickListener(mOnClickListener);
-
-        // Find the widget id from the intent.
-        Intent intent = getIntent();
-        Bundle extras = intent.getExtras();
-        if (extras != null) {
-            mAppWidgetId = extras.getInt(
-                    AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+            // mAppWidgetText = binding.appwidgetText;
+            binding.addButton.setOnClickListener(mOnClickListener);
+            binding.rateButton.setOnClickListener(rateOnClickListener);
+        } catch (Exception e) {
+            Log.e("ScheduleWidgetConfigureActivity","Buttons binding failed: ", e);
         }
 
-        // If this activity was started with an intent without an app widget ID, finish with an error.
-        if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            finish();
-            return;
-        }
+        try {
+            // Find the widget id from the intent.
+            Intent intent = getIntent();
+            Bundle extras = intent.getExtras();
+            if (extras != null) {
+                mAppWidgetId = extras.getInt(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+            }
 
-        //mAppWidgetText.setText(loadTitlePref(ScheduleWidgetConfigureActivity.this, mAppWidgetId));
+            // If this activity was started with an intent without an app widget ID, finish with an error.
+            if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+                Log.e("ScheduleWidgetConfigureActivity","Activity was started with an intent without an app widget ID - finishing it!");
+                finish();
+            }
+        } catch (Exception e) {
+            Log.e("ScheduleWidgetConfigureActivity","widget id checking failed: ", e);
+        }
+        // mAppWidgetText.setText(loadTitlePref(ScheduleWidgetConfigureActivity.this, mAppWidgetId));
     }
 }

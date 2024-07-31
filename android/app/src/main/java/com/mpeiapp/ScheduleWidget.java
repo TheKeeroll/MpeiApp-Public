@@ -28,7 +28,12 @@ public class ScheduleWidget extends AppWidgetProvider {
     private static final String ACTION_TODAY = "com.mpeiapp.ScheduleWidget.ACTION_TODAY";
     private static final String ACTION_TOMORROW = "com.mpeiapp.ScheduleWidget.ACTION_TOMORROW";
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, String day) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.schedule_widget);
+        RemoteViews views = null;
+        try {
+            views = new RemoteViews(context.getPackageName(), R.layout.schedule_widget);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget", "RemoteViews failed: ", e);
+        }
         String scheduleDataString = " ";
         try {
             SharedPreferences sharedPref = context.getSharedPreferences("DATA", Context.MODE_PRIVATE);
@@ -40,29 +45,43 @@ public class ScheduleWidget extends AppWidgetProvider {
         String formattedToday = getDateText("today");
         String formattedYesterday = getDateText("yesterday");
         String formattedTomorrow = getDateText("tomorrow");
-        String shortCurrentDate = shortenDateString(formattedToday);
-        String shortYesterdayDate = shortenDateString(formattedYesterday);
-        String shortTomorrowDate = shortenDateString(formattedTomorrow);
-        views.setTextViewText(R.id.btnYesterday, shortYesterdayDate);
-        views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
-        views.setTextViewText(R.id.btnToday, shortCurrentDate);
-
-        if (Objects.equals(day, "today")){
-            views.setTextColor(R.id.btnToday, Color.parseColor("#6600CC"));
-            views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
-            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
-        } else if (Objects.equals(day, "yesterday")){
-            views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
-            views.setTextColor(R.id.btnYesterday, Color.parseColor("#00FF00"));
-            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
-        } else if (Objects.equals(day, "tomorrow")){
-            views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
-            views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
-            views.setTextColor(R.id.btnTomorrow, Color.parseColor("#00FF00"));
+        String shortCurrentDate = " ";
+        String shortYesterdayDate = " ";
+        String shortTomorrowDate = " ";
+        try {
+            shortCurrentDate = shortenDateString(formattedToday);
+            shortYesterdayDate = shortenDateString(formattedYesterday);
+            shortTomorrowDate = shortenDateString(formattedTomorrow);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget", "Obtaining shorten strings failed: ", e);
         }
 
-        // Clear the existing schedule
-        views.removeAllViews(R.id.schedule_container);
+        try {
+            assert views != null;
+            views.setTextViewText(R.id.btnYesterday, shortYesterdayDate);
+            views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
+            views.setTextViewText(R.id.btnToday, shortCurrentDate);
+
+            if (Objects.equals(day, "today")){
+                views.setTextColor(R.id.btnToday, Color.parseColor("#6600CC"));
+                views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
+                views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
+            } else if (Objects.equals(day, "yesterday")){
+                views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
+                views.setTextColor(R.id.btnYesterday, Color.parseColor("#00FF00"));
+                views.setTextColor(R.id.btnTomorrow, Color.parseColor("#DDDDE0"));
+            } else if (Objects.equals(day, "tomorrow")){
+                views.setTextColor(R.id.btnToday, Color.parseColor("#DDDDE0"));
+                views.setTextColor(R.id.btnYesterday, Color.parseColor("#DDDDE0"));
+                views.setTextColor(R.id.btnTomorrow, Color.parseColor("#00FF00"));
+            }
+
+            // Clear the existing schedule
+            views.removeAllViews(R.id.schedule_container);
+
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","Setting texts&colors failed: " + e);
+        }
 
         // Load schedule data for the selected day
         List<WidgetSchItem> widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
@@ -76,43 +95,52 @@ public class ScheduleWidget extends AppWidgetProvider {
             lesson_num = widgetSchItems.size() + " пар";
         }
         String dateText = getDateText(day); // Implement this method to return the date string based on the day
-        views.setTextViewText(R.id.date_text, dateText + " - " + lesson_num);
 
-        // Clear previous schedule items
-        views.removeAllViews(R.id.schedule_container);
-        for (WidgetSchItem item : widgetSchItems) {
-            RemoteViews itemView = new RemoteViews(context.getPackageName(), R.layout.schedule_item);
+        try {
+            views.setTextViewText(R.id.date_text, dateText + " - " + lesson_num);
 
-            itemView.setTextViewText(R.id.schedule_time, item.getTime());
-            itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
-            itemView.setTextViewText(R.id.schedule_lesson_type, item.getLessonType());
-            itemView.setTextViewText(R.id.schedule_discipline, item.getDiscipline());
-            itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
+            // Clear previous schedule items
+            views.removeAllViews(R.id.schedule_container);
+            for (WidgetSchItem item : widgetSchItems) {
+                RemoteViews itemView = new RemoteViews(context.getPackageName(), R.layout.schedule_item);
 
-            if (item.getLessonType().contains("абот") || item.getLessonType().contains("кзамен") || item.getLessonType().contains("ащита")) {
-                itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#FF0500"));
-            } else if (item.getLessonType().contains("екция")){
-                itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#00FF00"));
+                itemView.setTextViewText(R.id.schedule_time, item.getTime());
+                itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
+                itemView.setTextViewText(R.id.schedule_lesson_type, item.getLessonType());
+                itemView.setTextViewText(R.id.schedule_discipline, item.getDiscipline());
+                itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
+
+                if (item.getLessonType().contains("абот") || item.getLessonType().contains("кзамен") || item.getLessonType().contains("ащита")) {
+                    itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#FF0500"));
+                } else if (item.getLessonType().contains("екция")){
+                    itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#00FF00"));
+                }
+
+                views.addView(R.id.schedule_container, itemView);
             }
-
-            views.addView(R.id.schedule_container, itemView);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","Filing schedule_container failed: " + e);
         }
 
-        // Set up intents for buttons
-        Intent intentYesterday = new Intent(context, ScheduleWidget.class);
-        intentYesterday.setAction(ACTION_YESTERDAY);
-        PendingIntent pendingIntentYesterday = PendingIntent.getBroadcast(context, 0, intentYesterday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        views.setOnClickPendingIntent(R.id.btnYesterday, pendingIntentYesterday);
+        try {
+            // Set up intents for buttons
+            Intent intentYesterday = new Intent(context, ScheduleWidget.class);
+            intentYesterday.setAction(ACTION_YESTERDAY);
+            PendingIntent pendingIntentYesterday = PendingIntent.getBroadcast(context, 0, intentYesterday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+            views.setOnClickPendingIntent(R.id.btnYesterday, pendingIntentYesterday);
 
-        Intent intentTomorrow = new Intent(context, ScheduleWidget.class);
-        intentTomorrow.setAction(ACTION_TOMORROW);
-        PendingIntent pendingIntentTomorrow = PendingIntent.getBroadcast(context, 0, intentTomorrow, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        views.setOnClickPendingIntent(R.id.btnTomorrow, pendingIntentTomorrow);
+            Intent intentTomorrow = new Intent(context, ScheduleWidget.class);
+            intentTomorrow.setAction(ACTION_TOMORROW);
+            PendingIntent pendingIntentTomorrow = PendingIntent.getBroadcast(context, 0, intentTomorrow, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+            views.setOnClickPendingIntent(R.id.btnTomorrow, pendingIntentTomorrow);
 
-        Intent intentToday = new Intent(context, ScheduleWidget.class);
-        intentToday.setAction(ACTION_TODAY);
-        PendingIntent pendingIntentToday = PendingIntent.getBroadcast(context, 0, intentToday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        views.setOnClickPendingIntent(R.id.btnToday, pendingIntentToday);
+            Intent intentToday = new Intent(context, ScheduleWidget.class);
+            intentToday.setAction(ACTION_TODAY);
+            PendingIntent pendingIntentToday = PendingIntent.getBroadcast(context, 0, intentToday, (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+            views.setOnClickPendingIntent(R.id.btnToday, pendingIntentToday);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","Setting up intents for buttons failed: " + e);
+        }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
@@ -214,9 +242,7 @@ public class ScheduleWidget extends AppWidgetProvider {
         public String GetName(){
             return name;
         }
-        public String GetLecOID(){
-            return lec_oid;
-        }
+        public String GetLecOID() { return lec_oid; }
         public String GetFullName(){
             return fullName;
         }
@@ -378,9 +404,7 @@ public class ScheduleWidget extends AppWidgetProvider {
         // Преобразование JSON строки в объект
         Root schDataObj = gson.fromJson(sch, Root.class);
         // Доступ к данным
-        List<Lesson> lessonsTomorrow = schDataObj.getDataForWidget().getTomorrow().getLessons();
         boolean todayIsToday = schDataObj.getDataForWidget().getToday().isToday();
-        Log.i("ScheduleWidget", "schDataObj - tomorrow lessons: " + lessonsTomorrow.toString());
         Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
 
         WidgetSchItem sch_item = new WidgetSchItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.");
@@ -397,7 +421,7 @@ public class ScheduleWidget extends AppWidgetProvider {
             res.add(sch_item2);
             res.add(sch_item2);
         } else if (Objects.equals(day, "yesterday")){
-            if (!schDataObj.getDataForWidget().getYesterday().isEmpty){
+            if (!schDataObj.getDataForWidget().getYesterday().isEmpty()){
                 for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
                     if (!Objects.equals(sch_les.GetType(), "DINNER")) {
                         res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
@@ -405,7 +429,7 @@ public class ScheduleWidget extends AppWidgetProvider {
                 }
             }
         } else if (Objects.equals(day, "tomorrow")){
-            if (!schDataObj.getDataForWidget().getTomorrow().isEmpty){
+            if (!schDataObj.getDataForWidget().getTomorrow().isEmpty()){
                 for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
                     if (!Objects.equals(sch_les.GetType(), "DINNER")) {
                         res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
