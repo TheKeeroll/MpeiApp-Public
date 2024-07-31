@@ -82,20 +82,25 @@ public class ScheduleWidget extends AppWidgetProvider {
         } catch (Exception e) {
             Log.e("ScheduleWidget","Setting texts&colors failed: " + e);
         }
-
-        // Load schedule data for the selected day
-        List<WidgetSchItem> widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
-        // Update date text based on the selected day
-        String lesson_num = widgetSchItems.size() + " пары";
-        if (widgetSchItems.isEmpty()){
+        String lesson_num;
+        List<WidgetSchItem> widgetSchItems = Collections.emptyList();
+        try {
+            // Load schedule data for the selected day
+            widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
+            // Update date text based on the selected day
+            lesson_num = widgetSchItems.size() + " пары";
+            if (widgetSchItems.isEmpty()){
+                lesson_num = "пар нет!";
+            } else if (widgetSchItems.size() == 1){
+                lesson_num = "1 пара";
+            } else if (widgetSchItems.size() >= 5){
+                lesson_num = widgetSchItems.size() + " пар";
+            }
+        } catch (Exception e) {
+            Log.e("ScheduleWidget", "getScheduleForDay failed: ", e);
             lesson_num = "пар нет!";
-        } else if (widgetSchItems.size() == 1){
-            lesson_num = "1 пара";
-        } else if (widgetSchItems.size() >= 5){
-            lesson_num = widgetSchItems.size() + " пар";
         }
-        String dateText = getDateText(day); // Implement this method to return the date string based on the day
-
+        String dateText = getDateText(day);
         try {
             views.setTextViewText(R.id.date_text, dateText + " - " + lesson_num);
 
@@ -401,11 +406,16 @@ public class ScheduleWidget extends AppWidgetProvider {
 
         // Создание объекта Gson
         Gson gson = new Gson();
-        // Преобразование JSON строки в объект
-        Root schDataObj = gson.fromJson(sch, Root.class);
-        // Доступ к данным
-        boolean todayIsToday = schDataObj.getDataForWidget().getToday().isToday();
-        Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
+        Root schDataObj = null;
+        try {
+            // Преобразование JSON строки в объект
+            schDataObj = gson.fromJson(sch, Root.class);
+            // Доступ к данным
+            boolean todayIsToday = schDataObj.getDataForWidget().getToday().isToday();
+            Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","Root.class fromJson failed: " + e);
+        }
 
         WidgetSchItem sch_item = new WidgetSchItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.");
         WidgetSchItem sch_item1 = new WidgetSchItem("01:00 - 02:00", "Test Лекция", "Test cabin1","Test dis1", "Test tea1");
@@ -413,31 +423,36 @@ public class ScheduleWidget extends AppWidgetProvider {
         // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetTeacher().GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetType());
         List<WidgetSchItem> schlist = Collections.emptyList();
         List<WidgetSchItem> res = new ArrayList<>(schlist);
-        if (Objects.equals(day, "today")){
-            res.add(sch_item);
-            res.add(sch_item);
-            res.add(sch_item1);
-            res.add(sch_item1);
-            res.add(sch_item2);
-            res.add(sch_item2);
-        } else if (Objects.equals(day, "yesterday")){
-            if (!schDataObj.getDataForWidget().getYesterday().isEmpty()){
-                for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
-                    if (!Objects.equals(sch_les.GetType(), "DINNER")) {
-                        res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+        try {
+            if (Objects.equals(day, "today")){
+                res.add(sch_item);
+                res.add(sch_item);
+                res.add(sch_item1);
+                res.add(sch_item1);
+                res.add(sch_item2);
+                res.add(sch_item2);
+            } else if (Objects.equals(day, "yesterday")){
+                assert schDataObj != null;
+                if (!schDataObj.getDataForWidget().getYesterday().isEmpty()){
+                    for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
+                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        }
+                    }
+                }
+            } else if (Objects.equals(day, "tomorrow")){
+                assert schDataObj != null;
+                if (!schDataObj.getDataForWidget().getTomorrow().isEmpty()){
+                    for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
+                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        }
                     }
                 }
             }
-        } else if (Objects.equals(day, "tomorrow")){
-            if (!schDataObj.getDataForWidget().getTomorrow().isEmpty()){
-                for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
-                    if (!Objects.equals(sch_les.GetType(), "DINNER")) {
-                        res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
-                    }
-                }
-            }
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","Filling res with items failed: " + e);
         }
-
         return res;
     }
 

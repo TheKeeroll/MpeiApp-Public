@@ -4,6 +4,7 @@
 -keep class java.util.** { *; }
 -keep class org.joda.** {*;}
 -keep class org.joda.time.** {*;}
--keep class org.joda.convert.** {*;}
+-keep class org.joda.convert.FromString.** {*;}
+-keep class org.joda.convert.ToString.** {*;}
 -keep class com.google.gson.** {*;}
 -keep class com.google.gson.annotations.** {*;}
