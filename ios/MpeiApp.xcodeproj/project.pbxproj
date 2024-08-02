@@ -16,6 +16,12 @@
 		14B87968280B0B6A000B420C /* cool@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 14B87966280B0B6A000B420C /* cool@3x.png */; };
 		14B8796B280B0B8B000B420C /* dragons@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 14B87969280B0B8B000B420C /* dragons@2x.png */; };
 		14B8796C280B0B8B000B420C /* dragons@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 14B8796A280B0B8B000B420C /* dragons@3x.png */; };
+		49040C312C5D1C99001822A2 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49040C152C5D0B92001822A2 /* WidgetKit.framework */; };
+		49040C322C5D1C99001822A2 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49040C172C5D0B93001822A2 /* SwiftUI.framework */; };
+		49040C352C5D1C99001822A2 /* ScheduleWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49040C342C5D1C99001822A2 /* ScheduleWidgetBundle.swift */; };
+		49040C372C5D1C99001822A2 /* ScheduleWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49040C362C5D1C99001822A2 /* ScheduleWidget.swift */; };
+		49040C392C5D1C9B001822A2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49040C382C5D1C9B001822A2 /* Assets.xcassets */; };
+		49040C3D2C5D1C9B001822A2 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 49040C302C5D1C99001822A2 /* ScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		495C9A7F295DCA71004C81A1 /* gold@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 495C9A7D295DCA71004C81A1 /* gold@2x.png */; };
 		495C9A82295DCA82004C81A1 /* gold@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 495C9A80295DCA82004C81A1 /* gold@3x.png */; };
 		495C9A85295DCA96004C81A1 /* matterial@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 495C9A83295DCA96004C81A1 /* matterial@2x.png */; };
@@ -41,7 +47,28 @@
 			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
 			remoteInfo = MpeiApp;
 		};
+		49040C3B2C5D1C9B001822A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 49040C2F2C5D1C99001822A2;
+			remoteInfo = ScheduleWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		49040C2B2C5D0B95001822A2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				49040C3D2C5D1C9B001822A2 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		00E356EE1AD99517003FC87E /* MpeiAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MpeiAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -62,6 +89,13 @@
 		14B8796A280B0B8B000B420C /* dragons@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "dragons@3x.png"; path = "../../assets/icons/dragons/Assets.xcassets/AppIcon.appiconset/dragons@3x.png"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-MpeiApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MpeiApp.debug.xcconfig"; path = "Target Support Files/Pods-MpeiApp/Pods-MpeiApp.debug.xcconfig"; sourceTree = "<group>"; };
 		4577486093D4F10838A3F71D /* libPods-MpeiApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MpeiApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		49040C152C5D0B92001822A2 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		49040C172C5D0B93001822A2 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		49040C302C5D1C99001822A2 /* ScheduleWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		49040C342C5D1C99001822A2 /* ScheduleWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidgetBundle.swift; sourceTree = "<group>"; };
+		49040C362C5D1C99001822A2 /* ScheduleWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidget.swift; sourceTree = "<group>"; };
+		49040C382C5D1C9B001822A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		49040C3A2C5D1C9B001822A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		495C9A7D295DCA71004C81A1 /* gold@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "gold@2x.png"; path = "../../../Icons/gold@2x.png"; sourceTree = "<group>"; };
 		495C9A80295DCA82004C81A1 /* gold@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "gold@3x.png"; path = "../../../Icons/gold@3x.png"; sourceTree = "<group>"; };
 		495C9A83295DCA96004C81A1 /* matterial@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "matterial@2x.png"; path = "../../../Icons/matterial@2x.png"; sourceTree = "<group>"; };
@@ -98,6 +132,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				7A3EDC2EEDDA3492B7890081 /* libPods-MpeiApp.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		49040C2D2C5D1C99001822A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49040C322C5D1C99001822A2 /* SwiftUI.framework in Frameworks */,
+				49040C312C5D1C99001822A2 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,8 +212,21 @@
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				4577486093D4F10838A3F71D /* libPods-MpeiApp.a */,
 				E0D5EA9F381CBB046CC69471 /* libPods-MpeiApp-MpeiAppTests.a */,
+				49040C152C5D0B92001822A2 /* WidgetKit.framework */,
+				49040C172C5D0B93001822A2 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		49040C332C5D1C99001822A2 /* ScheduleWidget */ = {
+			isa = PBXGroup;
+			children = (
+				49040C342C5D1C99001822A2 /* ScheduleWidgetBundle.swift */,
+				49040C362C5D1C99001822A2 /* ScheduleWidget.swift */,
+				49040C382C5D1C9B001822A2 /* Assets.xcassets */,
+				49040C3A2C5D1C9B001822A2 /* Info.plist */,
+			);
+			path = ScheduleWidget;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -193,6 +249,7 @@
 				13B07FAE1A68108700A75B9A /* MpeiApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* MpeiAppTests */,
+				49040C332C5D1C99001822A2 /* ScheduleWidget */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -209,6 +266,7 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* MpeiApp.app */,
 				00E356EE1AD99517003FC87E /* MpeiAppTests.xctest */,
+				49040C302C5D1C99001822A2 /* ScheduleWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,16 +325,35 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				49040C2B2C5D0B95001822A2 /* Embed Foundation Extensions */,
 				37B76CB369C17DBCD825AC51 /* [CP-User] [RNFB] Core Configuration */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				49040C3C2C5D1C9B001822A2 /* PBXTargetDependency */,
 			);
 			name = MpeiApp;
 			productName = MpeiApp;
 			productReference = 13B07F961A680F5B00A75B9A /* MpeiApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		49040C2F2C5D1C99001822A2 /* ScheduleWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 49040C3E2C5D1C9B001822A2 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */;
+			buildPhases = (
+				49040C2C2C5D1C99001822A2 /* Sources */,
+				49040C2D2C5D1C99001822A2 /* Frameworks */,
+				49040C2E2C5D1C99001822A2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ScheduleWidgetExtension;
+			productName = ScheduleWidgetExtension;
+			productReference = 49040C302C5D1C99001822A2 /* ScheduleWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -284,6 +361,7 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1340;
 				TargetAttributes = {
 					00E356ED1AD99517003FC87E = {
@@ -292,6 +370,9 @@
 					};
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
+					};
+					49040C2F2C5D1C99001822A2 = {
+						CreatedOnToolsVersion = 15.4;
 					};
 				};
 			};
@@ -310,6 +391,7 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* MpeiApp */,
 				00E356ED1AD99517003FC87E /* MpeiAppTests */,
+				49040C2F2C5D1C99001822A2 /* ScheduleWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -345,6 +427,14 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				14B8796B280B0B8B000B420C /* dragons@2x.png in Resources */,
 				1469CF4D28AEB3F100848D43 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		49040C2E2C5D1C99001822A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49040C392C5D1C9B001822A2 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -529,6 +619,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		49040C2C2C5D1C99001822A2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49040C372C5D1C99001822A2 /* ScheduleWidget.swift in Sources */,
+				49040C352C5D1C99001822A2 /* ScheduleWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -536,6 +635,11 @@
 			isa = PBXTargetDependency;
 			target = 13B07F861A680F5B00A75B9A /* MpeiApp */;
 			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
+		};
+		49040C3C2C5D1C9B001822A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 49040C2F2C5D1C99001822A2 /* ScheduleWidgetExtension */;
+			targetProxy = 49040C3B2C5D1C9B001822A2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -613,10 +717,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-MpeiApp.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = MpeiApp/MpeiApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 58KV3BTJAZ;
 				ENABLE_BITCODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -650,10 +755,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-MpeiApp.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = MpeiApp/MpeiApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 58KV3BTJAZ;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				HEADER_SEARCH_PATHS = (
@@ -679,6 +785,89 @@
 				TARGETED_DEVICE_FAMILY = 1;
 				USER_HEADER_SEARCH_PATHS = "\"${PROJECT_DIR}/Pods\"/**";
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		49040C3F2C5D1C9B001822A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 58KV3BTJAZ;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.NoobDragons.MpeiApp.ScheduleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		49040C402C5D1C9B001822A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 58KV3BTJAZ;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.NoobDragons.MpeiApp.ScheduleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -836,6 +1025,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		49040C3E2C5D1C9B001822A2 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				49040C3F2C5D1C9B001822A2 /* Debug */,
+				49040C402C5D1C9B001822A2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
