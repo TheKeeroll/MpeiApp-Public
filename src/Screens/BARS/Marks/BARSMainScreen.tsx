@@ -133,7 +133,8 @@ const FeedWidget = async () => {
             console.warn('preparing dataForWidget failed, empty schedule will be provided! Reason: ' + error)
         }
         if(Platform.OS == 'ios'){
-            await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)
+            await SharedGroupPreferences.setItem('widgetKey', JSON.stringify({dataForWidget}), group)
+            console.log('iOS - dataForWidget shared')
         } else {
             // Android
             SharedStorage.set(JSON.stringify({dataForWidget}))
