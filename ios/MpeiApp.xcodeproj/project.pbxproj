@@ -98,6 +98,7 @@
 		49040C4D2C5D3DFC001822A2 /* AppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntent.swift; sourceTree = "<group>"; };
 		49040C4F2C5D3DFE001822A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		49040C512C5D3DFE001822A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4951904D2C5EB92200E52D37 /* ScheduleWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScheduleWidgetExtension.entitlements; sourceTree = "<group>"; };
 		495C9A7D295DCA71004C81A1 /* gold@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "gold@2x.png"; path = "../../../Icons/gold@2x.png"; sourceTree = "<group>"; };
 		495C9A80295DCA82004C81A1 /* gold@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "gold@3x.png"; path = "../../../Icons/gold@3x.png"; sourceTree = "<group>"; };
 		495C9A83295DCA96004C81A1 /* matterial@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "matterial@2x.png"; path = "../../../Icons/matterial@2x.png"; sourceTree = "<group>"; };
@@ -242,6 +243,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				4951904D2C5EB92200E52D37 /* ScheduleWidgetExtension.entitlements */,
 				499B6AA829F07C94005E9A24 /* simple@3x.png */,
 				499B6AA629F07C94005E9A24 /* simple@2x.png */,
 				499B6AA429F07C94005E9A24 /* matterial@3x.png */,
@@ -804,6 +806,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -846,6 +849,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
