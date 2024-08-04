@@ -9,17 +9,35 @@ import WidgetKit
 import SwiftUI
 import Intents
 
-import os.log
 
-//extension OSLog {
-//    private static var subsystem = Bundle.main.bundleIdentifier!
+struct Teacher: Decodable {
+  var name: String = ""
+  var lec_oid: String = ""
+  var fullName: String?
+}
 
-    /// Logs the view cycles like viewDidLoad.
-//    static let viewCycle = OSLog(subsystem: subsystem, category: "viewcycle")
-//}
+struct Lesson: Decodable {
+  var name: String?
+  var lessonIndex: String?
+  var lessonType: String?
+  var place: String?
+  var cabinet: String?
+  var teacher: Teacher?
+  var group: String?
+  var type: String?
+}
 
-struct WidgetData: Decodable {
-   var text: String
+struct Day: Decodable {
+  var date: String = ""
+  var lessons: [Lesson]?
+  var isEmpty: Bool = true
+  var isToday: Bool = false
+}
+
+struct DataForWidget: Decodable {
+  var yesterday: Day = Day()
+  var today: Day = Day()
+  var tomorrow: Day = Day()
 }
 
 @available(iOSApplicationExtension 17, *)
@@ -32,22 +50,17 @@ struct Provider: AppIntentTimelineProvider {
   func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
     var entry = SimpleEntry(date: Date(), configuration: configuration, text: "Default sign")
     var timeline = Timeline(entries: [entry], policy: .atEnd)
-    print("iOS Widget - default timeline")
     let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
     if userDefaults != nil {
       print("iOS Widget - userDefaults: ")
-      print(userDefaults?.object(forKey: "widgetKey"))
+      print(userDefaults?.object(forKey: "widgetKey") ?? "failed to obtain")
       let entryDate = Date()
-      if let savedData = userDefaults!.object(forKey: "widgetKey") as? Data {
-        print("iOS Widget - Data obtained: " + savedData.description)
-        let decoder = JSONDecoder()
-        if let parsedData = try? decoder.decode(WidgetData.self, from: savedData) {
+      if let savedData = userDefaults!.object(forKey: "widgetKey") as? String {
+        print("iOS Widget - Data obtained: " + savedData)
+        //let testSavedData = userDefaults!.object(forKey: "widgetKey") as? Data ?? Data()
           let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-          entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: parsedData.text)
+          entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: savedData)
           timeline = Timeline(entries: [entry], policy: .atEnd)
-        } else {
-          print("Could not parse data")
-        }
       } else {
         print("iOS Widget - No data obtained!")
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
@@ -65,37 +78,6 @@ struct Provider: AppIntentTimelineProvider {
    func placeholder(in context: Context) -> SimpleEntry {
       SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), text: "Placeholder")
   }
-  
-  // func getSnapshot(for configuration: ConfigurationAppIntent, in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-  //    let entry = SimpleEntry(date: Date(), configuration: configuration, text: "Data goes here")
-  //    completion(entry)
-  // }
-  
-  // func getTimeline(for configuration: ConfigurationAppIntent, in context: Context, completion: @escaping
-  // (Timeline<SimpleEntry>) -> Void) {
-    //  let userDefaults = UserDefaults.init(suiteName: "group.schedule")
-    //  if userDefaults != nil {
-      //  let entryDate = Date()
-       // if let savedData = userDefaults!.value(forKey: "widgetKey") as? String {
-        //  print("iOS Widget - Data obtained: " + savedData)
-        //    let decoder = JSONDecoder()
-        //    let data = savedData.data(using: .utf8)
-        //    if let parsedData = try? decoder.decode(WidgetData.self, from: data!) {
-         //       let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-         //       let entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: parsedData.text)
-         //       let timeline = Timeline(entries: [entry], policy: .atEnd)
-        //        completion(timeline)
-        //    } else {
-        //        print("Could not parse data")
-       //     }
-       // } else {
-       //     let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-      //      let entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: "No data obtained")
-    //        let timeline = Timeline(entries: [entry], policy: .atEnd)
-   //         completion(timeline)
-  //      }
- //     }
- // }
 }
 
 @available(iOSApplicationExtension 17, *)
@@ -107,26 +89,38 @@ struct SimpleEntry: TimelineEntry {
 
 @available(iOSApplicationExtension 17, *)
 struct ScheduleWidgetEntryView : View {
-  var entry: Provider.Entry
-  
+  var entry: Provider.Entry?
   var body: some View {
+    //var schObj = entry?.text.toJSON() as? [String:AnyObject]?
+    let decoder = JSONDecoder()
+    let strangeData = entry?.text.data(using: .utf8)
+    let schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
     HStack {
       VStack(alignment: .leading, spacing: 0) {
         HStack(alignment: .center) {
-          Image("streak")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 37, height: 37)
-          Text(entry.text)
+         // Image("streak")
+         //   .resizable()
+         //   .aspectRatio(contentMode: .fit)
+         //   .frame(width: 37, height: 37)
+          Text(schObj?.today.date as? String ?? " no data provided")
+            .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
+            .font(Font.system(size: 18, weight: .bold, design: .rounded))
+            .padding(.leading, -8.0)
+          Text(schObj?.yesterday.date as? String ?? " no data provided")
             .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
             .font(Font.system(size: 21, weight: .bold, design: .rounded))
             .padding(.leading, -8.0)
+          if (schObj?.tomorrow.isEmpty == false) {
+            Text(schObj?.tomorrow.lessons?[0].teacher as? String ?? " no data provided")
+              .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
+              .font(Font.system(size: 18, weight: .bold, design: .rounded))
+            .padding(.leading, -8.0)        }
         }
         .padding(.top, 10.0)
         .frame(maxWidth: .infinity)
         Text("В разработке...")
           .foregroundColor(Color(red: 0.69, green: 0.69, blue: 0.69))
-          .font(Font.system(size: 14))
+          .font(Font.system(size: 16))
           .frame(maxWidth: .infinity)
        // Image("duo")
        //   .renderingMode(.original)
