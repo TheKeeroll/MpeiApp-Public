@@ -16,7 +16,8 @@ struct Teacher: Decodable {
   var fullName: String?
 }
 
-struct Lesson: Decodable {
+struct Lesson: Decodable, Identifiable {
+  var id: UUID = UUID()
   var name: String?
   var lessonIndex: String?
   var lessonType: String?
@@ -94,43 +95,76 @@ struct ScheduleWidgetEntryView : View {
     //var schObj = entry?.text.toJSON() as? [String:AnyObject]?
     let decoder = JSONDecoder()
     let strangeData = entry?.text.data(using: .utf8)
-    let schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
-    HStack {
-      VStack(alignment: .leading, spacing: 0) {
-        HStack(alignment: .center) {
-         // Image("streak")
-         //   .resizable()
-         //   .aspectRatio(contentMode: .fit)
-         //   .frame(width: 37, height: 37)
-          Text(schObj?.today.date as? String ?? " no data provided")
-            .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
-            .font(Font.system(size: 18, weight: .bold, design: .rounded))
-            .padding(.leading, -8.0)
-          Text(schObj?.yesterday.date as? String ?? " no data provided")
-            .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
-            .font(Font.system(size: 21, weight: .bold, design: .rounded))
-            .padding(.leading, -8.0)
-          if (schObj?.tomorrow.isEmpty == false) {
-            Text(schObj?.tomorrow.lessons?[0].teacher as? String ?? " no data provided")
-              .foregroundColor(Color(red: 1.00, green: 0.59, blue: 0.00))
-              .font(Font.system(size: 18, weight: .bold, design: .rounded))
-            .padding(.leading, -8.0)        }
+    var schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
+    var placeholderForTest = DataForWidget(yesterday: Day(date: "", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", teacher: Teacher(name: "Test teacher name", lec_oid: "")), Lesson()], isEmpty: false, isToday: false), today: Day(date: "", lessons: [Lesson(),Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""))], isEmpty: false, isToday: true), tomorrow: Day(date: "", lessons: [], isEmpty: true, isToday: false))
+    //var selectedDay = schObj?.today
+    var selectedDay = placeholderForTest.today
+    VStack {
+      HStack {
+        Button(action: {
+          // Action for yesterday's schedule
+          //selectedDay = schObj?.yesterday
+          selectedDay = placeholderForTest.yesterday
+        }) {
+          Text("Вчера")
+            .padding()
+            .background(Color.gray)
+            .foregroundColor(.white)
+            .cornerRadius(8)
         }
-        .padding(.top, 10.0)
-        .frame(maxWidth: .infinity)
-        Text("В разработке...")
-          .foregroundColor(Color(red: 0.69, green: 0.69, blue: 0.69))
-          .font(Font.system(size: 16))
-          .frame(maxWidth: .infinity)
-       // Image("duo")
-       //   .renderingMode(.original)
-       //   .resizable()
-       //   .aspectRatio(contentMode: .fit)
-       //   .frame(maxWidth: .infinity)
-        
+        Button(action: {
+          // Action for today's schedule
+          //selectedDay = schObj?.today
+          selectedDay = placeholderForTest.today
+        }) {
+          Text("Сегодня")
+            .padding()
+            .background(Color.pink)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+        }
+        Button(action: {
+          // Action for tomorrow's schedule
+          //selectedDay = schObj?.tomorrow
+          selectedDay = placeholderForTest.tomorrow
+        }) {
+          Text("Завтра")
+            .padding()
+            .background(Color.gray)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+        }
       }
+      
+      Text("День и кол-во пар - в разработке...")
+        .font(.headline)
+        .padding(.top, 8)
+      if selectedDay.isEmpty == false {
+        ForEach(selectedDay.lessons ?? []) { item in
+          HStack {
+            VStack(alignment: .leading) {
+              Text(item.lessonIndex ?? " ")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+              Text(item.name ?? " ")
+                .font(.headline)
+                .foregroundColor(.white)
+              Text(item.teacher?.name ?? " ")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            }
+            Spacer()
+          }
+          .padding(.vertical, 4)
+          .padding(.horizontal)
+          .background(Color.black.opacity(0.1))
+          .cornerRadius(8)
+          .padding(.horizontal)
+        }
+      }
+      
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .padding()
   }
 }
 
