@@ -147,8 +147,8 @@ struct ScheduleWidgetEntryView : View {
     //var schObj = entry?.text.toJSON() as? [String:AnyObject]?
     let decoder = JSONDecoder()
     let strangeData = entry?.text.data(using: .utf8)
-    var schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
-    var placeholderForTest = DataForWidget(yesterday: Day(date: "", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", lessonType: "Лабораторная работа", teacher: Teacher(name: "Test teacher name", lec_oid: ""))], isEmpty: false, isToday: false), today: Day(date: "", lessons: [Lesson(lessonType: "Практическое занятие"),Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", lessonType: "Лекция", teacher: Teacher(name: "Test teacher name 2", lec_oid: "")), Lesson(lessonType: "Экзамен"), Lesson(name: "Test lesson name very very long to check how this will be shown in widget - is it okay? If not, I have to do something, right? Right... ", lessonIndex: "10:00 - 14:00", lessonType: "test lesson type", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 2", lec_oid: "")),Lesson(name: "Test name 3", lessonIndex: "10:00 - 14:00", lessonType: "Практическое занятие", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 3", lec_oid: ""))], isEmpty: false, isToday: true), tomorrow: Day(date: "", lessons: [], isEmpty: true, isToday: false))
+    let schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
+    let placeholderForTest = DataForWidget(yesterday: Day(date: "", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", lessonType: "Лабораторная работа", teacher: Teacher(name: "Test teacher name", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: false), today: Day(date: "", lessons: [Lesson(lessonType: "Практическое занятие", type: "COMMON"), Lesson(lessonType: "Практическое занятие", type: "DINNER"), Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", lessonType: "Лекция", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMBINED"), Lesson(name: "Test lesson name very very long to check how this will be shown in widget - is it okay? If not, I have to do something, right? Right... ", lessonIndex: "10:00 - 14:00", lessonType: "test lesson type", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMMON"), Lesson(name: "Test name 3", lessonIndex: "10:00 - 14:00", lessonType: "Практическое занятие", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 3", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: true), tomorrow: Day(date: "", lessons: [], isEmpty: true, isToday: false))
     //var selectedDay = schObj?.today
     
     let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
@@ -163,9 +163,9 @@ struct ScheduleWidgetEntryView : View {
                 YesterdayClickHandler()
         ) {
           Text(formatDate(offsetBy: -1))
-            .padding(4)
+            .frame(width: 80, height: 30)
             .background(Color(hex: "#2B2B2B"))
-            .foregroundColor(.white)
+            .foregroundColor(savedDay == "yesterday" ? Color(hex: "#00FF00") : .white)
             .cornerRadius(8)
             .bold()
         }
@@ -173,9 +173,9 @@ struct ScheduleWidgetEntryView : View {
                 TodayClickHandler()
         ) {
           Text(formatDate(offsetBy: 0))
-            .padding(4)
+            .frame(width: 80, height: 30)
             .background(Color(hex: "#FF5666"))
-            .foregroundColor(Color(hex: "#6600CC"))
+            .foregroundColor(savedDay == "today" ? Color(hex: "#6600CC") : .white)
             .cornerRadius(8)
             .bold()
         }
@@ -183,9 +183,9 @@ struct ScheduleWidgetEntryView : View {
                 TomorrowClickHandler()
         ) {
           Text(formatDate(offsetBy: 1))
-            .padding(4)
+            .frame(width: 80, height: 30)
             .background(Color(hex: "#2B2B2B"))
-            .foregroundColor(.white)
+            .foregroundColor(savedDay == "tomorrow" ? Color(hex: "#00FF00") : .white)
             .cornerRadius(8)
             .bold()
         }
@@ -193,48 +193,64 @@ struct ScheduleWidgetEntryView : View {
       .padding(.bottom, 4)
       
       if savedDay == "yesterday" {
-        Text(formatDate(offsetBy: -1) + " Пар - " + (placeholderForTest.yesterday.lessons?.count.formatted() ?? "нет!"))
-          .font(.subheadline)
-          .padding(.top, 8)
-          .foregroundColor(.white)
-          .bold()
-        ForEach(placeholderForTest.yesterday.lessons?.prefix(4) ?? []) { item in
-          if (item.lessonType!.contains("абота") || item.lessonType!.contains("замен")) {
-            LessonView(item: item, typeColor: Color.red)
-          } else if item.lessonType!.contains("екция") {
-            LessonView(item: item, typeColor: Color.green)
-          } else {
-            LessonView(item: item, typeColor: Color.yellow)
+          // Отфильтровываем занятия, исключая те, где type == "DINNER"
+        let filteredLessons = schObj?.yesterday.lessons?.filter { $0.type != "DINNER" }
+          // Подсчитываем количество отфильтрованных занятий
+          let lessonCount = filteredLessons?.count ?? 0
+
+          // Отображаем дату и количество занятий
+          Text(formatDate(offsetBy: -1) + " Пар - " + lessonCount.formatted())
+              .font(.subheadline)
+              .padding(.top, 8)
+              .foregroundColor(.white)
+              .bold()
+
+          // Отображаем отфильтрованные занятия
+          ForEach(filteredLessons?.prefix(4) ?? []) { item in
+              if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
+                  LessonView(item: item, typeColor: Color(hex: "#FF0500"))
+              } else if item.lessonType!.contains("екция") {
+                  LessonView(item: item, typeColor: Color(hex: "#00FF00"))
+              } else {
+                  LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
+              }
           }
-        }
       } else if savedDay == "today" {
-        Text(formatDate(offsetBy: 0) + " Пар - " + (placeholderForTest.today.lessons?.count.formatted() ?? "нет!"))
+          let filteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
+          let lessonCount = filteredLessons?.count ?? 0
+
+          Text(formatDate(offsetBy: 0) + " Пар - " + lessonCount.formatted())
+              .font(.subheadline)
+              .padding(.top, 8)
+              .foregroundColor(.white)
+              .bold()
+
+          ForEach(filteredLessons?.prefix(4) ?? []) { item in
+              if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
+                  LessonView(item: item, typeColor: Color(hex: "#FF0500"))
+              } else if item.lessonType!.contains("екция") {
+                  LessonView(item: item, typeColor: Color(hex: "#00FF00"))
+              } else {
+                  LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
+              }
+          }
+      } else if savedDay == "tomorrow" {
+        let filteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
+        let lessonCount = filteredLessons?.count ?? 0
+        
+        Text(formatDate(offsetBy: 1) + " Пар - " + lessonCount.formatted())
           .font(.subheadline)
           .padding(.top, 8)
           .foregroundColor(.white)
           .bold()
-        ForEach(placeholderForTest.today.lessons?.prefix(4) ?? []) { item in
+        
+        ForEach(filteredLessons?.prefix(4) ?? []) { item in
           if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
             LessonView(item: item, typeColor: Color(hex: "#FF0500"))
           } else if item.lessonType!.contains("екция") {
             LessonView(item: item, typeColor: Color(hex: "#00FF00"))
           } else {
             LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
-          }
-        }
-      } else if savedDay == "tomorrow" {
-        Text(formatDate(offsetBy: 1) + " Пар - " + (placeholderForTest.tomorrow.lessons?.count.formatted() ?? "нет!"))
-          .font(.subheadline)
-          .padding(.top, 8)
-          .foregroundColor(.white)
-          .bold()
-        ForEach(placeholderForTest.tomorrow.lessons?.prefix(4) ?? []) { item in
-          if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
-            LessonView(item: item, typeColor: Color.red)
-          } else if item.lessonType!.contains("екция") {
-            LessonView(item: item, typeColor: Color(red: 0, green: 255, blue:0))
-          } else {
-            LessonView(item: item, typeColor: Color.yellow)
           }
         }
       }
@@ -246,7 +262,8 @@ struct ScheduleWidgetEntryView : View {
   }
 }
 
-      struct LessonView: View {
+@available(iOSApplicationExtension 16.0, *)
+struct LessonView: View {
           var item: Lesson
           var typeColor: Color
 
@@ -256,8 +273,11 @@ struct ScheduleWidgetEntryView : View {
                   VStack(alignment: .leading, spacing: 2) {
                     HStack {
                       Text(item.lessonIndex ?? " ? ")
+                        .padding(.horizontal, 4)
                         .font(.caption)
                         .foregroundColor(.white)
+                        .background(Color(hex: "#464646"))
+                        .cornerRadius(5)
                         .bold()
                       Text(item.lessonType ?? " ? ")
                         .font(.caption)
@@ -265,8 +285,11 @@ struct ScheduleWidgetEntryView : View {
                         .bold()
                     }
                       Text(item.name ?? " ")
+                          .padding(.horizontal, 4)
                           .font(.subheadline)
                           .foregroundColor(.white)
+                          .background(Color(hex: "#464646"))
+                          .cornerRadius(5)
                           .bold()
                     HStack {
                       Text(item.cabinet ?? " ? ")
@@ -274,8 +297,11 @@ struct ScheduleWidgetEntryView : View {
                         .foregroundColor(Color(hex: "#BB86FC"))
                         .bold()
                       Text(item.teacher?.name ?? " ")
+                        .padding(.horizontal, 4)
                         .font(.caption)
                         .foregroundColor(.white)
+                        .background(Color(hex: "#464646"))
+                        .cornerRadius(5)
                         .bold()
                     }
                   }
@@ -283,7 +309,7 @@ struct ScheduleWidgetEntryView : View {
               }
               .padding(.vertical, 4)
               .padding(.horizontal, 8)
-              .background(Color.black.opacity(0.2))
+              .background(Color(hex: "#2B2B2B"))
               .cornerRadius(8)
               .padding(.horizontal, 4)
           }
