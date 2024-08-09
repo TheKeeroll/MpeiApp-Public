@@ -14,9 +14,8 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Notes"
     static var description = IntentDescription("Handle some additional stuff")
 
-    // An example configurable parameter.
-    @Parameter(title: "Favorite Emoji", default: "😃")
-    var favoriteEmoji: String
+    @Parameter(title: "Привет! Чтобы в виджете были актуальные данные, нужно прогрузиться в приложении.", default: " ")
+    var myText: String
 }
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
