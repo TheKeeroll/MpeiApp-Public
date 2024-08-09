@@ -69,15 +69,14 @@ struct Provider: AppIntentTimelineProvider {
     var timeline = Timeline(entries: [entry], policy: .atEnd)
     let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
     if userDefaults != nil {
-      print("iOS Widget - userDefaults: ")
-      print(userDefaults?.object(forKey: "widgetKey") ?? "failed to obtain")
+    // print("iOS Widget - userDefaults: ")
+    // print(userDefaults?.object(forKey: "widgetKey") ?? "failed to obtain")
       let entryDate = Date()
       if let savedData = userDefaults!.object(forKey: "widgetKey") as? String {
         print("iOS Widget - Data obtained: " + savedData)
-        //let testSavedData = userDefaults!.object(forKey: "widgetKey") as? Data ?? Data()
-          let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-          entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: savedData)
-          timeline = Timeline(entries: [entry], policy: .atEnd)
+        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
+        entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: savedData)
+        timeline = Timeline(entries: [entry], policy: .atEnd)
       } else {
         print("iOS Widget - No data obtained!")
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
@@ -111,45 +110,33 @@ struct ScheduleWidgetEntryView : View {
   let calendar = Calendar.current
   let formatter = DateFormatter()
   
-  func yesterdayClick(clickedDay: String) -> Bool {
-    if clickedDay == "yesterday"{
-      return true
-    } else {
-      return false
-    }
-  }
-  
-  func todayClick(clickedDay: String) -> Bool {
-    if clickedDay == "today"{
-      return true
-    } else {
-      return false
-    }
-  }
-  
-  func tomorrowClick(clickedDay: String) -> Bool {
-    if clickedDay == "tomorrow"{
-      return true
-    } else {
-      return false
-    }
-  }
-  
-  func formatDate(offsetBy days: Int) -> String {
-          let date = calendar.date(byAdding: .day, value: days, to: Date())!
-          formatter.dateFormat = "EE d MMM"
-          formatter.locale = Locale(identifier: "ru_RU")
-          let formattedDate = formatter.string(from: date)
-          return formattedDate
+  func formatDate(from dateString: String) -> String? {
+      let formatter = DateFormatter()
+      formatter.dateFormat = "dd.MM.yyyy" // Формат исходной строки
+      formatter.locale = Locale(identifier: "ru_RU") // Локализация для корректной работы с русскими датами
+      
+      if dateString == "NOT_SET" {
+        return "Нет расписания."
       }
+    
+      // Преобразуем строку в дату
+      guard let date = formatter.date(from: dateString) else {
+          return nil // Если дата некорректна, возвращаем nil
+      }
+
+      // Настраиваем форматтер для нужного формата вывода
+      formatter.dateFormat = "EE d MMM" // Требуемый формат вывода
+
+      // Форматируем дату и возвращаем строку
+      let formattedDate = formatter.string(from: date).capitalized // Делаем первую букву большой для дней недели
+      return formattedDate
+  }
   
   var body: some View {
-    //var schObj = entry?.text.toJSON() as? [String:AnyObject]?
     let decoder = JSONDecoder()
     let strangeData = entry?.text.data(using: .utf8)
     let schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
-    let placeholderForTest = DataForWidget(yesterday: Day(date: "", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", lessonType: "Лабораторная работа", teacher: Teacher(name: "Test teacher name", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: false), today: Day(date: "", lessons: [Lesson(lessonType: "Практическое занятие", type: "COMMON"), Lesson(lessonType: "Практическое занятие", type: "DINNER"), Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", lessonType: "Лекция", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMBINED"), Lesson(name: "Test lesson name very very long to check how this will be shown in widget - is it okay? If not, I have to do something, right? Right... ", lessonIndex: "10:00 - 14:00", lessonType: "test lesson type", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMMON"), Lesson(name: "Test name 3", lessonIndex: "10:00 - 14:00", lessonType: "Практическое занятие", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 3", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: true), tomorrow: Day(date: "", lessons: [], isEmpty: true, isToday: false))
-    //var selectedDay = schObj?.today
+    // let placeholderForTest = DataForWidget(yesterday: Day(date: "08.08.2024", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", lessonType: "Лабораторная работа", teacher: Teacher(name: "Test teacher name", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: false), today: Day(date: "09.08.2024", lessons: [Lesson(lessonType: "Практическое занятие", type: "COMMON"), Lesson(lessonType: "Практическое занятие", type: "DINNER"), Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", lessonType: "Лекция", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMBINED"), Lesson(name: "Test lesson name very very long to check how this will be shown in widget - is it okay? If not, I have to do something, right? Right... ", lessonIndex: "10:00 - 14:00", lessonType: "test lesson type", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMMON"), Lesson(name: "Test name 3", lessonIndex: "10:00 - 14:00", lessonType: "Практическое занятие", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 3", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: true), tomorrow: Day(date: "10.08.2024", lessons: [], isEmpty: true, isToday: false))
     
     let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
     
@@ -162,7 +149,7 @@ struct ScheduleWidgetEntryView : View {
         Button(intent:
                 YesterdayClickHandler()
         ) {
-          Text(formatDate(offsetBy: -1))
+          Text(formatDate(from: schObj?.yesterday.date ?? "") ?? "Нет данных")
             .frame(width: 80, height: 30)
             .background(Color(hex: "#2B2B2B"))
             .foregroundColor(savedDay == "yesterday" ? Color(hex: "#00FF00") : .white)
@@ -172,7 +159,7 @@ struct ScheduleWidgetEntryView : View {
         Button(intent:
                 TodayClickHandler()
         ) {
-          Text(formatDate(offsetBy: 0))
+          Text(formatDate(from: schObj?.today.date ?? "") ?? "Нет данных")
             .frame(width: 80, height: 30)
             .background(Color(hex: "#FF5666"))
             .foregroundColor(savedDay == "today" ? Color(hex: "#6600CC") : .white)
@@ -182,7 +169,7 @@ struct ScheduleWidgetEntryView : View {
         Button(intent:
                 TomorrowClickHandler()
         ) {
-          Text(formatDate(offsetBy: 1))
+          Text(formatDate(from: schObj?.tomorrow.date ?? "") ?? "Нет данных")
             .frame(width: 80, height: 30)
             .background(Color(hex: "#2B2B2B"))
             .foregroundColor(savedDay == "tomorrow" ? Color(hex: "#00FF00") : .white)
@@ -199,7 +186,7 @@ struct ScheduleWidgetEntryView : View {
           let lessonCount = filteredLessons?.count ?? 0
 
           // Отображаем дату и количество занятий
-          Text(formatDate(offsetBy: -1) + " Пар - " + lessonCount.formatted())
+        Text((formatDate(from: schObj?.yesterday.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
               .font(.subheadline)
               .padding(.top, 8)
               .foregroundColor(.white)
@@ -219,7 +206,7 @@ struct ScheduleWidgetEntryView : View {
           let filteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
           let lessonCount = filteredLessons?.count ?? 0
 
-          Text(formatDate(offsetBy: 0) + " Пар - " + lessonCount.formatted())
+        Text((formatDate(from: schObj?.today.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
               .font(.subheadline)
               .padding(.top, 8)
               .foregroundColor(.white)
@@ -238,7 +225,7 @@ struct ScheduleWidgetEntryView : View {
         let filteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
         let lessonCount = filteredLessons?.count ?? 0
         
-        Text(formatDate(offsetBy: 1) + " Пар - " + lessonCount.formatted())
+        Text((formatDate(from: schObj?.tomorrow.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
           .font(.subheadline)
           .padding(.top, 8)
           .foregroundColor(.white)
