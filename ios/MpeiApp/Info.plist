@@ -2,18 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSPrivacyAccessedAPITypes
-</key>
-	<dict>
-		<key>NSPrivacyAccessedAPICategoryUserDefaults</key>
-		<string>1C8F.1</string>
-		<key>NSPrivacyAccessedAPICategorySystemBootTime</key>
-		<string>8FFB.1</string>
-		<key>NSPrivacyAccessedAPICategoryDiskSpace</key>
-		<string>E174.1</string>
-		<key>NSPrivacyAccessedAPICategoryFileTimestamp</key>
-		<string>3B52.1</string>
-	</dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ru</string>
 	<key>CFBundleDisplayName</key>
@@ -96,6 +84,13 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>INIntentsSupported</key>
+	<array>
+		<string>ConfigurationAppIntent</string>
+		<string>YesterdayClickHandler</string>
+		<string>TodayClickHandler</string>
+		<string>TomorrowClickHandler</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -120,6 +115,18 @@
 	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
+	<key>NSPrivacyAccessedAPITypes
+</key>
+	<dict>
+		<key>NSPrivacyAccessedAPICategoryDiskSpace</key>
+		<string>E174.1</string>
+		<key>NSPrivacyAccessedAPICategoryFileTimestamp</key>
+		<string>3B52.1</string>
+		<key>NSPrivacyAccessedAPICategorySystemBootTime</key>
+		<string>8FFB.1</string>
+		<key>NSPrivacyAccessedAPICategoryUserDefaults</key>
+		<string>1C8F.1</string>
+	</dict>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>
