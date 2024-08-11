@@ -1,5 +1,7 @@
 package com.mpeiapp;
 
+import static com.mpeiapp.JsonParser.parseJson;
+
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -20,7 +22,6 @@ import java.util.Objects;
 
 import java.util.Locale;
 
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 public class ScheduleWidget extends AppWidgetProvider {
@@ -172,7 +173,7 @@ public class ScheduleWidget extends AppWidgetProvider {
     }
 
     // Основной класс, соответствующий корневому объекту JSON
-    class Root {
+    static class Root {
         @SerializedName("dataForWidget")
         private DataForWidget dataForWidget;
 
@@ -181,10 +182,14 @@ public class ScheduleWidget extends AppWidgetProvider {
         public DataForWidget getDataForWidget() {
             return dataForWidget;
         }
+
+        public void setDataForWidget(DataForWidget dataForWidget) {
+            this.dataForWidget = dataForWidget;
+        }
     }
 
     // Класс, представляющий dataForWidget
-    class DataForWidget {
+    static class DataForWidget {
         private Day yesterday;
         private Day today;
         private Day tomorrow;
@@ -195,17 +200,29 @@ public class ScheduleWidget extends AppWidgetProvider {
             return yesterday;
         }
 
+        public void setYesterday(Day yesterday) {
+            this.yesterday = yesterday;
+        }
+
         public Day getToday() {
             return today;
+        }
+
+        public void setToday(Day today) {
+            this.today = today;
         }
 
         public Day getTomorrow() {
             return tomorrow;
         }
+
+        public void setTomorrow(Day tomorrow) {
+            this.tomorrow = tomorrow;
+        }
     }
 
     // Класс, представляющий каждый день
-    class Day {
+    static class Day {
         private String date;
         private List<Lesson> lessons;
         private boolean isEmpty;
@@ -217,20 +234,36 @@ public class ScheduleWidget extends AppWidgetProvider {
             return date;
         }
 
+        public void setDate(String date) {
+            this.date = date;
+        }
+
         public List<Lesson> getLessons() {
             return lessons;
         }
 
-        public boolean isEmpty() {
+        public void setLessons(List<Lesson> lessons) {
+            this.lessons = lessons;
+        }
+
+        public boolean getIsEmpty() {
             return isEmpty;
         }
 
-        public boolean isToday() {
+        public void setIsEmpty(boolean empty) {
+            isEmpty = empty;
+        }
+
+        public boolean getIsToday() {
             return isToday;
+        }
+
+        public void setIsToday(boolean today) {
+            isToday = today;
         }
     }
 
-    class Lesson {
+    static class Lesson {
         private String name;
         private String lessonIndex;
         private String lessonType;
@@ -242,45 +275,98 @@ public class ScheduleWidget extends AppWidgetProvider {
 
         public Lesson() {}
 
-        public String GetName(){
+        public String getName(){
             return name;
         }
-        public String GetLessonIndex(){
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getLessonIndex(){
             return lessonIndex;
         }
-        public String GetLessonType(){
+
+        public void setLessonIndex(String lessonIndex) {
+            this.lessonIndex = lessonIndex;
+        }
+
+        public String getLessonType(){
             return lessonType;
         }
-        public String GetPlace(){
+
+        public void setLessonType(String lessonType) {
+            this.lessonType = lessonType;
+        }
+
+        public String getPlace(){
             return place;
         }
-        public String GetCabinet(){
+
+        public void setPlace(String place) {
+            this.place = place;
+        }
+
+        public String getCabinet(){
             return cabinet;
         }
-        public Teacher GetTeacher(){
+
+        public void setCabinet(String cabinet) {
+            this.cabinet = cabinet;
+        }
+
+        public Teacher getTeacher(){
             return teacher;
         }
-        public String GetGroup(){
+
+        public void setTeacher(Teacher teacher) {
+            this.teacher = teacher;
+        }
+
+        public String getGroup(){
             return group;
         }
-        public String GetType(){
+
+        public void setGroup(String group) {
+            this.group = group;
+        }
+
+        public String getType(){
             return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
     }
 
-    class Teacher {
+    static class Teacher {
         private String name;
         private String lec_oid;
         private String fullName;
 
         public Teacher() {}
 
-        public String GetName(){
+        public String getName(){
             return name;
         }
-        public String GetLecOID() { return lec_oid; }
-        public String GetFullName(){
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getLecOID() { return lec_oid; }
+
+        public void setLec_oid(String lec_oid) {
+            this.lec_oid = lec_oid;
+        }
+
+        public String getFullName(){
             return fullName;
+        }
+
+        public void setFullName(String fullName) {
+            this.fullName = fullName;
         }
     }
 
@@ -435,27 +521,26 @@ public class ScheduleWidget extends AppWidgetProvider {
     }
 
     private static Root getSchDataObj(String sch) {
-        // Создание объекта Gson
-        Gson gson = new Gson();
-        Root schDataObj = null;
         try {
             // Преобразование JSON строки в объект
-            schDataObj = gson.fromJson(sch, Root.class);
+            Root schDataObj = parseJson(sch);
             // Доступ к данным
-            boolean todayIsToday = schDataObj.getDataForWidget().getToday().isToday();
+            boolean todayIsToday = schDataObj.getDataForWidget().getToday().getIsToday();
             Log.i("ScheduleWidget", "schDataObj - today is today? " + todayIsToday);
+            return schDataObj;
         } catch (Exception e) {
             Log.e("ScheduleWidget","Root.class fromJson failed: " + e);
+            return null;
         }
-        return schDataObj;
     }
+
 
     private static List<WidgetSchItem> getScheduleForDay(String day, String sch) {
         Root schDataObj = getSchDataObj(sch);
         // WidgetSchItem sch_item = new WidgetSchItem("00:00 - 00:00", "Лабораторная работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое длинное вообщем", "доц. Тестовый Т. Т.");
         // WidgetSchItem sch_item1 = new WidgetSchItem("00:00 - 00:00", "Лекция", "Тест-101","Тестовая дисциплина", "проф. Тестовый Т. Т.");
         // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", "Практическое занятие", "Тест-102","Ещё-что-то", "ст. преп. Тестовая Т. Т.");
-        // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetTeacher().GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetType());
+        // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).getLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).getCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).getName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).getTeacher().getName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).getType());
         List<WidgetSchItem> schlist = Collections.emptyList();
         List<WidgetSchItem> res = new ArrayList<>(schlist);
         try {
@@ -466,28 +551,28 @@ public class ScheduleWidget extends AppWidgetProvider {
 //                res.add(sch_item2);
 //                res.add(sch_item2);
                 assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getToday().isEmpty()){
+                if (!schDataObj.getDataForWidget().getToday().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getToday().getLessons()) {
-                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
-                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        if (!Objects.equals(sch_les.getType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
                         }
                     }
                 }
             } else if (Objects.equals(day, "yesterday")){
                 assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getYesterday().isEmpty()){
+                if (!schDataObj.getDataForWidget().getYesterday().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
-                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
-                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        if (!Objects.equals(sch_les.getType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
                         }
                     }
                 }
             } else if (Objects.equals(day, "tomorrow")){
                 assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getTomorrow().isEmpty()){
+                if (!schDataObj.getDataForWidget().getTomorrow().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
-                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
-                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        if (!Objects.equals(sch_les.getType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
                         }
                     }
                 }

@@ -10,6 +10,7 @@
 -keep class com.google.gson.annotations.** {*;}
 -keep class com.mpeiapp.ScheduleWidget.** {*;}
 -keep class **ScheduleWidget.** {*;}
+-keep class **Root** {*;}
 -keep class **DataForWidget** {*;}
 -keep class **Day** {*;}
 -keep class **Lesson** {*;}
