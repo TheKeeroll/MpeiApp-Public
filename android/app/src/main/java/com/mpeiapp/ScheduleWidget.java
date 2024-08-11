@@ -11,12 +11,13 @@ import android.graphics.Color;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import org.joda.time.DateTime;
 import java.util.Locale;
 
 import com.google.gson.Gson;
@@ -31,6 +32,7 @@ public class ScheduleWidget extends AppWidgetProvider {
         RemoteViews views = null;
         try {
             views = new RemoteViews(context.getPackageName(), R.layout.schedule_widget);
+            views.setTextViewText(R.id.date_text, "Необходимо прогрузить всё в приложении!");
         } catch (Exception e) {
             Log.e("ScheduleWidget", "RemoteViews failed: ", e);
         }
@@ -42,18 +44,27 @@ public class ScheduleWidget extends AppWidgetProvider {
         }catch (Exception e) {
             Log.e("ScheduleWidget", "Obtaining schedule Data failed: ", e);
         }
-        String formattedToday = getDateText("today");
-        String formattedYesterday = getDateText("yesterday");
-        String formattedTomorrow = getDateText("tomorrow");
+
+        Root schDataObj = getSchDataObj(scheduleDataString);
+
+        String formattedToday;
+        String formattedYesterday;
+        String formattedTomorrow;
         String shortCurrentDate = " ";
         String shortYesterdayDate = " ";
         String shortTomorrowDate = " ";
         try {
+            formattedToday = formatDate(schDataObj.getDataForWidget().getToday().getDate());
+            formattedYesterday = formatDate(schDataObj.getDataForWidget().getYesterday().getDate());
+            formattedTomorrow = formatDate(schDataObj.getDataForWidget().getTomorrow().getDate());
             shortCurrentDate = shortenDateString(formattedToday);
             shortYesterdayDate = shortenDateString(formattedYesterday);
             shortTomorrowDate = shortenDateString(formattedTomorrow);
         } catch (Exception e) {
             Log.e("ScheduleWidget", "Obtaining shorten strings failed: ", e);
+            shortCurrentDate = "Нет данных";
+            shortYesterdayDate = "Нет данных";
+            shortTomorrowDate = "Нет данных";
         }
 
         try {
@@ -100,8 +111,18 @@ public class ScheduleWidget extends AppWidgetProvider {
             Log.e("ScheduleWidget", "getScheduleForDay failed: ", e);
             lesson_num = "пар нет!";
         }
-        String dateText = getDateText(day);
+        String dateText;
         try {
+            switch (day) {
+                case "yesterday": dateText = formatDate(schDataObj.getDataForWidget().getYesterday().getDate());
+                    break;
+
+                case "tomorrow": dateText = formatDate(schDataObj.getDataForWidget().getTomorrow().getDate());
+                    break;
+
+                default: dateText = formatDate(schDataObj.getDataForWidget().getToday().getDate());
+            }
+
             views.setTextViewText(R.id.date_text, dateText + " - " + lesson_num);
 
             // Clear previous schedule items
@@ -155,6 +176,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         @SerializedName("dataForWidget")
         private DataForWidget dataForWidget;
 
+        public Root() {}
+
         public DataForWidget getDataForWidget() {
             return dataForWidget;
         }
@@ -165,6 +188,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         private Day yesterday;
         private Day today;
         private Day tomorrow;
+
+        public DataForWidget() {}
 
         public Day getYesterday() {
             return yesterday;
@@ -185,6 +210,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         private List<Lesson> lessons;
         private boolean isEmpty;
         private boolean isToday;
+
+        public Day() {}
 
         public String getDate() {
             return date;
@@ -212,6 +239,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         private Teacher teacher;
         private String group;
         private String type;
+
+        public Lesson() {}
 
         public String GetName(){
             return name;
@@ -244,6 +273,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         private String lec_oid;
         private String fullName;
 
+        public Teacher() {}
+
         public String GetName(){
             return name;
         }
@@ -258,7 +289,6 @@ public class ScheduleWidget extends AppWidgetProvider {
         // There may be multiple widgets active, so update all of them
         for (int appWidgetId : appWidgetIds) {
             // Default to today
-            Log.i("ScheduleWidget", "updating AppWidget onUpdate...");
             updateAppWidget(context, appWidgetManager, appWidgetId, "today");
         }
     }
@@ -273,7 +303,6 @@ public class ScheduleWidget extends AppWidgetProvider {
             int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidget);
 
             for (int appWidgetId : appWidgetIds) {
-                Log.i("ScheduleWidget", "updating AppWidget - ACTION_YESTERDAY...");
                 updateAppWidget(context, appWidgetManager, appWidgetId, "yesterday");
             }
         } else if (Objects.equals(intent.getAction(), ACTION_TODAY)) {
@@ -282,7 +311,6 @@ public class ScheduleWidget extends AppWidgetProvider {
             int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidget);
 
             for (int appWidgetId : appWidgetIds) {
-                Log.i("ScheduleWidget", "updating AppWidget - ACTION_TODAY...");
                 updateAppWidget(context, appWidgetManager, appWidgetId, "today");
             }
         } else if (Objects.equals(intent.getAction(), ACTION_TOMORROW)) {
@@ -291,30 +319,57 @@ public class ScheduleWidget extends AppWidgetProvider {
             int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidget);
 
             for (int appWidgetId : appWidgetIds) {
-                Log.i("ScheduleWidget", "updating AppWidget - ACTION_TOMORROW...");
                 updateAppWidget(context, appWidgetManager, appWidgetId, "tomorrow");
             }
         }
     }
+    private static String formatDate(String dateString) {
+        if (dateString.contains("NOT_SET")) {
+            return "Нет расписания";
+        }
+        // Преобразуем строку в Calendar
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.forLanguageTag("ru"));
+        Calendar calendar = Calendar.getInstance();
+        try {
+            calendar.setTime(sdf.parse(dateString));
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","formatDate failed: " + e);
+            return "Нет данных";
+        }
 
-    private static String formatDate(DateTime dateTime) {
-        String dayOfWeek = dateTime.toString("EEEEE", Locale.forLanguageTag("ru"));
-        String dayMonth = dateTime.toString("dd MMMM", Locale.forLanguageTag("ru"));
+        // Получаем день недели и дату
+        SimpleDateFormat dayOfWeekFormatter = new SimpleDateFormat("EEEE", Locale.forLanguageTag("ru"));
+        String dayOfWeek = dayOfWeekFormatter.format(calendar.getTime());
+
+        SimpleDateFormat dayMonthFormatter = new SimpleDateFormat("dd MMMM", Locale.forLanguageTag("ru"));
+        String dayMonth = dayMonthFormatter.format(calendar.getTime());
+
         return dayOfWeek + ", " + dayMonth;
     }
 
     private static String shortenDateString(String dateString) {
+        if (dateString.contains("Нет")) {
+            return dateString;
+        }
         // Разделение строки на день недели и дату
-        String[] parts = dateString.split(", ");
-        String dayOfWeek = parts[0];
-        String dayMonth = parts[1];
-
-        // Сокращение дня недели
-        String shortDayOfWeek = shortenDayOfWeek(dayOfWeek);
-
-        // Сокращение месяца
-        String shortDayMonth = shortenDayMonth(dayMonth);
-
+        String[] parts;
+        String dayOfWeek;
+        String dayMonth;
+        String shortDayOfWeek;
+        String shortDayMonth;
+        try {
+            // Разделение строки на день недели и дату
+            parts = dateString.split(", ");
+            dayOfWeek = parts[0];
+            dayMonth = parts[1];
+            // Сокращение дня недели
+            shortDayOfWeek = shortenDayOfWeek(dayOfWeek);
+            // Сокращение месяца
+            shortDayMonth = shortenDayMonth(dayMonth);
+        } catch (Exception e) {
+            Log.e("ScheduleWidget","shortDayOfWeek/shortDayMonth failed: " + e);
+            return "Нет данных";
+        }
         return shortDayOfWeek + " " + shortDayMonth;
     }
 
@@ -379,31 +434,7 @@ public class ScheduleWidget extends AppWidgetProvider {
         return day + " " + shortMonth;
     }
 
-    // Helper methods to get date text and schedule data
-    private static String getDateText(String day) {
-        // Implement this method to return the date text based on the day
-        // Получение текущей даты
-        DateTime currentDate = new DateTime();
-        String formattedToday = formatDate(currentDate);
-        Log.i("ScheduleWidget", "formattedDate - today: " + formattedToday);
-        DateTime yesterdayDate = currentDate.minusDays(1);
-        String formattedYesterday = formatDate(yesterdayDate);
-        Log.i("ScheduleWidget", "formattedDate - yesterday: " + formattedYesterday);
-        DateTime tomorrowDate = currentDate.plusDays(1);
-        String formattedTomorrow = formatDate(tomorrowDate);
-        Log.i("ScheduleWidget", "formattedDate - tomorrow: " + formattedTomorrow);
-        if (Objects.equals(day, "today")){
-            return formattedToday;
-        } else if (Objects.equals(day, "yesterday")){
-            return formattedYesterday;
-        } else {
-            return formattedTomorrow;
-        }
-    }
-
-    private static List<WidgetSchItem> getScheduleForDay(String day, String sch) {
-        // Implement this method to return the schedule items for the given day
-
+    private static Root getSchDataObj(String sch) {
         // Создание объекта Gson
         Gson gson = new Gson();
         Root schDataObj = null;
@@ -416,21 +447,32 @@ public class ScheduleWidget extends AppWidgetProvider {
         } catch (Exception e) {
             Log.e("ScheduleWidget","Root.class fromJson failed: " + e);
         }
+        return schDataObj;
+    }
 
-        WidgetSchItem sch_item = new WidgetSchItem("00:00 - 01:00", "Тест Лаборат работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое", "доц. Тестовый Т. Т.");
-        WidgetSchItem sch_item1 = new WidgetSchItem("01:00 - 02:00", "Test Лекция", "Test cabin1","Test dis1", "Test tea1");
-        WidgetSchItem sch_item2 = new WidgetSchItem("01:00 - 02:00", "Test занятие", "Test cabin1","Test dis1", "Test tea1");
+    private static List<WidgetSchItem> getScheduleForDay(String day, String sch) {
+        Root schDataObj = getSchDataObj(sch);
+        // WidgetSchItem sch_item = new WidgetSchItem("00:00 - 00:00", "Лабораторная работа", "Тест-100","Информационные что-то там и радиолокационные ещё что-то там такое длинное вообщем", "доц. Тестовый Т. Т.");
+        // WidgetSchItem sch_item1 = new WidgetSchItem("00:00 - 00:00", "Лекция", "Тест-101","Тестовая дисциплина", "проф. Тестовый Т. Т.");
+        // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", "Практическое занятие", "Тест-102","Ещё-что-то", "ст. преп. Тестовая Т. Т.");
         // WidgetSchItem sch_item2 = new WidgetSchItem("00:00 - 00:00", schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetLessonType(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetCabinet(),schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetTeacher().GetName(), schDataObj.getDataForWidget().getTomorrow().getLessons().get(0).GetType());
         List<WidgetSchItem> schlist = Collections.emptyList();
         List<WidgetSchItem> res = new ArrayList<>(schlist);
         try {
             if (Objects.equals(day, "today")){
-                res.add(sch_item);
-                res.add(sch_item);
-                res.add(sch_item1);
-                res.add(sch_item1);
-                res.add(sch_item2);
-                res.add(sch_item2);
+//                res.add(sch_item);
+//                res.add(sch_item);
+//                res.add(sch_item1);
+//                res.add(sch_item2);
+//                res.add(sch_item2);
+                assert schDataObj != null;
+                if (!schDataObj.getDataForWidget().getToday().isEmpty()){
+                    for (Lesson sch_les : schDataObj.getDataForWidget().getToday().getLessons()) {
+                        if (!Objects.equals(sch_les.GetType(), "DINNER")) {
+                            res.add(new WidgetSchItem(sch_les.GetLessonIndex(), sch_les.GetLessonType(), sch_les.GetCabinet(), sch_les.GetName(), sch_les.GetTeacher().GetName()));
+                        }
+                    }
+                }
             } else if (Objects.equals(day, "yesterday")){
                 assert schDataObj != null;
                 if (!schDataObj.getDataForWidget().getYesterday().isEmpty()){

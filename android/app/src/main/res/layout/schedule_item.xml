@@ -22,7 +22,7 @@
 			android:padding="3dp"
 			android:text="@string/schedule_time"
 			android:textColor="#FFFFFF"
-			android:textSize="13sp"
+			android:textSize="12sp"
 			android:textStyle="bold" />
 
 		<TextView
@@ -31,10 +31,12 @@
 			android:layout_height="wrap_content"
 			android:layout_margin="1dp"
 			android:background="@drawable/app_widget_rounded_corner"
+			android:ellipsize="end"
+			android:maxLines="1"
 			android:padding="1dp"
 			android:text="@string/schedule_lesson_type"
 			android:textColor="#FFFF00"
-			android:textSize="13sp"
+			android:textSize="12sp"
 			android:textStyle="bold" />
 	</LinearLayout>
 
@@ -51,8 +53,8 @@
 			android:layout_height="wrap_content"
 			android:layout_margin="1dp"
 			android:background="@drawable/app_widget_item_content_rounded_corner"
-			android:maxLines="5"
-			android:minLines="1"
+			android:ellipsize="end"
+			android:maxLines="1"
 			android:padding="3dp"
 			android:text="@string/schedule_discipline"
 			android:textColor="#FFFFFF"
@@ -72,6 +74,8 @@
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:background="@drawable/app_widget_rounded_corner"
+			android:ellipsize="end"
+			android:maxLines="1"
 			android:padding="3dp"
 			android:text="@string/schedule_cabinet"
 			android:textColor="#BB86FC"
@@ -83,6 +87,8 @@
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:background="@drawable/app_widget_item_content_rounded_corner"
+			android:ellipsize="end"
+			android:maxLines="1"
 			android:padding="3dp"
 			android:text="@string/schedule_teacher"
 			android:textColor="#FFFFFF"

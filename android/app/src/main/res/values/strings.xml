@@ -5,7 +5,10 @@
     <string name="me">Это я, </string>
     <string name="dragonsava"> DragonSavA</string>
     <string name="thanks">Спасибо, что пользуешься MpeiApp, а теперь и созданным мною виджетом расписания!</string>
-    <string name="sizes">Размеры виджета можно настраивать - уменьшать и увеличивать(пригодится, если вдруг все пары не умещаются). Приятного использования!</string>
+    <string name="warning">Важные моменты:</string>
+    <string name="warn_refreshing"> - чтобы в виджет поступили актуальные данные, необходимо запустить приложение и дождаться окончания загрузки!</string>
+    <string name="warn_sizes"> - размеры виджета можно изменить (пригодится, если вдруг все пары не умещаются)</string>
+    <string name="enjoy">Приятного использования!</string>
     <string name="rating">P.S. Будет здорово, если ты оставишь отзыв о приложении:</string>
     <string name="rate_app">Оценить MpeiApp в Google Play</string>
     <string name="add_widget">Понятно, активировать виджет</string>

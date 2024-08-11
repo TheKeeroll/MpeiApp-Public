@@ -42,7 +42,7 @@ const FeedWidget = async () => {
         let studentSchedule = useSelector((state: RootState)=>state.Schedule)
         let today = new Date().getDDMMYY()
 
-        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [], isEmpty: true, isToday: false}}
+        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}}
         try {
             for (let j = 0; j < studentSchedule.data!.days.length; j++) {
                 let dateYear = studentSchedule.data!.days[j]!.date.split('.')[2]

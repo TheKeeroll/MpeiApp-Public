@@ -1,8 +1,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="10dp"
-	android:background="#212121">
+    android:background="@drawable/app_widget_initial_rounded_corner"
+    android:padding="10dp">
 
     <!-- Date selection buttons -->
 
@@ -20,8 +20,9 @@
             android:layout_marginEnd="10dp"
             android:layout_weight="1"
             android:background="@drawable/app_widget_rounded_corner"
-            android:lines="3"
-            android:minLines="3"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:minLines="1"
             android:padding="1dp"
             android:text="@string/btnYesterday_text"
             android:textColor="#FFFFFF"
@@ -34,8 +35,9 @@
             android:layout_marginEnd="10dp"
             android:layout_weight="1"
             android:background="@drawable/app_widget_btn_today_rounded_corner"
-            android:lines="3"
-            android:minLines="3"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:minLines="1"
             android:padding="1dp"
             android:text="@string/btnToday_text"
             android:textColor="#FFFFFF"
@@ -48,8 +50,9 @@
             android:layout_marginEnd="10dp"
             android:layout_weight="1"
             android:background="@drawable/app_widget_rounded_corner"
-            android:lines="3"
-            android:minLines="3"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:minLines="1"
             android:padding="1dp"
             android:text="@string/btnTomorrow_text"
             android:textColor="#FFFFFF"
@@ -66,7 +69,7 @@
         android:layout_below="@+id/linearLayout"
         android:layout_marginTop="3dp"
         android:text="@string/date_text"
-		android:textColor="#FFFFFF"
+        android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold" />
 
