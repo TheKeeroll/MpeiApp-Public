@@ -89,7 +89,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <View style={{width: '100%', alignItems: 'center', marginTop: 20}}>
                         <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_termsofuse')} title={'Лицензионное соглашение\n сервиса Яндекс.Карты'}/>
                         <ListText title={''}/>
-                        <ListText title={'Mpei App'} textStyle={{fontSize: 18, opacity: .5}}/>
+                        <ListText title={'MpeiApp'} textStyle={{fontSize: 18, opacity: .5}}/>
                         <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{fontSize: 14, opacity: .5}}/>
                         <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
                     </View>
