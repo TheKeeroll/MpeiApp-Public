@@ -51,7 +51,7 @@ index fbede17..68c3054 100644
    implementation "androidx.webkit:webkit:$webkit_version"
  }
 diff --git a/node_modules/react-native-webview/android/gradle.properties b/node_modules/react-native-webview/android/gradle.properties
-index e6f0f5e..22a2988 100644
+index e6f0f5e..ec5ea6d 100644
 --- a/node_modules/react-native-webview/android/gradle.properties
 +++ b/node_modules/react-native-webview/android/gradle.properties
 @@ -1,6 +1,6 @@
@@ -62,9 +62,9 @@ index e6f0f5e..22a2988 100644
 -ReactNativeWebView_buildToolsVersion=29.0.3
 -ReactNativeWebView_targetSdkVersion=28
 -ReactNativeWebView_minSdkVersion=21
-+ReactNativeWebView_compileSdkVersion=34
-+ReactNativeWebView_buildToolsVersion=34.0.0
-+ReactNativeWebView_targetSdkVersion=34
++ReactNativeWebView_compileSdkVersion=35
++ReactNativeWebView_buildToolsVersion=35.0.0
++ReactNativeWebView_targetSdkVersion=35
 +ReactNativeWebView_minSdkVersion=23
 diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManager.java
 index c285684..c0d8ee9 100644

@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-yamap/android/build.gradle b/node_modules/react-native-yamap/android/build.gradle
-index 01aa0d9..07088dd 100644
+index 01aa0d9..c1396fd 100644
 --- a/node_modules/react-native-yamap/android/build.gradle
 +++ b/node_modules/react-native-yamap/android/build.gradle
 @@ -1,38 +1,37 @@
@@ -22,8 +22,8 @@ index 01aa0d9..07088dd 100644
  android {
 -    compileSdkVersion 28
 -    buildToolsVersion "28.0.3"
-+    compileSdk 34
-+    buildToolsVersion "34.0.0"
++    compileSdk 35
++    buildToolsVersion "35.0.0"
  
      defaultConfig {
 -        minSdkVersion 16
@@ -31,7 +31,7 @@ index 01aa0d9..07088dd 100644
 -        versionCode 1
 -        versionName "1.0"
 +        minSdkVersion 23
-+        targetSdkVersion 34
++        targetSdkVersion 35
      }
 -    lintOptions {
 +    lint {

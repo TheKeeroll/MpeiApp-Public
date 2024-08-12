@@ -233,7 +233,7 @@ index cdb4c21..bbf3b14 100644
 +POM_PACKAGING=aar
 \ No newline at end of file
 diff --git a/node_modules/lottie-react-native/src/android/build.gradle b/node_modules/lottie-react-native/src/android/build.gradle
-index 2d63065..b6ef54b 100644
+index 2d63065..87eb229 100644
 --- a/node_modules/lottie-react-native/src/android/build.gradle
 +++ b/node_modules/lottie-react-native/src/android/build.gradle
 @@ -8,19 +8,19 @@ apply from: 'gradle-maven-push.gradle'
@@ -241,13 +241,13 @@ index 2d63065..b6ef54b 100644
  
  android {
 -  compileSdkVersion safeExtGet('compileSdkVersion', 30)
-+  compileSdk safeExtGet('compileSdkVersion', 34)
++  compileSdk safeExtGet('compileSdkVersion', 35)
  
    defaultConfig {
 -    minSdkVersion safeExtGet('minSdkVersion', 21)
 -    targetSdkVersion safeExtGet('targetSdkVersion', 30)
 +    minSdkVersion safeExtGet('minSdkVersion', 23)
-+    targetSdkVersion safeExtGet('targetSdkVersion', 34)
++    targetSdkVersion safeExtGet('targetSdkVersion', 35)
    }
  
 -  lintOptions {

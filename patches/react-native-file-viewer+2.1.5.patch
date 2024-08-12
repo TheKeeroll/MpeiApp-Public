@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-file-viewer/android/build.gradle b/node_modules/react-native-file-viewer/android/build.gradle
-index 5016f0c..0e9c60f 100644
+index 5016f0c..38bf079 100644
 --- a/node_modules/react-native-file-viewer/android/build.gradle
 +++ b/node_modules/react-native-file-viewer/android/build.gradle
 @@ -5,16 +5,16 @@ def safeExtGet(prop, fallback) {
@@ -8,14 +8,14 @@ index 5016f0c..0e9c60f 100644
  android {
 -    compileSdkVersion safeExtGet('compileSdkVersion', 28)
 -    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
-+    compileSdk safeExtGet('compileSdkVersion', 34)
-+    buildToolsVersion safeExtGet('buildToolsVersion', '34.0.0')
++    compileSdk safeExtGet('compileSdkVersion', 35)
++    buildToolsVersion safeExtGet('buildToolsVersion', '35.0.0')
  
      defaultConfig {
 -        minSdkVersion safeExtGet('minSdkVersion', 16)
 -        targetSdkVersion safeExtGet('targetSdkVersion', 28)
 +        minSdkVersion safeExtGet('minSdkVersion', 23)
-+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
++        targetSdkVersion safeExtGet('targetSdkVersion', 35)
          versionCode 1
          versionName "1.0"
      }

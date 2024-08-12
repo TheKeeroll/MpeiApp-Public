@@ -30,7 +30,7 @@ index 82b3c9a..d80f3e7 100644
  
  }
 diff --git a/node_modules/@react-native-community/netinfo/android/gradle.properties b/node_modules/@react-native-community/netinfo/android/gradle.properties
-index e0a52d0..c02a413 100644
+index e0a52d0..e44c0a2 100644
 --- a/node_modules/@react-native-community/netinfo/android/gradle.properties
 +++ b/node_modules/@react-native-community/netinfo/android/gradle.properties
 @@ -1,4 +1,4 @@
@@ -38,7 +38,7 @@ index e0a52d0..c02a413 100644
 -ReactNativeNetInfo_buildToolsVersion=29.0.3
 -ReactNativeNetInfo_targetSdkVersion=27
 -ReactNativeNetInfo_minSdkVersion=16
-+ReactNativeNetInfo_compileSdkVersion=34
-+ReactNativeNetInfo_buildToolsVersion=34.0.0
-+ReactNativeNetInfo_targetSdkVersion=34
++ReactNativeNetInfo_compileSdkVersion=35
++ReactNativeNetInfo_buildToolsVersion=35.0.0
++ReactNativeNetInfo_targetSdkVersion=35
 +ReactNativeNetInfo_minSdkVersion=23

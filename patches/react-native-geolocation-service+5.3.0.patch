@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-geolocation-service/android/build.gradle b/node_modules/react-native-geolocation-service/android/build.gradle
-index cf167cf..86da848 100644
+index cf167cf..13a9182 100644
 --- a/node_modules/react-native-geolocation-service/android/build.gradle
 +++ b/node_modules/react-native-geolocation-service/android/build.gradle
 @@ -1,17 +1,17 @@
@@ -10,10 +10,10 @@ index cf167cf..86da848 100644
 -def DEFAULT_MIN_SDK_VERSION              = 16
 -def DEFAULT_TARGET_SDK_VERSION           = 29
 -def DEFAULT_GOOGLE_PLAY_SERVICES_VERSION = "18.0.0"
-+def DEFAULT_COMPILE_SDK_VERSION          = 34
-+def DEFAULT_BUILD_TOOLS_VERSION          = "34.0.0"
++def DEFAULT_COMPILE_SDK_VERSION          = 35
++def DEFAULT_BUILD_TOOLS_VERSION          = "35.0.0"
 +def DEFAULT_MIN_SDK_VERSION              = 23
-+def DEFAULT_TARGET_SDK_VERSION           = 34
++def DEFAULT_TARGET_SDK_VERSION           = 35
 +def DEFAULT_GOOGLE_PLAY_SERVICES_VERSION = "20.0.0"
  
  def safeExtGet(prop, fallback) {

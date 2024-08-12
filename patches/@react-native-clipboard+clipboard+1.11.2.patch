@@ -28,7 +28,7 @@ index 86d4866..e33de37 100644
 +    implementation 'com.facebook.react:react-native:0.68.1'
  }
 diff --git a/node_modules/@react-native-clipboard/clipboard/android/gradle.properties b/node_modules/@react-native-clipboard/clipboard/android/gradle.properties
-index 936c1f0..27d8dac 100644
+index 936c1f0..a5ee705 100644
 --- a/node_modules/@react-native-clipboard/clipboard/android/gradle.properties
 +++ b/node_modules/@react-native-clipboard/clipboard/android/gradle.properties
 @@ -1,4 +1,4 @@
@@ -37,8 +37,7 @@ index 936c1f0..27d8dac 100644
 -ReactNativeClipBoard_targetSdkVersion=30
 -ReactNativeClipBoard_minSdkVersion=16
 \ No newline at end of file
-+ReactNativeClipBoard_compileSdkVersion=34
-+ReactNativeClipBoard_buildToolsVersion=34.0.0
-+ReactNativeClipBoard_targetSdkVersion=34
++ReactNativeClipBoard_compileSdkVersion=35
++ReactNativeClipBoard_buildToolsVersion=35.0.0
++ReactNativeClipBoard_targetSdkVersion=35
 +ReactNativeClipBoard_minSdkVersion=23
-\ No newline at end of file

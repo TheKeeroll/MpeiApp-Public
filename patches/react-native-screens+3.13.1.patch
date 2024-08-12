@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-screens/android/build.gradle b/node_modules/react-native-screens/android/build.gradle
-index 5097a1a..f544f9f 100644
+index 5097a1a..7b431e1 100644
 --- a/node_modules/react-native-screens/android/build.gradle
 +++ b/node_modules/react-native-screens/android/build.gradle
 @@ -7,12 +7,19 @@ buildscript {
@@ -34,7 +34,7 @@ index 5097a1a..f544f9f 100644
  
  android {
 -    compileSdkVersion safeExtGet('compileSdkVersion', 28)
-+    compileSdk safeExtGet('compileSdkVersion', 34)
++    compileSdk safeExtGet('compileSdkVersion', 35)
  
      defaultConfig {
 -        minSdkVersion safeExtGet('minSdkVersion', 16)
@@ -42,7 +42,7 @@ index 5097a1a..f544f9f 100644
 -        versionCode 1
 -        versionName "1.0"
 +        minSdkVersion safeExtGet('minSdkVersion', 23)
-+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
++        targetSdkVersion safeExtGet('targetSdkVersion', 35)
          buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
          if (isNewArchitectureEnabled()) {
              var appProject = rootProject.allprojects.find {it.plugins.hasPlugin('com.android.application')}

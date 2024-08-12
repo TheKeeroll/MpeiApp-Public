@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-safe-area-context/android/build.gradle b/node_modules/react-native-safe-area-context/android/build.gradle
-index fd6d976..dbe30d0 100644
+index fd6d976..e89f43e 100644
 --- a/node_modules/react-native-safe-area-context/android/build.gradle
 +++ b/node_modules/react-native-safe-area-context/android/build.gradle
 @@ -30,11 +30,11 @@ if (isNewArchitectureEnabled()) {
@@ -7,13 +7,13 @@ index fd6d976..dbe30d0 100644
  
  android {
 -    compileSdkVersion getExtOrDefault('compileSdkVersion', 30)
-+    compileSdk getExtOrDefault('compileSdkVersion', 34)
++    compileSdk getExtOrDefault('compileSdkVersion', 35)
  
      defaultConfig {
 -        minSdkVersion getExtOrDefault('minSdkVersion', 16)
 -        targetSdkVersion getExtOrDefault('targetSdkVersion', 28)
 +        minSdkVersion getExtOrDefault('minSdkVersion', 23)
-+        targetSdkVersion getExtOrDefault('targetSdkVersion', 34)
++        targetSdkVersion getExtOrDefault('targetSdkVersion', 35)
          versionCode 1
          versionName "1.0"
          buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()

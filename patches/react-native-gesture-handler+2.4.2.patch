@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-gesture-handler/android/build.gradle b/node_modules/react-native-gesture-handler/android/build.gradle
-index ad5845e..8bd3a7c 100644
+index ad5845e..1268c60 100644
 --- a/node_modules/react-native-gesture-handler/android/build.gradle
 +++ b/node_modules/react-native-gesture-handler/android/build.gradle
 @@ -13,6 +13,11 @@ buildscript {
@@ -37,7 +37,7 @@ index ad5845e..8bd3a7c 100644
  
  android {
 -    compileSdkVersion safeExtGet("compileSdkVersion", 28)
-+    compileSdk safeExtGet("compileSdkVersion", 33)
++    compileSdk safeExtGet("compileSdkVersion", 35)
  
      // Used to override the NDK path/version on internal CI or by allowing
      // users to customize the NDK path/version from their root project (e.g. for M1 support)
@@ -48,7 +48,7 @@ index ad5845e..8bd3a7c 100644
 -        minSdkVersion safeExtGet('minSdkVersion', 16)
 -        targetSdkVersion safeExtGet('targetSdkVersion', 28)
 +        minSdkVersion safeExtGet('minSdkVersion', 23)
-+        targetSdkVersion safeExtGet('targetSdkVersion', 33)
++        targetSdkVersion safeExtGet('targetSdkVersion', 35)
          versionCode 1
          versionName "1.0"
          buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
@@ -83,7 +83,7 @@ index 323af3e..83af222 100644
 -RNGH_kotlinVersion=1.5.20
 +RNGH_kotlinVersion=1.8.20
 diff --git a/node_modules/react-native-gesture-handler/android/lib/build.gradle b/node_modules/react-native-gesture-handler/android/lib/build.gradle
-index 4b7cffc..ee5384d 100644
+index 4b7cffc..be4d491 100644
 --- a/node_modules/react-native-gesture-handler/android/lib/build.gradle
 +++ b/node_modules/react-native-gesture-handler/android/lib/build.gradle
 @@ -5,12 +5,12 @@ repositories {
@@ -92,14 +92,14 @@ index 4b7cffc..ee5384d 100644
  android {
 -    compileSdkVersion 23
 -    buildToolsVersion '25.0.0'
-+    compileSdk 34
-+    buildToolsVersion '34.0.0'
++    compileSdk 35
++    buildToolsVersion '35.0.0'
  
      defaultConfig {
 -        minSdkVersion 16
 -        targetSdkVersion 23
 +        minSdkVersion 23
-+        targetSdkVersion 34
++        targetSdkVersion 35
          versionCode 1
          versionName "1.0"
      }

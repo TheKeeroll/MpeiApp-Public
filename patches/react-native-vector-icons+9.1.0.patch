@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-vector-icons/android/build.gradle b/node_modules/react-native-vector-icons/android/build.gradle
-index 3d12e69..4d321d3 100644
+index 3d12e69..4c5f39d 100644
 --- a/node_modules/react-native-vector-icons/android/build.gradle
 +++ b/node_modules/react-native-vector-icons/android/build.gradle
 @@ -9,7 +9,7 @@ buildscript {
@@ -16,7 +16,7 @@ index 3d12e69..4d321d3 100644
  
  android {
 -  compileSdkVersion safeExtGet('compileSdkVersion', 28)
-+  compileSdk safeExtGet('compileSdkVersion', 34)
++  compileSdk safeExtGet('compileSdkVersion', 35)
    
    defaultConfig {
 -    minSdkVersion safeExtGet('minSdkVersion', 16)
@@ -27,7 +27,7 @@ index 3d12e69..4d321d3 100644
 -  lintOptions {
 -    abortOnError false
 +    minSdkVersion safeExtGet('minSdkVersion', 23)
-+    targetSdkVersion safeExtGet('targetSdkVersion', 34)
++    targetSdkVersion safeExtGet('targetSdkVersion', 35)
    }
 +    lint {
 +        abortOnError false

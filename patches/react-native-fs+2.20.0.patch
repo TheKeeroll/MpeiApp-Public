@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-fs/android/build.gradle b/node_modules/react-native-fs/android/build.gradle
-index ddef857..d446f18 100644
+index ddef857..05139b6 100644
 --- a/node_modules/react-native-fs/android/build.gradle
 +++ b/node_modules/react-native-fs/android/build.gradle
 @@ -4,31 +4,32 @@ def safeExtGet(prop, fallback) {
@@ -21,14 +21,14 @@ index ddef857..d446f18 100644
  android {
 -    compileSdkVersion safeExtGet('compileSdkVersion', 26)
 -    buildToolsVersion safeExtGet('buildToolsVersion', '26.0.3')
-+    compileSdk safeExtGet('compileSdkVersion', 34)
-+    buildToolsVersion safeExtGet('buildToolsVersion', '34.0.0')
++    compileSdk safeExtGet('compileSdkVersion', 35)
++    buildToolsVersion safeExtGet('buildToolsVersion', '35.0.0')
  
      defaultConfig {
 -        minSdkVersion safeExtGet('minSdkVersion', 19)
 -        targetSdkVersion safeExtGet('targetSdkVersion', 26)
 +        minSdkVersion safeExtGet('minSdkVersion', 23)
-+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
++        targetSdkVersion safeExtGet('targetSdkVersion', 35)
          versionCode 1
          versionName "1.0"
      }
