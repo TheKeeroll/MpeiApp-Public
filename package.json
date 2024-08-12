@@ -1,6 +1,6 @@
 {
   "name": "mpeiapp",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -13,9 +13,6 @@
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.11.2",
     "@react-native-community/netinfo": "^9.3.8",
-    "@react-native-firebase/app": "^15.3.0",
-    "@react-native-firebase/auth": "^15.3.0",
-    "@react-native-firebase/messaging": "^15.3.0",
     "@react-navigation/bottom-tabs": "^6.3.1",
     "@react-navigation/drawer": "^6.4.1",
     "@react-navigation/native": "^6.0.10",
