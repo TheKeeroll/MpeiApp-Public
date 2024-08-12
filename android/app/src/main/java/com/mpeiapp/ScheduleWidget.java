@@ -22,8 +22,6 @@ import java.util.Objects;
 
 import java.util.Locale;
 
-import com.google.gson.annotations.SerializedName;
-
 public class ScheduleWidget extends AppWidgetProvider {
 
     private static final String ACTION_YESTERDAY = "com.mpeiapp.ScheduleWidget.ACTION_YESTERDAY";
@@ -174,7 +172,6 @@ public class ScheduleWidget extends AppWidgetProvider {
 
     // Основной класс, соответствующий корневому объекту JSON
     static class Root {
-        @SerializedName("dataForWidget")
         private DataForWidget dataForWidget;
 
         public Root() {}
