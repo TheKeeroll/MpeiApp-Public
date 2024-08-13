@@ -87,9 +87,6 @@
 	<key>INIntentsSupported</key>
 	<array>
 		<string>ConfigurationAppIntent</string>
-		<string>YesterdayClickHandler</string>
-		<string>TodayClickHandler</string>
-		<string>TomorrowClickHandler</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
