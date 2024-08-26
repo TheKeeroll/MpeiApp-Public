@@ -171,7 +171,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
         _discipleText = 'Предоставлено согласие на получение оценки ПА!'
         _discipleTextColor = colors.accent
 
-    } else if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))){
+    } else if (((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) && !(_discipleText == ' ' && (todayDate.getMonth() == 7 || todayDate.getMonth() == 1 ))){
         if ((GetMainMark().includes('5') || GetMainMark().includes('4') || GetMainMark().includes('3')) && !(GetMainMark().includes(','))){
             _discipleText = 'ДИСЦИПЛИНА СДАНА'
         } else _discipleText = 'Все КМ сданы'

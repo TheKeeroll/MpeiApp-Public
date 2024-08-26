@@ -208,7 +208,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     try {
         for (let l = 0; l <= (marks.data!.disciplines.length - 1); l++) {
             let closeBARSDate = convertDate(marks.data!.disciplines[l].passUpUntil.split('\n')[0].trim())
-            if ((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) {
+            if (((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) && !(marks.data!.disciplines[l].passUpUntil.split('\n')[0].trim() == '-' && (todayDate.getMonth() == 7 || todayDate.getMonth() == 1 ))) {
                 let breaker = false
                 for (let i = 0; i < marks.data!.disciplines[l].kms.length; i++) {
                     for (let j = 0; j < marks.data!.disciplines[l].kms[i].marks.length; j++) {
