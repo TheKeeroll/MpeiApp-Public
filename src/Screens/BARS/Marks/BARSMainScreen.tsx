@@ -41,7 +41,7 @@ const FeedWidget = async () => {
 
         let studentSchedule = useSelector((state: RootState)=>state.Schedule)
         let today = new Date().getDDMMYY()
-
+        let isTodayFound = false
         let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}}
         try {
             for (let j = 0; j < studentSchedule.data!.days.length; j++) {
@@ -59,17 +59,67 @@ const FeedWidget = async () => {
                 if (studentSchedule.data!.days[j]!.date!.includes("2020")) {
                     studentSchedule.data!.days[j]!.date! = studentSchedule.data!.days[j]!.date!.replace("2020", "" + YearForFix)
                 }
+                try {
+                    if (studentSchedule.data!.days[j + 1]!.date!.includes("2020")) {
+                        studentSchedule.data!.days[j + 1]!.date! = studentSchedule.data!.days[j + 1]!.date!.replace("2020", "" + YearForFix)
+                    }
+                } catch (e) {
+                    console.warn('studentSchedule.data!.days[j+1] not exists! j = ' + j)
+                }
                 if (today == studentSchedule.data!.days[j]!.date!) {
-                    dataForWidget = {
-                        yesterday: studentSchedule.data!.days[j - 1],
-                        today: studentSchedule.data!.days[j],
-                        tomorrow: studentSchedule.data!.days[j + 1]
+                    isTodayFound = true
+                    try {
+                        dataForWidget = {
+                            yesterday: studentSchedule.data!.days[j - 1],
+                            today: studentSchedule.data!.days[j],
+                            tomorrow: studentSchedule.data!.days[j + 1]
+                        }
+                    } catch (e) {
+                        try {
+                            dataForWidget = {
+                                yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
+                                today: studentSchedule.data!.days[j],
+                                tomorrow: studentSchedule.data!.days[j + 1]
+                            }
+                            console.warn('dataForWidget without yesterday!')
+                        } catch (e) {
+                            try {
+                                dataForWidget = {
+                                    yesterday: studentSchedule.data!.days[j-1],
+                                    today: studentSchedule.data!.days[j],
+                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}
+                                }
+                                console.warn('dataForWidget without tomorrow!')
+                            } catch (e) {
+                                dataForWidget = {
+                                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
+                                    today: studentSchedule.data!.days[j],
+                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}
+                                }
+                                console.warn('dataForWidget only with today!')
+                            }
+                        }
                     }
                     console.log('Today: ' + studentSchedule.data!.days[j]!.date!)
                     break
                 }
-
+                /*dataForWidget = {
+                    yesterday: studentSchedule.data!.days[j],
+                    today: studentSchedule.data!.days[j + 1],
+                    tomorrow: studentSchedule.data!.days[j + 2]
+                }
+                console.log('Test start date: ' + studentSchedule.data!.days[j]!.date!)
+                break*/
             }
+            if (!isTodayFound) {
+                console.log('Today not found in schedule - looking to the future...')
+                dataForWidget = {
+                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
+                    today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: true},
+                    tomorrow: studentSchedule.data!.days[0]
+                }
+            }
+
         } catch (error) {
             console.warn('preparing dataForWidget failed, empty schedule will be provided! Reason: ' + error)
         }
