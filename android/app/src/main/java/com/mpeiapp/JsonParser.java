@@ -39,28 +39,35 @@ public class JsonParser {
                 ScheduleWidget.Lesson lesson = new ScheduleWidget.Lesson();
 
                 lesson.setType(lessonJsonObject.getString("type"));
-                if (!lesson.getType().contains("DINNER")){
+                if (!lesson.getType().contains("DINNER")) {
                     lesson.setName(lessonJsonObject.getString("name"));
                     lesson.setLessonIndex(lessonJsonObject.getString("lessonIndex"));
                     lesson.setLessonType(lessonJsonObject.getString("lessonType"));
                     lesson.setPlace(lessonJsonObject.getString("place"));
-                    lesson.setCabinet(lessonJsonObject.getString("cabinet"));
+                    if (lessonJsonObject.getString("cabinet").contains("Спортзал")) {
+                        lesson.setCabinet("Стадион");
+                    } else {
+                        lesson.setCabinet(lessonJsonObject.getString("cabinet"));
+                    }
                     lesson.setGroup(lessonJsonObject.getString("group"));
-                }
 
-                // Parsing teacher object
-                JSONObject teacherJsonObject = lessonJsonObject.getJSONObject("teacher");
-                ScheduleWidget.Teacher teacher = new ScheduleWidget.Teacher();
-                teacher.setName(teacherJsonObject.getString("name"));
-                try {
-                    teacher.setLec_oid(teacherJsonObject.getString("lec_oid"));
-                    teacher.setFullName(teacherJsonObject.getString("fullName"));
-                } catch (Exception e) {
-                    teacher.setLec_oid("-");
-                    teacher.setFullName("-");
+                    // Parsing teacher object
+                    JSONObject teacherJsonObject = lessonJsonObject.getJSONObject("teacher");
+                    ScheduleWidget.Teacher teacher = new ScheduleWidget.Teacher();
+                    if (teacherJsonObject.getString("name").equals("-")){
+                        teacher.setName("");
+                    } else {
+                        teacher.setName(teacherJsonObject.getString("name"));
+                    }
+                    try {
+                        teacher.setLec_oid(teacherJsonObject.getString("lec_oid"));
+                        teacher.setFullName(teacherJsonObject.getString("fullName"));
+                    } catch (Exception e) {
+                        teacher.setLec_oid("-");
+                        teacher.setFullName("-");
+                    }
+                    lesson.setTeacher(teacher);
                 }
-                lesson.setTeacher(teacher);
-
                 lessons.add(lesson);
             }
         }

@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -133,8 +134,11 @@ public class ScheduleWidget extends AppWidgetProvider {
                 itemView.setTextViewText(R.id.schedule_cabinet, item.getCabinet());
                 itemView.setTextViewText(R.id.schedule_lesson_type, item.getLessonType());
                 itemView.setTextViewText(R.id.schedule_discipline, item.getDiscipline());
-                itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
-
+                if (item.getTeacher().isEmpty()){
+                    itemView.setViewVisibility(R.id.schedule_teacher, TextView.GONE);
+                } else {
+                    itemView.setTextViewText(R.id.schedule_teacher, item.getTeacher());
+                }
                 if (item.getLessonType().contains("абот") || item.getLessonType().contains("кзамен") || item.getLessonType().contains("ащита")) {
                     itemView.setTextColor(R.id.schedule_lesson_type, Color.parseColor("#FF0500"));
                 } else if (item.getLessonType().contains("екция")){
