@@ -27,13 +27,13 @@ extension Color {
 }
 
 struct Teacher: Decodable {
-  var name: String = ""
-  var lec_oid: String = ""
+  var name: String?
+  var lec_oid: String?
   var fullName: String?
 }
 
-struct Lesson: Decodable, Identifiable {
-  var id: UUID = UUID()
+struct Lesson: Decodable, Hashable {
+  // var id: UUID = UUID()
   var name: String?
   var lessonIndex: String?
   var lessonType: String?
@@ -42,6 +42,17 @@ struct Lesson: Decodable, Identifiable {
   var teacher: Teacher?
   var group: String?
   var type: String?
+  
+  static func == (lhs: Lesson, rhs: Lesson) -> Bool {
+    return lhs.name == rhs.name && lhs.lessonIndex == rhs.lessonIndex && lhs.lessonType == rhs.lessonType && lhs.cabinet == rhs.cabinet
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    hasher.combine(lessonIndex)
+    hasher.combine(lessonType)
+    hasher.combine(cabinet)
+   }
 }
 
 struct Day: Decodable {
@@ -77,6 +88,14 @@ struct Provider: AppIntentTimelineProvider {
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
         entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: savedData)
         timeline = Timeline(entries: [entry], policy: .atEnd)
+        //let testSchObj = try? JSONDecoder().decode(DataForWidget.self, from: savedData.data(using: .utf8)!)
+        //do
+        //  {
+        //    let testSchObj = try JSONDecoder().decode(DataForWidget.self, from: savedData.data(using: .utf8)!)
+        //    print("TestSchObj - tomorrow date = " + (testSchObj.tomorrow.date))
+        //    }catch let error as NSError {
+        //      print("\(error)") //Error Domain=Swift.DecodingError Code=2 "(null)"
+        //  }
       } else {
         print("iOS Widget - No data obtained!")
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
@@ -180,12 +199,13 @@ struct ScheduleWidgetEntryView : View {
       .padding(.bottom, 4)
       
       if savedDay == "yesterday" {
-          // Отфильтровываем занятия, исключая те, где type == "DINNER"
-        let filteredLessons = schObj?.yesterday.lessons?.filter { $0.type != "DINNER" }
-          // Подсчитываем количество отфильтрованных занятий
-          let lessonCount = filteredLessons?.count ?? 0
+        // Отфильтровываем занятия, исключая те, где type == "DINNER"
+        let prefilteredLessons = schObj?.yesterday.lessons?.filter { $0.type != "DINNER" }
+        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
+        // Подсчитываем количество отфильтрованных занятий
+        let lessonCount = filteredLessons?.count ?? 0
 
-          // Отображаем дату и количество занятий
+        // Отображаем дату и количество занятий
         Text((formatDate(from: schObj?.yesterday.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
               .font(.subheadline)
               .padding(.top, 8)
@@ -193,7 +213,7 @@ struct ScheduleWidgetEntryView : View {
               .bold()
 
           // Отображаем отфильтрованные занятия
-          ForEach(filteredLessons?.prefix(4) ?? []) { item in
+          ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
               if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
                   LessonView(item: item, typeColor: Color(hex: "#FF0500"))
               } else if item.lessonType!.contains("екция") {
@@ -203,8 +223,9 @@ struct ScheduleWidgetEntryView : View {
               }
           }
       } else if savedDay == "today" {
-          let filteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
-          let lessonCount = filteredLessons?.count ?? 0
+        let prefilteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
+        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
+        let lessonCount = filteredLessons?.count ?? 0
 
         Text((formatDate(from: schObj?.today.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
               .font(.subheadline)
@@ -212,7 +233,7 @@ struct ScheduleWidgetEntryView : View {
               .foregroundColor(.white)
               .bold()
 
-          ForEach(filteredLessons?.prefix(4) ?? []) { item in
+        ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
               if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
                   LessonView(item: item, typeColor: Color(hex: "#FF0500"))
               } else if item.lessonType!.contains("екция") {
@@ -222,7 +243,8 @@ struct ScheduleWidgetEntryView : View {
               }
           }
       } else if savedDay == "tomorrow" {
-        let filteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
+        let prefilteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
+        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
         let lessonCount = filteredLessons?.count ?? 0
         
         Text((formatDate(from: schObj?.tomorrow.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
@@ -231,7 +253,7 @@ struct ScheduleWidgetEntryView : View {
           .foregroundColor(.white)
           .bold()
         
-        ForEach(filteredLessons?.prefix(4) ?? []) { item in
+        ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
           if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
             LessonView(item: item, typeColor: Color(hex: "#FF0500"))
           } else if item.lessonType!.contains("екция") {
@@ -279,17 +301,26 @@ struct LessonView: View {
                           .cornerRadius(5)
                           .bold()
                     HStack {
-                      Text(item.cabinet ?? " ? ")
-                        .font(.caption)
-                        .foregroundColor(Color(hex: "#BB86FC"))
-                        .bold()
-                      Text(item.teacher?.name ?? " ")
-                        .padding(.horizontal, 4)
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .background(Color(hex: "#464646"))
-                        .cornerRadius(5)
-                        .bold()
+                      if item.cabinet == "Спортзал" {
+                        Text("Стадион")
+                          .font(.caption)
+                          .foregroundColor(Color(hex: "#BB86FC"))
+                          .bold()
+                      } else {
+                        Text(item.cabinet ?? " ? ")
+                          .font(.caption)
+                          .foregroundColor(Color(hex: "#BB86FC"))
+                          .bold()
+                      }
+                      if (item.teacher?.name != "-") {
+                        Text(item.teacher?.name ?? " ")
+                          .padding(.horizontal, 4)
+                          .font(.caption)
+                          .foregroundColor(.white)
+                          .background(Color(hex: "#464646"))
+                          .cornerRadius(5)
+                          .bold()
+                      }
                     }
                   }
                   Spacer()
