@@ -12,6 +12,10 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Что нового ?'}/>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Готовность № 1'} version={'1.1.1'}/>
+                    <WhatsNewChange title={'Хотфикс `долгов` при отсутствии `Сдать до` у дисциплины в БАРС в период смены семестров'}/>
+                    <WhatsNewChange title={'Хотфиксы виджета расписания для его корректной работы'}/>
+
                     <WhatsNewLogo title={'На низком старте'} version={'1.1.0'}/>
                     <WhatsNewChange title={'Виджет расписания под iOS и Android!'}/>
                     <WhatsNewChange title={'Улучшение и добавление состояний для дисциплин после закрытия БАРС'}/>
