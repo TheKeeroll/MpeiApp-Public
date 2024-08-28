@@ -31,7 +31,7 @@ import SharedGroupPreferences from "react-native-shared-group-preferences";
 
 const Stack = createStackNavigator()
 
-const group = 'group.schedule'
+const group = 'group.com.mpeiapp'
 
 const SharedStorage = NativeModules.SharedStorage
 
