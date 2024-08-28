@@ -42,7 +42,8 @@ const FeedWidget = async () => {
         let studentSchedule = useSelector((state: RootState)=>state.Schedule)
         let today = new Date().getDDMMYY()
         let isTodayFound = false
-        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}}
+        // @ts-ignore
+        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}}
         try {
             for (let j = 0; j < studentSchedule.data!.days.length; j++) {
                 let dateYear = studentSchedule.data!.days[j]!.date.split('.')[2]
@@ -76,25 +77,28 @@ const FeedWidget = async () => {
                         }
                     } catch (e) {
                         try {
+                            // @ts-ignore
                             dataForWidget = {
-                                yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
+                                yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
                                 today: studentSchedule.data!.days[j],
                                 tomorrow: studentSchedule.data!.days[j + 1]
                             }
                             console.warn('dataForWidget without yesterday!')
                         } catch (e) {
                             try {
+                                // @ts-ignore
                                 dataForWidget = {
                                     yesterday: studentSchedule.data!.days[j-1],
                                     today: studentSchedule.data!.days[j],
-                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}
+                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}
                                 }
                                 console.warn('dataForWidget without tomorrow!')
                             } catch (e) {
+                                // @ts-ignore
                                 dataForWidget = {
-                                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
+                                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
                                     today: studentSchedule.data!.days[j],
-                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false}
+                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}
                                 }
                                 console.warn('dataForWidget only with today!')
                             }
@@ -113,9 +117,10 @@ const FeedWidget = async () => {
             }
             if (!isTodayFound) {
                 console.log('Today not found in schedule - looking to the future...')
+                // @ts-ignore
                 dataForWidget = {
-                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: false},
-                    today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "COMMON"}], isEmpty: true, isToday: true},
+                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
+                    today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true},
                     tomorrow: studentSchedule.data!.days[0]
                 }
             }
