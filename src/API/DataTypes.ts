@@ -147,7 +147,7 @@ export interface BARSScheduleLesson{
   cabinet: string
   teacher: Teacher
   group: string
-  type: 'COMBINED' | 'DINNER' | 'COMMON'
+  type: 'COMBINED' | 'DINNER' | 'COMMON' | 'PLACEHOLDER'
 }
 
 export interface BARSSchedule{
