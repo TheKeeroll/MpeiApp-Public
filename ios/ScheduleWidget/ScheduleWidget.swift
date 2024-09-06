@@ -129,6 +129,20 @@ struct ScheduleWidgetEntryView : View {
   let calendar = Calendar.current
   let formatter = DateFormatter()
   
+  func extraChosenCounter(from lessons:[Lesson]) -> Int? {
+    var counter = 0;
+    for lesson in lessons {
+      if (lesson.name!.contains("по выбору")) {
+        counter = counter + 1;
+      }
+    }
+    if (counter > 0) {
+      return (counter - 1);
+    } else {
+      return 0;
+    }
+  }
+  
   func formatDate(from dateString: String) -> String? {
       let formatter = DateFormatter()
       formatter.dateFormat = "dd.MM.yyyy" // Формат исходной строки
@@ -203,7 +217,7 @@ struct ScheduleWidgetEntryView : View {
         let prefilteredLessons = schObj?.yesterday.lessons?.filter { $0.type != "DINNER" }
         let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
         // Подсчитываем количество отфильтрованных занятий
-        let lessonCount = filteredLessons?.count ?? 0
+        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
 
         // Отображаем дату и количество занятий
         Text((formatDate(from: schObj?.yesterday.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
@@ -225,7 +239,7 @@ struct ScheduleWidgetEntryView : View {
       } else if savedDay == "today" {
         let prefilteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
         let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
-        let lessonCount = filteredLessons?.count ?? 0
+        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
 
         Text((formatDate(from: schObj?.today.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
               .font(.subheadline)
@@ -245,7 +259,7 @@ struct ScheduleWidgetEntryView : View {
       } else if savedDay == "tomorrow" {
         let prefilteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
         let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
-        let lessonCount = filteredLessons?.count ?? 0
+        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
         
         Text((formatDate(from: schObj?.tomorrow.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
           .font(.subheadline)
