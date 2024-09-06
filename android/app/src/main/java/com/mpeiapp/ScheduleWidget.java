@@ -98,14 +98,24 @@ public class ScheduleWidget extends AppWidgetProvider {
         try {
             // Load schedule data for the selected day
             widgetSchItems = getScheduleForDay(day, scheduleDataString); // Implement this method to return a list of schedule items for the day
+            int chosen_dis_num = 0;
+            for (WidgetSchItem sch_item : widgetSchItems) {
+                if (sch_item.getDiscipline().contains("по выбору")){
+                    chosen_dis_num++;
+                }
+            }
+            int extra_chosen_num = chosen_dis_num - 1;
+            if (extra_chosen_num < 0) {
+                extra_chosen_num = 0;
+            }
             // Update date text based on the selected day
-            lesson_num = widgetSchItems.size() + " пары";
+            lesson_num = (widgetSchItems.size() - extra_chosen_num) + " пары";
             if (widgetSchItems.isEmpty()){
                 lesson_num = "пар нет!";
-            } else if (widgetSchItems.size() == 1){
+            } else if ((widgetSchItems.size() - extra_chosen_num) == 1){
                 lesson_num = "1 пара";
-            } else if (widgetSchItems.size() >= 5){
-                lesson_num = widgetSchItems.size() + " пар";
+            } else if ((widgetSchItems.size() - extra_chosen_num) >= 5){
+                lesson_num = (widgetSchItems.size() - extra_chosen_num) + " пар";
             }
         } catch (Exception e) {
             Log.e("ScheduleWidget", "getScheduleForDay failed: ", e);
