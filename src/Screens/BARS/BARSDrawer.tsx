@@ -130,8 +130,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     let activeStipendsCounter = 0
     const stipends = useSelector((state: RootState)=>state.Stipends)
     try {
-        for (let i = 0; i <= (stipends.data!.length - 1); i++) {
-            if (todayDate <= convertDate(stipends.data![i].end_date)){
+        for (let i = 0; i <= (stipends.data!.stipends.length - 1); i++) {
+            if (todayDate <= convertDate(stipends.data!.stipends[i].end_date)){
                 activeStipendsCounter++
             }
         }

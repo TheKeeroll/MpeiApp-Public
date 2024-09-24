@@ -132,6 +132,21 @@ export interface BARSStipend {
   order_number: string
 }
 
+export interface BARSStipendPetition {
+  term: string
+  wave: string
+  type: string
+  sub_date: string
+  average_grade: string
+  total: string
+  calc_date: string
+}
+
+export interface BARSStipendsPack {
+  stipends: BARSStipend[]
+  petitions: BARSStipendPetition[]
+}
+
 export interface BARSOrder {
   num: string,
   date: string,

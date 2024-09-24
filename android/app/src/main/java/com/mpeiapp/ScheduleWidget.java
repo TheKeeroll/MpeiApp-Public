@@ -68,8 +68,8 @@ public class ScheduleWidget extends AppWidgetProvider {
         }
 
         try {
-            assert views != null;
-            views.setTextViewText(R.id.btnYesterday, shortYesterdayDate);
+            // assert views != null;
+            Objects.requireNonNull(views).setTextViewText(R.id.btnYesterday, shortYesterdayDate);
             views.setTextViewText(R.id.btnTomorrow, shortTomorrowDate);
             views.setTextViewText(R.id.btnToday, shortCurrentDate);
 
@@ -561,8 +561,8 @@ public class ScheduleWidget extends AppWidgetProvider {
 //                res.add(sch_item1);
 //                res.add(sch_item2);
 //                res.add(sch_item2);
-                assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getToday().getIsEmpty()){
+                // assert schDataObj != null;
+                if (!Objects.requireNonNull(schDataObj).getDataForWidget().getToday().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getToday().getLessons()) {
                         if (!Objects.equals(sch_les.getType(), "DINNER")) {
                             res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
@@ -570,8 +570,8 @@ public class ScheduleWidget extends AppWidgetProvider {
                     }
                 }
             } else if (Objects.equals(day, "yesterday")){
-                assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getYesterday().getIsEmpty()){
+                // assert schDataObj != null;
+                if (!Objects.requireNonNull(schDataObj).getDataForWidget().getYesterday().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getYesterday().getLessons()) {
                         if (!Objects.equals(sch_les.getType(), "DINNER")) {
                             res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
@@ -579,8 +579,8 @@ public class ScheduleWidget extends AppWidgetProvider {
                     }
                 }
             } else if (Objects.equals(day, "tomorrow")){
-                assert schDataObj != null;
-                if (!schDataObj.getDataForWidget().getTomorrow().getIsEmpty()){
+                // assert schDataObj != null;
+                if (!Objects.requireNonNull(schDataObj).getDataForWidget().getTomorrow().getIsEmpty()){
                     for (Lesson sch_les : schDataObj.getDataForWidget().getTomorrow().getLessons()) {
                         if (!Objects.equals(sch_les.getType(), "DINNER")) {
                             res.add(new WidgetSchItem(sch_les.getLessonIndex(), sch_les.getLessonType(), sch_les.getCabinet(), sch_les.getName(), sch_les.getTeacher().getName()));
