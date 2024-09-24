@@ -6,7 +6,7 @@ import {
     BARSRecordBookSemester,
     BARSReport,
     BARSSchedule,
-    SkippedClass, BARSStipend, BARSOrder, AdditionalData,
+    SkippedClass, BARSStipend, BARSOrder, AdditionalData, BARSStipendsPack,
 } from "../DataTypes";
 
 interface ReduxStatePlaceHolder<T>{
@@ -78,9 +78,9 @@ export const ReportsSlice = createSlice({
 
 export const StipendsSlice = createSlice({
     name: 'stipends',
-    initialState:initialState<BARSStipend[]>(),
+    initialState:initialState<BARSStipendsPack>(),
     reducers:{
-        updateStipends: (state, action: PayloadAction<ReduxStatePlaceHolder<BARSStipend[]>>) => {
+        updateStipends: (state, action: PayloadAction<ReduxStatePlaceHolder<BARSStipendsPack>>) => {
             return action.payload
         }
     }
