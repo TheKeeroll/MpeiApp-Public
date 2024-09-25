@@ -128,7 +128,7 @@ export default class BARS{
   public mCurrentData: Partial<BARSData>
   private mCredentials: BARSCredentials = {login: '', password: ''}
   public mStorage = new MMKV()
-  private mCurrentIcon: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' = 'cool'
+  private mCurrentIcon: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign' = 'cool'
   public mCurrentWeek = ''
   private mDebts: BARSDiscipline[] = []
 
@@ -137,14 +137,14 @@ export default class BARS{
   constructor() {
     //this.mStorage.clearAll()
     this.mCurrentData = {}
-    getIcon().then((r: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' = 'cool')=>{
+    getIcon().then((r: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign' = 'cool')=>{
       this.mCurrentIcon=r
     })
   }
   public get Week(){return this.mCurrentWeek}
-  public ChangeIcon(name: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold'){
+  public ChangeIcon(name: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign'){
     changeIcon(name).then(()=>{
-      return getIcon().then((i: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' = 'cool')=>{
+      return getIcon().then((i: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign' = 'cool')=>{
         this.mCurrentIcon = i
         console.log('Icon changed to ' + i)
       })
