@@ -115,7 +115,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                 <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
             <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
-                <Avatar.Image source={icon == 'dragons' ? require(`../../../assets/images/dragons.webp`) : ( icon == 'simple' ? require(`../../../assets/images/simple.webp`) : ( icon == 'matterial' ? require(`../../../assets/images/matterial.webp`) : ( icon == 'gold' ? require(`../../../assets/images/gold.webp`) : require(`../../../assets/images/cool.webp`))))} style={{borderRadius: 4 }} size={40}/>
+                <Avatar.Image source={icon == 'dragons' ? require(`../../../assets/images/dragons.webp`) : ( icon == 'simple' ? require(`../../../assets/images/simple.webp`) : ( icon == 'matterial' ? require(`../../../assets/images/matterial.webp`) : ( icon == 'gold' ? require(`../../../assets/images/gold.webp`) : ( icon == 'crymat' ? require(`../../../assets/images/crymat.webp`) : ( icon == 'crysign' ? require(`../../../assets/images/crysign.webp`) : require(`../../../assets/images/cool.webp`))))))} style={{borderRadius: 4 }} size={40}/>
             </View>
         </TouchableOpacity>
     )
@@ -180,6 +180,26 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                             <Avatar.Image  source={require(`../../../assets/images/gold.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={()=>{
+                          setIcon('crymat')
+                          BARSAPI.ChangeIcon('crymat')
+                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                          setExpanded(false)
+                        }}
+                        style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+                        <Avatar.Image  source={require(`../../../assets/images/crymat.webp`)} style={{borderRadius: 50 }} size={80}/>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={()=>{
+                          setIcon('crysign')
+                          BARSAPI.ChangeIcon('crysign')
+                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                          setExpanded(false)
+                        }}
+                        style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+                        <Avatar.Image  source={require(`../../../assets/images/crysign.webp`)} style={{borderRadius: 50 }} size={80}/>
+                      </TouchableOpacity>
                     </Fragment>
             </ScrollView>
         </TouchableOpacity>
