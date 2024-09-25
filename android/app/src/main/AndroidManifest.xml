@@ -46,6 +46,32 @@
         </activity>
 
         <activity-alias
+            android:name=".MainActivitycrysign"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/crysign"
+            android:roundIcon="@mipmap/crysign_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".MainActivitycrymat"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/crymat"
+            android:roundIcon="@mipmap/crymat_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
             android:name=".MainActivitygold"
             android:enabled="false"
             android:exported="true"
