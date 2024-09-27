@@ -12,6 +12,24 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
+			<key>crysign</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>crysign</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<string>NO</string>
+			</dict>
+			<key>crymat</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>crymat</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<string>NO</string>
+			</dict>
 			<key>cool</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
