@@ -22,6 +22,7 @@ import OrdersScreen from "./Orders/OrdersScreen";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
 import { BARSStipend, SkippedClass } from "../../API/DataTypes";
+import BooksScreen from "./Books/BooksScreen";
 
 const Drawer = createDrawerNavigator()
 
@@ -191,6 +192,21 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
         console.warn('Drawer, unhandledReportsCounter - ' + e.toString())
     }
 
+    const books = useSelector((state: RootState)=>state.Books)
+    let expiredBooksCounter = 0
+    let warningBooksCounter = 0
+    try {
+        for (let i = 0; i <= (books.data!.books.length - 1); i++) {
+            if (todayDate >= convertDate(books.data!.books[i].return_until)) {
+                expiredBooksCounter++
+            } else if (new Date(todayDate.getFullYear(), (todayDate.getDate() + 14) <= 31 ? todayDate.getMonth() : (todayDate.getMonth() + 1), (todayDate.getDate() + 14) <= 31 ? (todayDate.getDate() + 14) : (todayDate.getDate() + 14) - 31) >= convertDate(books.data!.books[i].return_until)) {
+                warningBooksCounter++
+            }
+        }
+    } catch (e:any){
+        console.warn('Drawer, expired/warning books counter - ' + e.toString())
+    }
+
     const questionnaires = useSelector((state: RootState)=>state.Questionnaires)
     let unhandledQuestionnairesCounter = 0
     try {
@@ -335,6 +351,16 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       id={7}
                       presserId={pressedId}
                       onPress={setPressedId.bind(this, 7)}
+                      routeName={'books'} {...props}
+                      title={'Книги'}
+                      iconComponent={<FAIcon.default name={'book'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                      counter={expiredBooksCounter > 0 ? expiredBooksCounter : warningBooksCounter}
+                      counterColor={expiredBooksCounter > 0 ? colors.error : colors.warning}
+                    />
+                    <DrawerButton
+                      id={8}
+                      presserId={pressedId}
+                      onPress={setPressedId.bind(this, 8)}
                       routeName={'questionnaires'} {...props}
                       title={'Анкеты'}
                       iconComponent={<ADIcon.default name={'questioncircleo'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
@@ -382,6 +408,13 @@ const BARSDrawer: React.FC = () => {
                 options={{
                     title: 'Отчёты'
                 }}
+            />
+            <Drawer.Screen
+              name={'books'}
+              component={BooksScreen}
+              options={{
+                  title: 'Книги'
+              }}
             />
             <Drawer.Screen
               name={'questionnaires'}
