@@ -6,7 +6,7 @@ import {
     BARSRecordBookSemester,
     BARSReport,
     BARSSchedule,
-    SkippedClass, BARSStipend, BARSOrder, AdditionalData, BARSStipendsPack,
+    SkippedClass, BARSStipend, BARSOrder, AdditionalData, BARSStipendsPack, BARSBook, BARSBooksPack,
 } from "../DataTypes";
 
 interface ReduxStatePlaceHolder<T>{
@@ -106,6 +106,16 @@ export const QuestionnairesSlice = createSlice({
     }
 })
 
+export const BooksSlice = createSlice({
+    name: 'books',
+    initialState:initialState<BARSBooksPack>(),
+    reducers:{
+        updateBooks: (state, action: PayloadAction<ReduxStatePlaceHolder<BARSBooksPack>>) => {
+            return action.payload
+        }
+    }
+})
+
 export const AdditionalDataSlice = createSlice({
     name: 'additionalData',
     initialState:initialState<AdditionalData>(),
@@ -122,6 +132,7 @@ export const {updateMarkTable} = MarkTableSlice.actions
 export const {updateTasks} = TasksSlice.actions
 export const {updateReports} = ReportsSlice.actions
 export const {updateQuestionnaires} = QuestionnairesSlice.actions
+export const {updateBooks} = BooksSlice.actions
 
 export const {updateStipends} = StipendsSlice.actions
 
@@ -136,6 +147,7 @@ let BARSReducers = combineReducers({
     Tasks: TasksSlice.reducer,
     Reports: ReportsSlice.reducer,
     Questionnaires: QuestionnairesSlice.reducer,
+    Books: BooksSlice.reducer,
     Stipends: StipendsSlice.reducer,
     Orders: OrdersSlice.reducer,
     SkippedClasses: SkippedClassesSlice.reducer,

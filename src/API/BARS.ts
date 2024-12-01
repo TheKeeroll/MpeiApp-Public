@@ -25,7 +25,7 @@ import { parse } from "node-html-parser";
 import { MMKV } from "react-native-mmkv";
 import { Store } from "./Redux/Store";
 import {
-  updateAdditionalData,
+  updateAdditionalData, updateBooks,
   updateMarkTable,
   updateOrders,
   updateQuestionnaires,
@@ -48,6 +48,7 @@ import StipendsParser from "./Parsers/StipendsParser";
 import OrdersParser from "./Parsers/OrdersParser";
 // @ts-ignore
 import * as HTMLParser from 'fast-html-parser'
+import BooksParser from "./Parsers/BooksParser";
 
 export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
 
@@ -251,6 +252,7 @@ export default class BARS{
     Store.dispatch(updateReports({status: "LOADING", data: null}))
     Store.dispatch(updateStipends({status: "LOADING", data: null}))
     Store.dispatch(updateOrders({status: "LOADING", data: null}))
+    Store.dispatch(updateBooks({status: "LOADING", data: null}))
     Store.dispatch(updateQuestionnaires({status: "LOADING", data: null}))
     Store.dispatch(updateMarkTable({status: "LOADING", data: null}))
     Store.dispatch(updateAdditionalData({status: "LOADING", data: null}))
@@ -305,9 +307,10 @@ export default class BARS{
                                 () => this.FetchReports().finally(
                                   () => this.FetchStipends().finally(
                                     () => this.FetchOrders().finally(
-                                      () => this.FetchQuestionnaires().finally(
-                                        () => console.log('Extra fetch completed')
-                                ))))))))
+                                      () => this.FetchBooks().finally(
+                                        () => this.FetchQuestionnaires().finally(
+                                          () => console.log('Extra fetch completed')
+                                )))))))))
                   })
 
               //Долги
@@ -1076,6 +1079,41 @@ export default class BARS{
         } else {
           Store.dispatch(updateTasks({status: "OFFLINE", data: JSON.parse(tasksRaw)}))
         }
+    })
+  }
+
+  public FetchBooks(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
+    console.log('Fetching books')
+    return Timeout(2000, fetch(URLS.BARS_BOOKS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+      .then(r=>r.text()).then(
+        (response)=>{
+          const books = BooksParser(response)
+          if(isBARSError(books)){
+            console.warn('Failed to fetch books! Trying to use offline data... ')
+            const booksRaw = this.mStorage.getString(STORAGE_KEYS.BOOKS)
+            if(typeof booksRaw == 'undefined'){
+              Store.dispatch(updateBooks({status: "FAILED", data: null}))
+              console.warn(books)
+              throw books;
+            } else {
+              Store.dispatch(updateBooks({status: "OFFLINE", data: JSON.parse(booksRaw)}))
+            }
+          } else {
+            Store.dispatch(updateBooks({status: "LOADED", data: books}))
+            this.mStorage.set(STORAGE_KEYS.BOOKS, JSON.stringify(books))
+            console.log('Fetched books')
+          }
+        }).catch(()=>{
+        return Promise.resolve()
+      })).catch(e => {
+      console.warn("Data download time exceeded on books! ", e)
+      const booksRaw = this.mStorage.getString(STORAGE_KEYS.BOOKS)
+      if(typeof booksRaw == 'undefined'){
+        Store.dispatch(updateBooks({status: "FAILED", data: null}))
+        throw e
+      } else {
+        Store.dispatch(updateBooks({status: "OFFLINE", data: JSON.parse(booksRaw)}))
+      }
     })
   }
 

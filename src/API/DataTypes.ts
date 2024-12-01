@@ -110,6 +110,13 @@ export interface BARSQuestionnaire {
   completed: string
 }
 
+export interface BARSBook {
+  name: string
+  author: string
+  code: string
+  return_until: string
+}
+
 export interface BARSTask {
   // type: string
   manager: string
@@ -145,6 +152,11 @@ export interface BARSStipendPetition {
 export interface BARSStipendsPack {
   stipends: BARSStipend[]
   petitions: BARSStipendPetition[]
+}
+
+export interface BARSBooksPack {
+  books: BARSBook[]
+  library_card: string
 }
 
 export interface BARSOrder {
