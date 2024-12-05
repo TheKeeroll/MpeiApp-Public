@@ -32,24 +32,36 @@ const DrawerHeader: React.FC = () => {
     const student = BARSAPI.CurrentData.student!
     const {colors} = useTheme()
     let study_rating_color = colors.warning
-    if (parseFloat(student.study_rating) <= 2.0) {
+    const weekString = BARSAPI.Week
+    const week = parseInt(weekString)
+    if (parseFloat(student.study_rating) <= 5.0) {
         study_rating_color = colors.text
     }
     else if (parseFloat(student.study_rating) >= 75.0) {
         study_rating_color = colors.accent
     }
-    else if (parseFloat(student.study_rating) < 50.0 ){
+    else if (parseFloat(student.study_rating) < 50.0) {
         study_rating_color = colors.error
+        if (!isNaN(week)){
+            if (week < 12){
+                study_rating_color = colors.text
+            }
+        }
     }
     let complex_rating_color = colors.warning
-    if (parseFloat(student.complex_rating) <= 2.0) {
+    if (parseFloat(student.complex_rating) <= 5.0) {
         complex_rating_color = colors.text
     }
     else if (parseFloat(student.complex_rating) >= 40.0) {
         complex_rating_color = colors.accent
     }
-    else if (parseFloat(student.complex_rating) < 30.0 ){
+    else if (parseFloat(student.complex_rating) < 25.0 ){
         complex_rating_color = colors.error
+        if (!isNaN(week)) {
+            if (week < 12) {
+                complex_rating_color = colors.text
+            }
+        }
     }
     let status_color = colors.accent
     if (student.status == "завершил обучение"){
