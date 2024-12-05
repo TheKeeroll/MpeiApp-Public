@@ -857,10 +857,26 @@ export default class BARS{
         return Promise.resolve(scheduleWithDinner)
       })
     }).then((result)=>{
-      Store.dispatch(updateSchedule({status: "LOADED", data: result}))
-      this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(result))
-      console.log('Fetched schedule')
-      DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+      const current_month = parseInt(moment().format("M"))
+      console.log("BARSSchedule days length: " + result.days.length.toString())
+      if (result.days.length == 0 && !((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
+        const scheduleRaw = this.mStorage.getString(STORAGE_KEYS.SCHEDULE)
+        if(typeof scheduleRaw == 'undefined'){
+          throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Both online and offline schedules are empty!');
+        } else {
+          Store.dispatch(updateSchedule({ status: "OFFLINE", data: JSON.parse(scheduleRaw) }))
+          DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+        }
+      } else {
+          if (result.days.length == 0 && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
+            Store.dispatch(updateSchedule({status: "FAILED", data: null}))
+          } else {
+            Store.dispatch(updateSchedule({ status: "LOADED", data: result }))
+          }
+          this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(result))
+          // console.log('Fetched schedule')
+          DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+        }
     }).catch((error: any)=>{
       if(isBARSError(error)){
         console.warn("Schedule fetch failed! Trying to use offline data...", error.message)
