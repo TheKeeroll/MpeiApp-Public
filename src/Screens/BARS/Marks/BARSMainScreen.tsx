@@ -307,7 +307,10 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                         {props.discipline.debt ? '' : (discipleTextSwitcher ? discipleText : _discipleText)}
                 </Text>
                 <View style={[Styles.disciplineNameView, {backgroundColor: colors.primary}]}>
+                    <TouchableOpacity
+                      onPress={()=>props.navigation.navigate('detailedMarks', props.discipline)}>
                     <Text adjustsFontSizeToFit style={{color: colors.text}}>{props.discipline.name}</Text>
+                    </TouchableOpacity>
                 </View>
                 <View style={Styles.teacherTypeWrapper}>
                     <TouchableOpacity
