@@ -424,9 +424,9 @@ export default class BARS{
         method: 'POST',
         headers: LOGIN_HEADER,
         body: JSON.stringify({
-          UserName: creds.login,
+          Account: creds.login,
           Password: creds.password,
-          Remember: false
+          RememberMe: false
         })
       }).then(async (response) => {
         let str = await response.text()
@@ -440,9 +440,9 @@ export default class BARS{
           method: 'POST',
           headers: LOGIN_HEADER,
           body: JSON.stringify({
-            UserName: creds.login,
+            Account: creds.login,
             Password: creds.password,
-            Remember: false
+            RememberMe: false
           })
         })
       })
