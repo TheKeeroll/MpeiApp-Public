@@ -263,7 +263,7 @@ export default class BARS{
 
   private FetchCurrentWeek(){
     console.time('CurrentWeek ' + Platform.OS)
-    return Timeout(1500, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
+    return Timeout(15000, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
       try{
         this.mCurrentWeek = parse(r).querySelector('#ctl00_g_06da9461_ac13_4827_a73a_ec9ca4dd6498 > div > div')!.text
         console.timeEnd('CurrentWeek ' + Platform.OS)
@@ -420,7 +420,9 @@ export default class BARS{
         return Promise.resolve<'ONLINE' | 'OFFLINE' | BARSMarks | void>('OFFLINE')
       }
       console.time('Login&StudentInfoParser')
-      return Timeout(4000, fetch(URLS.BARS_MAIN, {
+      let ms_bars_main = 4000
+      if (firstStart) ms_bars_main = 30000
+      return Timeout(ms_bars_main, fetch(URLS.BARS_MAIN, {
         method: 'POST',
         headers: LOGIN_HEADER,
         body: JSON.stringify({
@@ -754,7 +756,7 @@ export default class BARS{
     const dateEnd = moment(g, 'DD.MM.YYYY');
 
     const linkSearch = 'http://ts.mpei.ru/api/search?term=' + encodeURI(group) + `&type=group`
-    return Timeout(2500, fetch(linkSearch,{
+    return Timeout(10000, fetch(linkSearch,{
       method: 'GET',
       headers: {},
       credentials: 'include'
