@@ -19,17 +19,19 @@ export const AverageScoreToColor = (ball: string) => {
   const markAsNumber = parseFloat(ball.replace(',','.'))
 
 
- if(markAsNumber <= 5 && markAsNumber >= 4.6){
+ if(markAsNumber <= 5 && markAsNumber >= 4.51){
    return marksColors['5']
- } else if(markAsNumber < 4.6 && markAsNumber >= 3.6){
+ }else if(markAsNumber < 4.51 && markAsNumber >= 4.20) {
+   return marksColors["4_auto"]
+ }else if(markAsNumber < 4.20 && markAsNumber >= 3.51){
    return marksColors["4"]
- }else if(markAsNumber < 3.6 && markAsNumber >= 2.6){
+ }else if(markAsNumber < 3.51 && markAsNumber >= 2.51){
    return marksColors["3"]
- }else if(markAsNumber < 2.6 && markAsNumber >= 1.6){
+ }else if(markAsNumber < 2.51 && markAsNumber >= 1.51){
    return marksColors["2"]
- }else if(markAsNumber < 1.6 && markAsNumber >= 0.6){
+ }else if(markAsNumber < 1.51 && markAsNumber >= 0.51){
    return marksColors["1"]
- }else if(markAsNumber < 0.6 && markAsNumber >= 0){
+ }else if(markAsNumber < 0.51 && markAsNumber >= 0){
    return marksColors["0"]
  }else {
    return marksColors["-"]
@@ -76,6 +78,7 @@ export const THEME_DARK = {
     textUnderline: '#BB86FC',
     marks:{
       '5':'#03C04AE0',
+      '4_auto':'#3FB926',
       '4':'#7BB302',
       '3':'#FFB347',
       '2':'#FF4B4B',
@@ -108,6 +111,7 @@ export const THEME_LIGHT = {
     textUnderline: '#5788E7',
     marks:{
       '5':'#94FF92',
+      '4_auto':'#A8FF49',
       '4':'#BDFF00',
       '3':'#FFD700',
       '2':'#FF688C',
