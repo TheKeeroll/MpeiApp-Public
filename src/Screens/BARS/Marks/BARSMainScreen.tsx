@@ -117,12 +117,15 @@ const FeedWidget = async () => {
                 break*/
             }
             if (!isTodayFound) {
-                console.log('Today not found in schedule - looking to the future...')
-
-                dataForWidget = {
-                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
-                    today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true},
-                    tomorrow: studentSchedule.data!.days[0]!
+                if (convertDate(studentSchedule.data!.days[0]!.date!) > convertDate(new Date().getDDMMYY())){
+                    dataForWidget = {
+                        yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
+                        today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true},
+                        tomorrow: studentSchedule.data!.days[0]!
+                    }
+                    console.log('Only future schedule found - dataForWidget prepared accordingly');
+                } else {
+                    console.log('Suitable schedule not found - empty dataForWidget will be provided')
                 }
             }
 
