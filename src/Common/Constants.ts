@@ -2,7 +2,7 @@ import {Dimensions} from "react-native";
 
 export const URLS = {
   BARS_MAIN: 'https://bars.mpei.ru/bars_web/',
-  BARS_MULTI_ACCOUNT: 'https://bars.mpei.ru/bars_web/Student/ListStudent',
+  BARS_MULTI_ACCOUNT: 'https://bars.mpei.ru/bars_web/ST/Student/ListStudent',
   BARS_TASKS:  'https://bars.mpei.ru/bars_web/ST_Study/StudentTask/ListStudent__StudentTask?studentID=',
   BARS_REPORTS:  'https://bars.mpei.ru/bars_web/ST_Study/StudentReport/ListStudent__StudentReport?studentID=',
   BARS_QUESTIONNAIRES: 'https://bars.mpei.ru/bars_web/ST_Q/QuestionnaireAnswer/ListStudent__QuestionnaireAnswer?studentID=',
