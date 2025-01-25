@@ -28,6 +28,8 @@
     "path": "^0.12.7",
     "react": "17.0.2",
     "react-native": "0.68.1",
+    "react-native-camera": "^4.2.1",
+    "react-native-camera-tflite": "^0.0.3",
     "react-native-change-icon": "^4.0.0",
     "react-native-cheerio": "^1.0.0-rc.4",
     "react-native-console-time-polyfill": "^1.2.3",
