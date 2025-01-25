@@ -2,11 +2,14 @@ import React from "react";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import { View, Text } from "react-native";
 import * as FIcon from 'react-native-vector-icons/Feather'
+import * as MCIcon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MapScreen from './Map/MapScreen'
 import BARSDrawer from "./BARS/BARSDrawer";
 import ScheduleStack from "./Schedule/ScheduleStack";
 import {useTheme} from "react-native-paper";
 import SettingsStack from "./Settings/SettingsStack";
+import inDev from "./CommonComponents/InDev";
+import QRCodeScanner from "./QR-Scanner/QRCodeScanner";
 
 const Stack = createBottomTabNavigator()
 
@@ -42,6 +45,15 @@ const Navigator:React.FC = () => {
               </View>
               )
             }}/>
+          <Stack.Screen
+            name={'qr'}
+            component={QRCodeScanner}
+            options={{
+              title: 'QR-Сканер',
+              tabBarActiveTintColor: colors.textUnderline,
+              tabBarIcon: ()=><MCIcon.default name={'qrcode-scan'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+            }}
+          />
           <Stack.Screen
             name={'schedule'}
             component={ScheduleStack}
