@@ -14,6 +14,7 @@ export const URLS = {
   BARS_TEACHER_SCHEDULE: 'https://bars.mpei.ru/bars_web/Timetable/RUZ/Timetable?rt=1&lec_oid=',
   BARS_SEMESTER: 'https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/_PartialListStudent_SemesterSheet__Mark?studentID=',
   BARS_SKIPPED_CLASSES: 'https://bars.mpei.ru/bars_web/ST_Study/LessonSkip/ListStudent__LessonSkip?studentID=',
+  BARS_QR_PRESENCE: 'https://bars.mpei.ru/bars_web/?ReturnUrl=https%3A%2F%2Fbars.mpei.ru%2Fbars_web%2FQR%2FPresence%2FConfirm%3FqrID%3D',
 
   HM_LIST_GROUP: 'https://bars.mpei.ru/bars_web/StudyGroup/StudyGroup/ListStudyGroup',
   HM_STUDENT_LIST: 'https://bars.mpei.ru/bars_web/StudyGroup/Student/ListStudyGroup__Students?sgID=',
