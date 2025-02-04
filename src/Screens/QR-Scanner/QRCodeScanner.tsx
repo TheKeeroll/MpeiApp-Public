@@ -77,6 +77,7 @@ const QRCodeScanner: React.FC = () => {
         type={RNCamera.Constants.Type.back}
         flashMode={RNCamera.Constants.FlashMode.auto}
         onCameraReady={() => setIsLoading(false)}
+        captureAudio={false}
         onStatusChange={() =>
         {console.log('status changed');
           setIsLoading(!isLoading)}}
