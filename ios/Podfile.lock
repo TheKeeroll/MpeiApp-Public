@@ -349,6 +349,14 @@ PODS:
   - React-jsinspector (0.68.1)
   - React-logger (0.68.1):
     - glog
+  - react-native-camera (4.2.1):
+    - React-Core
+    - react-native-camera/RCT (= 4.2.1)
+    - react-native-camera/RN (= 4.2.1)
+  - react-native-camera/RCT (4.2.1):
+    - React-Core
+  - react-native-camera/RN (4.2.1):
+    - React-Core
   - react-native-change-icon (4.0.0):
     - React-Core
   - react-native-document-picker (8.1.1):
@@ -511,6 +519,7 @@ DEPENDENCIES:
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
+  - react-native-camera (from `../node_modules/react-native-camera`)
   - react-native-change-icon (from `../node_modules/react-native-change-icon`)
   - react-native-document-picker (from `../node_modules/react-native-document-picker`)
   - react-native-geolocation-service (from `../node_modules/react-native-geolocation-service`)
@@ -604,6 +613,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/jsinspector"
   React-logger:
     :path: "../node_modules/react-native/ReactCommon/logger"
+  react-native-camera:
+    :path: "../node_modules/react-native-camera"
   react-native-change-icon:
     :path: "../node_modules/react-native-change-icon"
   react-native-document-picker:
@@ -701,6 +712,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 4a4bae5671b064a2248a690cf75957669489d08c
   React-jsinspector: 218a2503198ff28a085f8e16622a8d8f507c8019
   React-logger: f79dd3cc0f9b44f5611c6c7862badd891a862cf8
+  react-native-camera: 3eae183c1d111103963f3dd913b65d01aef8110f
   react-native-change-icon: ea9bb7255b09e89f41cbf282df16eade91ab1833
   react-native-document-picker: f68191637788994baed5f57d12994aa32cf8bf88
   react-native-geolocation-service: f32ef48fa665bd710207a3ac39bc127cac9cb993
