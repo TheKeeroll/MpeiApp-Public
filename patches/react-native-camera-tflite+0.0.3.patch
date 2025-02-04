@@ -11,7 +11,7 @@ deleted file mode 100644
 index aae9c62..0000000
 Binary files a/node_modules/react-native-camera-tflite/android/.gradle/4.1/fileHashes/fileHashes.lock and /dev/null differ
 diff --git a/node_modules/react-native-camera-tflite/android/build.gradle b/node_modules/react-native-camera-tflite/android/build.gradle
-index f0252c5..755df80 100644
+index f0252c5..c94fa65 100644
 --- a/node_modules/react-native-camera-tflite/android/build.gradle
 +++ b/node_modules/react-native-camera-tflite/android/build.gradle
 @@ -5,30 +5,29 @@ def safeExtGet(prop, fallback) {
@@ -56,9 +56,10 @@ index f0252c5..755df80 100644
  }
  
  dependencies {
-+  implementation 'androidx.collection:collection-jvm:1.4.5'
-   compileOnly 'com.facebook.react:react-native:+'
+-  compileOnly 'com.facebook.react:react-native:+'
 -  compile 'org.tensorflow:tensorflow-lite:+'
++  implementation 'androidx.collection:collection-jvm:1.4.5'
++  compileOnly 'com.facebook.react:react-native:0.68.1'
 +  implementation 'org.tensorflow:tensorflow-lite:+'
    compileOnly 'com.facebook.infer.annotation:infer-annotation:+'
    implementation "com.google.zxing:core:3.3.0"
