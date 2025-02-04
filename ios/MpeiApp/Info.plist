@@ -130,6 +130,8 @@
 	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
+    <key>NSCameraUsageDescription</key>
+    <string>The camera is used to provide QR code scanning functionality</string>    
 	<key>NSPrivacyAccessedAPITypes
 </key>
 	<dict>
