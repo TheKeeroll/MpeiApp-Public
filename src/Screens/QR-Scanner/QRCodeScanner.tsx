@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Image } from 
 import { Barcode, RNCamera } from "react-native-camera";
 import { useTheme } from "react-native-paper";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import { LOGIN_HEADER, URLS } from "../../Common/Constants";
-import BARS from "../../API/BARS";
+import { URLS } from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 import { parse } from "node-html-parser";
 
@@ -17,13 +16,7 @@ const QRCodeScanner: React.FC = () => {
 
   const takePicture = async (camera: RNCamera) => {
     if (!camera) return;
-    try {
-      const options = { quality: 0.5, base64: true };
-      const data = await camera.takePictureAsync(options);
-      console.log('Photo saved at: ', data.uri);
-    } catch (error) {
-      console.error('Error taking picture:', error);
-    }
+    console.log('takePicture pressed');
   };
 
 
@@ -33,7 +26,6 @@ const QRCodeScanner: React.FC = () => {
     const s = qr_link.split('=')[2]
     console.log('QR ID: ' + qrID + ' s: ' + s);
     let user_creds = BARSAPI.GetCreds()
-    console.log( 'Account: ' + user_creds.login + ' Password: ' + user_creds.password);
     const qr_combined_url = URLS.BARS_QR_PRESENCE + qrID + '%26s%3D' + s
     console.log('qr_combined_url = ' + qr_combined_url);
     const response = await fetch(qr_combined_url, {
@@ -85,6 +77,9 @@ const QRCodeScanner: React.FC = () => {
         type={RNCamera.Constants.Type.back}
         flashMode={RNCamera.Constants.FlashMode.auto}
         onCameraReady={() => setIsLoading(false)}
+        onStatusChange={() =>
+        {console.log('status changed');
+          setIsLoading(!isLoading)}}
         onGoogleVisionBarcodesDetected={({ barcodes }) => {
           barcodes.forEach(barcode => {
             console.log('Barcode data: ' + barcode.data);
@@ -113,15 +108,20 @@ const QRCodeScanner: React.FC = () => {
         }}
       >
         {({ camera, status }) => {
+          if (camera) {
+            camera.refreshAuthorizationStatus()
+            console.log('status: ' + status);
+          }
           if (isLoading) {
-            console.log('Camera isLoading: ', isLoading);
+            console.log('Camera isLoading: ' + isLoading + ' status: ' + status);
             return <LoadingScreen />;
           }
+
           return (
             <View style={styles.overlayContainer}>
               <Image source={require("../../../assets/images/QRScan/qr-frame.webp")} style={styles.scanOverlay} />
               <TouchableOpacity onPress={() => takePicture(camera)} style={styles.capture}>
-                <Text style={{ fontSize: 14 }}>Фото</Text>
+                <Text style={{ fontSize: 14 }}> </Text>
               </TouchableOpacity>
             </View>
           );
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   capture: {
     flex: 0,
-    backgroundColor: '#6600CC',
+    backgroundColor: 'transparent',
     borderRadius: 5,
     padding: 15,
     paddingHorizontal: 20,
