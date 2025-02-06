@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Image } from "react-native";
 import { Barcode, RNCamera } from "react-native-camera";
 import { useTheme } from "react-native-paper";
@@ -7,12 +7,14 @@ import { URLS } from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 import { parse } from "node-html-parser";
 import { ImageSource } from "react-native-vector-icons/Icon";
+import { useFocusEffect } from "@react-navigation/native";
 
 
 
 const QRCodeScanner: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
+  const [cameraKey, setCameraKey] = useState(0);
   const { colors } = useTheme();
 
   const takePicture = async (camera: RNCamera) => {
@@ -79,12 +81,23 @@ const QRCodeScanner: React.FC = () => {
           isAlert = false}}])
     })
   };
+  useFocusEffect(
+    useCallback(() => {
+      console.log('QRCodeScanner is focused, resetting camera...');
+      setCameraKey(prevKey => prevKey + 1); // Меняем ключ, чтобы камера пересоздалась
+      return () => {
+        console.log('QRCodeScanner is unfocused, cleaning up...');
+        setIsLoading(true)
+      };
+    }, [])
+  );
   let handling_barcode = '';
   let isAlert = false;
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <RNCamera
-        style={styles.preview}
+        key={cameraKey}  // Этот ключ заставляет пересоздать компонент камеры
+        style={[styles.preview, { backgroundColor: colors.surface }]}
         type={RNCamera.Constants.Type.back}
         flashMode={RNCamera.Constants.FlashMode.auto}
         onCameraReady={() => setIsLoading(false)}
@@ -122,13 +135,12 @@ const QRCodeScanner: React.FC = () => {
         {({ camera, status }) => {
           if (camera) {
             camera.refreshAuthorizationStatus()
-            console.log('status: ' + status);
           }
           if (isLoading) {
             console.log('Camera isLoading: ' + isLoading + ' status: ' + status);
+            if (status == 'READY') setIsLoading(false)
             return <LoadingScreen />;
           }
-
           return (
             <View style={styles.overlayContainer}>
               <Image source={GetSelectedQRFrame()} style={styles.scanOverlay} />
@@ -155,6 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   overlayContainer: {
+    backgroundColor: 'transparent',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
