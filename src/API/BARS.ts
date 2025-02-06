@@ -132,6 +132,7 @@ export default class BARS{
   private mCurrentIcon: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign' = 'cool'
   public mCurrentWeek = ''
   private mDebts: BARSDiscipline[] = []
+  private mCurrentFrame: "qr-frame" | "empty" | "qr-frame-black" | "qr-frame-green" | "qr-frame-red" = 'qr-frame';
 
   public get Debts() { return this.mDebts }
 
@@ -151,7 +152,29 @@ export default class BARS{
       })
     })
   }
+  public ChangeFrame(name: 'qr-frame' | 'empty' | 'qr-frame-black' | 'qr-frame-green' | 'qr-frame-red'){
+    this.mCurrentFrame = name
+    this.mStorage.set(STORAGE_KEYS.FRAME, name)
+    console.log('QR Scanner frame changed to ' + name)
+  }
   public get Icon(){return this.mCurrentIcon}
+
+  public get QRFrame(){
+    const frameRaw = this.mStorage.getString(STORAGE_KEYS.FRAME)
+    if(typeof frameRaw == 'undefined' && frameRaw != ''){
+      this.mStorage.set(STORAGE_KEYS.FRAME, 'qr-frame')
+      this.mCurrentFrame = 'qr-frame'
+      return this.mCurrentFrame
+    } else {
+      try{
+        // @ts-ignore
+        this.mCurrentFrame = frameRaw
+        return frameRaw
+      } catch (e){
+        return 'qr-frame'
+      }
+    }
+  }
 
   public Init(backgroundMode: boolean){
 

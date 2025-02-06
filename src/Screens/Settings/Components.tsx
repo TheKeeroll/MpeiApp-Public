@@ -211,6 +211,100 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
     )
 }
 
+export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items: JSX.Element[], disabled?: boolean, style?: ViewStyle}> = (props)=>{
+  const [expanded, setExpanded] = useState(false)
+  const [frame, setFrame] = useState(BARSAPI.QRFrame)
+  const {colors} = useTheme()
+  const disabled = typeof props.disabled != 'undefined' && props.disabled
+
+  const Collapsed = () => (
+    <TouchableOpacity disabled={disabled} onPress={()=>{
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+      setExpanded(p=>!p)
+    }} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+      {typeof props.frame != 'undefined' &&
+        <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.frame}</View>
+      }
+      <View style={{flex: .7 + (typeof props.frame == 'undefined' ? .12 : 0), height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
+        <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+      </View>
+      <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+        <Avatar.Image source={frame == 'qr-frame' ? require(`../../../assets/images/QRScan/qr-frame.webp`) : ( frame == 'empty' ? require(`../../../assets/images/QRScan/qr-no_frame_text.webp`) : ( frame == 'qr-frame-black' ? require(`../../../assets/images/QRScan/qr-frame-black.webp`) : ( frame == 'qr-frame-green' ? require(`../../../assets/images/QRScan/qr-frame-green.webp`) : require(`../../../assets/images/QRScan/qr-frame-red.webp`))))} style={{borderRadius: 4 }} size={40}/>
+      </View>
+    </TouchableOpacity>
+  )
+  const Expanded = () =>(
+    <TouchableOpacity disabled={disabled} onPress={()=>{
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+      setExpanded(p=>!p)
+    }} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 96, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+      <ScrollView
+        horizontal
+        style={{flex: 1, height: '100%'}}
+        contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}
+      >
+        <TouchableOpacity
+          onPress={()=>{
+            setFrame('qr-frame')
+            BARSAPI.ChangeFrame('qr-frame')
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+            setExpanded(false)
+          }}
+          style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+          <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame.webp`)} style={{borderRadius: 50 }} size={80}/>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={()=>{
+            setFrame('empty')
+            BARSAPI.ChangeFrame('empty')
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+            setExpanded(false)
+          }}
+          style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+          <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-no_frame_text.webp`)} style={{borderRadius: 50 }} size={80}/>
+        </TouchableOpacity>
+        <Fragment>
+          <TouchableOpacity
+            onPress={()=>{
+              setFrame('qr-frame-black')
+              BARSAPI.ChangeFrame('qr-frame-black')
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+              setExpanded(false)
+            }}
+            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-black.webp`)} style={{borderRadius: 50 }} size={80}/>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={()=>{
+              setFrame('qr-frame-green')
+              BARSAPI.ChangeFrame('qr-frame-green')
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+              setExpanded(false)
+            }}
+            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-green.webp`)} style={{borderRadius: 50 }} size={80}/>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={()=>{
+              setFrame('qr-frame-red')
+              BARSAPI.ChangeFrame('qr-frame-red')
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+              setExpanded(false)
+            }}
+            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
+            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-red.webp`)} style={{borderRadius: 50 }} size={80}/>
+          </TouchableOpacity>
+        </Fragment>
+      </ScrollView>
+    </TouchableOpacity>
+  )
+  return (
+    <Fragment>
+      {expanded ? <Expanded/> : <Collapsed/>}
+    </Fragment>
+  )
+}
+
 export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) => {
     const {colors} = useTheme()
     return (

@@ -58,6 +58,7 @@ export const LOGIN_HEADER = {
 export const STORAGE_KEYS = {
   CREDENTIALS: 'credentials',
   THEME: 'theme',
+  FRAME: 'frame',
   SCHEDULE: 'schedule',
   MARKS: 'marks',
   STUDENT_INFO: 'studentInfo',
