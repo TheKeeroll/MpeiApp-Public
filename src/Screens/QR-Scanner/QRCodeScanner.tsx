@@ -6,6 +6,7 @@ import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { URLS } from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 import { parse } from "node-html-parser";
+import { ImageSource } from "react-native-vector-icons/Icon";
 
 
 
@@ -19,6 +20,16 @@ const QRCodeScanner: React.FC = () => {
     console.log('takePicture pressed');
   };
 
+  const GetSelectedQRFrame: ImageSource = () => {
+      const FRAMES = {
+        "qr-frame": require('../../../assets/images/QRScan/qr-frame.webp'),
+        "empty": require('../../../assets/images/QRScan/empty.webp'),
+        "qr-frame-black": require('../../../assets/images/QRScan/qr-frame-black.webp'),
+        "qr-frame-green": require('../../../assets/images/QRScan/qr-frame-green.webp'),
+        "qr-frame-red": require('../../../assets/images/QRScan/qr-frame-red.webp'),
+      }
+    return (FRAMES as any)[BARSAPI.QRFrame]
+  }
 
   const HandleBARSPresenceQR = async (qr_link: string)  => {
     console.log('BARS presence confirm QR detected - handling...')
@@ -120,7 +131,7 @@ const QRCodeScanner: React.FC = () => {
 
           return (
             <View style={styles.overlayContainer}>
-              <Image source={require("../../../assets/images/QRScan/qr-frame.webp")} style={styles.scanOverlay} />
+              <Image source={GetSelectedQRFrame()} style={styles.scanOverlay} />
               <TouchableOpacity onPress={() => takePicture(camera)} style={styles.capture}>
                 <Text style={{ fontSize: 14 }}> </Text>
               </TouchableOpacity>

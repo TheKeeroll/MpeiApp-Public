@@ -13,7 +13,15 @@ import * as EnIcon from 'react-native-vector-icons/Entypo'
 import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
 import * as McIcon from 'react-native-vector-icons/MaterialCommunityIcons'
 import * as FaIcon from 'react-native-vector-icons/FontAwesome'
-import { ListButton, IconSelector, ListSeparator, ListSwitch, ListText, openSupportChat } from "./Components";
+import {
+    ListButton,
+    IconSelector,
+    ListSeparator,
+    ListSwitch,
+    ListText,
+    openSupportChat,
+    QRFrameSelector,
+} from "./Components";
 import {withOpacity} from "../../Themes/Themes"
 import BARSAPI from "../../Common/Globals"
 import {APP_CONFIG} from "../../Common/Config"
@@ -41,6 +49,11 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         icon={
                             <IonIcon.default name={'square'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'Иконка'}
+                    />
+                    <QRFrameSelector items={[]}
+                        frame={
+                            <IonIcon.default name={'square'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
+                        } title={'QR-Сканер'}
                     />
                     <ListSeparator title={'Прочее'}/>
                     <ListButton icon={
