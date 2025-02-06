@@ -113,9 +113,6 @@ const QRCodeScanner: React.FC = () => {
             camera.refreshAuthorizationStatus()
             console.log('status: ' + status);
           }
-          if (status == 'READY' && isLoading) {
-            setIsLoading(false)
-          }
           if (isLoading) {
             console.log('Camera isLoading: ' + isLoading + ' status: ' + status);
             return <LoadingScreen />;
