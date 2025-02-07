@@ -97,11 +97,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         if(place.category != 'Еда') throw new Error('GetUniqueFoodIcon: passed non food')
 
         const ICONS = {
-            "taras": require('../../../assets/images/MapMarkers/Taras_Bulba.webp'),
+            "bubbletea": require('../../../assets/images/MapMarkers/Bubble_Tea.webp'),
             "rostics": require('../../../assets/images/MapMarkers/Rostics.webp'),
             "bbcc": require('../../../assets/images/MapMarkers/Big_Black_Cup_coffee.webp'),
             "1&2": require('../../../assets/images/MapMarkers/1&2.webp'),
-            "manga": require('../../../assets/images/MapMarkers/Manga.webp'),
             "harvard": require('../../../assets/images/MapMarkers/Harvard.webp'),
             "subway": require('../../../assets/images/MapMarkers/Subway.webp'),
             "bk": require('../../../assets/images/MapMarkers/Burger_King.webp'),
@@ -113,7 +112,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             "olen": require('../../../assets/images/MapMarkers/Tayojny.webp'),
             "terem": require('../../../assets/images/MapMarkers/teremok.webp'),
             "imonutsa": require('../../../assets/images/MapMarkers/Imonutsa.webp'),
-            "ilum": require('../../../assets/images/MapMarkers/Illuminator.webp'),
             "yakit": require('../../../assets/images/MapMarkers/Yakitoria.webp'),
         }
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.webp')

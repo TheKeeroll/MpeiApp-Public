@@ -383,6 +383,12 @@
     "uniqueIcon": "subway"
   },
   {
+    "lat":55.754072, "lon":37.709700,
+    "category": "Еда",
+    "name": "БО! Bubble Tea",
+    "uniqueIcon": "bubbletea"
+  },
+  {
     "lat":55.753420, "lon":37.716662,
     "category": "Еда",
     "name": "Бургер Кинг",
@@ -418,12 +424,6 @@
     "uniqueIcon": "imonutsa"
   },
   {
-    "lat":55.754005, "lon":37.709890,
-    "category": "Еда",
-    "name": "Манга Рамен Суши бар",
-    "uniqueIcon": "manga"
-  },
-  {
     "lat":55.756415, "lon":37.711740,
     "category": "Еда",
     "name": "Столовая №10"
@@ -448,8 +448,7 @@
   {
     "lat":55.758480, "lon":37.694614,
     "category": "Еда",
-    "name": "Корчма Тарас Бульба",
-    "uniqueIcon": "taras"
+    "name": "Корчма"
   },
   {
     "lat":55.758286, "lon":37.700594,
