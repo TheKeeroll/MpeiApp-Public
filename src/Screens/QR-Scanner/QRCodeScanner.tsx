@@ -73,6 +73,9 @@ const QRCodeScanner: React.FC = () => {
       if (status?.includes('не действительна')){
         headline = 'Не удалось зарегистрировать присутствие'
         mes = status
+      } else if (typeof main_info == 'undefined'){
+        headline = 'Не удалось зарегистрировать присутствие'
+        mes = 'QR-код относится к занятию, не связанному с вашим аккаунтом БАРС, или же возникла другая проблема!'
       }
       Alert.alert(headline, mes, [{
         text: 'ОК',
