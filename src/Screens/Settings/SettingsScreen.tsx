@@ -52,7 +52,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     />
                     <QRFrameSelector items={[]}
                         frame={
-                            <IonIcon.default name={'square'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
+                            <IonIcon.default name={'scan'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'QR-Сканер'}
                     />
                     <ListSeparator title={'Прочее'}/>
