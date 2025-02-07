@@ -6,7 +6,7 @@ export default function(raw: string): BARSOrder[] | BARSError {
   console.time('OrdersParser')
   try{
     const result: BARSOrder[] = []
-    const $ = parse(raw).querySelectorAll('#div-Student__Thanks > div > table> tbody > tr')
+    const $ = parse(raw).querySelectorAll('#div-Student__Order > div > table> tbody > tr')
     for(let i of $){
       const order: BARSOrder = {
         num: i.querySelector(`td:nth-child(1)`)!.text.trim(),
