@@ -7,6 +7,7 @@ import {ListAvatarItem, ListSeparator} from "./Components";
 
 const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme()
+    const unknown_avatar = require('../../../assets/images/Gratitudies/unknown.webp')
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
@@ -22,7 +23,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
 
                     <ListSeparator title={'Оказали финансовую поддержку'}/>
                     <ListAvatarItem title={'Егор Клишин'} link={'https://vk.com/astralcheak'} image={require('../../../assets/images/Gratitudies/Klishin.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете поддержать проект!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете поддержать проект!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
                     <ListSeparator title={'Предоставили аккаунт БАРС'}/>
                     <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
@@ -42,14 +43,15 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Никита Помогалов'} link={'https://vk.com/disokily'} image={require('../../../assets/images/Gratitudies/NickPomogalov.webp')}/>
                     <ListAvatarItem title={'Максим Андреев'} link={'https://vk.com/id520560547'} image={require('../../../assets/images/Gratitudies/MaxAndreev.webp')}/>
                     <ListAvatarItem title={'Екатерина Филязова'} link={'https://vk.com/katriiiiinnnnnnn'} image={require('../../../assets/images/Gratitudies/KatrinFeel.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
+                    <ListAvatarItem title={'Рания Шабанова'} link={'https://vk.com/qwrssq'} image={require('../../../assets/images/Gratitudies/RaniaShab.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
                     <ListSeparator title={'Наполнение/уточнение карты'}/>
                     <ListAvatarItem title={'Денис'} link={'https://vk.com/aokich0'} image={require('../../../assets/images/Gratitudies/Den.webp')}/>
                     <ListAvatarItem title={'Анна'} link={'https://vk.com/minina0803'} image={require('../../../assets/images/Gratitudies/Anna.webp')}/>
                     <ListAvatarItem title={'Даниил Подзюбан'} link={'https://vk.com/danko3264'} image={require('../../../assets/images/Gratitudies/DanylPodzuban.webp')}/>
                     <ListAvatarItem title={'Анастасия Карабанова'} link={'https://vk.com/rastvorilas'} image={require('../../../assets/images/Gratitudies/AK.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете помочь с картой!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете помочь с картой!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
                     <ListSeparator title={'Дизайн'}/>
                     <ListAvatarItem title={'Максим Крайнов'} link={'https://vk.com/id240979343'} image={require('../../../assets/images/Gratitudies/MaxKryanov.webp')}/>
@@ -57,7 +59,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListSeparator title={'Альтернативные иконки'}/>
                     <ListAvatarItem title={"Алиса 'Alnijen' Балашова"} link={'https://vk.com/alnijen'} image={require('../../../assets/images/Gratitudies/alnijen.webp')}/>
                     <ListAvatarItem title={'Даниил Шеремет'} link={'https://vk.com/sheremetvideo'} image={require('../../../assets/images/Gratitudies/Sheremet.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете предложить свою иконку!'} link={'https://vk.com/dragonsava'} image={require('../../../assets/images/Gratitudies/unknown.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете предложить свою иконку!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
                     <ListSeparator title={''}/>
                 </ScrollView>
             </SafeAreaView>
