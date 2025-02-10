@@ -32,6 +32,8 @@ target 'MpeiApp' do
   pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
 
   pod 'RNYamap', :path => '../node_modules/react-native-yamap'
+  
+  pod 'react-native-camera', :path => '../node_modules/react-native-camera'
 
   #pod 'react-native-mail', :path => '../node_modules/react-native-mail'
 
