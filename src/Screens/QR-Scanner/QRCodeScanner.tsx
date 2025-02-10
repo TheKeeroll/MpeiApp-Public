@@ -110,8 +110,7 @@ const QRCodeScanner: React.FC = () => {
         onStatusChange={(changeEvent) => {
           console.log('status changed to ' + changeEvent.cameraStatus)
           setIsLoading(!isLoading)}}
-        onGoogleVisionBarcodesDetected={({ barcodes }) => {
-          barcodes.forEach(barcode => {
+        onBarCodeRead={(barcode) => {
             console.log('Barcode data: ' + barcode.data);
             if (barcode.data.includes('bars_web/QR/Presence') && barcode.data != handling_barcode) {
               handling_barcode = barcode.data;
@@ -134,7 +133,6 @@ const QRCodeScanner: React.FC = () => {
                     isAlert = false}}])
               }
             }
-          });
         }}
       >
         {({ camera, status }) => {
