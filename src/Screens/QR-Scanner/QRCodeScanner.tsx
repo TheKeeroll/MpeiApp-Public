@@ -103,10 +103,12 @@ const QRCodeScanner: React.FC = () => {
         style={[styles.preview, { backgroundColor: colors.surface }]}
         type={RNCamera.Constants.Type.back}
         flashMode={RNCamera.Constants.FlashMode.auto}
-        onCameraReady={() => setIsLoading(false)}
+        onCameraReady={() => {
+          setIsLoading(false)
+        }}
         captureAudio={false}
-        onStatusChange={() =>
-        {console.log('status changed');
+        onStatusChange={(changeEvent) => {
+          console.log('status changed to ' + changeEvent.cameraStatus)
           setIsLoading(!isLoading)}}
         onGoogleVisionBarcodesDetected={({ barcodes }) => {
           barcodes.forEach(barcode => {
@@ -166,6 +168,8 @@ const styles = StyleSheet.create({
   },
   preview: {
     flex: 1,
+    width: '100%',  // Добавляем ширину на всю страницу
+    height: '100%', // Делаем камеру во весь экран
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
