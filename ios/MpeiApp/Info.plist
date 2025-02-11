@@ -127,11 +127,11 @@
 		</dict>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
+	<string>Геолокация используется для проложения маршрутов к выбранному вами маркеру на карте (например, чтобы добраться до заведения общепита).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Your location is used to provide step-by-step directions to your destination (for example, to pave the way to the dining room).</string>
+	<string>Геолокация используется для проложения маршрутов к выбранному вами маркеру на карте (например, чтобы добраться до заведения общепита).</string>
     <key>NSCameraUsageDescription</key>
-    <string>The camera is used to provide QR code scanning functionality</string>    
+    <string>Камера используется для работы сканера QR-кодов.</string>    
 	<key>NSPrivacyAccessedAPITypes
 </key>
 	<dict>
