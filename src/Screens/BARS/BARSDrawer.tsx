@@ -73,6 +73,14 @@ const DrawerHeader: React.FC = () => {
     else if (student.status.includes("отчислен")){
         status_color = colors.error
     }
+    let study_rating_text = 'Учебный рейтинг: '  + student.study_rating
+    let complex_rating_text = 'Комплексный рейтинг: ' + student.complex_rating
+    if (student.study_rating.includes('не распарсилось')){
+        study_rating_text = ' '
+    }
+    if (student.complex_rating.includes('не распарсилось')){
+        complex_rating_text = ' '
+    }
 
     return (
         <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
@@ -86,8 +94,8 @@ const DrawerHeader: React.FC = () => {
                         </Text>
                     </View>
                     <Text onPress={()=>Clipboard.setString(student.indexBook)} style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 60)}}>{'№ ЗК ' + student.indexBook + ' 🖇️'}</Text>
-                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 60)}}>{'Учебный рейтинг: ' + student.study_rating}</Text>
-                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 60)}}>{'Комплексный рейтинг: ' + student.complex_rating}</Text>
+                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 60)}}>{study_rating_text}</Text>
+                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 60)}}>{complex_rating_text}</Text>
                     <Text style={{fontSize: 12, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 60)}}>{CapitalizeFirstChar(student.status)}</Text>
                 </View>
                 <View style={{flex: .3, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
