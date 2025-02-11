@@ -94,8 +94,12 @@ const DrawerHeader: React.FC = () => {
                         </Text>
                     </View>
                     <Text onPress={()=>Clipboard.setString(student.indexBook)} style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 60)}}>{'№ ЗК ' + student.indexBook + ' 🖇️'}</Text>
+                    {(study_rating_text.includes(':')) &&
                     <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 60)}}>{study_rating_text}</Text>
+                    }
+                    {(complex_rating_text.includes(':')) &&
                     <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 60)}}>{complex_rating_text}</Text>
+                    }
                     <Text style={{fontSize: 12, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 60)}}>{CapitalizeFirstChar(student.status)}</Text>
                 </View>
                 <View style={{flex: .3, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
