@@ -1,16 +1,17 @@
 import React, {Fragment} from "react";
-import {FlatList, SafeAreaView, StyleSheet, Text, View} from "react-native";
+import { FlatList, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {useTheme} from "react-native-paper";
 import { BARSQuestionnaire } from "../../../API/DataTypes";
-import {SCREEN_SIZE} from "../../../Common/Constants";
+import { SCREEN_SIZE, URLS } from "../../../Common/Constants";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
 import {withOpacity} from "../../../Themes/Themes";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import BARSAPI from "../../../Common/Globals";
 
 const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => {
   const {colors} = useTheme()
@@ -52,6 +53,11 @@ const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => 
         style={{paddingBottom: '1%', paddingLeft: '2%', fontWeight: 'bold', color: withOpacity(text_color, 60)}}>
         {dates}
       </Text>
+      {(!item.status.includes('завершено')) &&
+        <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_QUESTIONNAIRES +  BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
+          <Text adjustsFontSizeToFit style={{color: colors.textUnderline}}>{'Перейти на сайт БАРС'}</Text>
+        </TouchableOpacity>
+      }
     </View>
   )
 }
