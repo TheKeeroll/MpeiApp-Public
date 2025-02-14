@@ -100,7 +100,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     </Fragment>
                     }
                     <View style={{width: '100%', alignItems: 'center', marginTop: 20}}>
-                        <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_termsofuse')} title={'Лицензионное соглашение\n сервиса Яндекс.Карты'}/>
+                        <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
                         <ListText title={''}/>
                         <ListText title={'MpeiApp'} textStyle={{fontSize: 18, opacity: .5}}/>
                         <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{fontSize: 14, opacity: .5}}/>
