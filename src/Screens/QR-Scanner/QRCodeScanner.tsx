@@ -116,7 +116,7 @@ const QRCodeScanner: React.FC = () => {
               handling_barcode = barcode.data;
               HandleBARSPresenceQR(barcode.data);
             } else {
-              if ((barcode.data.includes('http') || barcode.data.includes('www')) && barcode.data != handling_barcode && !isAlert) {
+              if ((barcode.data.toLowerCase().includes('http') || barcode.data.toLowerCase().includes('www')) && barcode.data != handling_barcode && !isAlert) {
                 isAlert = true;
                 Alert.alert('Результат сканирования', barcode.data, [{
                   text: 'Закрыть',
