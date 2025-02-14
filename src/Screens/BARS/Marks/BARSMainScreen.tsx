@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useState } from "react";
 import {
     FlatList,
-    LayoutAnimation,
+    LayoutAnimation, Linking,
     NativeModules,
     Platform,
     SafeAreaView,
@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { COMMON_HTTP_HEADER, SCREEN_SIZE } from "../../../Common/Constants";
+import { COMMON_HTTP_HEADER, SCREEN_SIZE, URLS } from "../../../Common/Constants";
 import { AdditionalData, BARSDiscipline, Mark, ScheduleForWidget } from "../../../API/DataTypes";
 import { AverageScoreToColor, MarkToColor, withOpacity } from "../../../Themes/Themes";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -335,6 +335,11 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                         </Text>
                     </View>
                 </View>
+                {(discipleText.includes('оступно согласие')) &&
+                  <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 5, marginLeft: '2%', marginBottom: '2%', padding: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
+                        <Text adjustsFontSizeToFit style={{color: colors.textUnderline}}>{'Перейти на сайт БАРС'}</Text>
+                  </TouchableOpacity>
+                }
             </View>
             <TouchableOpacity
                 onPress={()=>props.navigation.navigate('detailedMarks', props.discipline)}
