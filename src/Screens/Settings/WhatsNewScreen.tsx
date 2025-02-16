@@ -14,7 +14,7 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <ScrollView style={{width: '90%'}}>
                     <WhatsNewLogo title={'Переход в рабочий режим'} version={'1.3.1'}/>
                     <WhatsNewChange title={'Доработан QR-Сканер с учётом отличий в регистрации присутствия для разных аккаунтов БАРС'}/>
-                    <WhatsNewChange title={'Добавление кнопок перехода в соотвествующий раздел сайта БАРС когда от студента там ожидаются действия'}/>
+                    <WhatsNewChange title={'Добавление кнопок перехода в соответствующий раздел сайта БАРС когда от студента там ожидаются действия'}/>
                     <WhatsNewChange title={'Восстановлен показ типов пропущенных занятий'}/>
                     <WhatsNewChange title={'Различные мелкие правки'}/>
 
