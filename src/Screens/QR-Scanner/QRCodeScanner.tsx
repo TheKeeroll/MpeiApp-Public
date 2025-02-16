@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Image } from 
 import { Barcode, RNCamera } from "react-native-camera";
 import { useTheme } from "react-native-paper";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import { URLS } from "../../Common/Constants";
+import { QR_PRESENCE_HEADER, URLS } from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 import { parse } from "node-html-parser";
 import { ImageSource } from "react-native-vector-icons/Icon";
@@ -33,6 +33,29 @@ const QRCodeScanner: React.FC = () => {
     return (FRAMES as any)[BARSAPI.QRFrame]
   }
 
+  const HandlePresenceQRResponse = (response_text: string)  => {
+    const $ = parse(response_text)
+    const main_info = $.querySelector('body > div.row.mt-2 > div:nth-child(1) > span > span.fw-bold')?.text.trim()
+    const status = $.querySelector('body > div.row.mt-2 > div:nth-child(2) > span')?.text.trim()
+    console.log('main_info: ' + main_info + ' status: ' + status);
+    let headline = 'Успешная регистрация присутствия!'
+    let mes = 'QR ID - ' + main_info + '\n' + status ?? ''
+    if (status?.includes('не действительна')) {
+      headline = 'Не удалось зарегистрировать присутствие'
+      mes = status
+    } else if (typeof main_info == 'undefined') {
+      headline = 'Не удалось зарегистрировать присутствие'
+      mes = 'Попробуйте ещё раз. Если проблема сохраняется, пожалуйста, сообщите разработчику!'
+    }
+    Alert.alert(headline, mes, [{
+      text: 'ОК',
+      onPress: () => {
+        console.log('QR BARSPresence - alert closed')
+        isAlert = false
+      }
+    }])
+  }
+
   const HandleBARSPresenceQR = async (qr_link: string)  => {
     console.log('BARS presence confirm QR detected - handling...')
     const qrID = qr_link.split('=')[1].split('&')[0]
@@ -43,20 +66,7 @@ const QRCodeScanner: React.FC = () => {
     console.log('qr_combined_url = ' + qr_combined_url);
     const response = await fetch(qr_combined_url, {
       method: 'POST',
-      headers: {
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'ru,en;q=0.9',
-        'content-type': 'application/json',
-        'dnt': '1',
-        'origin': 'https://bars.mpei.ru',
-        'referer': qr_combined_url,
-        'sec-ch-ua': `"Chromium";v="130", "YaBrowser";v="24.12", "Not(A:Brand";v="99", "Yowser";v="2.5"`,
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': `"Windows"`,
-        'sec-fetch-user': '?1',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 YaBrowser/24.12.0.0 Safari/537.36'
-      },
+      headers: QR_PRESENCE_HEADER(qr_combined_url),
       body: JSON.stringify({
         Account: user_creds.login,
         Password: user_creds.password,
@@ -64,24 +74,18 @@ const QRCodeScanner: React.FC = () => {
       })
     }).then(async (response) => {
       const response_text = await response.text();
-      const $ = parse(response_text)
-      const main_info = $.querySelector('body > div.row.mt-2 > div:nth-child(1) > span > span.fw-bold')?.text.trim()
-      const status = $.querySelector('body > div.row.mt-2 > div:nth-child(2) > span')?.text.trim()
-      console.log('main_info: ' + main_info + ' status: ' + status);
-      let headline = 'Успешная регистрация присутствия!'
-      let mes = 'QR ID - ' + main_info + '\n' + status ?? ''
-      if (status?.includes('не действительна')){
-        headline = 'Не удалось зарегистрировать присутствие'
-        mes = status
-      } else if (typeof main_info == 'undefined'){
-        headline = 'Не удалось зарегистрировать присутствие'
-        mes = 'QR-код относится к занятию, не связанному с вашим аккаунтом БАРС, или же возникла другая проблема!'
+      if (response_text.includes('Учёба')){
+        console.log('Presence QR: additional fetch performing');
+        const additional_response = await fetch(qr_link, {
+          method: 'GET',
+          headers: QR_PRESENCE_HEADER(qr_combined_url),
+        }).then(async (res) => {
+          const res_text = await res.text();
+          HandlePresenceQRResponse(res_text);
+        })
+      } else {
+        HandlePresenceQRResponse(response_text);
       }
-      Alert.alert(headline, mes, [{
-        text: 'ОК',
-        onPress: () => {
-          console.log('QR BARSPresence - alert closed')
-          isAlert = false}}])
     })
   };
   useFocusEffect(

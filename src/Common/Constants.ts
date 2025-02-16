@@ -1,4 +1,4 @@
-import {Dimensions} from "react-native";
+import { Dimensions } from "react-native";
 
 export const URLS = {
   BARS_MAIN: 'https://bars.mpei.ru/bars_web/',
@@ -54,6 +54,23 @@ export const LOGIN_HEADER = {
   'sec-fetch-user': '?1',
   'sec-gpc': '1',
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
+}
+
+export const QR_PRESENCE_HEADER = (qr_combined_url: string)  => {
+  return {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-encoding': 'gzip, deflate, br, zstd',
+    'accept-language': 'ru,en;q=0.9',
+    'content-type': 'application/json',
+    'dnt': '1',
+    'origin': 'https://bars.mpei.ru',
+    'referer': qr_combined_url,
+    'sec-ch-ua': `"Chromium";v="130", "YaBrowser";v="24.12", "Not(A:Brand";v="99", "Yowser";v="2.5"`,
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': `"Windows"`,
+    'sec-fetch-user': '?1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 YaBrowser/24.12.0.0 Safari/537.36'
+  }
 }
 export const STORAGE_KEYS = {
   CREDENTIALS: 'credentials',
