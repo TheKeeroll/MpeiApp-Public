@@ -55,7 +55,7 @@ const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => 
       </Text>
       {(!item.status.includes('завершено')) &&
         <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_QUESTIONNAIRES +  BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
-          <Text adjustsFontSizeToFit style={{color: colors.textUnderline}}>{'Перейти на сайт БАРС'}</Text>
+          <Text adjustsFontSizeToFit style={{color: colors.textUnderline, fontWeight: 'bold'}}>{'Перейти на сайт БАРС'}</Text>
         </TouchableOpacity>
       }
     </View>
