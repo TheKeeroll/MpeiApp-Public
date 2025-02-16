@@ -4,15 +4,15 @@ import {parse} from "node-html-parser";
 import { Platform } from "react-native";
 
 const LessonTypeFromHeader = (header: string) => {
-  const testFix = [
-    'Лабораторная работа',
-    'Практическое занятие',
-    'Лекция',
-    'Консультация',
-    'Лекция (факультатив)',
-    'Консультации КП/КР'
+  const types = [
+    'лабораторная работа',
+    'практическое занятие',
+    'лекция',
+    'консультация',
+    'лекция (факультатив)',
+    'консультации КП/КР'
   ]
-  for(let i of testFix){
+  for(let i of types){
     if(header.includes(i)) return i//header.replace(', ' + i + ',', '')
   }
   return 'NaN'
