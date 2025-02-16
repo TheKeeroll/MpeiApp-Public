@@ -43,19 +43,20 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
     const [showEditorTime, setShowEditorTime] = useState(false)
     const {colors} = useTheme()
     let lessonTypeColor = colors.warning
-    if (props.item.lessonType.includes('Лаб') || props.item.lessonType.includes('Экзамен') || props.item.lessonType.includes('Защита')){
+    if (props.item.lessonType.includes('аб') || props.item.lessonType.includes('кзамен') || props.item.lessonType.includes('ащита')){
         lessonTypeColor = colors.error
     }
-    else if (props.item.lessonType == "Лекция"){
+    else if (props.item.lessonType.includes('екция')){
+        props.item.lessonType = 'Лекция'
         lessonTypeColor = colors.accent
     }
-    if (props.item.lessonType.includes('Практическое')){
+    if (props.item.lessonType.includes('рактическое')){
         props.item.lessonType = 'Практ. занятие'
     }
-    if (props.item.lessonType.includes('Лабораторная')){
+    if (props.item.lessonType.includes('абораторная')){
         props.item.lessonType = 'Лаб. работа'
     }
-    if (props.item.lessonType.includes('Консультации')){
+    if (props.item.lessonType.includes('онсультации')){
         props.item.lessonType = 'Консул. КП/КР'
     }
     return (
