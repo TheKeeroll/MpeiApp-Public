@@ -301,6 +301,8 @@ dependencies {
 
     implementation 'joda-time:joda-time:2.10.14'
 
+    implementation 'org.jetbrains:annotations:16.0.2'
+
     debugImplementation("com.facebook.flipper:flipper:0.144.0") {
         exclude group:'com.facebook.fbjni'
     }
