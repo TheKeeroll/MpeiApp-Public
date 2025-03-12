@@ -482,11 +482,11 @@ export default class BARS{
               const $ = cheerio.load(response);
               const last = $("#tbl__PartialListStudent > tbody").find("tr").length;
               let target_acc = last
-              let acc_status = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(5)`)[0].children[0].data
+              let acc_status = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(3)`)[0].children[0].data
               if (acc_status.includes('отчислен') || acc_status.includes('завершил обучение')){
                 console.log('"Expelled"/"Сompleted study" in the last account! An attempt to find a valid one...')
                 for (let i = (last - 1); i >= 1; i--) {
-                  let textForCheck = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${i}) > td:nth-child(5)`)[0].children[0].data
+                  let textForCheck = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${i}) > td:nth-child(3)`)[0].children[0].data
                   if (!textForCheck.includes("отчислен") && !textForCheck.includes("завершил обучение")) {
                     target_acc = i
                     console.log('An active account has been detected! Authorization has been redirected to it.')
