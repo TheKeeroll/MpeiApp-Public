@@ -475,7 +475,7 @@ export default class BARS{
         .then((response) => {
           // throw "ters";
           this.mCurrentData = {}
-          if (response.includes("Студенты")) { //multi-account
+          if (response.includes("Студенты") || response.includes('На главную')) { //multi-account or EditUser page
             const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
             return fetch(URLS.BARS_MULTI_ACCOUNT, {
               method: "GET",
@@ -533,7 +533,7 @@ export default class BARS{
                     throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
                   }
                 } else {
-                  console.log("Successfully logged in multi-account");
+                  console.log("Successfully logged in multi-account / from EditUser page");
 
                   const result = ParseStudentInfo(response)
 
