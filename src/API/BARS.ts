@@ -110,6 +110,26 @@ const DealWithRepeated = (schedule: BARSSchedule) : BARSSchedule => {
   return schedule
 }
 
+const CalculateRange = () : Date[] => {
+  let start = new Date()
+  let end = new Date()
+  const currentMonthNum = start.getMonth()
+  if (currentMonthNum == 0) {
+    start.substractDays(30)
+    end.addDays(30)
+  } else if(currentMonthNum == 1){
+    start.substractDays(28)
+    end.addDays(100)
+  } else if((currentMonthNum >= 2) && (currentMonthNum <= 6)){
+    start.substractDays(Math.floor((currentMonthNum + 1) * 2.6 * 7))
+    end.addDays(Math.floor((8 - (currentMonthNum + 1)) * 2.6 * 7))
+  } else {
+    start.substractDays(Math.floor((currentMonthNum - 6) * 2.6 * 7))
+    end.addDays(Math.floor((8 - (currentMonthNum - 6)) * 2.6 * 7))
+  }
+  return [start, end]
+}
+
 const GetAvailableSemesters = (raw: string): Semester[] => {
   const $ = parse(raw).querySelector('#ddl_StudyFilterSemester')!
   const result: Semester[] = []
@@ -678,12 +698,14 @@ export default class BARS{
       return NetInfo.fetch()
     }
 
-    const end  = new Date()
+    // const end  = new Date()
     const form = new FormData()
     let request_type = ''
     let normal_name = ''
     form.append('search', target.lec_oid)
-    end.addDays(APP_CONFIG.DATE_RANGE)
+    // end.addDays(APP_CONFIG.DATE_RANGE)
+    const dateRange = CalculateRange()
+
     return CheckInternet().then((response)=> {
       if (!response.isConnected)
         return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
@@ -712,7 +734,7 @@ export default class BARS{
           }
           fform.append('type', request_type);
           fform.append('fromDate', moment(new Date()).format('YYYY.MM.DD'))
-          fform.append('toDate', moment(end).format('YYYY.MM.DD'))
+          fform.append('toDate', moment(dateRange[1]).format('YYYY.MM.DD'))
           if (request_type == 'teacher') {
             if (r.teachers.length == 0)
               throw 'Error'
@@ -772,11 +794,15 @@ export default class BARS{
     console.log('Fetching schedule')
     console.time('ScheduleParser')
     const group = this.mCurrentData.student!.group
-    const g = new Date();
+    /*const g = new Date();
     g.substractDays(APP_CONFIG.DATE_RANGE);
     const dateStart = moment(g, 'DD.MM.YYYY');
-    g.addDays(APP_CONFIG.DATE_RANGE * 4)
-    const dateEnd = moment(g, 'DD.MM.YYYY');
+    g.addDays(APP_CONFIG.DATE_RANGE * 2)
+    const dateEnd = moment(g, 'DD.MM.YYYY');*/
+    const dateRange = CalculateRange()
+    const dateStart = moment(dateRange[0], 'DD.MM.YYYY')
+    const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
+    console.log('target schedule range: ' + dateStart.format('DD.MM.YYYY') + ' - ' + dateEnd.format('DD.MM.YYYY'))
 
     const linkSearch = 'http://ts.mpei.ru/api/search?term=' + encodeURI(group) + `&type=group`
     return Timeout(2500, fetch(linkSearch,{
