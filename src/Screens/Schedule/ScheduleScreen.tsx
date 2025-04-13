@@ -1,6 +1,6 @@
-import React, { Fragment, useRef, useState } from "react";
+import React, { Fragment, useMemo, useRef, useState } from "react";
 import { TextInput, useTheme } from "react-native-paper";
-import { Alert, FlatList, LayoutAnimation, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, LayoutAnimation, SafeAreaView, Text, TouchableOpacity, View, Dimensions } from "react-native";
 import { NavigationHeader } from "../CommonComponents/DrawerHeader";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
@@ -19,24 +19,16 @@ import { Button } from "../Login/LoginScreen";
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
 
-const DateCell: React.FC<{item: BARSScheduleCell, index: number, selectedIndex: number, onPress:(index: number)=>void}> = (props) =>{
+const DateCell: React.FC<{
+    item: BARSScheduleCell,
+    index: number,
+    selectedIndex: number,
+    onPress: (index: number) => void,
+    cellWidth: number
+}> = (props) =>{
     const isSelected = props.index == props.selectedIndex
     // console.log( "initialDateString = " + props.item.date)
     let dateYear = props.item.date.split('.')[2]
-    // console.log('dateYear = ' + dateYear)
-    if (parseInt(dateYear) > parseInt(YearForFix)){
-        YearForFix = props.item.date.split('.')[2]
-        console.log('YearForFix increased to ' + YearForFix)
-    }
-    if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))){
-        YearForFix = props.item.date.split('.')[2]
-        console.log('YearForFix decreased to ' + YearForFix)
-    }
-
-    if (dateYear.includes('2020')){
-        dateYear = YearForFix
-        console.log('dateYear changed to ' + dateYear)
-    }
     let date = new Date(parseInt(dateYear), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
     // console.log('current month = ' + props.item.date.split('.')[1])
     // console.log('current YearForFix = ' + YearForFix)
@@ -78,15 +70,16 @@ const DateCell: React.FC<{item: BARSScheduleCell, index: number, selectedIndex: 
 
     // console.log(date.toString() + " : " + date.getDayName())
     return (
-      <TouchableOpacity disabled={props.item.isEmpty}
-                        onPress={props.onPress.bind(this, props.index)}
-                        style={{
-                            height: '100%',
-                            minWidth: 60,
-                            opacity: isEmpty ? .3 : 1,
-                            borderRadius: 8,
-                            backgroundColor: isSelected ? colors.surface : colors.primary
-                        }}>
+      <TouchableOpacity
+        disabled={props.item.isEmpty}
+        onPress={() => props.onPress(props.index)}
+        style={{
+            width: props.cellWidth,
+            height: '100%',
+            opacity: isEmpty ? .3 : 1,
+            borderRadius: 8,
+            backgroundColor: isSelected ? colors.surface : colors.primary
+        }}>
           <View
             style={{ alignItems: 'center', justifyContent: 'space-evenly', flex: 1, opacity: isEmpty ? .3 : 1 }}>
               <Text style={{ color: colors.text }}>{dayNameOfTheWeek}</Text>
@@ -107,34 +100,57 @@ const DateCell: React.FC<{item: BARSScheduleCell, index: number, selectedIndex: 
     )
 }
 
-const DateSelector: React.FC<{days: BARSScheduleCell[], selectedIndex: number, initScrollIndex: number, onDateSelect:(index: number)=>void}> = (props) => {
-    const dateSelectFlatListRef = useRef<FlatList | null>(null)
-    return(
-        <View style={{width: '100%', marginTop: 10, height: 80}}>
-            <FlatList
-                ref={dateSelectFlatListRef}
-                data={props.days}
-                renderItem={({item,index}:{item:BARSScheduleCell, index: number})=>
-                    <DateCell item={item} index={index} selectedIndex={props.selectedIndex} onPress={props.onDateSelect}/>
-                }
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                ItemSeparatorComponent={()=><View style={{width: 10}}/>}
-                initialScrollIndex={props.initScrollIndex}
-                getItemLayout={(data, index) => (
-                  { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
-                )}
-                onScrollToIndexFailed={(info) => {
-                    // Обработка ошибки прокрутки к индексу
-                    console.warn("Failed to scroll to index!")
-                    const wait = new Promise(resolve => setTimeout(resolve, 500))
-                    wait.then(() => {
-                        dateSelectFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
-                }}
-            />
-        </View>
-    )
-}
+const DateSelector: React.FC<{
+    days: BARSScheduleCell[],
+    selectedIndex: number,
+    initScrollIndex: number,
+    onDateSelect: (index: number) => void
+}> = (props) => {
+    const dateSelectFlatListRef = useRef<FlatList | null>(null);
+
+    const CELL_WIDTH = useMemo(() => {
+        const screenWidth = Dimensions.get('window').width;
+        const cellsPerScreen = 6; // можно настроить
+        const separatorWidth = 10;
+        return (screenWidth - separatorWidth * (cellsPerScreen - 1)) / cellsPerScreen;
+    }, []);
+
+    return (
+      <View style={{ width: '100%', marginTop: 10, height: 80 }}>
+          <FlatList
+            ref={dateSelectFlatListRef}
+            data={props.days}
+            renderItem={({ item, index }) =>
+              <DateCell
+                item={item}
+                index={index}
+                selectedIndex={props.selectedIndex}
+                onPress={props.onDateSelect}
+                cellWidth={CELL_WIDTH}
+              />
+            }
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+            initialScrollIndex={props.initScrollIndex}
+            getItemLayout={(_, index) => ({
+                length: CELL_WIDTH + 10,
+                offset: (CELL_WIDTH + 10) * index,
+                index
+            })}
+            onScrollToIndexFailed={(info) => {
+                console.warn("Failed to scroll to index!");
+                setTimeout(() => {
+                    dateSelectFlatListRef.current?.scrollToIndex({
+                        index: info.index,
+                        animated: true
+                    });
+                }, 500);
+            }}
+          />
+      </View>
+    );
+};
 
 const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesson, index: number, requestMode?: boolean, isToday: boolean}> = (props) =>{
     const {colors} = useTheme()
@@ -276,7 +292,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 if (today == schedule.data!.days[j]!.date!) {
                     setisFirstTime(false)
                     setSelectedDate(j)
-                    // console.log('Today: ' + schedule.data!.days[j]!.date!)
+                    console.log('Today: ' + schedule.data!.days[j]!.date!)
                     break
                 }
 
@@ -326,7 +342,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     //@ts-ignore
                     teacherSchedule.current = result
                     result.days.forEach(v=>{
-                        console.log(v.lessons);
+                        // console.log(v.lessons);
 
                     })
 
@@ -410,6 +426,26 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             if ((unlistedDateIndex >= 0) && (new Date().getFullYear() % 4 !== 0)){
                 editableScheduleData.days = editableScheduleData.days.filter(item => !item.date.includes('29.02'))
                 console.log("Unlisted date filtered out!")
+            }
+            let k = 0
+            for (let j = 0; j < editableScheduleData.days.length; j++) {
+                let dateYear = editableScheduleData.days[j].date.split('.')[2]
+                // console.log('dateYear = ' + dateYear)
+                if (parseInt(dateYear) > parseInt(YearForFix)){
+                    YearForFix = dateYear
+                    console.log('YearForFix increased to ' + YearForFix)
+                }
+                if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))){
+                    YearForFix = dateYear
+                    console.log('YearForFix decreased to ' + YearForFix)
+                }
+                if (dateYear.includes('2020')){
+                    editableScheduleData.days[j].date = editableScheduleData.days[j].date.replace(/\d{4}$/, YearForFix)
+                    k++
+                }
+            }
+            if (k > 0){
+                console.log('Year fixed in ' + k + ' schedule days');
             }
 
             const lastFlatListRef = useRef<FlatList | null>(null)
