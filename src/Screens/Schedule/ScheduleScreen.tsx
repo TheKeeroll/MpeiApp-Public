@@ -280,19 +280,21 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
         return <FetchFailed/>
     }
 
+    let editableScheduleData = schedule.data!
 
-    const FindToday = () => {
+
+    const FindToday = (editedScheduleData: BARSSchedule) => {
         if (isFirstTime) {
             let today = new Date().getDDMMYY()
 
-            for (let j = 0; j < schedule.data!.days.length; j++) {
-                if (schedule.data!.days[j]!.date!.includes("2020")) {
-                    schedule.data!.days[j]!.date! = schedule.data!.days[j]!.date!.replace("2020", "" + YearForFix)
+            for (let j = 0; j < editedScheduleData.days.length; j++) {
+                if (editedScheduleData.days[j]!.date!.includes("2020")) {
+                    editedScheduleData.days[j]!.date! = editedScheduleData.days[j]!.date!.replace("2020", "" + YearForFix)
                 }
-                if (today == schedule.data!.days[j]!.date!) {
+                if (today == editedScheduleData.days[j]!.date!) {
                     setisFirstTime(false)
                     setSelectedDate(j)
-                    console.log('Today: ' + schedule.data!.days[j]!.date!)
+                    console.log('Today: ' + editedScheduleData.days[j]!.date!)
                     break
                 }
 
@@ -416,36 +418,35 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 const today = new Date().getDDMMYY()
                 return today == schedule.data!.days[selectedDate].date
             }
+
             if (isFirstTime){
-                FindToday()
-            }
+                let unlistedDateIndex = schedule.data!.days.findIndex(item => item.date.includes('29.02'))
 
-            let unlistedDateIndex = schedule.data!.days.findIndex(item => item.date.includes('29.02'))
-
-            let editableScheduleData = schedule.data!
-            if ((unlistedDateIndex >= 0) && (new Date().getFullYear() % 4 !== 0)){
-                editableScheduleData.days = editableScheduleData.days.filter(item => !item.date.includes('29.02'))
-                console.log("Unlisted date filtered out!")
-            }
-            let k = 0
-            for (let j = 0; j < editableScheduleData.days.length; j++) {
-                let dateYear = editableScheduleData.days[j].date.split('.')[2]
-                // console.log('dateYear = ' + dateYear)
-                if (parseInt(dateYear) > parseInt(YearForFix)){
-                    YearForFix = dateYear
-                    console.log('YearForFix increased to ' + YearForFix)
+                if ((unlistedDateIndex >= 0) && (new Date().getFullYear() % 4 !== 0)){
+                    editableScheduleData.days = editableScheduleData.days.filter(item => !item.date.includes('29.02'))
+                    console.log("Unlisted date filtered out!")
                 }
-                if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))){
-                    YearForFix = dateYear
-                    console.log('YearForFix decreased to ' + YearForFix)
+                let k = 0
+                for (let j = 0; j < editableScheduleData.days.length; j++) {
+                    let dateYear = editableScheduleData.days[j].date.split('.')[2]
+                    // console.log('dateYear = ' + dateYear)
+                    if (parseInt(dateYear) > parseInt(YearForFix)){
+                        YearForFix = dateYear
+                        console.log('YearForFix increased to ' + YearForFix)
+                    }
+                    if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))){
+                        YearForFix = dateYear
+                        console.log('YearForFix decreased to ' + YearForFix)
+                    }
+                    if (dateYear.includes('2020')){
+                        editableScheduleData.days[j].date = editableScheduleData.days[j].date.replace(/\d{4}$/, YearForFix)
+                        k++
+                    }
                 }
-                if (dateYear.includes('2020')){
-                    editableScheduleData.days[j].date = editableScheduleData.days[j].date.replace(/\d{4}$/, YearForFix)
-                    k++
+                if (k > 0){
+                    console.log('Year fixed in ' + k + ' schedule days');
                 }
-            }
-            if (k > 0){
-                console.log('Year fixed in ' + k + ' schedule days');
+                FindToday(editableScheduleData)
             }
 
             const lastFlatListRef = useRef<FlatList | null>(null)
