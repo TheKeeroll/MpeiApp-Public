@@ -33,6 +33,8 @@ export interface BARSStudentInfo{
   status: string
   study_rating: string
   complex_rating: string
+  average_scorePA: string
+  average_scoreZK: string
 
   id: string
   headman: boolean
