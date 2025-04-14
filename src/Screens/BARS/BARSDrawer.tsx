@@ -13,7 +13,7 @@ import * as EIcon from "react-native-vector-icons/Entypo";
 import * as ADIcon from "react-native-vector-icons/AntDesign";
 import * as FAIcon from "react-native-vector-icons/FontAwesome";
 import { useTheme } from "react-native-paper";
-import { withOpacity } from "../../Themes/Themes";
+import { AverageScoreToColor, withOpacity } from "../../Themes/Themes";
 import Clipboard from "@react-native-clipboard/clipboard";
 import QuestionnairesScreen from "./Questionnaires/QuestionnairesScreen";
 import TasksScreen from "./Tasks/TasksScreen";
@@ -63,6 +63,10 @@ const DrawerHeader: React.FC = () => {
             }
         }
     }
+
+    let av_scorePA_color = AverageScoreToColor(student.average_scorePA)
+    let av_scoreZK_color = AverageScoreToColor(student.average_scoreZK)
+
     let status_color = colors.accent
     if (student.status == "завершил обучение"){
         status_color = '#33FFFF'
@@ -80,6 +84,14 @@ const DrawerHeader: React.FC = () => {
     }
     if (student.complex_rating.includes('не распарсилось')){
         complex_rating_text = ' '
+    }
+    let av_scorePA_text = 'Средний балл ПА: '  + student.average_scorePA
+    let av_scoreZK_text = 'Средний балл ЗК: ' + student.average_scoreZK
+    if (student.average_scorePA.includes('не распарсилось')){
+        av_scorePA_text = ' '
+    }
+    if (student.average_scoreZK.includes('не распарсилось')){
+        av_scoreZK_text = ' '
     }
 
     return (
@@ -100,10 +112,16 @@ const DrawerHeader: React.FC = () => {
                     {(complex_rating_text.includes(':')) &&
                     <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 60)}}>{complex_rating_text}</Text>
                     }
+                    {(av_scorePA_text.includes(':')) &&
+                      <Text style={{fontSize: 12, fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scorePA_color, 90)}}>{av_scorePA_text}</Text>
+                    }
+                    {(av_scoreZK_text.includes(':')) &&
+                      <Text style={{fontSize: 12, fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scoreZK_color, 90)}}>{av_scoreZK_text}</Text>
+                    }
                     <Text style={{fontSize: 12, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 60)}}>{CapitalizeFirstChar(student.status)}</Text>
                 </View>
-                <View style={{flex: .3, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '5%', paddingRight: '4%', color: colors.text}}>{student.group}</Text>
+                <View style={{flex: .6, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student.group}</Text>
                     <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 60)}}>{CapitalizeFirstChar(student.qualification)}</Text>
                 </View>
             </View>

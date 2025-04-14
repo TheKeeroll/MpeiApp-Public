@@ -94,6 +94,20 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
     console.warn("on _complex_rating: " + e);
     _complex_rating = '(не распарсилось!)'
   }
+  let _av_scorePA: string
+  try {
+    _av_scorePA = firstPart.childNodes[1].querySelector('ul')!.childNodes[13]!.querySelector('strong')!.text
+  }catch (e) {
+    console.warn("on _av_scorePA: " + e);
+    _av_scorePA = '(не распарсилось!)'
+  }
+  let _av_scoreZK: string
+  try {
+    _av_scoreZK = firstPart.childNodes[1].querySelector('ul')!.childNodes[15]!.querySelector('strong')!.text
+  }catch (e) {
+    console.warn("on _av_scoreZK: " + e);
+    _av_scoreZK = '(не распарсилось!)'
+  }
 
   console.timeEnd('FHT ' + Platform.OS)
 
@@ -113,6 +127,8 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
       status: _status,
       study_rating: _study_rating,
       complex_rating: _complex_rating,
+      average_scorePA: _av_scorePA,
+      average_scoreZK: _av_scoreZK,
       id: _id,
       headman: false // will set later
     }
