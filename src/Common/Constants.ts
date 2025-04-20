@@ -19,7 +19,10 @@ export const URLS = {
   HM_LIST_GROUP: 'https://bars.mpei.ru/bars_web/StudyGroup/StudyGroup/ListStudyGroup',
   HM_STUDENT_LIST: 'https://bars.mpei.ru/bars_web/StudyGroup/Student/ListStudyGroup__Students?sgID=',
   HM_LESSON_SKIP: 'https://bars.mpei.ru/bars_web/ST_Study/LessonSkip/_PartialListStudent__LessonSkip?studentID=',
-  HM_REPORTS: 'https://bars.mpei.ru/bars_web/Report/ListReport'
+  HM_REPORTS: 'https://bars.mpei.ru/bars_web/Report/ListReport',
+
+  MAIL_LEGACY: 'https://legacy.mpei.ru',
+  MAIL_MODERN: 'https://mail.mpei.ru'
 }
 
 export const COMMON_HTTP_HEADER = {
@@ -87,8 +90,7 @@ export const STORAGE_KEYS = {
   ORDERS: 'orders',
   SKIPPED_CLASSES: 'skippedClasses',
   RECORD_BOOK: 'recordBook',
-  MAIL_CACHE: 'mailCache',
-  MAIL_USERS_CACHE: 'mailUsers',
+  MAIL: 'mail',
   ADDITIONAL_DATA: 'additionalData'
 }
 

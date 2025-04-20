@@ -6,6 +6,7 @@ export interface BARSData{
   schedule: BARSSchedule
   availableSemesters: Semester[]
   skippedClasses: SkippedClass[]
+  mail: string
 }
 
 export interface MarkDiff{

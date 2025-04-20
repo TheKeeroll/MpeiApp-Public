@@ -66,6 +66,16 @@ export const TasksSlice = createSlice({
     }
 })
 
+export const MailSlice = createSlice({
+    name: 'mail',
+    initialState:initialState<string>(),
+    reducers:{
+        updateMail: (state, action: PayloadAction<ReduxStatePlaceHolder<string>>) => {
+            return action.payload
+        }
+    }
+})
+
 export const ReportsSlice = createSlice({
     name: 'reports',
     initialState:initialState<BARSReport[]>(),
@@ -139,11 +149,14 @@ export const {updateStipends} = StipendsSlice.actions
 export const {updateOrders} = OrdersSlice.actions
 export const {updateRecordBook} = RecordBookSlice.actions
 
+export const {updateMail} = MailSlice.actions
+
 export const {updateAdditionalData} = AdditionalDataSlice.actions
 
 let BARSReducers = combineReducers({
     MarkTable: MarkTableSlice.reducer,
     Schedule: ScheduleSlice.reducer,
+    Mail: MailSlice.reducer,
     Tasks: TasksSlice.reducer,
     Reports: ReportsSlice.reducer,
     Questionnaires: QuestionnairesSlice.reducer,
