@@ -11,7 +11,12 @@ import {
   Semester,
   Teacher,
 } from "./DataTypes";
-import { COMMON_HTTP_HEADER, LOGIN_HEADER, STORAGE_KEYS, URLS } from "../Common/Constants";
+import {
+  COMMON_HTTP_HEADER,
+  LOGIN_HEADER,
+  STORAGE_KEYS,
+  URLS,
+} from "../Common/Constants";
 import { cheerio, Compare } from "../Common/Globals";
 import { ParseStudentInfo } from "./Parsers/StudentInfoParser";
 import ParsMarkTable from "./Parsers/MarkTableParser";
@@ -25,7 +30,9 @@ import { parse } from "node-html-parser";
 import { MMKV } from "react-native-mmkv";
 import { Store } from "./Redux/Store";
 import {
-  updateAdditionalData, updateBooks,
+  updateAdditionalData,
+  updateBooks,
+  updateMail,
   updateMarkTable,
   updateOrders,
   updateQuestionnaires,
@@ -49,6 +56,7 @@ import OrdersParser from "./Parsers/OrdersParser";
 // @ts-ignore
 import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
+import MailParser from "./Parsers/MailParser";
 
 export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
 
@@ -289,6 +297,7 @@ export default class BARS{
     //  console.log(this.mStorage.getString(i[1]))
     //}
     Store.dispatch(updateSchedule({status: "LOADING", data: null}))
+    Store.dispatch(updateMail({status: "LOADING", data: null}))
     Store.dispatch(updateSkippedClasses({status: "LOADING", data: null}))
     Store.dispatch(updateRecordBook({status: "LOADING", data: null}))
     Store.dispatch(updateTasks({status: "LOADING", data: null}))
@@ -344,7 +353,8 @@ export default class BARS{
                     DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
                     console.log('Main fetch completed')
                     return this.FetchSkippedClasses().finally(
-                        () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
+                      () => this.FetchMail().finally(
+                          () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
                             () => this.FetchRecordBook().finally(
                               () => this.FetchTasks().finally(
                                 () => this.FetchReports().finally(
@@ -353,7 +363,7 @@ export default class BARS{
                                       () => this.FetchBooks().finally(
                                         () => this.FetchQuestionnaires().finally(
                                           () => console.log('Extra fetch completed')
-                                )))))))))
+                                ))))))))))
                   })
 
               //Долги
@@ -647,6 +657,7 @@ export default class BARS{
   public LoadOfflineData(){
     console.log('Loading offline data...')
     const schedule = this.mStorage.getString(STORAGE_KEYS.SCHEDULE)
+    const mail = this.mStorage.getString(STORAGE_KEYS.MAIL)
     const marks = this.mStorage.getString(STORAGE_KEYS.MARKS)
     const skippedClasses = this.mStorage.getString(STORAGE_KEYS.SKIPPED_CLASSES)
     const recordBook = this.mStorage.getString(STORAGE_KEYS.RECORD_BOOK)
@@ -676,6 +687,7 @@ export default class BARS{
       Store.dispatch(updateSchedule({status: "OFFLINE", data: typeof schedule != 'undefined' ? JSON.parse(schedule) : null}))
     }
     Store.dispatch(updateMarkTable({status: "OFFLINE", data: typeof marks != 'undefined' ? JSON.parse(marks) : null}))
+    Store.dispatch(updateMail({status: "OFFLINE", data: typeof mail != 'undefined' ? mail : null}))
     Store.dispatch(updateSkippedClasses({status: "OFFLINE", data: typeof skippedClasses != 'undefined' ? JSON.parse(skippedClasses) : null}))
     Store.dispatch(updateRecordBook({status: "OFFLINE", data: typeof recordBook != 'undefined' ? JSON.parse(recordBook) : null}))
     Store.dispatch(updateReports({status: "OFFLINE", data: typeof reports != 'undefined' ? JSON.parse(reports) : null}))
@@ -807,7 +819,7 @@ export default class BARS{
     console.log('target schedule range: ' + dateStart.format('DD.MM.YYYY') + ' - ' + dateEnd.format('DD.MM.YYYY'))
 
     const linkSearch = 'http://ts.mpei.ru/api/search?term=' + encodeURI(group) + `&type=group`
-    return Timeout(10000, fetch(linkSearch,{
+    return Timeout(15000, fetch(linkSearch,{
       method: 'GET',
       headers: {},
       credentials: 'include'
@@ -1185,6 +1197,147 @@ export default class BARS{
       }
     })
   }
+
+  public async FetchMail(): Promise<void> {
+    console.log('Fetching legacy mail');
+    const { login, password } = this.GetCreds();
+    let redirectUrl: string | null
+    let mode: 'legacy' | 'modern' = 'legacy'
+
+    const loginUrl = `${URLS.MAIL_LEGACY}/CookieAuth.dll?Logon`;
+    const refererCurl = 'Z2FowaZ2FZ3FaeZ3DFolderZ26tZ3DIPF.Note&reason=0&formdir=2';
+
+    // Формируем тело как application/x-www-form-urlencoded
+    const GetForm = (curl: string)  => {
+      return new URLSearchParams({
+        curl: curl,
+        flags: '0',
+        forcedownlevel: '0',
+        formdir: '2',
+        username: login,
+        password: password,
+        isUtf8: '1',
+        trusted: '4'
+      })
+    }
+
+    // Первый fetch с redirect: 'manual', credentials: 'include'
+    const resp1 = await fetch(loginUrl, {
+      method:   'POST',
+      mode:     'same-origin',
+      credentials: 'include',
+      // @ts-ignore
+      redirect: 'manual',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept':       'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Origin':       URLS.MAIL_LEGACY,
+        'Referer':      `${URLS.MAIL_LEGACY}/CookieAuth.dll?GetLogon?curl=${refererCurl}`
+      },
+      body: GetForm('Z2FowaZ2FZ3FaeZ3DFolderZ26tZ3DIPF.NoteZ26idZ3DLgAAAAAZ252faJ6Rlp8wQ4mSsQM3EPEvAQA3zcW5sZ252fzhSry5ktzNFKjqAHEtjletAAABZ26slUsngZ3D0').toString()
+    });
+
+    let html = ''
+    if (resp1.status == 200) {
+      html = await resp1.text()
+      if (html.includes('mail.mpei.ru')){
+        mode = 'modern'
+      }
+    }
+    if ((resp1.status !== 200) && (resp1.status !== 302)) {
+        const text = await resp1.text()
+        console.error('Legacy mail login failed, server returned:', resp1.status, text)
+        throw new Error('Legacy mail login failed')
+    }
+    if ((mode == 'legacy' && (resp1.status === 302))) {
+      redirectUrl = resp1.headers.get('Location')
+      if (!redirectUrl) {
+        throw new Error('No redirect URL after legacy mail login')
+      }
+      console.log('Redirecting to ', redirectUrl)
+      // Второй fetch по полученному URL: браузер автоматически приклеит HTTP-Only cookie
+      const resp2 = await fetch(redirectUrl, {
+        method: 'GET',
+        mode: 'same-origin',
+        credentials: 'include'
+      });
+
+      if (!resp2.ok) {
+        console.error('Failed to load mailbox page:', resp2.status)
+        throw new Error('Mailbox fetch failed')
+      }
+      html = await resp2.text()
+      console.log('resp2 html received')
+    } else if (mode == 'modern') {
+      const url_3 = URLS.MAIL_MODERN + '/CookieAuth.dll?Logon'
+      const resp3 = await fetch(url_3, {
+            method:   'POST',
+            mode:     'same-origin',
+            credentials: 'include',
+            // @ts-ignore
+            redirect: 'manual',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'Accept':       'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Origin':       URLS.MAIL_MODERN,
+              'Referer':      `${URLS.MAIL_MODERN}/CookieAuth.dll?GetLogon?curl=Z2Fowa&reason=0&formdir=2`
+            },
+            body: GetForm('Z2Fowa').toString()
+          });
+      html = await resp3.text()
+      console.log('resp3 html received')
+      if ((html.includes('ASP.auth_error')) || (resp3.status === 302)) {
+        try {
+          redirectUrl = resp3.headers.get('Location') + ''
+          console.log('Redirecting to ' + redirectUrl)
+          const resp4 = await fetch(redirectUrl, {
+            method:      'GET',
+            mode:        'same-origin',
+            credentials: 'include'
+          });
+          if (resp4.status == 200) {
+            html = await resp4.text()
+            console.log('resp4 html received')
+          } else {
+            if (resp4.status !== 301) {
+              const text = await resp4.text()
+              console.error('Modern mail login failed, server returned:', resp4.status, text)
+            }
+            const final_url = URLS.MAIL_MODERN + '/owa/'
+            console.log('Fetching '+ final_url)
+            const resp5 = await fetch(final_url, {
+              method:      'GET',
+              mode:        'same-origin',
+              credentials: 'include'
+            });
+            if (resp5.status == 200) {
+              html = await resp5.text()
+              console.log('resp5 html received')
+            } else {
+              const text = await resp5.text()
+              console.error('Modern mail login failed on final url, server returned:', resp5.status, text)
+            }
+          }
+        } catch (e: any) {
+          console.error('Modern mail redirects failed: ' + e.toString())
+        }
+      }
+    }
+    // парсим количество непрочитанных
+    const mailCounter = MailParser(html, mode)
+    if (isBARSError(mailCounter)) {
+      console.warn('Failed to parse mail!', mailCounter);
+      const mail_mes = 'не удалось обновить'
+      Store.dispatch(updateMail({ status: 'OFFLINE', data: mail_mes }));
+      this.mStorage.set(STORAGE_KEYS.MAIL, mail_mes);
+    } else {
+      Store.dispatch(updateMail({ status: 'LOADED', data: mailCounter }));
+      this.mStorage.set(STORAGE_KEYS.MAIL, mailCounter);
+      this.mCurrentData.mail = mailCounter
+      console.log('Unread e-mails: ' + mailCounter);
+    }
+  }
+
 
   public FetchQuestionnaires(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching questionnaires')

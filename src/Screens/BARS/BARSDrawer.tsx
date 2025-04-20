@@ -29,8 +29,8 @@ const Drawer = createDrawerNavigator()
 const SpacingBig = () => (<View style={{height: 25.5, width: '100%'}}/>)
 
 const DrawerHeader: React.FC = () => {
-    const student = BARSAPI.CurrentData.student!
     const {colors} = useTheme()
+    const student = BARSAPI.CurrentData.student!
     let study_rating_color = colors.warning
     const weekString = BARSAPI.Week
     const week = parseInt(weekString)
@@ -165,8 +165,30 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
 }
 
 const DrawerContent: React.FC<{navigation: any}> = (props)=>{
-    const {colors} = useTheme()
     const [pressedId, setPressedId] = useState(0)
+    const {colors} = useTheme()
+    let mail_str = 'загрузка...'
+    let mail_color = colors.warning
+    const mail_count_str = useSelector((state: RootState)=>state.Mail)
+    try {
+        if (mail_count_str.data == '0'){
+            mail_str = 'новых писем нет'
+            mail_color = colors.accent
+        } else if (mail_count_str.data == 'не удалось обновить'){
+            mail_str = mail_count_str.data
+        } else if (mail_count_str.data == '1'){
+            mail_str = '1 новое письмо'
+        } else { // @ts-ignore
+            if ((parseInt(mail_count_str.data) >= 2) && (parseInt(mail_count_str.data) <= 4)){
+                mail_str = mail_count_str.data + ' новых письма'
+            } else {
+                mail_str = mail_count_str.data + ' новых писем!'
+                mail_color = colors.error
+            }
+        }
+    } catch (e: any) {
+        console.warn('Drawer, mail_count_str - ' + e.toString())
+    }
 
     let todayDate= convertDate(new Date().getDDMMYY())
 
@@ -318,6 +340,23 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
             <SafeAreaView style={{flex: 1, backgroundColor: colors.background}}>
                 <DrawerContentScrollView>
                     <DrawerHeader/>
+                    <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
+                        <View style={{width: '100%', flexDirection: 'row'}}>
+                            <View style={{flex: .7}}>
+                                <View style={{width: '100%', flexDirection: 'row'}}>
+                                    <Text
+                                      numberOfLines={1}
+                                      style={{fontSize: 16, fontWeight: '600', paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', color: colors.text}}>
+                                        {'Почта:'}
+                                    </Text>
+                                    <Text
+                                      numberOfLines={1}
+                                      style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>{mail_str}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
                     <SpacingBig/>
                     <DrawerButton
                         id={0}
