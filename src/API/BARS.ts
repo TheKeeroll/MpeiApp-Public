@@ -7,7 +7,7 @@ import {
   BARSSchedule,
   BARSScheduleCell,
   BARSScheduleLesson,
-  BARSStudentInfo,
+  BARSStudentInfo, OWAMail,
   Semester,
   Teacher,
 } from "./DataTypes";
@@ -687,7 +687,7 @@ export default class BARS{
       Store.dispatch(updateSchedule({status: "OFFLINE", data: typeof schedule != 'undefined' ? JSON.parse(schedule) : null}))
     }
     Store.dispatch(updateMarkTable({status: "OFFLINE", data: typeof marks != 'undefined' ? JSON.parse(marks) : null}))
-    Store.dispatch(updateMail({status: "OFFLINE", data: typeof mail != 'undefined' ? mail : null}))
+    Store.dispatch(updateMail({status: "OFFLINE", data: typeof mail != 'undefined' ? JSON.parse(mail) : null}))
     Store.dispatch(updateSkippedClasses({status: "OFFLINE", data: typeof skippedClasses != 'undefined' ? JSON.parse(skippedClasses) : null}))
     Store.dispatch(updateRecordBook({status: "OFFLINE", data: typeof recordBook != 'undefined' ? JSON.parse(recordBook) : null}))
     Store.dispatch(updateReports({status: "OFFLINE", data: typeof reports != 'undefined' ? JSON.parse(reports) : null}))
@@ -1323,18 +1323,21 @@ export default class BARS{
         }
       }
     }
-    // парсим количество непрочитанных
-    const mailCounter = MailParser(html, mode)
-    if (isBARSError(mailCounter)) {
-      console.warn('Failed to parse mail!', mailCounter);
-      const mail_mes = 'не удалось обновить'
-      Store.dispatch(updateMail({ status: 'OFFLINE', data: mail_mes }));
-      this.mStorage.set(STORAGE_KEYS.MAIL, mail_mes);
+    // парсим почту
+    const mail = MailParser(html, mode)
+    if (isBARSError(mail)) {
+      console.warn('Failed to parse mail!', mail);
+      const mail_offline: OWAMail = {
+        mode: 'error',
+        unreadCount: 'не удалось обновить'
+      }
+      Store.dispatch(updateMail({ status: 'OFFLINE', data: mail_offline }));
+      this.mStorage.set(STORAGE_KEYS.MAIL, JSON.stringify(mail_offline));
     } else {
-      Store.dispatch(updateMail({ status: 'LOADED', data: mailCounter }));
-      this.mStorage.set(STORAGE_KEYS.MAIL, mailCounter);
-      this.mCurrentData.mail = mailCounter
-      console.log('Unread e-mails: ' + mailCounter);
+      Store.dispatch(updateMail({ status: 'LOADED', data: mail }));
+      this.mStorage.set(STORAGE_KEYS.MAIL, JSON.stringify(mail));
+      this.mCurrentData.mail = mail
+      console.log('Unread e-mails: ' + mail.unreadCount);
     }
   }
 

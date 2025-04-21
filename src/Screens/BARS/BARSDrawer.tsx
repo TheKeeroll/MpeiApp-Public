@@ -4,11 +4,11 @@ import BARSMainScreen, { convertDate } from "./Marks/BARSMainScreen";
 import RecordBookScreen from "./RecordBook/RecordBookScreen";
 import ReportsScreen from "./Reports/ReportsScreen";
 import SkippedClassesScreen from "./SkippedClasses/SkippedClassesScreen";
-import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { Linking, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { DrawerActions, getFocusedRouteNameFromRoute, useNavigation } from "@react-navigation/native";
 import BARSAPI from "../../Common/Globals";
 import { CapitalizeFirstChar } from "../../Common/Globals";
-import { SCREEN_SIZE } from "../../Common/Constants";
+import { SCREEN_SIZE, URLS } from "../../Common/Constants";
 import * as EIcon from "react-native-vector-icons/Entypo";
 import * as ADIcon from "react-native-vector-icons/AntDesign";
 import * as FAIcon from "react-native-vector-icons/FontAwesome";
@@ -169,26 +169,34 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     const {colors} = useTheme()
     let mail_str = 'загрузка...'
     let mail_color = colors.warning
-    const mail_count_str = useSelector((state: RootState)=>state.Mail)
-    try {
-        if (mail_count_str.data == '0'){
-            mail_str = 'новых писем нет'
-            mail_color = colors.accent
-        } else if (mail_count_str.data == 'не удалось обновить'){
-            mail_str = mail_count_str.data
-        } else if (mail_count_str.data == '1'){
-            mail_str = '1 новое письмо'
-        } else { // @ts-ignore
-            if ((parseInt(mail_count_str.data) >= 2) && (parseInt(mail_count_str.data) <= 4)){
-                mail_str = mail_count_str.data + ' новых письма'
-            } else {
-                mail_str = mail_count_str.data + ' новых писем!'
-                mail_color = colors.error
+    let mail_button_flag = false
+    const mail = useSelector((state: RootState)=>state.Mail)
+    if (mail.status != 'LOADING'){
+        try {
+            if (mail.data?.unreadCount == '0'){
+                mail_str = 'новых писем нет'
+                mail_color = colors.accent
+                mail_button_flag = false
+            } else if (mail.data?.unreadCount == 'не удалось обновить'){
+                mail_str = mail.data.unreadCount
+                mail_button_flag = false
+            } else if (mail.data?.unreadCount == '1'){
+                mail_str = '1 новое письмо'
+                mail_button_flag = true
+            } else { // @ts-ignore
+                if ((parseInt(mail.data?.unreadCount) >= 2) && (parseInt(mail.data?.unreadCount) <= 4)){
+                    mail_str = mail.data?.unreadCount + ' новых письма'
+                } else {
+                    mail_str = mail.data?.unreadCount + ' новых писем!'
+                    mail_color = colors.error
+                }
+                mail_button_flag = true
             }
+        } catch (e: any) {
+            console.warn('Drawer, mail - ' + e.toString())
         }
-    } catch (e: any) {
-        console.warn('Drawer, mail_count_str - ' + e.toString())
     }
+
 
     let todayDate= convertDate(new Date().getDDMMYY())
 
@@ -343,16 +351,23 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                     <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
                         <View style={{width: '100%', flexDirection: 'row'}}>
                             <View style={{flex: .7}}>
-                                <View style={{width: '100%', flexDirection: 'row'}}>
-                                    <Text
-                                      numberOfLines={1}
-                                      style={{fontSize: 16, fontWeight: '600', paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', color: colors.text}}>
-                                        {'Почта:'}
-                                    </Text>
-                                    <Text
-                                      numberOfLines={1}
-                                      style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>{mail_str}
-                                    </Text>
+                                <View style={{width: '100%', flexDirection: 'column'}}>
+                                    <View style={{width: '100%', flexDirection: 'row'}}>
+                                        <Text
+                                          numberOfLines={1}
+                                          style={{fontSize: 14, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: colors.text}}>
+                                            {'Почта:'}
+                                        </Text>
+                                        <Text
+                                          numberOfLines={1}
+                                          style={{fontSize: 14, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>{mail_str}
+                                        </Text>
+                                    </View>
+                                    {(mail_button_flag) &&
+                                      <TouchableOpacity onPress={()=> Linking.openURL(mail.data?.mode == 'legacy' ? `${URLS.MAIL_LEGACY}/owa/?ae=Folder&t=IPF.Note` : (URLS.MAIL_MODERN + '/owa/'))} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
+                                          <Text adjustsFontSizeToFit style={{fontSize: 14, color: colors.textUnderline, fontWeight: 'bold'}}>{'Перейти в ОСЭП'}</Text>
+                                      </TouchableOpacity>
+                                    }
                                 </View>
                             </View>
                         </View>

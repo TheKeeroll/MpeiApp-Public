@@ -6,7 +6,7 @@ import {
     BARSRecordBookSemester,
     BARSReport,
     BARSSchedule,
-    SkippedClass, BARSStipend, BARSOrder, AdditionalData, BARSStipendsPack, BARSBook, BARSBooksPack,
+    SkippedClass, BARSStipend, BARSOrder, AdditionalData, BARSStipendsPack, BARSBook, BARSBooksPack, OWAMail,
 } from "../DataTypes";
 
 interface ReduxStatePlaceHolder<T>{
@@ -68,9 +68,9 @@ export const TasksSlice = createSlice({
 
 export const MailSlice = createSlice({
     name: 'mail',
-    initialState:initialState<string>(),
+    initialState:initialState<OWAMail>(),
     reducers:{
-        updateMail: (state, action: PayloadAction<ReduxStatePlaceHolder<string>>) => {
+        updateMail: (state, action: PayloadAction<ReduxStatePlaceHolder<OWAMail>>) => {
             return action.payload
         }
     }
