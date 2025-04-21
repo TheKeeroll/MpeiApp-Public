@@ -274,6 +274,10 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const [isShowRequestOtherSchedule, setisShowRequestOtherSchedule] = useState(false)
     const [targetSchedule, settargetSchedule] = useState('')
 
+    const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
+    const lastFlatListRef = useRef<FlatList | null>(null)
+    const wait = new Promise(resolve => setTimeout(resolve, 500))
+
     if(schedule.status == 'FAILED' && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
         return <Holidays/>
     } else if(schedule.status == 'FAILED'){
@@ -304,7 +308,6 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const requestMode = typeof props.route.params != 'undefined' ? props.route.params as Teacher : null
     // const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
-    const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
 
 
 
@@ -343,10 +346,10 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                     //@ts-ignore
                     teacherSchedule.current = result
-                    result.days.forEach(v=>{
-                        // console.log(v.lessons);
+                    /*result.days.forEach(v=>{
+                        console.log(v.lessons);
 
-                    })
+                    })*/
 
                     setLoadingState('OK')
             }, (e: any)=>{
@@ -448,8 +451,6 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }
                 FindToday(editableScheduleData)
             }
-
-            const lastFlatListRef = useRef<FlatList | null>(null)
             return (
                 <Fragment>
                     <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
@@ -495,7 +496,6 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 onScrollToIndexFailed={(info) => {
                                     // Обработка ошибки прокрутки к индексу
                                     console.warn("Failed to scroll to index!")
-                                    const wait = new Promise(resolve => setTimeout(resolve, 500))
                                     wait.then(() => {
                                         lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
                                 }}
