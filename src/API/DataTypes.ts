@@ -6,7 +6,7 @@ export interface BARSData{
   schedule: BARSSchedule
   availableSemesters: Semester[]
   skippedClasses: SkippedClass[]
-  mail: string
+  mail: OWAMail
 }
 
 export interface MarkDiff{
@@ -210,6 +210,11 @@ export interface SkippedClass{
 export interface BARSCredentials {
   login: string
   password: string
+}
+
+export interface OWAMail {
+  mode: 'legacy' | 'modern' | 'error'
+  unreadCount: string
 }
 
 export interface AdditionalData {
