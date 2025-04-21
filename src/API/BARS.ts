@@ -348,13 +348,13 @@ export default class BARS{
     return this.FetchCurrentWeek().finally(
             () => this.FetchMarkTable().finally(()=>{
 
-              const Con = () => this.FetchSchedule().finally(
-                  () => {
+              const Con = () =>  {
                     DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
                     console.log('Main fetch completed')
-                    return this.FetchSkippedClasses().finally(
-                      () => this.FetchMail().finally(
-                          () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
+                    return this.FetchMail().finally(
+                      () => this.FetchSchedule().finally(
+                        () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
+                          () => this.FetchSkippedClasses().finally(
                             () => this.FetchRecordBook().finally(
                               () => this.FetchTasks().finally(
                                 () => this.FetchReports().finally(
@@ -363,8 +363,8 @@ export default class BARS{
                                       () => this.FetchBooks().finally(
                                         () => this.FetchQuestionnaires().finally(
                                           () => console.log('Extra fetch completed')
-                                ))))))))))
-                  })
+                                )))))))))))
+                  }
 
               //Долги
               const l = this.mCurrentData.availableSemesters?.length;
