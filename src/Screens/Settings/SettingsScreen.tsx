@@ -67,7 +67,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <ListButton icon={
                         <McIcon.default name={'robot-love'} adjustsFontSizeToFit size={30} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
-                                title={'Спасибо'} onPress={()=>props.navigation.navigate('gratuities')}/>
+                                title={'Благодарности'} onPress={()=>props.navigation.navigate('gratuities')}/>
                     <ListButton icon={
                         <FaIcon.default name={'support'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
@@ -102,8 +102,8 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <View style={{width: '100%', alignItems: 'center', marginTop: 20}}>
                         <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
                         <ListText title={''}/>
-                        <ListText title={'MpeiApp'} textStyle={{fontSize: 18, opacity: .5}}/>
-                        <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{fontSize: 14, opacity: .5}}/>
+                        <ListText title={'MpeiApp'} textStyle={{color: colors.text, fontWeight: 'bold', fontSize: 18, opacity: .5}}/>
+                        <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{color: colors.text, fontSize: 14, opacity: .5}}/>
                         <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
                     </View>
                 </ScrollView>
