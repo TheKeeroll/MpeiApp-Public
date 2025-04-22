@@ -331,15 +331,15 @@ export const openSupportChat = async () => {
   if (deviceOS == 'ios'){
     deviceModel = Platform.constants.systemName
   } else if (deviceOS == 'android') {
-    deviceModel = Platform.constants.Model
+    deviceModel = Platform.constants.Brand + ' ' + Platform.constants.Model
   } else {
     deviceModel = "Модель не определена"
   }
   let message: string
   if (BARSAPI.GetCreds().login != '' && BARSAPI.GetCreds().password != '') {
-    message = `-ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\nЛогин БАРC: ${BARSAPI.GetCreds().login}\nПароль БАРC: ${BARSAPI.GetCreds().password}\n-------------------------------------\n`
+    message = `ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS == 'android' ? 'Android API' : (deviceOS == 'ios' ? 'iOS' : '')}: ${systemVersion}\nВерсия MpeiApp: ${require('../../../package.json').version}\nЛогин БАРC: ${BARSAPI.GetCreds().login}\nПароль БАРC: ${BARSAPI.GetCreds().password}\n-------------------------------------\n`
   } else {
-    message = `-ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS.toUpperCase()}: ${systemVersion}\n-------------------------------------\n`
+    message = `ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS == 'android' ? 'Android API' : (deviceOS == 'ios' ? 'iOS' : '')}: ${systemVersion}\nВерсия MpeiApp: ${require('../../../package.json').version}\n-------------------------------------\n`
   }
   console.log(message)
   // const url = `https://vk.com/im?sel=-215610947&msg=${encodeURIComponent(message)}`
