@@ -1285,7 +1285,7 @@ export default class BARS{
             body: GetForm('Z2Fowa').toString()
           });
       html = await resp3.text()
-      console.log('resp3 html received')
+      // console.log('resp3 html received')
       if ((html.includes('ASP.auth_error')) || (resp3.status === 302)) {
         try {
           redirectUrl = resp3.headers.get('Location') + ''
@@ -1297,7 +1297,7 @@ export default class BARS{
           });
           if (resp4.status == 200) {
             html = await resp4.text()
-            console.log('resp4 html received')
+            // console.log('resp4 html received')
           } else {
             if (resp4.status !== 301) {
               const text = await resp4.text()
@@ -1312,7 +1312,7 @@ export default class BARS{
             });
             if (resp5.status == 200) {
               html = await resp5.text()
-              console.log('resp5 html received')
+              // console.log('resp5 html received')
             } else {
               const text = await resp5.text()
               console.error('Modern mail login failed on final url, server returned:', resp5.status, text)
