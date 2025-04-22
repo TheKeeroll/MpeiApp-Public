@@ -3,7 +3,8 @@ import {CreateBARSError, BARSError} from "../Error/Error";
 import { OWAMail } from "../DataTypes";
 
 export default function(raw: string, mode: 'legacy' | 'modern'): OWAMail | BARSError {
-  console.log('parsing mail in ' + mode + ' mode: ' + raw);
+  // console.log('parsing mail in ' + mode + ' mode: ' + raw);
+  console.log('parsing mail in ' + mode + ' mode');
   console.time('MailParser')
   let mail: OWAMail = {
     mode: mode,
@@ -12,7 +13,7 @@ export default function(raw: string, mode: 'legacy' | 'modern'): OWAMail | BARSE
   try{
     const span_elements = parse(raw).querySelectorAll('span')
     for(let i of span_elements){
-      console.log(i.text)
+      // console.log(i.text)
       if (mode == 'legacy') {
         if (i.outerHTML.includes('unrd')) {
           console.log('Legacy unread counter found - ' + i.text)
