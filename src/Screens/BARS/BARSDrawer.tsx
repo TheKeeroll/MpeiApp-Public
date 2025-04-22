@@ -31,8 +31,8 @@ const SpacingBig = () => (<View style={{height: 25.5, width: '100%'}}/>)
 const DrawerHeader: React.FC = () => {
     const {colors} = useTheme()
     const student = BARSAPI.CurrentData.student!
-    let study_rating_text = ''
-    let complex_rating_text = ''
+    let study_rating_text = 'NO_VALUE'
+    let complex_rating_text = 'NO_VALUE'
     let study_rating_color = colors.warning
     let complex_rating_color = colors.warning
     const weekString = BARSAPI.Week
@@ -67,13 +67,13 @@ const DrawerHeader: React.FC = () => {
                 }
             }
         }
-        study_rating_text = 'Учебный рейтинг: '  + student.study_rating
-        complex_rating_text = 'Комплексный рейтинг: ' + student.complex_rating
+        study_rating_text = ''  + student.study_rating
+        complex_rating_text = '' + student.complex_rating
         if (student.study_rating.includes('не распарсилось')){
-            study_rating_text = ' '
+            study_rating_text = 'NO_VALUE'
         }
         if (student.complex_rating.includes('не распарсилось')){
-            complex_rating_text = ' '
+            complex_rating_text = 'NO_VALUE'
         }
     } catch (e:any) {
         console.warn('study/complex rating is missing: ' + e.toString())
@@ -84,13 +84,13 @@ const DrawerHeader: React.FC = () => {
     let av_scorePA_color = colors.warning
     let av_scoreZK_color = colors.warning
     try {
-        av_scorePA_text = 'Средний балл ПА: '  + student.average_scorePA
-        av_scoreZK_text = 'Средний балл ЗК: ' + student.average_scoreZK
+        av_scorePA_text = ''  + student.average_scorePA
+        av_scoreZK_text = '' + student.average_scoreZK
         if (student.average_scorePA.includes('не распарсилось')){
-            av_scorePA_text = ' '
+            av_scorePA_text = 'NO_VALUE'
         }
         if (student.average_scoreZK.includes('не распарсилось')){
-            av_scoreZK_text = ' '
+            av_scoreZK_text = 'NO_VALUE'
         }
         av_scorePA_color = AverageScoreToColor(student.average_scorePA)
         av_scoreZK_color = AverageScoreToColor(student.average_scoreZK)
@@ -127,19 +127,31 @@ const DrawerHeader: React.FC = () => {
                         }
                     </View>
                     {(student?.indexBook) &&
-                    <Text onPress={()=>Clipboard.setString(student?.indexBook ?? ' ')} style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 60)}}>{'№ ЗК ' + student?.indexBook + ' 🖇️'}</Text>
+                    <Text onPress={()=>Clipboard.setString(student?.indexBook ?? ' ')} style={{fontSize: 12, textDecorationLine: 'underline', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'№ ЗК ' + student?.indexBook + ' 🖇️'}</Text>
                     }
-                    {(study_rating_text.includes(':')) &&
-                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 60)}}>{study_rating_text}</Text>
-                    }
-                    {(complex_rating_text.includes(':')) &&
-                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 60)}}>{complex_rating_text}</Text>
-                    }
-                    {(av_scorePA_text.includes(':')) &&
-                      <Text style={{fontSize: 12, fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scorePA_color, 90)}}>{av_scorePA_text}</Text>
-                    }
-                    {(av_scoreZK_text.includes(':')) &&
-                      <Text style={{fontSize: 12, fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scoreZK_color, 90)}}>{av_scoreZK_text}</Text>
+                    {(!study_rating_text.includes('NO_VALUE')) &&
+                      <View style={{width: '100%', flexDirection: 'row'}}>
+                        <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Учебный рейтинг: '}</Text>
+                        <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 90)}}>{study_rating_text}</Text>
+                      </View>
+                      }
+                    {(!complex_rating_text.includes('NO_VALUE')) &&
+                      <View style={{width: '100%', flexDirection: 'row'}}>
+                        <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Комплексный рейтинг: '}</Text>
+                        <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(complex_rating_color, 90)}}>{complex_rating_text}</Text>
+                      </View>
+                      }
+                    {(!av_scorePA_text.includes('NO_VALUE')) &&
+                      <View style={{width: '100%', flexDirection: 'row'}}>
+                        <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Средний балл ПА: '}</Text>
+                        <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scorePA_color, 90)}}>{av_scorePA_text}</Text>
+                      </View>
+                      }
+                    {(!av_scoreZK_text.includes('NO_VALUE')) &&
+                      <View style={{width: '100%', flexDirection: 'row'}}>
+                          <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Средний балл ЗК: '}</Text>
+                          <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scoreZK_color, 90)}}>{av_scoreZK_text}</Text>
+                      </View>
                     }
                     {(student?.status) &&
                     <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status)}</Text>
@@ -149,8 +161,8 @@ const DrawerHeader: React.FC = () => {
                     {(student?.group) &&
                     <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group}</Text>
                     }
-                    {(student?.qualification) &&
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 60)}}>{CapitalizeFirstChar(student?.qualification)}</Text>
+                    {(student?.direction) &&
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 90)}}>{CapitalizeFirstChar(student?.direction)}</Text>
                     }
                 </View>
             </View>
