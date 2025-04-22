@@ -91,7 +91,7 @@ const BooksScreen: React.FC<{navigation: any, params: any}> = (props) => {
                 Styles.libraryCardViewText,
                 {color: colors.text}
               ]}>
-              {booksPack.data?.library_card == 'empty' ? ' ' : ('Читательский билет ' + booksPack.data?.library_card)}
+              {booksPack.data?.library_card == 'empty' ? ' ' : (typeof booksPack.data?.library_card == 'undefined' ? 'Читательский билет не обнаружен...' : 'Читательский билет ' + booksPack.data?.library_card)}
             </Text>
           </View>
         </View>
