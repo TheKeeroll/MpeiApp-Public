@@ -122,12 +122,12 @@ const DrawerHeader: React.FC = () => {
                         <Text
                           numberOfLines={2}
                           style={{fontSize: 16, fontWeight: '600', paddingTop: '1%', paddingLeft: '2%', color: colors.text}}>
-                            {student?.name + ' ' + student?.surname}
+                            {(student?.name.includes('не распарсилось') ? '' : student?.name) + ' ' + (student?.surname.includes('не распарсилось') ? '' : student?.surname)}
                         </Text>
                         }
                     </View>
                     {(student?.indexBook) &&
-                    <Text onPress={()=>Clipboard.setString(student?.indexBook ?? ' ')} style={{fontSize: 12, textDecorationLine: 'underline', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'№ ЗК ' + student?.indexBook + ' 🖇️'}</Text>
+                    <Text onPress={()=>Clipboard.setString(student?.indexBook ?? ' ')} style={{fontSize: 12, textDecorationLine: 'underline', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'№ ЗК ' + (student?.indexBook.includes('не распарсилось') ? '' : student?.indexBook) + ' 🖇️'}</Text>
                     }
                     {(!study_rating_text.includes('NO_VALUE')) &&
                       <View style={{width: '100%', flexDirection: 'row'}}>
@@ -154,15 +154,15 @@ const DrawerHeader: React.FC = () => {
                       </View>
                     }
                     {(student?.status) &&
-                    <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status)}</Text>
+                    <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status.includes('не распарсилось') ? '' : student?.status)}</Text>
                     }
                 </View>
                 <View style={{flex: .6, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
                     {(student?.group) &&
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group}</Text>
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group.includes('не распарсилось') ? '' : student?.group}</Text>
                     }
                     {(student?.direction) &&
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 90)}}>{CapitalizeFirstChar(student?.direction)}</Text>
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 90)}}>{CapitalizeFirstChar(student?.direction.includes('не распарсилось') ? '' : student?.direction)}</Text>
                     }
                 </View>
             </View>
