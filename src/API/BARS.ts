@@ -69,6 +69,100 @@ function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" 
   })
 }
 
+const groupBy = function(xs: any, key: any) {
+  return xs.reduce(function(rv: any, x: any) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+};
+
+const ParseTsMPEISchedule = (r: any)=> {
+  let result: BARSSchedule = {
+    days: [],
+    todayIndex: -1
+  }
+  try {
+    let grouped = groupBy(r, 'date');
+    for (const [key, value] of Object.entries(grouped)) {
+      const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
+      const day: BARSScheduleCell = {
+        date: date_,
+        lessons: [],
+        isEmpty: false,
+        isToday: date_ == moment(new Date()).format('DD.MM.YYYY')
+      }
+      // console.log(date_, moment(new Date()).format('DD.MM.YYYY'))
+      for (let lesson of (value as any)) {
+
+        const c: BARSScheduleLesson = {
+          name: lesson.discipline,
+          lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
+          lessonType: lesson.kindOfWork,
+          place: lesson.building,
+          cabinet: lesson?.auditorium || '',
+          teacher: {
+            name: lesson.listOfLecturers[0].lecturer.includes('!Вакансия') ? '-' : lesson.listOfLecturers[0].lecturer,
+            lec_oid: lesson.listOfLecturers[0].lecturerUID,
+            fullName: lesson.listOfLecturers[0].lecturer_title
+          },
+          group: lesson.subGroup === null ? '' : lesson.subGroup,
+          type: 'COMMON'
+        }
+        day.lessons.push(c)
+      }
+      result.days.push(day)
+    }
+
+    for (let i = 1; i < result.days.length; i++) {
+      const prev = moment(result.days[i - 1].date, 'DD.MM.YY').toDate()
+      const curr = moment(result.days[i].date, 'DD.MM.YY').toDate()
+      const missedDaysCount = (curr.getTime() - prev.getTime()) / 8640000 / 10 - 1
+      for (let j = 0; j < missedDaysCount; j++) {
+        const missedDate = new Date(moment(result.days[i + j - 1].date, 'DD.MM.YY').toDate())
+        missedDate.addDays(1)
+        const missedDay: BARSScheduleCell = {
+          date: missedDate.getDDMMYY(),
+          lessons: [],
+          isEmpty: true,
+          isToday: missedDate.getDDMMYY().replace(/\.\d{4}/g, '') == moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, '') //TODO do better
+        }
+        //result.todayIndex = i+j
+        // console.log(missedDate.getDDMMYY().replace(/\.\d{4}/g, '') +' : '+ moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, ''))
+        result.days.splice(i + j, 0, missedDay)
+      }
+    }
+
+    for (let i = 0; i < result.days.length; i++) {
+      for (let j = 0; j < result.days[i].lessons.length - 1; j++) {
+        const a = result.days[i].lessons[j]
+        const b = result.days[i].lessons[j + 1]
+        if (a.name == b.name && a.lessonIndex == b.lessonIndex) {
+          console.log(a.teacher.fullName + '|' + b.teacher.fullName);
+
+          const c: BARSScheduleLesson = {
+            name: a.name,
+            lessonIndex: a.lessonIndex,
+            lessonType: a.lessonType,
+            place: a.place + '|' + b.place,
+            cabinet: a.cabinet + '|' + b.cabinet,
+            teacher: {
+              name: a.teacher.name + '|' + b.teacher.name,
+              lec_oid: a.teacher.lec_oid + '|' + b.teacher.lec_oid,
+              fullName: a.teacher.fullName + '|' + b.teacher.fullName
+            },
+            group: a.group + '|' + b.group,
+            type: 'COMBINED'
+          }
+          result.days[i].lessons.splice(j, 2, c)
+        }
+      }
+    }
+  } catch (e:any) {
+    console.warn('ParseTsMPEISchedule - ' + e.toString());
+  }
+  return result
+}
+
 const DealWithMeal = (schedule: BARSSchedule) : BARSSchedule => {
   for(let i = 0; i < schedule.days.length; i++){
     for(let j = 0; j < schedule.days[i].lessons.length; j++){
@@ -707,107 +801,162 @@ export default class BARS{
 
   public FetchRequestedSchedule(target: Teacher): Promise<BARSSchedule>{
     console.log('Trying to fetch requested schedule: ' + target.lec_oid)
-
+    console.time('ScheduleRequest')
     const CheckInternet = () => {
       return NetInfo.fetch()
     }
 
-    // const end  = new Date()
-    const form = new FormData()
-    let request_type = ''
-    let normal_name = ''
-    form.append('search', target.lec_oid)
-    // end.addDays(APP_CONFIG.DATE_RANGE)
+    function classifyString(input: string): "teacher" | "group" | "auditorium" {
+      if (!/\d/.test(input)) {
+        return "teacher";
+      }
+
+      if (/\d{3}/.test(input)) {
+        return "auditorium";
+      }
+
+      return "group";
+    }
+
     const dateRange = CalculateRange()
 
-    return CheckInternet().then((response)=> {
-      if (!response.isConnected)
-        return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
-      else {
-       return fetch('https://oss.mpei.ru/api/schedule/search', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/josn',
-            'Content-Type': 'multipart/form-data'
-          },
-          body: form
-        }).then(r => r.json()).then(r => {
-          const fform = new FormData()
+    // const end  = new Date()
+    const form = new FormData()
+    let request_type = classifyString(target.lec_oid)
+    if (request_type == 'auditorium') {
+      return CheckInternet().then((response)=> {
+        if (!response.isConnected) {
+          return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
+        }
+        else {
           try {
-            fform.append('oid', r.groups[0].groupOid);
-            request_type = 'group'
-            normal_name = r.groups[0].name
-          } catch (e) {
-            try {
-              fform.append('oid', r.teachers[0].lecturerOid);
-              request_type = 'teacher'
-              normal_name = r.teachers[0].fio
+            let ts_mpei_link = 'http://ts.mpei.ru/api/search?term=' + encodeURI(target.lec_oid)  + '&type=auditorium'
+            return fetch(ts_mpei_link, {
+              method: 'GET',
+              headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-encoding': 'gzip, deflate',
+                'accept-language': 'ru,en;q=0.9',
+                'dnt': '1',
+                'host': 'ts.mpei.ru',
+                'referer': 'http://ts.mpei.ru/ruz/main',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 YaBrowser/25.4.0.0 Safari/537.36'
+              },
+              credentials: 'include'
+            }).then(r => r.json()).then(r => {
+                const dateStart = moment(new Date()).format('YYYY.MM.DD')
+                const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
+                const linkAuditoriumSchedule = `http://ts.mpei.ru/api/schedule/auditorium/${r[0]?.id || ''}?start=${dateStart}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
+                return fetch(linkAuditoriumSchedule, {
+                  method: 'GET',
+                  headers: {},
+                  credentials: 'include'
+                }).then(r=>r.json()).then(r=> {
+                  let scheduleWithDinner = DealWithMeal(ParseTsMPEISchedule(r))
+                  scheduleWithDinner.fullTeacherName = r[0]?.auditorium || "Запрошенная аудитория не найдена"
+                  console.timeEnd('ScheduleRequest')
+                  return scheduleWithDinner
+                })
+              })
             } catch (error) {
-              throw CreateBARSError("INVALID_REQUEST_SCHEDULE", "По указанным данным ни группа, ни преподаватель не обнаружены! Скорректируйте ввод и попробуйте ещё раз.");
+              throw CreateBARSError("INVALID_REQUEST_SCHEDULE", "По указанным данным ни группа, ни преподаватель, ни аудитория не обнаружены! Скорректируйте ввод и попробуйте ещё раз.");
             }
-          }
-          fform.append('type', request_type);
-          fform.append('fromDate', moment(new Date()).format('YYYY.MM.DD'))
-          fform.append('toDate', moment(dateRange[1]).format('YYYY.MM.DD'))
-          if (request_type == 'teacher') {
-            if (r.teachers.length == 0)
-              throw 'Error'
-          } else if (r.groups.length == 0)
-            throw 'Error'
-          return fetch('https://oss.mpei.ru/api/schedule', {
+        }
+      })
+    } else {
+      let normal_name = ''
+      form.append('search', target.lec_oid)
+      // end.addDays(APP_CONFIG.DATE_RANGE)
+
+      return CheckInternet().then((response)=> {
+        if (!response.isConnected)
+          return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
+        else {
+         return fetch('https://oss.mpei.ru/api/schedule/search', {
+            method: 'POST',
             headers: {
               'Accept': 'application/josn',
               'Content-Type': 'multipart/form-data'
             },
-            method: 'POST',
-            body: fform
-          }).then(d => d.json()).then(data => {
-            const res: BARSSchedule = {
-              todayIndex: 0,
-              fullTeacherName: normal_name,
-              days: []
-            }
-            let f = true
-            //console.log(data);
-
-            for (const [date, lessons] of Object.entries(data)) {
-              //console.log('LL', [date, lessons]);
-              const ll = (lessons as any[]).map((lesson, k) => {
-                return {
-                  name: lesson.discipline,
-                  lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
-                  lessonType: lesson.kindOfWork,
-                  place: lesson.place,
-                  cabinet: lesson.auditorium,
-                  teacher: { name: lesson.lecturer, lec_oid: lesson.lecturerOid },
-                  group: lesson.group,
-                  type: 'COMMON'
-                } as BARSScheduleLesson
-              }) ?? []
-              const cell: BARSScheduleCell = {
-                date: date.split('.').reverse().join('.'),
-                lessons: ll,
-                isToday: f,
-                isEmpty: (lessons as any[]).length === 0
+            body: form
+          }).then(r => r.json()).then(r => {
+            const fform = new FormData()
+            try {
+              fform.append('oid', r.groups[0].groupOid);
+              request_type = 'group'
+              normal_name = r.groups[0].name
+            } catch (e) {
+              try {
+                fform.append('oid', r.teachers[0].lecturerOid);
+                request_type = 'teacher'
+                normal_name = r.teachers[0].fio
+              } catch (error) {
+                throw CreateBARSError("INVALID_REQUEST_SCHEDULE", "По указанным данным ни группа, ни преподаватель, ни аудитория не обнаружены! Скорректируйте ввод и попробуйте ещё раз.");
               }
-              f = false
-              res.days.push(cell)
-              //console.log('CELL',cell);
-
             }
+            fform.append('type', request_type);
+            fform.append('fromDate', moment(new Date()).format('YYYY.MM.DD'))
+            fform.append('toDate', moment(dateRange[1]).format('YYYY.MM.DD'))
+            if (request_type == 'teacher') {
+              if (r.teachers.length == 0)
+                throw 'Error'
+            } else if (r.groups.length == 0)
+              throw 'Error'
+            return fetch('https://oss.mpei.ru/api/schedule', {
+              headers: {
+                'Accept': 'application/josn',
+                'Content-Type': 'multipart/form-data'
+              },
+              method: 'POST',
+              body: fform
+            }).then(d => d.json()).then(data => {
+              const res: BARSSchedule = {
+                todayIndex: 0,
+                fullTeacherName: normal_name,
+                days: []
+              }
+              let f = true
+              //console.log(data);
 
-            return DealWithMeal(DealWithRepeated(res))
+              for (const [date, lessons] of Object.entries(data)) {
+                //console.log('LL', [date, lessons]);
+                const ll = (lessons as any[]).map((lesson, k) => {
+                  return {
+                    name: lesson.discipline,
+                    lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
+                    lessonType: lesson.kindOfWork,
+                    place: lesson.place,
+                    cabinet: lesson?.auditorium || '',
+                    teacher: { name: lesson.lecturer, lec_oid: lesson.lecturerOid },
+                    group: lesson.group,
+                    type: 'COMMON'
+                  } as BARSScheduleLesson
+                }) ?? []
+                const cell: BARSScheduleCell = {
+                  date: date.split('.').reverse().join('.'),
+                  lessons: ll,
+                  isToday: f,
+                  isEmpty: (lessons as any[]).length === 0
+                }
+                f = false
+                res.days.push(cell)
+                //console.log('CELL',cell);
+
+              }
+              console.timeEnd('ScheduleRequest')
+              return DealWithMeal(DealWithRepeated(res))
+            })
           })
-        })
-      }
-    })
+        }
+      })
+    }
   }
 
   public FetchSchedule(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
 
     console.log('Fetching schedule')
     console.time('ScheduleParser')
-    const group = this.mCurrentData.student!.group
+    const group = this.mCurrentData.student!.group.includes('не распарсилось') ? 'ЭР-11-21' : this.mCurrentData.student!.group
     /*const g = new Date();
     g.substractDays(APP_CONFIG.DATE_RANGE);
     const dateStart = moment(g, 'DD.MM.YYYY');
@@ -830,93 +979,8 @@ export default class BARS{
         headers: {},
         credentials: 'include'
       }).then(r=>r.json()).then(r=>{
-        const groupBy = function(xs: any, key: any) {
-          return xs.reduce(function(rv: any, x: any) {
-            (rv[x[key]] = rv[x[key]] || []).push(x);
-            return rv;
-          }, {});
-        };
-        let result: BARSSchedule = {
-          days: [],
-          todayIndex: -1
-        }
-        let grouped = groupBy(r, 'date');
-        for(const [key, value] of Object.entries(grouped)){
-          const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
-          const day: BARSScheduleCell = {
-            date: date_,
-            lessons:[],
-            isEmpty: false,
-            isToday: date_ == moment(new Date()).format('DD.MM.YYYY')
-          }
-          // console.log(date_, moment(new Date()).format('DD.MM.YYYY'))
-          for(let lesson of (value as any)){
 
-            const c : BARSScheduleLesson = {
-              name: lesson.discipline,
-              lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
-              lessonType: lesson.kindOfWork,
-              place: lesson.building,
-              cabinet: lesson.auditorium,
-              teacher: {
-                name: lesson.listOfLecturers[0].lecturer.includes('!Вакансия') ? '-' : lesson.listOfLecturers[0].lecturer,
-                lec_oid: lesson.listOfLecturers[0].lecturerUID,
-                fullName: lesson.listOfLecturers[0].lecturer_title
-              },
-              group: lesson.subGroup,
-              type: 'COMMON'
-            }
-            day.lessons.push(c)
-          }
-          result.days.push(day)
-        }
-
-        for(let i = 1; i < result.days.length; i++){
-          const prev = moment(result.days[i-1].date, 'DD.MM.YY').toDate()
-          const curr = moment(result.days[i].date, 'DD.MM.YY').toDate()
-          const missedDaysCount = (curr.getTime() - prev.getTime()) / 8640000  / 10 - 1
-          for(let j = 0; j < missedDaysCount; j++){
-            const missedDate = new Date(moment(result.days[i + j - 1].date, 'DD.MM.YY').toDate())
-            missedDate.addDays(1)
-            const missedDay: BARSScheduleCell = {
-              date: missedDate.getDDMMYY(),
-              lessons: [],
-              isEmpty: true,
-              isToday: missedDate.getDDMMYY().replace(/\.\d{4}/g, '') == moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, '') //TODO do better
-            }
-            //result.todayIndex = i+j
-            // console.log(missedDate.getDDMMYY().replace(/\.\d{4}/g, '') +' : '+ moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, ''))
-            result.days.splice(i+j,0,missedDay)
-          }
-        }
-
-        for (let i = 0; i < result.days.length; i++) {
-          for (let j = 0; j < result.days[i].lessons.length - 1; j++) {
-            const a = result.days[i].lessons[j]
-            const b = result.days[i].lessons[j + 1]
-            if (a.name == b.name && a.lessonIndex == b.lessonIndex) {
-              console.log(a.teacher.fullName + '|' + b.teacher.fullName);
-
-              const c: BARSScheduleLesson = {
-                name: a.name,
-                lessonIndex: a.lessonIndex,
-                lessonType: a.lessonType,
-                place: a.place + '|' + b.place,
-                cabinet: a.cabinet + '|' + b.cabinet,
-                teacher: {
-                  name: a.teacher.name + '|' + b.teacher.name,
-                  lec_oid: a.teacher.lec_oid + '|' + b.teacher.lec_oid,
-                  fullName: a.teacher.fullName + '|' + b.teacher.fullName
-                },
-                group: a.group + '|' + b.group,
-                type: 'COMBINED'
-              }
-              result.days[i].lessons.splice(j, 2, c)
-            }
-          }
-        }
-
-        const scheduleWithDinner = DealWithMeal(result)
+        const scheduleWithDinner = DealWithMeal(ParseTsMPEISchedule(r))
 
         console.timeEnd('ScheduleParser')
         return Promise.resolve(scheduleWithDinner)

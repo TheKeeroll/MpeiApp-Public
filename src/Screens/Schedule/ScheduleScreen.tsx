@@ -464,7 +464,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                               <View style={{flexDirection: 'row'}}>
                                   <TextInput
                                     onChangeText={t=>settargetSchedule(t)}
-                                    placeholder={'Укажите группу/преподавателя'}
+                                    placeholder={'Укажите искомое'}
                                     textContentType={'name'}
                                     placeholderTextColor={withOpacity(colors.text, 40)}
                                     underlineColor={colors.text}
@@ -475,7 +475,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                   <Button title={'Найти'} onPress={()=>props.navigation.push('scheduleMain', targetSchedule)} style={{ width: '20%', height:'5%', aspectRatio: 1}}/>
                               </View>}
                             {!isShowRequestOtherSchedule &&
-                              <Text style={{color: colors.textUnderline, marginHorizontal: 5, marginVertical:5, fontSize: 16}}>{'Другая группа/преподаватель'}</Text>
+                              <Text style={{color: colors.textUnderline, marginHorizontal: 5, marginVertical:5, fontSize: 16}}>{'Другая группа/препод./ауд.'}</Text>
                             }
                         </TouchableOpacity>
 
