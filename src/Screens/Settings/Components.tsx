@@ -317,7 +317,7 @@ export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) 
 export const WhatsNewChange: React.FC<{title: string}> = (props) => {
     const {colors} = useTheme()
     return (
-        <View style={{ justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
+        <View style={{ justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', width: '98%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
             <View style={{height: 6, aspectRatio: 1, borderRadius: 50, backgroundColor: colors.text}}/>
             <Text numberOfLines={3} style={{color: withOpacity(colors.text, 80),fontSize: 16, marginLeft: 10}}>{props.title}</Text>
         </View>
