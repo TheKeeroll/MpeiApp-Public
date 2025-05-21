@@ -13,29 +13,36 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
       .querySelector('div')!
   let _FIO : string
   let _middleName: string
-  let _group: string
+  // let _group: string
   try {
      _FIO = firstPart.childNodes[1].querySelector('span')!.text.trim()
     if (_FIO.split(' ')[2].includes('№ЗК')){
       _middleName = ' '
-      _group = _FIO.split(' ')[5]
+      // _group = _FIO.split(' ')[5]
     } else {
       _middleName = _FIO.split(' ')[2]
-      _group = _FIO.split(' ')[6]
+      // _group = _FIO.split(' ')[6]
     }
-    if ((typeof _group == 'undefined') || (_group.includes('002'))){
+    /*if ((typeof _group == 'undefined') || (_group.includes('002'))){
       try {
         _group = _FIO.split(') ')[1]
       }catch (e) {
         console.warn("on _FIO, _group: " + e)
         _group = ' '
       }
-    }
+    }*/
   }catch (e) {
     console.warn("on _FIO: " + e);
     _FIO = 'ФИО (не распарсилось!)'
     _middleName = ' '
-    _group = ' '
+    // _group = ' '
+  }
+  let _group: string
+  try {
+    _group = firstPart.childNodes[1].querySelectorAll('span')[1].text.trim()
+  } catch (e: any) {
+    console.warn("on _group: " + e);
+    _group = 'Группа (не распарсилось!)'
   }
   let _course: string
   try {
@@ -118,7 +125,7 @@ export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{
       surname: _FIO.split(' ')[0],
       middleName: _middleName,
       mail: _mail,
-      indexBook: _FIO.split(' - ')[1].split(') ')[0],
+      indexBook: _FIO.split(' - ')[1].split(')')[0].trim(),
       group: _group,
       course: _course,
       qualification: _qualification,
