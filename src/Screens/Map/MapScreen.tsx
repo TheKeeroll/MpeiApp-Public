@@ -54,11 +54,11 @@ const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>
 }
 const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors, dark} = useTheme()
-    if(Platform.OS == 'android' && Platform.Version < 24) {
+    if(Platform.OS == 'android' && Platform.Version < 26) {
         return (<Fragment>
             <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
             <SafeAreaView style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background}}>
-                <Title style={{textAlign: 'center', color: colors.text}}>Для функционирования карты необходим Android 7.0 или новее!</Title>
+                <Title style={{textAlign: 'center', color: colors.text}}>Для функционирования карты необходим Android 8.0 или новее!</Title>
             </SafeAreaView>
         </Fragment>)
     }
