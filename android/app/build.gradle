@@ -4,6 +4,7 @@ plugins{
     id('com.android.library') apply(false)
     id('com.google.gms.google-services')
     id('com.facebook.react')
+    id 'org.jetbrains.kotlin.android'
     // id('com.google.firebase.crashlytics')
 
 }
@@ -61,6 +62,10 @@ react {
     /* Autolinking */
     autolinkLibrariesWithApp()
 }
+
+project.ext.react = [
+        enableHermes: hermesEnabled.toBoolean()
+]
 
 /**
 
@@ -151,7 +156,11 @@ android {
         pickFirst '**/libhermes-executor-debug.so'
         pickFirst '**/libhermes-inspector.so'
         pickFirst '**/libjsc.so'
+        pickFirst 'libreact_featureflagsjni.so'
         pickFirst '**/libreact_devsupportjni.so'
+    }
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
@@ -170,6 +179,7 @@ dependencies {
     implementation 'joda-time:joda-time:2.10.14'
 
     implementation 'org.jetbrains:annotations:26.0.2'
+    implementation 'androidx.core:core-ktx:1.16.0'
 
     if (hermesEnabled.toBoolean()) {
             implementation("com.facebook.react:hermes-android")
