@@ -1,12 +1,15 @@
 import React from "react";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import { View, Text } from "react-native";
+// @ts-ignore
 import * as FIcon from 'react-native-vector-icons/Feather'
+// @ts-ignore
 import * as MCIcon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MapScreen from './Map/MapScreen'
 import BARSDrawer from "./BARS/BARSDrawer";
 import ScheduleStack from "./Schedule/ScheduleStack";
 import {useTheme} from "react-native-paper";
+import {CustomTheme} from "../Themes/Themes";
 import SettingsStack from "./Settings/SettingsStack";
 import inDev from "./CommonComponents/InDev";
 import QRCodeScanner from "./QR-Scanner/QRCodeScanner";
@@ -15,7 +18,7 @@ const Stack = createBottomTabNavigator()
 
 
 const Navigator:React.FC = () => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
 
     return (
         <Stack.Navigator initialRouteName={'main'} screenOptions={{headerShown: false,
@@ -37,12 +40,11 @@ const Navigator:React.FC = () => {
               title: 'БАРС',
                 tabBarActiveTintColor: colors.textUnderline,
               tabBarIcon: ()=>(
-              <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-                <Text
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  style={{fontWeight: 'bold', fontSize: 250, color: colors.text}}>Б</Text>
-              </View>
+                  <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24 }}>
+                          Б
+                      </Text>
+                  </View>
               )
             }}/>
           <Stack.Screen

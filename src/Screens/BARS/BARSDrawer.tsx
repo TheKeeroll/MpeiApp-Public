@@ -1,5 +1,5 @@
 import { createDrawerNavigator, DrawerContentScrollView } from "@react-navigation/drawer";
-import React, { Fragment, useState } from "react";
+import React, {Fragment, JSX, useState} from "react";
 import BARSMainScreen, { convertDate } from "./Marks/BARSMainScreen";
 import RecordBookScreen from "./RecordBook/RecordBookScreen";
 import ReportsScreen from "./Reports/ReportsScreen";
@@ -9,11 +9,14 @@ import { DrawerActions, getFocusedRouteNameFromRoute, useNavigation } from "@rea
 import BARSAPI from "../../Common/Globals";
 import { CapitalizeFirstChar } from "../../Common/Globals";
 import { SCREEN_SIZE, URLS } from "../../Common/Constants";
+// @ts-ignore
 import * as EIcon from "react-native-vector-icons/Entypo";
+// @ts-ignore
 import * as ADIcon from "react-native-vector-icons/AntDesign";
+// @ts-ignore
 import * as FAIcon from "react-native-vector-icons/FontAwesome";
 import { useTheme } from "react-native-paper";
-import { AverageScoreToColor, withOpacity } from "../../Themes/Themes";
+import { AverageScoreToColor, withOpacity, CustomTheme } from "../../Themes/Themes";
 import Clipboard from "@react-native-clipboard/clipboard";
 import QuestionnairesScreen from "./Questionnaires/QuestionnairesScreen";
 import TasksScreen from "./Tasks/TasksScreen";
@@ -29,7 +32,7 @@ const Drawer = createDrawerNavigator()
 const SpacingBig = () => (<View style={{height: 25.5, width: '100%'}}/>)
 
 const DrawerHeader: React.FC = () => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const student = BARSAPI.CurrentData.student!
     let study_rating_text = 'NO_VALUE'
     let complex_rating_text = 'NO_VALUE'
@@ -173,8 +176,8 @@ const DrawerHeader: React.FC = () => {
 const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, onPress:()=>void, title: string, routeName: string, iconComponent: JSX.Element, counter: number, counterColor: string}> = (props) => {
     const isExit = props.routeName == 'exit'
     const isFocused = props.presserId == props.id || isExit && false
-    const {colors} = useTheme()
-    const navigation = useNavigation()
+    const {colors} = useTheme<CustomTheme>()
+    // const navigation = useNavigation()
     const onPress = () => {
         if(isExit){
             BARSAPI.ClearStorage()
@@ -182,11 +185,11 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
             if(isFocused){
                 props.navigation.closeDrawer()
             }
-            navigation.dispatch(DrawerActions.closeDrawer())
+            props.navigation.dispatch(DrawerActions.closeDrawer())
             requestAnimationFrame(()=> {
                 props.onPress()
                 //@ts-ignore
-                navigation.navigate(props.routeName)
+                props.navigation.navigate(props.routeName)
             })
         }
     }
@@ -207,7 +210,7 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
 
 const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     const [pressedId, setPressedId] = useState(0)
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     let mail_str = 'загрузка...'
     let mail_color = colors.warning
     let mail_button_flag = false
@@ -446,7 +449,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         onPress={setPressedId.bind(this, 1)}
                         routeName={'recordBook'} {...props}
                         title={'Зачётная книжка'}
-                        iconComponent={<ADIcon.default name={'book'} size={20} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
+                        iconComponent={<ADIcon.default name={'book'} size={25} adjustsFontSizeToFit color={withOpacity(colors.text, 80)}/>}
                         counter={0}
                         counterColor={colors.text}
                     />
@@ -531,10 +534,10 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
 }
 
 const BARSDrawer: React.FC = () => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <Drawer.Navigator
-        useLegacyImplementation={true}
+        // useLegacyImplementation={true}
             drawerContent={(props)=><DrawerContent {...props}/>}
             initialRouteName={'barsMainDrawer'}
             screenOptions={{headerTintColor: colors.text, headerShown: false, headerTitleStyle:{color: colors.text}}}

@@ -16,13 +16,14 @@ import DrawerHeader from "../../CommonComponents/DrawerHeader";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import {LessonIndexToTime} from "../../../API/Parsers/SkippedClassesParser";
-import {withOpacity} from "../../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../../Themes/Themes";
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import SkippedClassesNotFound from "../../CommonComponents/SkippedClassesNotFound";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import {useNavigation} from "@react-navigation/native";
 
 const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <Fragment>
             <View style={{ justifyContent: 'space-evenly', alignItems: 'center', flexDirection: 'row', marginTop: '5%', minWidth: '70%', height: 40, borderRadius: 10, backgroundColor: props.hours >= 40 ? colors.notification : colors.primary}}>
@@ -41,7 +42,7 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
     const [showLessonType, setShowLessonType] = useState(false)
     const [showCreatorTime, setShowCreatorTime] = useState(false)
     const [showEditorTime, setShowEditorTime] = useState(false)
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     let lessonTypeColor = colors.warning
     if (props.item.lessonType.includes('аб') || props.item.lessonType.includes('кзамен') || props.item.lessonType.includes('ащита')){
         lessonTypeColor = colors.error
@@ -90,7 +91,7 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
 }
 
 const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void, item: SkippedClass[], index: number}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const Collapsed = () => (
         <View style={{width: SCREEN_SIZE.width * .9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', borderRadius: 5, alignSelf: 'center', height: 50, backgroundColor: colors.surface}}>
             <View style={{height: '80%', flex: .75, marginVertical: 20, justifyContent: 'center', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
@@ -147,7 +148,8 @@ const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void,
     )
 }
 
-const SkippedClassesScreen: React.FC<{navigation: any, params: any}> = (props) => {
+const SkippedClassesScreen: React.FC = () => {
+    const navigation = useNavigation();
     const raw = useSelector((state: RootState)=> state.SkippedClasses)
     const [expanded, setExpanded] = useState(-1)
     const {colors} = useTheme()
@@ -216,7 +218,7 @@ const SkippedClassesScreen: React.FC<{navigation: any, params: any}> = (props) =
         <Fragment>
             <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
             <SafeAreaView style={[Styles.center, {flex: 1, backgroundColor: colors.background}]}>
-                <DrawerHeader {...props} title={'Пропуски'}/>
+                <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
             </SafeAreaView>
         </Fragment>

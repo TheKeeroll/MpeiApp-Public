@@ -8,13 +8,14 @@ import { SCREEN_SIZE, URLS } from "../../../Common/Constants";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
-import {withOpacity} from "../../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../../Themes/Themes";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import BARSAPI from "../../../Common/Globals";
+import {useNavigation} from "@react-navigation/native";
 
 const TaskCell = ({item}: {item: BARSTask, index: number}) => {
-  const {colors} = useTheme()
+  const {colors} = useTheme<CustomTheme>()
   let text_color = colors.warning
   if (item.status.includes('ознакомлен')){
     text_color = colors.accent
@@ -72,7 +73,8 @@ const TaskCell = ({item}: {item: BARSTask, index: number}) => {
   )
 }
 
-const TasksScreen: React.FC<{navigation: any, params: any}> = (props) => {
+const TasksScreen: React.FC = () => {
+  const navigation = useNavigation();
   const {colors} = useTheme()
   const tasks = useSelector((state: RootState)=>state.Tasks)
 
@@ -112,7 +114,7 @@ const TasksScreen: React.FC<{navigation: any, params: any}> = (props) => {
     <Fragment>
       <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
       <SafeAreaView style={[Styles.main,{backgroundColor: colors.background}]}>
-        <DrawerHeader {...props} title={'Задания'}/>
+        <DrawerHeader navigation={navigation} title={'Задания'}/>
         {renderSwitch()}
       </SafeAreaView>
     </Fragment>

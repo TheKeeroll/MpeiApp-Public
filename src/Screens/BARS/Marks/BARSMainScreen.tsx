@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { COMMON_HTTP_HEADER, SCREEN_SIZE, URLS } from "../../../Common/Constants";
 import { AdditionalData, BARSDiscipline, Mark, ScheduleForWidget } from "../../../API/DataTypes";
-import { AverageScoreToColor, MarkToColor, withOpacity } from "../../../Themes/Themes";
+import { AverageScoreToColor, MarkToColor, withOpacity, CustomTheme } from "../../../Themes/Themes";
 import { createStackNavigator } from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
 import BARSAPI from "../../../Common/Globals";
@@ -197,7 +197,8 @@ export function convertDate(d: string)
 const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: number}> =
     (props) => {
     const marks = useSelector((state: RootState)=>state.MarkTable)
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
     const GetMainMark = () => {
         const m = props.discipline.resultMarks[props.discipline.resultMarks.length - 1].mark
         //console.log(m == '-' ? props.discipline.sredBall : typeof m == 'undefined' ? '-' : m)
@@ -372,7 +373,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
 
 const Body: React.FC<{navigation: any}> = (props)=>{
     const marks = useSelector((state: RootState)=>state.MarkTable)
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const [refreshing, setRefreshing] = useState(false)
     if (!sessionStarted){
         weekDColor = colors.text

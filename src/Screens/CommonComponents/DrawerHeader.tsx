@@ -1,11 +1,14 @@
 import React from "react";
 import {Platform, Text, TouchableOpacity, View} from "react-native";
+// @ts-ignore
 import * as Icon from "react-native-vector-icons/FontAwesome";
 import {useTheme} from "react-native-paper";
+import {CustomTheme} from "../../Themes/Themes";
+// @ts-ignore
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
 
 const DrawerHeader: React.FC<{navigation: any, title: string}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <View style={{shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 4, width: 0}, width: '100%', height: Platform.OS == 'android' ? '10%' : '5%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backdrop}}>
             <TouchableOpacity onPress={props.navigation.openDrawer}
@@ -18,7 +21,7 @@ const DrawerHeader: React.FC<{navigation: any, title: string}> = (props) => {
 }
 
 export const NavigationHeader: React.FC<{navigation: any, title: string, beforeGoBack?: ()=>void, backable?: boolean, }> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const backable = typeof props.backable != 'undefined' && props.backable
     return (
         <View style={{shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 4, width: 0}, width: '100%', height: Platform.OS == 'android' ? '10%' : '5%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backdrop}}>

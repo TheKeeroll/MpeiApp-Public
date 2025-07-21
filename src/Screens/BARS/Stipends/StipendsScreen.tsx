@@ -8,14 +8,15 @@ import {SCREEN_SIZE} from "../../../Common/Constants";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
-import {withOpacity} from "../../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../../Themes/Themes";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import { convertDate } from "../Marks/BARSMainScreen";
+import {useNavigation} from "@react-navigation/native";
 
 const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onSelect:(index: number)=>void}> =
   (props)=>{
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
       <View style={{marginVertical: 10, height: SCREEN_SIZE.height * .05, width: SCREEN_SIZE.width}}>
         <FlatList
@@ -39,7 +40,7 @@ const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onS
   }
 
 const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: number}) => {
-  const {colors} = useTheme()
+  const {colors} = useTheme<CustomTheme>()
   let todayDate= convertDate(new Date().getDDMMYY())
 
   let stipend_endDate = convertDate(new Date().getDDMMYY())
@@ -130,7 +131,8 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
   }
 }
 
-const StipendsScreen: React.FC<{navigation: any, params: any}> = (props) => {
+const StipendsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const {colors} = useTheme()
   const stipends = useSelector((state: RootState)=>state.Stipends)
 
@@ -203,7 +205,7 @@ const StipendsScreen: React.FC<{navigation: any, params: any}> = (props) => {
     <Fragment>
       <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
       <SafeAreaView style={[Styles.main,{backgroundColor: colors.background}]}>
-        <DrawerHeader {...props} title={'Стипендии'}/>
+        <DrawerHeader navigation={navigation} title={'Стипендии'}/>
         {renderSwitch()}
       </SafeAreaView>
     </Fragment>

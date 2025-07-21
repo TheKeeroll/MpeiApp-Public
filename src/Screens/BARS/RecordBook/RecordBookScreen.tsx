@@ -11,12 +11,13 @@ import {SCREEN_SIZE} from "../../../Common/Constants";
 import {useTheme} from "react-native-paper";
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {BARSRecordBookDiscipline, BARSRecordBookSemester} from "../../../API/DataTypes";
-import {MarkToColor, withOpacity} from "../../../Themes/Themes";
+import {MarkToColor, withOpacity, CustomTheme} from "../../../Themes/Themes";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import {useNavigation} from "@react-navigation/native";
 
 const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
     switch (type){
@@ -28,7 +29,7 @@ const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
 
 const SemSelector: React.FC<{sems: BARSRecordBookSemester[], selectedIndex: number, onSelect:(index: number)=>void}> =
     (props)=>{
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <View style={{marginVertical: 10, height: SCREEN_SIZE.height * .05, width: SCREEN_SIZE.width}}>
             <FlatList
@@ -53,7 +54,8 @@ const SemSelector: React.FC<{sems: BARSRecordBookSemester[], selectedIndex: numb
 
 const SemCell: React.FC<{item: BARSRecordBookDiscipline, index: number}> =
     (props) =>{
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
     let typeColor : string
     let _type = DisciplineTypeToText(props.item.type)
     if (_type.includes('Зачёт без оценки')) typeColor = colors.accent
@@ -105,8 +107,8 @@ const SemCell: React.FC<{item: BARSRecordBookDiscipline, index: number}> =
     )
 }
 
-const RecordBookScreen: React.FC<{navigation: any, params: any}> = (props) => {
-
+const RecordBookScreen: React.FC = () => {
+    const navigation = useNavigation();
     const {colors} = useTheme()
     const recordBook = useSelector((state: RootState)=>state.RecordBook)
     const [semIndex, setSemIndex] =
@@ -153,7 +155,7 @@ const RecordBookScreen: React.FC<{navigation: any, params: any}> = (props) => {
         <Fragment>
             <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
             <SafeAreaView style={[Styles.main, {backgroundColor: colors.background}]}>
-                <DrawerHeader {...props} title={'Зачётная книжка'}/>
+                <DrawerHeader navigation={navigation} title={'Зачётная книжка'}/>
                 {renderSwitch()}
             </SafeAreaView>
         </Fragment>

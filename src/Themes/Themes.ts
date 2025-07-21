@@ -2,6 +2,27 @@ import { DefaultTheme } from 'react-native-paper';
 import {Font} from "react-native-paper/src/types";
 import BARSAPI from "../Common/Globals";
 
+import { MD3Theme } from 'react-native-paper';
+
+// Сначала делаем alias для существующего типа:
+type BaseColors = MD3Theme['colors'];
+
+export interface CustomThemeColors extends BaseColors {
+  text: string;
+  textUnderline: string;
+  accent: string;
+  disabled: string;
+  placeholder: string;
+  notification: string;
+  warning: string;
+  highlight: string;
+  marks: Record<string, string>;
+}
+
+export interface CustomTheme extends Omit<MD3Theme, 'colors'> {
+  colors: CustomThemeColors;
+}
+
 export const withOpacity = (hexColor: string, percent: number)=>{
   percent = percent / 100
   const _opacity = Math.round(Math.min(Math.max(percent || 1, 0), 1) * 255);
@@ -55,15 +76,15 @@ declare global {
   }
 }
 
-export const THEME_DARK = {
+export const THEME_DARK:CustomTheme = {
   ...DefaultTheme,
   dark: true,
   roundness: -1,
   colors: {
+    ...DefaultTheme.colors,
     primary: '#2B2B2B',
     background: '#212121',
     surface: '#464646',
-    // accent: '#2B2B2B',
     accent: '#00FF00',
     warning: '#f7ef02',
     error: '#FF0500',
@@ -73,7 +94,6 @@ export const THEME_DARK = {
     placeholder: 'red',
     backdrop: '#282828',
     notification: '#FF5666',
-    // highlight: '#747474',
     highlight: '#6600CC',
     textUnderline: '#BB86FC',
     marks:{
@@ -90,11 +110,12 @@ export const THEME_DARK = {
   }
 }
 
-export const THEME_LIGHT = {
+export const THEME_LIGHT:CustomTheme = {
   ...DefaultTheme,
   dark: false,
   roundness: -1,
   colors: {
+    ...DefaultTheme.colors,
     primary: '#F1F1F1',
     background: '#DCDCDC',
     surface: '#FFFFFF',

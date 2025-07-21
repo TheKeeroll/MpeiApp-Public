@@ -8,12 +8,13 @@ import {SCREEN_SIZE} from "../../../Common/Constants";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
-import {withOpacity} from "../../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../../Themes/Themes";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import {useNavigation} from "@react-navigation/native";
 
 const OrderCell = ({item}: {item: BARSOrder, index: number}) => {
-  const {colors} = useTheme()
+  const {colors} = useTheme<CustomTheme>()
   let text_color = colors.textUnderline
   return (
     <View style={[Styles.wrapper, {backgroundColor: colors.surface}]}>
@@ -48,7 +49,8 @@ const OrderCell = ({item}: {item: BARSOrder, index: number}) => {
   )
 }
 
-const OrdersScreen: React.FC<{navigation: any, params: any}> = (props) => {
+const OrdersScreen: React.FC = () => {
+  const navigation = useNavigation();
   const {colors} = useTheme()
   const orders = useSelector((state: RootState)=>state.Orders)
 
@@ -88,7 +90,7 @@ const OrdersScreen: React.FC<{navigation: any, params: any}> = (props) => {
     <Fragment>
       <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
       <SafeAreaView style={[Styles.main,{backgroundColor: colors.background}]}>
-        <DrawerHeader {...props} title={'Приказы'}/>
+        <DrawerHeader navigation={navigation} title={'Приказы'}/>
         {renderSwitch()}
       </SafeAreaView>
     </Fragment>
