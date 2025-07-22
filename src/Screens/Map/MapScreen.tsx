@@ -8,18 +8,24 @@ import {
     Text,
     TouchableOpacity,
     View,
-    PermissionsAndroid, SafeAreaView,
+    PermissionsAndroid,
 } from "react-native";
-import { Switch, Title, useTheme } from "react-native-paper";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Switch, useTheme } from "react-native-paper";
 import {SCREEN_SIZE} from "../../Common/Constants";
+// @ts-ignore
 import * as FIcon from "react-native-vector-icons/Feather";
+// @ts-ignore
 import * as FA5Icon from 'react-native-vector-icons/FontAwesome5'
+// @ts-ignore
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
+// @ts-ignore
 import * as IonIcon from 'react-native-vector-icons/Ionicons';
 import Geolocation from 'react-native-geolocation-service';
-import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {withOpacity} from "../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../Themes/Themes";
+// @ts-ignore
 import {ImageSource} from "react-native-vector-icons/Icon";
+
 YaMap.init('083a7d26-4df7-4646-8973-7e7382ba4f7b')
 
 //Ionic school | home | star | fast-food
@@ -53,14 +59,22 @@ const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>
     }
 }
 const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
+    const safeAreaInsets = useSafeAreaInsets();
     if(Platform.OS == 'android' && Platform.Version < 26) {
-        return (<Fragment>
-            <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
-            <SafeAreaView style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background}}>
-                <Title style={{textAlign: 'center', color: colors.text}}>Для функционирования карты необходим Android 8.0 или новее!</Title>
-            </SafeAreaView>
-        </Fragment>)
+        return (<SafeAreaView style={{
+            flex: 1,
+            backgroundColor: colors.background,
+            paddingTop: safeAreaInsets.top,
+            paddingBottom: safeAreaInsets.bottom,
+            paddingLeft: safeAreaInsets.left,
+            paddingRight: safeAreaInsets.right,
+            alignItems: 'center',
+            justifyContent: 'center',
+            }}>
+                <Text style={{textAlign: 'center', color: colors.text}}>Для функционирования карты необходим Android 8.0 или новее!</Text>
+            </SafeAreaView>)
     }
     FROM_LOGIN = typeof props.route.params !== 'undefined'
     const [locationAccess, setLocationAccess] = useState<boolean>(false)
@@ -78,7 +92,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
 
     const GetCategoryIcon: React.FC<{category: PlaceCategory}> = (props) => {
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         let name = ''
         switch (props.category){
             case "Общежития": name = 'home'; break;
@@ -180,7 +194,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
     const DetailPlaceModal: React.FC<{place: Place, show: boolean, onRoute:(place: Place)=> void, onDismiss:()=>void}> = (props) => {
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         return (props.show ?
             <View style={{height: '100%', width: '100%', flexDirection: 'column', justifyContent: 'center', position: 'absolute', top: 0, left: 0, backgroundColor: withOpacity(colors.background, 60)}}>
                 <TouchableOpacity onPress={props.onDismiss.bind(this)} style={{flexGrow: 1, width: '100%'}}/>
@@ -220,7 +234,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
     const RouteCell: React.FC<{index: number, routeInfo: MasstransitInfo, onPress:(index: number)=>void}> = (props) => {
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         return (
           <TouchableOpacity onPress={()=>{
               console.log('f')
@@ -265,7 +279,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
 
     const Search: React.FC<{onNavigate:(place: Place, special: boolean)=>void}> = (props)=>{
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         const [expanded, setExpanded] = useState(false)
         const [selectedCategory, setSelectedCategory] = useState<PlaceCategory | 'main'>('main')
 
@@ -320,7 +334,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
     const Category: React.FC<{category: PlaceCategory, onPress:(category: PlaceCategory)=>void}> = (props) => {
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         const isCategoryVisible = isShowCategory[props.category];
         return (
           <View style={{flexDirection: 'row', maxWidth:SCREEN_SIZE.width * .75}}>
@@ -346,7 +360,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
     const CategoryDetail: React.FC<{place: Place, onPress:(place: Place)=>void}> = (props) => {
-        const {colors} = useTheme()
+        const {colors} = useTheme<CustomTheme>()
         const {place} = props
         return (
           <TouchableOpacity onPress={props.onPress.bind(this, props.place)} style={[Styles.detailedCategory,{backgroundColor: colors.primary}]}>
@@ -503,7 +517,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 />
             }
             {
-                routes != [] &&
+                (routes?.length || 0) > 0 &&
                 <RouteSelector routes={routes} onRouteSelect={(route)=>{
                     setRoutes([])
                     setShowHowToGet(true)

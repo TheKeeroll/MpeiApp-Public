@@ -1,15 +1,17 @@
 import React, {Fragment} from "react";
 import {useTheme} from "react-native-paper";
-import {SafeAreaView, ScrollView} from "react-native";
+import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {WhatsNewChange, WhatsNewLogo} from "./Components";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {withOpacity, CustomTheme} from "../../Themes/Themes"
 
 const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+            <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+            <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Что нового ?'}/>
                 <ScrollView style={{width: '90%'}}>
                     <WhatsNewLogo title={'Сюрприз на ДР'} version={'1.4.1'}/>
@@ -184,7 +186,7 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <WhatsNewChange title={'Исправлено большое количество различных ошибок'}/>
 
                 </ScrollView>
-            </SafeAreaView>
+            </View>
         </Fragment>
     )
 }

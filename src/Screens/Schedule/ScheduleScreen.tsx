@@ -1,18 +1,19 @@
 import React, { Fragment, useMemo, useRef, useState } from "react";
 import { TextInput, useTheme } from "react-native-paper";
-import { Alert, FlatList, LayoutAnimation, SafeAreaView, Text, TouchableOpacity, View, Dimensions } from "react-native";
+import { Alert, FlatList, LayoutAnimation, Text, TouchableOpacity, View, Dimensions } from "react-native";
 import { NavigationHeader } from "../CommonComponents/DrawerHeader";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
 import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson, Teacher } from "../../API/DataTypes";
 import moment from "moment";
-import { withOpacity } from "../../Themes/Themes";
+import { withOpacity, CustomTheme } from "../../Themes/Themes";
 import { SCREEN_SIZE } from "../../Common/Constants";
 import LottieView from "lottie-react-native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import BARSAPI from "../../Common/Globals";
 import FetchFailed from "../CommonComponents/FetchFailed";
 import { isBARSError } from "../../API/Error/Error";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Holidays from "../CommonComponents/Holidays";
 import { Button } from "../Login/LoginScreen";
 
@@ -27,7 +28,7 @@ const DateCell: React.FC<{
     cellWidth: number
 }> = (props) =>{
     const isSelected = props.index == props.selectedIndex
-    // console.log( "initialDateString = " + props.item.date)
+    // console.log("initialDateString = " + props.item.date)
     let dateYear = props.item.date.split('.')[2]
     let date = new Date(parseInt(dateYear), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
     // console.log('current month = ' + props.item.date.split('.')[1])
@@ -35,7 +36,7 @@ const DateCell: React.FC<{
     // date.setFullYear(Number(YearForFix))
     // console.log('Final date = ' + date.getDate().toString() + '.' + (date.getMonth() + 1).toString() + '.' + date.getFullYear().toString())
     const {isEmpty, isToday} = props.item
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
 
     let dayNameOfTheWeek = '?'
     switch (date.getDay()) {
@@ -153,7 +154,7 @@ const DateSelector: React.FC<{
 };
 
 const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesson, index: number, requestMode?: boolean, isToday: boolean}> = (props) =>{
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     let {type, name, lessonIndex, place, cabinet, teacher, lessonType, group} = props.item
     const [showPlace, setShowPlace] = useState(false)
     const requestMode = typeof props.requestMode != 'undefined' || props.requestMode == true
@@ -267,7 +268,7 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
 
 
 const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     let schedule = useSelector((state: RootState)=>state.Schedule)
     const current_month = parseInt(moment().format("M"))
     const [isFirstTime, setisFirstTime] = useState(true)
@@ -276,6 +277,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
     const lastFlatListRef = useRef<FlatList | null>(null)
+    // @ts-ignore
     const wait = new Promise(resolve => setTimeout(resolve, 500))
 
     if(schedule.status == 'FAILED' && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
@@ -371,8 +373,8 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 // const flatListRef = useRef<FlatList | null>(null)
                 return (
                       <Fragment>
-                          <SafeAreaView style={{ flex: 0, backgroundColor: colors.backdrop }} />
-                          <SafeAreaView style={[{
+                          <SafeAreaView style={{ flex: 0, paddingTop: -100, backgroundColor: colors.backdrop }} />
+                          <View style={[{
                               alignItems: 'center',
                               justifyContent: 'center',
                               flex: 1,
@@ -404,7 +406,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                   }}*/
                                 />
                                 : <EmptyDay />}
-                          </SafeAreaView>
+                          </View>
                       </Fragment>
 
                     )
@@ -453,17 +455,19 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             }
             return (
                 <Fragment>
-                    <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-                    <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+                    <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+                    <View style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                         <NavigationHeader {...props} title={'Расписание'}/>
 
                         <TouchableOpacity
                           onPress={()=>setisShowRequestOtherSchedule(p=>!p)}
                           style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'flex-start', justifyContent: 'flex-start'}}>
                             {isShowRequestOtherSchedule &&
-                              <View style={{flexDirection: 'row'}}>
+                              <View style={{padding: 16, flexDirection: 'row'}}>
                                   <TextInput
                                     onChangeText={t=>settargetSchedule(t)}
+                                    value={targetSchedule}
+                                    textColor={colors.text}
                                     placeholder={'Укажите искомое'}
                                     textContentType={'name'}
                                     placeholderTextColor={withOpacity(colors.text, 40)}
@@ -501,7 +505,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 }}
                             />
                             : <EmptyDay/>}
-                    </SafeAreaView>
+                    </View>
                 </Fragment>
             )
         }

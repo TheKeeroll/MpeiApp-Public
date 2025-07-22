@@ -1,17 +1,19 @@
 import React from "react";
 import {Fragment} from "react";
 import {useTheme} from "react-native-paper";
-import {SafeAreaView, ScrollView} from "react-native";
+import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {ListAvatarItem, ListSeparator} from "./Components";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {withOpacity, CustomTheme} from "../../Themes/Themes"
 
 const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const unknown_avatar = require('../../../assets/images/Gratitudies/unknown.webp')
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+            <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+            <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Благодарности'}/>
                 <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>
 
@@ -67,7 +69,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Вы тоже можете предложить свою иконку!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
                     <ListSeparator title={''}/>
                 </ScrollView>
-            </SafeAreaView>
+            </View>
         </Fragment>
     )
 }

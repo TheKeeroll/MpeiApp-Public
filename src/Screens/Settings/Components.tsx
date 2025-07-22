@@ -1,4 +1,4 @@
-import React, {Fragment, useState} from "react";
+import React, {Fragment, JSX, useState} from "react";
 import {Avatar, Switch, useTheme} from "react-native-paper";
 import {
   Alert,
@@ -11,15 +11,17 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import {withOpacity} from "../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../Themes/Themes";
+// @ts-ignore
 import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
+// @ts-ignore
 import * as EtIcons from 'react-native-vector-icons/Entypo'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
 import BARSAPI, { openTelegram } from "../../Common/Globals";
 import Clipboard from "@react-native-clipboard/clipboard";
 
 export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value: boolean)=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
         <View style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: disabled ? withOpacity(colors.primary, 30) : colors.primary}}>
@@ -42,7 +44,7 @@ export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value
 
 
 export const ListButton: React.FC<{title: string,onPress:()=>void, disabled?: boolean, icon?:JSX.Element}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
         <TouchableOpacity disabled={disabled} onPress={props.onPress} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
@@ -60,7 +62,7 @@ export const ListButton: React.FC<{title: string,onPress:()=>void, disabled?: bo
 }
 
 export const ListText: React.FC<{title: string, onPress?:()=>void, textStyle?: TextStyle}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <TouchableOpacity disabled={typeof props.onPress == 'undefined'} onPress={props.onPress}>
             <Text style={[{fontSize: 12, textAlign: 'center', color: typeof props.onPress == 'undefined' ? withOpacity(colors.text, 60) : '#007AFF'},props.textStyle]}>{props.title}</Text>
@@ -69,16 +71,16 @@ export const ListText: React.FC<{title: string, onPress?:()=>void, textStyle?: T
 }
 
 export const ListSeparator: React.FC<{title: string}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
-        <View style={{ alignItems: 'flex-end', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5}}>
+        <View style={{ alignItems: 'flex-end', flexDirection: 'row', width: '100%', height: 48, maxHeight: 'auto', marginTop: 10, borderRadius: 5}}>
                 <Text style={{color: withOpacity(colors.text, 30), fontSize: 18}}>{props.title}</Text>
         </View>
     )
 }
 
 export const ListAvatarItem: React.FC<{title: string, link: string, textStyle?: TextStyle, image: AvatarImageSource}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <TouchableOpacity onPress={()=>{
             return Linking.openURL(props.link)
@@ -100,7 +102,7 @@ export const ListAvatarItem: React.FC<{title: string, link: string, textStyle?: 
 export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JSX.Element[], disabled?: boolean, style?: ViewStyle}> = (props)=>{
     const [expanded, setExpanded] = useState(false)
     const [icon, setIcon] = useState(BARSAPI.Icon)
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
 
     const Collapsed = () => (
@@ -214,7 +216,7 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
 export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items: JSX.Element[], disabled?: boolean, style?: ViewStyle}> = (props)=>{
   const [expanded, setExpanded] = useState(false)
   const [frame, setFrame] = useState(BARSAPI.QRFrame)
-  const {colors} = useTheme()
+  const {colors} = useTheme<CustomTheme>()
   const disabled = typeof props.disabled != 'undefined' && props.disabled
 
   const Collapsed = () => (
@@ -306,7 +308,7 @@ export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items
 }
 
 export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <View style={{ justifyContent: 'space-evenly', width: '100%', height: 60, marginTop: 10,borderRadius: 5}}>
             <Text style={{color: colors.textUnderline, fontSize: 20, fontWeight: 'bold'}}>{props.title}</Text>
@@ -315,7 +317,7 @@ export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) 
     )
 }
 export const WhatsNewChange: React.FC<{title: string}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <View style={{ justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', width: '98%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
             <View style={{height: 6, aspectRatio: 1, borderRadius: 50, backgroundColor: colors.text}}/>

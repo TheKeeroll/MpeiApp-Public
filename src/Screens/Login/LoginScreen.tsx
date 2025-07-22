@@ -1,18 +1,20 @@
 import {
     Alert,
     DeviceEventEmitter,
-    LayoutAnimation, SafeAreaView,
+    LayoutAnimation,
     Text,
     TouchableOpacity,
     View, ViewStyle,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, {Fragment, useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
 import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
+// @ts-ignore
 import * as Icon from 'react-native-vector-icons/Fontisto'
 import {TextInput, useTheme} from "react-native-paper";
-import {withOpacity} from "../../Themes/Themes";
+import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
 import {createStackNavigator} from "@react-navigation/stack";
 import MapScreen from "../Map/MapScreen";
@@ -21,7 +23,7 @@ import {openSupportChat} from "../Settings/Components";
 
 const Stack = createStackNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress:()=>void, style: ViewStyle}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     return (
         <TouchableOpacity onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center'}, props.style]}>
             {typeof props.icon != 'undefined' ?
@@ -33,21 +35,42 @@ export const Button: React.FC<{title?: string, icon?: string, iconSize?: number,
 }
 
 const Help: React.FC<{onBack: ()=>void}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     return (
-        <View style={{width: '90%', borderRadius: 5, marginTop: '20%', alignSelf: 'center', justifyContent: 'center'}}>
-            <Text style={{padding: '2%', color: withOpacity(colors.text, 80)}}>
-                Приложение для взаимодействия с сервисами НИУ "МЭИ".
+        <SafeAreaView style={{flex: 1, width: '90%', borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'center', overflow: 'scroll'}}>
+            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
+                Добро пожаловать!
+            </Text>
+            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
+                Для начала нужно ввести логин и пароль от "БАРС" - чтобы приложение могло скачивать из систем вуза всё необходимое.
+            </Text>
+            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.accent, 80)}}>
+                Логин и пароль будут надёжно сохранены на устройстве - чтобы вам не вводить их каждый раз.
                 {'\n\n'}
-                Для начала, перейдите на карту или введите ваш логин и пароль от системы "БАРС".
+                MpeiApp не передаёт данные аккаунта, как и любые другие личные сведения ни разработчику, ни кому-либо ещё!
+
+            </Text>
+            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
+                Вам ещё не выдали доступ в "БАРС"?
+                {'\n'}
+                Не беда - интерактивная 3D-карта вуза и окрестностей доступна и без входа в аккаунт, просто вернитесь назад и нажмите её кнопку!
+                {'\n\n'}
+                Столкнулись с проблемой в приложении, есть вопросы/предложения?
+                {'\n'}
+                Смело связывайтесь с разработчиком: нажмите "Поддержка", чтобы открыть ЛС ВК-Сообщества MpeiApp.
+                {'\n\n'}
+                Желаю приятного использования!
+                {'\n'}
+                Ну, и успехов в учёбе!
             </Text>
             <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
-        </View>
+        </SafeAreaView>
     )
 }
 
 const LoginScreen: React.FC = () => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const navigator = useNavigation();
     const [login, setLogin] = useState('')
     const [password, setPassword] = useState('')
@@ -64,12 +87,18 @@ const LoginScreen: React.FC = () => {
         if(isMounted)setShowingHelp(p=>!p)
     }
 
-
+    const insets = useSafeAreaInsets();
     return (
-      <Fragment>
-          <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
-          <SafeAreaView style={{flex: 1, backgroundColor: colors.background, alignItems: 'center'}}>
-              <View style={{width: '85%', maxWidth: 400, alignItems: 'center'}}>
+        <SafeAreaView style={{
+            flex: 1,
+            backgroundColor: colors.background,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+            alignItems: 'center',
+        }}>
+            <View style={{ width: '85%', maxWidth: 400, alignItems: 'center' }}>
                   <Text style={{
                       fontWeight: 'bold',
                       fontSize: 48,
@@ -99,6 +128,8 @@ const LoginScreen: React.FC = () => {
                 <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
                     <TextInput
                       onChangeText={t=>setLogin(t)}
+                      value={login}
+                      textColor={colors.text}
                       placeholder={'Логин'}
                       textContentType={'username'}
                       placeholderTextColor={withOpacity(colors.text, 40)}
@@ -109,6 +140,8 @@ const LoginScreen: React.FC = () => {
                     />
                     <TextInput
                       onChangeText={t=>setPassword(t)}
+                      value={password}
+                      textColor={colors.text}
                       placeholder={'Пароль'}
                       textContentType={'password'}
                       secureTextEntry
@@ -146,14 +179,12 @@ const LoginScreen: React.FC = () => {
                         <Button title={'Поддержка'} onPress={openSupportChat} style={{ width: '60%', aspectRatio: 4.8}}/>
                     </View>
                     <View style={{flexDirection: 'row'}}>
-                        <Text style={{color: withOpacity(colors.text, 30)}}>Версия: </Text>
-                        <Text style={{color: withOpacity(colors.text, 70)}}>{require('../../../package.json').version}</Text>
+                        <Text style={{fontWeight: 'bold', color: withOpacity(colors.text, 30)}}>Версия: </Text>
+                        <Text style={{fontWeight: 'bold', color: withOpacity(colors.text, 90)}}>{require('../../../package.json').version}</Text>
                     </View>
                 </View>
               }
-          </SafeAreaView>
-      </Fragment>
-
+        </SafeAreaView>
     )
 }
 

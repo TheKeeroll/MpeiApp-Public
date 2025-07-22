@@ -500,10 +500,10 @@ const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[Styles.mainView, {backgroundColor: colors.background}]}>
+            <View style={[Styles.mainView, {backgroundColor: colors.background}]}>
                 <DrawerHeader {...props} title={'Оценки'}/>
                 <Body {...props}/>
-            </SafeAreaView>
+            </View>
         </Fragment>
     )
 }

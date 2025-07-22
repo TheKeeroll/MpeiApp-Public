@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {  DeviceEventEmitter } from "react-native";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {NavigationContainer} from "@react-navigation/native";
 import BARSAPI from "./src/Common/Globals";
 import Navigator from "./src/Screens/Navigator";
@@ -38,15 +39,17 @@ const AppEntry: React.FC = () => {
         setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
     })
     return (
-        <NavigationContainer>
-            <ReduxProvider store={Store}>
-                <PaperProvider theme={theme}>
-                    <GestureHandlerRootView style={{flex:1}}>
-                        <App/>
-                    </GestureHandlerRootView>
-                </PaperProvider>
-            </ReduxProvider>
-        </NavigationContainer>
+        <SafeAreaProvider>
+            <NavigationContainer>
+                <ReduxProvider store={Store}>
+                    <PaperProvider theme={theme}>
+                        <GestureHandlerRootView style={{flex:1}}>
+                            <App/>
+                        </GestureHandlerRootView>
+                    </PaperProvider>
+                </ReduxProvider>
+            </NavigationContainer>
+        </SafeAreaProvider>
     );
 }
 

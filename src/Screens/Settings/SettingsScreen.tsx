@@ -1,17 +1,22 @@
 import React, {Fragment, useState} from "react";
 import {useTheme} from "react-native-paper";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     Alert,
     Linking,
-    SafeAreaView,
     ScrollView,
     View
 } from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader"
+// @ts-ignore
 import * as IonIcon from 'react-native-vector-icons/Ionicons'
+// @ts-ignore
 import * as EnIcon from 'react-native-vector-icons/Entypo'
+// @ts-ignore
 import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
+// @ts-ignore
 import * as McIcon from 'react-native-vector-icons/MaterialCommunityIcons'
+// @ts-ignore
 import * as FaIcon from 'react-native-vector-icons/FontAwesome'
 import {
     ListButton,
@@ -22,23 +27,23 @@ import {
     openSupportChat,
     QRFrameSelector,
 } from "./Components";
-import {withOpacity} from "../../Themes/Themes"
+import {withOpacity, CustomTheme} from "../../Themes/Themes"
 import BARSAPI from "../../Common/Globals"
 import {APP_CONFIG} from "../../Common/Config"
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
     const [isDark, setDark] = useState(dark)
 
     const onThemeChange = (value: boolean) => {
         setDark(p=>!p)
         BARSAPI.SetTheme(value ? 'dark' : 'light')
     }
-
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+            <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+            <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} title={'Настройки'}/>
                 <ScrollView style={{width: '90%'}}>
                     <ListSeparator title={'Оформление'}/>
@@ -104,10 +109,10 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <ListText title={''}/>
                         <ListText title={'MpeiApp'} textStyle={{color: colors.text, fontWeight: 'bold', fontSize: 18, opacity: .5}}/>
                         <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{color: colors.text, fontSize: 14, opacity: .5}}/>
-                        <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
+                        <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
                     </View>
                 </ScrollView>
-            </SafeAreaView>
+            </View>
         </Fragment>
     )
 }
