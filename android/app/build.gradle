@@ -174,6 +174,8 @@ dependencies {
     // implementation 'com.google.firebase:firebase-crashlytics'
     // implementation 'com.google.firebase:firebase-analytics'
 
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+
     implementation 'androidx.work:work-runtime:2.9.1'
 
     implementation 'joda-time:joda-time:2.10.14'

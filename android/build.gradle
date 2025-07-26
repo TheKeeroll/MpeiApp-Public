@@ -39,6 +39,11 @@ allprojects {
         maven { url "$rootDir/../node_modules/react-native-background-fetch/android/libs" }
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.android.gms:play-services-location:21.3.0'
+        }
+    }
 }
 
 apply plugin: "com.facebook.react.rootproject"

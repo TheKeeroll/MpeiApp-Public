@@ -8,7 +8,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    PermissionsAndroid,
+    PermissionsAndroid, Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Switch, useTheme } from "react-native-paper";
@@ -400,10 +400,18 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const GetRoutes = (place: Place) => {
         Geolocation.getCurrentPosition((pos)=>{
             map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event)=>{
-                setShowRoutes(event.nativeEvent.routes)
-                setRoutes(event.nativeEvent.routes)
-                setModalShown(null)
-                setTargetPlace(place)
+                // @ts-ignore
+                if (event.status == 'success' || event.nativeEvent?.status == 'success') {
+                    // @ts-ignore
+                    setShowRoutes(event.routes || event.nativeEvent?.routes)
+                    // @ts-ignore
+                    setRoutes(event.routes || event.nativeEvent?.routes)
+                    setTargetPlace(place)
+                    setModalShown(null)
+                } else {
+                    console.warn(JSON.stringify(event))
+                    Alert.alert('Нет маршрутов!','Не удалось построить ни одного маршрута от вашего местоположения к выбранной точке. Попробуйте позже, если проблема сохранится - сообщите разработчику!', [{text: 'ОК', onPress: ()=> setModalShown(null)}])
+                }
             })
         },(e)=>console.warn(e))
     }
