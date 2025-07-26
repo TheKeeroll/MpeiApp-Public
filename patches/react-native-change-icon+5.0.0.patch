@@ -1,0 +1,155 @@
+diff --git a/node_modules/react-native-change-icon/android/build.gradle b/node_modules/react-native-change-icon/android/build.gradle
+index a078aaa..5a279aa 100644
+--- a/node_modules/react-native-change-icon/android/build.gradle
++++ b/node_modules/react-native-change-icon/android/build.gradle
+@@ -1,3 +1,5 @@
++import com.android.Version
++
+ buildscript {
+   repositories {
+     google()
+@@ -5,7 +7,7 @@ buildscript {
+   }
+ 
+   dependencies {
+-    classpath "com.android.tools.build:gradle:7.2.1"
++    classpath "com.android.tools.build:gradle:8.11.1"
+   }
+ }
+ 
+@@ -31,7 +33,7 @@ def getExtOrIntegerDefault(name) {
+ }
+ 
+ def supportsNamespace() {
+-  def parsed = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
++  def parsed = Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
+   def major = parsed[0].toInteger()
+   def minor = parsed[1].toInteger()
+ 
+@@ -72,8 +74,8 @@ android {
+   }
+ 
+   compileOptions {
+-    sourceCompatibility JavaVersion.VERSION_1_8
+-    targetCompatibility JavaVersion.VERSION_1_8
++    sourceCompatibility JavaVersion.VERSION_17
++    targetCompatibility JavaVersion.VERSION_17
+   }
+ 
+ }
+diff --git a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java b/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
+index b303063..acdef2c 100644
+--- a/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
++++ b/node_modules/react-native-change-icon/android/src/main/java/com/reactnativechangeicon/ChangeIconModule.java
+@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
+ 
+ import android.app.Activity;
+ import android.app.Application;
++import android.content.Intent;
+ import android.content.pm.PackageManager;
+ import android.content.ComponentName;
+ import android.os.Bundle;
+@@ -25,9 +26,12 @@ public class ChangeIconModule extends ReactContextBaseJavaModule implements Appl
+     private Boolean iconChanged = false;
+     private String componentClass = "";
+ 
++    private ReactApplicationContext reactContext;
++
+     public ChangeIconModule(ReactApplicationContext reactContext, String packageName) {
+         super(reactContext);
+         this.packageName = packageName;
++        this.reactContext = reactContext;
+     }
+ 
+     @Override
+@@ -62,36 +66,37 @@ public class ChangeIconModule extends ReactContextBaseJavaModule implements Appl
+     @ReactMethod
+     public void changeIcon(String iconName, Promise promise) {
+         final Activity activity = getCurrentActivity();
+-        final String activityName = activity.getComponentName().getClassName();
+         if (activity == null) {
+             promise.reject("ANDROID:ACTIVITY_NOT_FOUND");
+             return;
+         }
+-        if (this.componentClass.isEmpty()) {
+-            this.componentClass = activityName.endsWith("MainActivity") ? activityName + "Default" : activityName;
+-        }
+ 
+-        final String newIconName = (iconName == null || iconName.isEmpty()) ? "Default" : iconName;
+-        final String activeClass = this.packageName + ".MainActivity" + newIconName;
++        // Define MainActivity as default icon class
++        final String mainActivityClass = this.packageName + ".MainActivity";
++
++        // handling bad icon names
++        final String activeClass = (iconName == null || iconName.isEmpty())
++                ? mainActivityClass
++                : this.packageName + ".MainActivity" + iconName;
++
++        // handling icon already in use
+         if (this.componentClass.equals(activeClass)) {
+-            promise.reject("ANDROID:ICON_ALREADY_USED:" + this.componentClass);
++            promise.reject("ANDROID:ICON_ALREADY_USED");
+             return;
+         }
++
+         try {
++            // activate new icon
+             activity.getPackageManager().setComponentEnabledSetting(
+                     new ComponentName(this.packageName, activeClass),
+                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                    PackageManager.DONT_KILL_APP);
+-            promise.resolve(newIconName);
++                    PackageManager.DONT_KILL_APP
++            );
++            promise.resolve(iconName);
+         } catch (Exception e) {
+             promise.reject("ANDROID:ICON_INVALID");
+             return;
+         }
+-        this.classesToKill.add(this.componentClass);
+-        this.componentClass = activeClass;
+-        activity.getApplication().registerActivityLifecycleCallbacks(this);
+-        iconChanged = true;
+-        activity.finish();
+     }
+ 
+     private void completeIconChange() {
+@@ -109,31 +114,31 @@ public class ChangeIconModule extends ReactContextBaseJavaModule implements Appl
+     }
+ 
+     @Override
+-    public void onActivityPaused(Activity activity) {
++    public void onActivityPaused(@NonNull Activity activity) {
+         completeIconChange();
+     }
+ 
+     @Override
+-    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
++    public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
+     }
+ 
+     @Override
+-    public void onActivityStarted(Activity activity) {
++    public void onActivityStarted(@NonNull Activity activity) {
+     }
+ 
+     @Override
+-    public void onActivityResumed(Activity activity) {
++    public void onActivityResumed(@NonNull Activity activity) {
+     }
+ 
+     @Override
+-    public void onActivityStopped(Activity activity) {
++    public void onActivityStopped(@NonNull Activity activity) {
+     }
+ 
+     @Override
+-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
++    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+     }
+ 
+     @Override
+-    public void onActivityDestroyed(Activity activity) {
++    public void onActivityDestroyed(@NonNull Activity activity) {
+     }
+ }

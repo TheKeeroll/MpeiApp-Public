@@ -45,11 +45,11 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustPan">
-            <intent-filter>
+            <!--<intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            </intent-filter>-->
         </activity>
 
         <activity-alias
@@ -132,7 +132,7 @@
         </activity-alias>
         <activity-alias
             android:name=".MainActivitycool"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/cool"
             android:roundIcon="@mipmap/cool_round"
