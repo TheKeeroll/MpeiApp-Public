@@ -1,25 +1,38 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {Alert, Image, Linking, StyleSheet, View,} from "react-native";
+import {useTheme} from "react-native-paper";
 import {
-  View,
-  Text,
-  Alert,
-  Linking,
-  Image,
-  StyleSheet,
-  Platform,
-} from "react-native";
-import { useTheme } from "react-native-paper";
-import {Camera, getCameraDevice, useCameraDevices, useCameraFormat, useCodeScanner} from "react-native-vision-camera";
+  Camera,
+  CameraDevice,
+  CameraDeviceFormat,
+  getCameraDevice,
+  useCameraDevices,
+  useCodeScanner
+} from "react-native-vision-camera";
 // import { useFrameProcessor } from "react-native-vision-camera";
-// import { scanBarcodes, BarcodeFormat } from "vision-camera-code-scanner";
-import { runOnJS } from "react-native-reanimated";
-import { useFocusEffect } from "@react-navigation/native";
+import {runOnJS} from "react-native-reanimated";
+import {useFocusEffect} from "@react-navigation/native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import { QR_PRESENCE_HEADER, URLS } from "../../Common/Constants";
+import {QR_PRESENCE_HEADER, URLS} from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 // @ts-ignore
-import { ImageSource } from "react-native-vector-icons/Icon";
+import {ImageSource} from "react-native-vector-icons/Icon";
 import {parse} from "node-html-parser";
+
+function getBrightestFormat(device: CameraDevice | undefined): CameraDeviceFormat | undefined {
+  if (!device?.formats?.length) return undefined;
+  return device.formats
+      .filter((f) => f.photoHeight && f.videoHeight && f.minISO != null && f.maxISO != null)
+      .sort((a, b) => {
+        // Чем длиннее выдержка (minShutter), тем светлее
+        const isoScore = (a.minISO || 0) - (b.minISO || 0); // ниже ISO — лучше
+        const resolutionScore = (b.videoWidth * b.videoHeight) - (a.videoWidth * a.videoHeight);
+
+        return (
+           resolutionScore * 0.0001 + isoScore * 0.5
+        );
+      })[0];
+}
 
 const QRCodeScanner: React.FC = () => {
   const [hasPermission, setHasPermission] = useState(false);
@@ -28,12 +41,15 @@ const QRCodeScanner: React.FC = () => {
   const [isHandlingBARS_QR, setHandlingBARS_QR] = useState(false);
   const { colors } = useTheme();
   const devices = useCameraDevices();
-  const device = getCameraDevice(devices, 'back')
-  const format = useCameraFormat(device, [
-    { fps: 60 }
-  ])
-  const minFps = Math.max(format?.minFps || 5, 5)
-  const maxFps = Math.min(format?.maxFps || 60, 60)
+  const device = getCameraDevice(devices, 'back', {
+    physicalDevices: [
+      'ultra-wide-angle-camera',
+      'wide-angle-camera',
+      'telephoto-camera'
+    ]})
+  const format = useMemo(() => getBrightestFormat(device), [device]);
+  /*const minFps = Math.max(format?.minFps || 30, 30)
+  const maxFps = Math.min(format?.maxFps || 30, 240)*/
 
   let handling_barcode = '';
   let isAlert = false;
@@ -202,7 +218,9 @@ const QRCodeScanner: React.FC = () => {
             // frameProcessor={frameProcessor}
             codeScanner={codeScanner}
             format={format}
-            fps={[minFps, maxFps]}
+            // fps={[minFps, maxFps]}
+            enableZoomGesture={true}
+            lowLightBoost={device.supportsLowLightBoost}
             onInitialized={() => {
               setIsLoading(false);
             }}
