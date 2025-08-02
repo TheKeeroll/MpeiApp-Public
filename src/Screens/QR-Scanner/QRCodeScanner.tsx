@@ -1,45 +1,61 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Image } from "react-native";
-import { Barcode, RNCamera } from "react-native-camera";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  Alert,
+  Linking,
+  Image,
+  StyleSheet,
+  Platform,
+} from "react-native";
 import { useTheme } from "react-native-paper";
+import {Camera, getCameraDevice, useCameraDevices, useCameraFormat, useCodeScanner} from "react-native-vision-camera";
+// import { useFrameProcessor } from "react-native-vision-camera";
+// import { scanBarcodes, BarcodeFormat } from "vision-camera-code-scanner";
+import { runOnJS } from "react-native-reanimated";
+import { useFocusEffect } from "@react-navigation/native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { QR_PRESENCE_HEADER, URLS } from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
-import { parse } from "node-html-parser";
+// @ts-ignore
 import { ImageSource } from "react-native-vector-icons/Icon";
-import { useFocusEffect } from "@react-navigation/native";
-
-
+import {parse} from "node-html-parser";
 
 const QRCodeScanner: React.FC = () => {
-
+  const [hasPermission, setHasPermission] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [cameraKey, setCameraKey] = useState(0);
+  const [isHandlingBARS_QR, setHandlingBARS_QR] = useState(false);
   const { colors } = useTheme();
+  const devices = useCameraDevices();
+  const device = getCameraDevice(devices, 'back')
+  const format = useCameraFormat(device, [
+    { fps: 60 }
+  ])
+  const minFps = Math.max(format?.minFps || 5, 5)
+  const maxFps = Math.min(format?.maxFps || 60, 60)
 
-  const takePicture = async (camera: RNCamera) => {
-    if (!camera) return;
-    console.log('takePicture pressed');
-  };
+  let handling_barcode = '';
+  let isAlert = false;
 
   const GetSelectedQRFrame: ImageSource = () => {
-      const FRAMES = {
-        "qr-frame": require('../../../assets/images/QRScan/qr-frame.webp'),
-        "empty": require('../../../assets/images/QRScan/empty.webp'),
-        "qr-frame-black": require('../../../assets/images/QRScan/qr-frame-black.webp'),
-        "qr-frame-green": require('../../../assets/images/QRScan/qr-frame-green.webp'),
-        "qr-frame-red": require('../../../assets/images/QRScan/qr-frame-red.webp'),
-      }
-    return (FRAMES as any)[BARSAPI.QRFrame]
-  }
+    const FRAMES = {
+      "qr-frame": require("../../../assets/images/QRScan/qr-frame.webp"),
+      "empty": require("../../../assets/images/QRScan/empty.webp"),
+      "qr-frame-black": require("../../../assets/images/QRScan/qr-frame-black.webp"),
+      "qr-frame-green": require("../../../assets/images/QRScan/qr-frame-green.webp"),
+      "qr-frame-red": require("../../../assets/images/QRScan/qr-frame-red.webp"),
+    };
+    return (FRAMES as any)[BARSAPI.QRFrame];
+  };
 
-  const HandlePresenceQRResponse = (response_text: string)  => {
+  const HandlePresenceQRResponse = (response_text: string) => {
     const $ = parse(response_text)
     const main_info = $.querySelector('body > div.row.mt-2 > div:nth-child(1) > span > span.fw-bold')?.text.trim()
     const status = $.querySelector('body > div.row.mt-2 > div:nth-child(2) > span')?.text.trim()
     console.log('main_info: ' + main_info + ' status: ' + status);
     let headline = 'Успешная регистрация присутствия!'
-    let mes = 'QR ID - ' + main_info + '\n' + status ?? ''
+    let mes = 'QR ID - ' + (main_info || '') + '\n' + (status || '')
     if (status?.includes('не действительна')) {
       headline = 'Не удалось зарегистрировать присутствие'
       mes = status
@@ -51,12 +67,13 @@ const QRCodeScanner: React.FC = () => {
       text: 'ОК',
       onPress: () => {
         console.log('QR BARSPresence - alert closed')
+        setHandlingBARS_QR(false);
         isAlert = false
       }
     }])
-  }
+  };
 
-  const HandleBARSPresenceQR = async (qr_link: string)  => {
+  const HandleBARSPresenceQR = async (qr_link: string) => {
     console.log('BARS presence confirm QR detected - handling...')
     const qrID = qr_link.split('=')[1].split('&')[0]
     const s = qr_link.split('=')[2]
@@ -88,115 +105,139 @@ const QRCodeScanner: React.FC = () => {
       }
     })
   };
+
+  const handleBarcode = useCallback((data: string) => {
+    console.log("Barcode data: ", data);
+    if (
+        data.includes("bars_web/QR/Presence") &&
+        data !== handling_barcode && !isHandlingBARS_QR &&
+        !isAlert
+    ) {
+      handling_barcode = data;
+      setHandlingBARS_QR(true);
+      HandleBARSPresenceQR(data);
+    } else if (
+        (data.toLowerCase().includes("http") ||
+            data.toLowerCase().includes("www")) &&
+        data !== handling_barcode && !isHandlingBARS_QR &&
+        !isAlert
+    ) {
+      handling_barcode = data;
+      isAlert = true;
+      Alert.alert("Результат сканирования", data, [
+        {
+          text: "Закрыть",
+          onPress: () => {
+            isAlert = false;
+          },
+        },
+        {
+          text: "Перейти по ссылке",
+          onPress: () => {
+            Linking.openURL(data).finally(() => (isAlert = false));
+          },
+        },
+      ]);
+    } else if (!isAlert && data !== handling_barcode && !isHandlingBARS_QR) {
+      handling_barcode = data;
+      isAlert = true;
+      Alert.alert("Результат сканирования", data, [
+        {
+          text: "ОК",
+          onPress: () => {
+            isAlert = false;
+          },
+        },
+      ]);
+    }
+  }, []);
+
+  /*const frameProcessor = useFrameProcessor((frame) => {
+    "worklet";
+    const barcodes = scanBarcodes(frame, [BarcodeFormat.QR_CODE]);
+    if (barcodes.length > 0) {
+      const raw = barcodes[0]?.rawValue ?? "";
+      runOnJS(handleBarcode)(raw);
+    }
+  }, [handleBarcode]);*/
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr', 'ean-13'],
+    onCodeScanned: (codes) => {
+      if (codes.length > 0) {
+        const raw = codes[0]?.value ?? "";
+        runOnJS(handleBarcode)(raw);
+      }
+    }
+  })
+
+  useEffect(() => {
+    (async () => {
+      const permission = await Camera.requestCameraPermission();
+      const granted = permission === "granted";
+      setHasPermission(granted);
+      setIsLoading(!granted);
+    })();
+  }, []);
+
   useFocusEffect(
-    useCallback(() => {
-      console.log('QRCodeScanner is focused, resetting camera...');
-      setCameraKey(prevKey => prevKey + 1); // Меняем ключ, чтобы камера пересоздалась
-      return () => {
-        console.log('QRCodeScanner is unfocused, cleaning up...');
-        setIsLoading(true)
-      };
-    }, [])
+      useCallback(() => {
+        setCameraKey((prevKey) => prevKey + 1);
+        return () => {
+          setIsLoading(true);
+        };
+      }, [])
   );
-  let handling_barcode = '';
-  let isAlert = false;
+
+  if (!device || !hasPermission) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <RNCamera
-        key={cameraKey}  // Этот ключ заставляет пересоздать компонент камеры
-        style={[styles.preview, { backgroundColor: colors.surface }]}
-        type={RNCamera.Constants.Type.back}
-        flashMode={RNCamera.Constants.FlashMode.auto}
-        onCameraReady={() => {
-          setIsLoading(false)
-        }}
-        captureAudio={false}
-        onStatusChange={(changeEvent) => {
-          console.log('status changed to ' + changeEvent.cameraStatus)
-          setIsLoading(!isLoading)}}
-        onGoogleVisionBarcodesDetected={({ barcodes }) => {
-          barcodes.forEach(barcode => {
-            console.log('Barcode data: ' + barcode.data);
-            if (barcode.data.includes('bars_web/QR/Presence') && barcode.data != handling_barcode) {
-              handling_barcode = barcode.data;
-              HandleBARSPresenceQR(barcode.data);
-            } else {
-              if ((barcode.data.toLowerCase().includes('http') || barcode.data.toLowerCase().includes('www')) && barcode.data != handling_barcode && !isAlert) {
-                isAlert = true;
-                Alert.alert('Результат сканирования', barcode.data, [{
-                  text: 'Закрыть',
-                  onPress: () => {
-                    console.log('QR with link - alert closed')
-                    isAlert = false}
-                }, { text: 'Перейти по ссылке', onPress: () => {Linking.openURL(barcode.data).then(r => isAlert = false)} }]);
-              } else if (!isAlert && barcode.data != handling_barcode) {
-                isAlert = true;
-                Alert.alert('Результат сканирования', barcode.data, [{
-                  text: 'ОК',
-                  onPress: () => {
-                    console.log('QR - alert closed')
-                    isAlert = false}}])
-              }
-            }
-          });
-        }}
-      >
-        {({ camera, status }) => {
-          if (camera) {
-            camera.refreshAuthorizationStatus()
-          }
-          if (isLoading) {
-            console.log('Camera isLoading: ' + isLoading + ' status: ' + status);
-            if (status == 'READY') setIsLoading(false)
-            return <LoadingScreen />;
-          }
-          return (
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        <Camera
+            key={cameraKey}
+            style={styles.preview}
+            device={device}
+            isActive={true}
+            // frameProcessor={frameProcessor}
+            codeScanner={codeScanner}
+            format={format}
+            fps={[minFps, maxFps]}
+            onInitialized={() => {
+              setIsLoading(false);
+            }}
+        />
+        {isLoading ? (
+            <LoadingScreen />
+        ) : (
             <View style={styles.overlayContainer}>
               <Image source={GetSelectedQRFrame()} style={styles.scanOverlay} />
-              <TouchableOpacity onPress={() => takePicture(camera)} style={styles.capture}>
-                <Text style={{ fontSize: 14 }}> </Text>
-              </TouchableOpacity>
             </View>
-          );
-        }}
-      </RNCamera>
-    </View>
+        )}
+      </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   preview: {
     flex: 1,
-    width: '100%',  // Добавляем ширину на всю страницу
-    height: '100%', // Делаем камеру во весь экран
-    justifyContent: 'flex-end',
-    alignItems: 'center',
   },
   overlayContainer: {
-    backgroundColor: 'transparent',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scanOverlay: {
-    width: 250,
-    height: 250,
-    position: 'absolute',
-    resizeMode: 'contain',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: 'transparent',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
+    width: 300,
+    height: 300,
+    resizeMode: "contain",
   },
 });
 

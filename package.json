@@ -30,8 +30,6 @@
     "path": "^0.12.7",
     "react": "19.1.0",
     "react-native": "0.80.1",
-    "react-native-camera": "^4.2.1",
-    "react-native-camera-tflite": "^0.0.3",
     "react-native-change-icon": "^5.0.0",
     "react-native-cheerio": "^1.0.0-rc.4",
     "react-native-console-time-polyfill": "^1.2.3",
@@ -49,7 +47,9 @@
     "react-native-screens": "^4.11.1",
     "react-native-shared-group-preferences": "^1.1.24",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-vision-camera": "^4.7.1",
     "react-native-webview": "^13.15.0",
+    "react-native-worklets-core": "^1.6.0",
     "react-native-yamap": "^4.8.3",
     "react-redux": "^9.2.0"
   },
