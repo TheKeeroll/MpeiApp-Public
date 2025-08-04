@@ -81,3 +81,5 @@ android/app/src/main/assets/index.android.bundle
 android/app/google-services.json
 android/app/noob_dragons_keystore.jks
 android/gradle.properties
+ios/MpeiApp/YandexMapsInitializer.swift
+src/config/Secrets.ts

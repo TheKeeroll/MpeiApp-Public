@@ -26,7 +26,9 @@ import {withOpacity, CustomTheme} from "../../Themes/Themes";
 // @ts-ignore
 import {ImageSource} from "react-native-vector-icons/Icon";
 
-YaMap.init('083a7d26-4df7-4646-8973-7e7382ba4f7b')
+import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
+
+YaMap.init(YANDEX_MAPS_API_KEY)
 
 //Ionic school | home | star | fast-food
 type PlaceCategory = 'Корпуса'|'Общежития'|'Точки интереса'| 'Еда' | 'Кафедры'
