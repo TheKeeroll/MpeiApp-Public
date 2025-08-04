@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-yamap/android/build.gradle b/node_modules/react-native-yamap/android/build.gradle
-index d9de295..bd17744 100644
+index d9de295..f6d365b 100644
 --- a/node_modules/react-native-yamap/android/build.gradle
 +++ b/node_modules/react-native-yamap/android/build.gradle
 @@ -1,7 +1,7 @@
@@ -30,10 +30,12 @@ index d9de295..bd17744 100644
  dependencies {
 -    implementation 'com.google.android.gms:play-services-location:+'
 -    implementation 'com.facebook.react:react-native:+'
+-    implementation 'com.yandex.android:maps.mobile:4.8.0-full'
+-    implementation 'androidx.core:core-ktx:1.13.1'
 +    implementation 'com.google.android.gms:play-services-location:21.3.0'
 +    implementation 'com.facebook.react:react-native:0.20.1'
-     implementation 'com.yandex.android:maps.mobile:4.8.0-full'
-     implementation 'androidx.core:core-ktx:1.13.1'
++    implementation 'com.yandex.android:maps.mobile:4.19.0-full'
++    implementation 'androidx.core:core-ktx:1.16.0'
  }
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt
 index 54d8a0f..b37dc38 100644
@@ -142,9 +144,18 @@ index c01f591..c492365 100644
          placemarksMap.clear()
          val pt = ArrayList<Point>()
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
-index 48c1cdf..a67cb93 100644
+index 48c1cdf..a917265 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
 +++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
+@@ -84,7 +84,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+     private var userLocationIconScale = 1f
+     private var userLocationBitmap: Bitmap? = null
+     private val routeMng = RouteManager()
+-    private var routeOptions: RouteOptions = RouteOptions(FitnessOptions(false))
++    private var routeOptions: RouteOptions = RouteOptions(FitnessOptions(false, false))
+     private val masstransitRouter = TransportFactory.getInstance().createMasstransitRouter()
+     private val drivingRouter: DrivingRouter
+     private val pedestrianRouter = TransportFactory.getInstance().createPedestrianRouter()
 @@ -226,8 +226,8 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
  
          for (i in 0 until worldPoints.size()) {
@@ -168,7 +179,40 @@ index 48c1cdf..a67cb93 100644
              worldPoints.pushMap(worldPointToJSON(worldPoint))
          }
  
-@@ -685,7 +686,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+@@ -295,7 +296,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+             val _points = ArrayList<RequestPoint>()
+             for (i in points.indices) {
+                 val point = points[i]
+-                val _p = RequestPoint(point!!, RequestPointType.WAYPOINT, null, null)
++                val _p = RequestPoint(point!!, RequestPointType.WAYPOINT, null, null, null)
+                 _points.add(_p)
+             }
+ 
+@@ -310,7 +311,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+         val _points = ArrayList<RequestPoint>()
+         for (i in points.indices) {
+             val point = points[i]
+-            _points.add(RequestPoint(point!!, RequestPointType.WAYPOINT, null, null))
++            _points.add(RequestPoint(point!!, RequestPointType.WAYPOINT, null, null, null))
+         }
+         val listener: Session.RouteListener = object : Session.RouteListener {
+             override fun onMasstransitRoutes(routes: List<Route>) {
+@@ -590,10 +591,12 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+         if (show) {
+             userLocationLayer!!.setObjectListener(this)
+             userLocationLayer!!.isVisible = true
+-            userLocationLayer!!.isHeadingEnabled = true
++            userLocationLayer!!.isHeadingModeActive = true
++            // userLocationLayer!!.isHeadingEnabled = true
+         } else {
+             userLocationLayer!!.isVisible = false
+-            userLocationLayer!!.isHeadingEnabled = false
++            userLocationLayer!!.isHeadingModeActive = false
++            // userLocationLayer!!.isHeadingEnabled = false
+             userLocationLayer!!.setObjectListener(null)
+         }
+     }
+@@ -685,7 +688,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
          val wTransports = Arguments.createMap()
  
          for ((key, value) in transports) {
