@@ -110,8 +110,11 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+	    <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+        <true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>localhost</key>
@@ -121,9 +124,47 @@
 			</dict>
 			<key>ts.mpei.ru</key>
 			<dict>
+			    <key>NSIncludesSubdomains</key>
+                <true/>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
+			<key>legacy.mpei.ru</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
+            <key>mail.mpei.ru</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
+            <key>bars.mpei.ru</key>
+            <dict>
+                 <key>NSIncludesSubdomains</key>
+                 <true/>
+                 <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                 <true/>
+                 <key>NSExceptionMinimumTLSVersion</key>
+                 <string>TLSv1.2</string>
+            </dict>
+            <key>mpei.ru</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
 		</dict>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -144,6 +185,8 @@
 		<key>NSPrivacyAccessedAPICategoryUserDefaults</key>
 		<string>1C8F.1</string>
 	</dict>
+	<key>NSPrivacyTracking</key>
+    <false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>
@@ -172,7 +215,7 @@
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
