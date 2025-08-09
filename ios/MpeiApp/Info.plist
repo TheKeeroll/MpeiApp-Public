@@ -12,11 +12,11 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>crysign</key>
+			<key>cool</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>crysign</string>
+					<string>cool</string>
 				</array>
 				<key>UIPrerenderedIcon</key>
 				<string>NO</string>
@@ -30,11 +30,11 @@
 				<key>UIPrerenderedIcon</key>
 				<string>NO</string>
 			</dict>
-			<key>cool</key>
+			<key>crysign</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>cool</string>
+					<string>crysign</string>
 				</array>
 				<key>UIPrerenderedIcon</key>
 				<string>NO</string>
@@ -110,69 +110,68 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	    <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
-        <true/>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>bars.mpei.ru</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>legacy.mpei.ru</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 			<key>localhost</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
-			<key>ts.mpei.ru</key>
+			<key>mail.mpei.ru</key>
 			<dict>
-			    <key>NSIncludesSubdomains</key>
-                <true/>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
 			</dict>
-			<key>legacy.mpei.ru</key>
-            <dict>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSExceptionMinimumTLSVersion</key>
-                <string>TLSv1.2</string>
-            </dict>
-            <key>mail.mpei.ru</key>
-            <dict>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSExceptionMinimumTLSVersion</key>
-                <string>TLSv1.2</string>
-            </dict>
-            <key>bars.mpei.ru</key>
-            <dict>
-                 <key>NSIncludesSubdomains</key>
-                 <true/>
-                 <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                 <true/>
-                 <key>NSExceptionMinimumTLSVersion</key>
-                 <string>TLSv1.2</string>
-            </dict>
-            <key>mpei.ru</key>
-            <dict>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSExceptionMinimumTLSVersion</key>
-                <string>TLSv1.2</string>
-            </dict>
+			<key>mpei.ru</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>ts.mpei.ru</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Камера используется для работы сканера QR-кодов.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Геолокация используется для проложения маршрутов к выбранному вами маркеру на карте (например, чтобы добраться до заведения общепита).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Геолокация используется для проложения маршрутов к выбранному вами маркеру на карте (например, чтобы добраться до заведения общепита).</string>
-    <key>NSCameraUsageDescription</key>
-    <string>Камера используется для работы сканера QR-кодов.</string>    
 	<key>NSPrivacyAccessedAPITypes
 </key>
 	<dict>
@@ -186,7 +185,9 @@
 		<string>1C8F.1</string>
 	</dict>
 	<key>NSPrivacyTracking</key>
-    <false/>
+	<false/>
+	<key>RCTNewArchEnabled</key>
+	<true/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>

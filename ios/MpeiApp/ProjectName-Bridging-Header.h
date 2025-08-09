@@ -1,1 +1,0 @@
-#import <YandexMapsMobile/YMKMapKitFactory.h>
