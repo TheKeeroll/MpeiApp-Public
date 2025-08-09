@@ -153,3 +153,19 @@ index b303063..acdef2c 100644
 +    public void onActivityDestroyed(@NonNull Activity activity) {
      }
  }
+diff --git a/node_modules/react-native-change-icon/ios/ChangeIcon.h b/node_modules/react-native-change-icon/ios/ChangeIcon.h
+index 3624fe4..3547915 100644
+--- a/node_modules/react-native-change-icon/ios/ChangeIcon.h
++++ b/node_modules/react-native-change-icon/ios/ChangeIcon.h
+@@ -1,11 +1,6 @@
+ #import <UIKit/UIKit.h>
+ 
+-#ifdef RCT_NEW_ARCH_ENABLED
+-#import "RNChangeIconSpec.h"
+-@interface ChangeIcon : NSObject <NativeChangeIconSpec, UIApplicationDelegate>
+-#else
+ #import <React/RCTBridgeModule.h>
+ @interface ChangeIcon : NSObject <RCTBridgeModule, UIApplicationDelegate>
+-#endif
+ 
+ @end
