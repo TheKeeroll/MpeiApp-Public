@@ -27,6 +27,7 @@ import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
+import SafeYaMap from "./SafeYaMap";
 
 YaMap.init(YANDEX_MAPS_API_KEY)
 
@@ -424,7 +425,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     },[])
     return (
         <Fragment>
-        <YaMap
+        <SafeYaMap
             ref={map}
             nightMode={dark}
 
@@ -462,7 +463,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     />
                 )).reduce((a,v)=>a.concat(v),[])
             }
-        </YaMap>
+        </SafeYaMap>
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
                     <TouchableOpacity onPress={()=>{setTargetPlace(null);setRoutes([]);setShowRoutes(null);setShowHowToGet(false)}}
