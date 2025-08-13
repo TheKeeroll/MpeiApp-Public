@@ -6,6 +6,7 @@ import { CustomTheme } from '../../Themes/Themes';
 
 interface SafeYaMapProps {
     nightMode?: boolean;
+    onMapLoaded?: (event: any) => void;
     children?: React.ReactNode;
     style?: object;
     [key: string]: any;

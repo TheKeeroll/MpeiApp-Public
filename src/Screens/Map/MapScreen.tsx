@@ -420,15 +420,19 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    useEffect(()=>{
-        map.current!.fitAllMarkers()
-    },[])
+    const handleMapReady = () => {
+        if (map.current) {
+            map.current.fitAllMarkers();
+        } else {
+            console.warn('handleMapReady: map not linked to ref!');
+        }
+    };
     return (
         <Fragment>
         <SafeYaMap
             ref={map}
             nightMode={dark}
-
+            onMapLoaded={handleMapReady}
             style={{ flex: 1, width: '100%'}}
         >
             {
