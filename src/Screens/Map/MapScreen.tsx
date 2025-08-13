@@ -203,15 +203,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <TouchableOpacity onPress={props.onDismiss.bind(this)} style={{flexGrow: 1, width: '100%'}}/>
                 <View style={{minHeight: 100, alignItems: 'center', alignSelf:'flex-end', width: '100%', borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: colors.background}}>
                     <Text numberOfLines={2} style={{padding: 5, color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>{props.place.name}</Text>
-                    { (Platform.OS !== 'ios') &&
-                      <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
-                          <Text style={{padding: 5, color: colors.text}}>Проложить маршрут</Text>
-                      </TouchableOpacity>
-                    }
-                    {
-                      (Platform.OS === 'ios') && props.place?.howToGet &&
-                      <Text numberOfLines={2} adjustsFontSizeToFit style={{padding: 5, color: colors.textUnderline, fontWeight: 'bold', marginBottom: 10}}>{props.place.howToGet}</Text>
-                    }
+                    <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
+                        <Text style={{padding: 5, color: colors.text}}>Проложить маршрут</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
             : null
@@ -422,7 +416,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const handleMapReady = () => {
         if (map.current) {
-            map.current.fitAllMarkers();
+            if (Platform.OS === 'ios') {
+                // Выполнить на главном потоке
+                requestAnimationFrame(() => {
+                    map.current?.fitAllMarkers();
+                });
+            } else {
+                map.current?.fitAllMarkers();
+            }
         } else {
             console.warn('handleMapReady: map not linked to ref!');
         }
@@ -541,7 +542,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }}/>
 
             }
-            {((Platform.OS !== 'ios') && locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
+            {(locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
                 <TouchableOpacity onPress={()=>GetRoutes(targetPlace!)}
                                   style={{height: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
                     <Text style={{padding: 5, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
