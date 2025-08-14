@@ -14,6 +14,7 @@ interface SafeYaMapProps {
 
 export default function SafeYaMap({ style, ...props }: SafeYaMapProps) {
     const [layout, setLayout] = useState<{ width: number; height: number } | null>(null);
+    const [loading, setLoading] = useState(true);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     const onLayout = (e: LayoutChangeEvent) => {
@@ -25,6 +26,7 @@ export default function SafeYaMap({ style, ...props }: SafeYaMapProps) {
 
     useEffect(() => {
         if (layout) {
+            setLoading(false);
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 350,
@@ -33,10 +35,20 @@ export default function SafeYaMap({ style, ...props }: SafeYaMapProps) {
         }
     }, [layout, fadeAnim]);
 
+    useEffect(() => {
+        const failSafeTimeout = setTimeout(() => {
+            if (!layout) {
+                console.warn("Forcing map load end due to timeout");
+            }
+            setLoading(false);
+        }, 3000);
+        return () => clearTimeout(failSafeTimeout);
+    }, []);
+
     return (
         <View style={[styles.container, style]} onLayout={onLayout}>
-            {!layout && <LoadingScreen />}
-            {layout && (
+            {loading && <LoadingScreen />}
+            {(layout  || (!loading)) && (
                 <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
                     <YaMap style={styles.map} {...props} />
                 </Animated.View>

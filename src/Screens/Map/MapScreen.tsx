@@ -417,10 +417,12 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const handleMapReady = () => {
         if (map.current) {
             if (Platform.OS === 'ios') {
-                // Выполнить на главном потоке
-                requestAnimationFrame(() => {
-                    map.current?.fitAllMarkers();
-                });
+                setTimeout(() => {
+                    // Выполнить на главном потоке
+                    requestAnimationFrame(() => {
+                        map.current?.fitAllMarkers();
+                    });
+                }, 500); // маленькая задержка на инициализацию
             } else {
                 map.current?.fitAllMarkers();
             }
