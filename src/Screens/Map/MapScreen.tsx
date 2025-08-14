@@ -1,4 +1,4 @@
-import React, {createRef, Fragment, useEffect, useState} from "react";
+import React, {createRef, Fragment, useCallback, useEffect, useRef, useState} from "react";
 import YaMap, {Marker, MasstransitInfo, Polyline, RouteInfo} from 'react-native-yamap';
 import {
     FlatList,
@@ -28,6 +28,7 @@ import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
 import SafeYaMap from "./SafeYaMap";
+import mapPoints from './MapPoints.json';
 
 YaMap.init(YANDEX_MAPS_API_KEY)
 
@@ -36,7 +37,7 @@ type PlaceCategory = 'Корпуса'|'Общежития'|'Точки инте�
 
 interface Place {
     name: string
-    category: PlaceCategory
+    category: PlaceCategory | string
     lat: number
     lon: number
     howToGet?: string
@@ -65,6 +66,19 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const safeAreaInsets = useSafeAreaInsets();
+
+    const map = useRef<any>(null);
+    const [visiblePoints, setVisiblePoints] = useState<{ lat: number; lon: number }[]>([]);
+
+    // Собираем список точек, которые реально отрисованы
+    const markersData = mapPoints.filter((val: Place) =>
+        targetPlace ? val.name === targetPlace.name : isShowCategory[val.category as PlaceCategory]
+    );
+
+    useEffect(() => {
+        setVisiblePoints(markersData.map(val => ({ lat: val.lat, lon: val.lon })));
+    }, [markersData]);
+
     if(Platform.OS == 'android' && Platform.Version < 26) {
         return (<SafeAreaView style={{
             flex: 1,
@@ -175,26 +189,26 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.webp')
     }
 
-    const GetPlaceMarker: React.FC<{shown: boolean, place: Place, onPress:(palce: Place)=>void}> = (props) => {
+    const GetPlaceMarker: React.FC<{ shown: boolean; place: Place; onPress: (place: Place) => void }> = (props) => {
         const GetRequire = () => {
-            switch (props.place.category){
-                case "Точки интереса": return GetUniqueInterestsIcon(props.place)
-                case "Еда": return GetUniqueFoodIcon(props.place)
-                case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp')
-                case "Корпуса": return GetUniqueCorpsIcon(props.place)
-                case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp')
+            switch (props.place.category) {
+                case "Точки интереса": return GetUniqueInterestsIcon(props.place);
+                case "Еда": return GetUniqueFoodIcon(props.place);
+                case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp');
+                case "Корпуса": return GetUniqueCorpsIcon(props.place);
+                case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp');
             }
-        }
+        };
 
         return props.shown ? (
-          <Marker
-            point={{lat: props.place.lat, lon: props.place.lon}}
-            source={GetRequire()}
-            onPress={props.onPress.bind(this, props.place)}
-            scale={(Platform.OS === 'ios') ? .45 : .30}
-          />
+            <Marker
+                point={{ lat: props.place.lat, lon: props.place.lon }}
+                source={GetRequire()}
+                onPress={() => props.onPress(props.place)}
+                scale={Platform.OS === 'ios' ? 0.45 : 0.3}
+            />
         ) : null;
-    }
+    };
 
     const DetailPlaceModal: React.FC<{place: Place, show: boolean, onRoute:(place: Place)=> void, onDismiss:()=>void}> = (props) => {
         const {colors} = useTheme<CustomTheme>()
@@ -214,10 +228,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const PLACES: Map<PlaceCategory, Place[]> = new Map();
     (require('./MapPoints.json') as Place[]).forEach(( val)=>{
-        if(!PLACES.has(val.category)) {
-            PLACES.set(val.category,[])
+        if(!PLACES.has(val.category as PlaceCategory)) {
+            PLACES.set(val.category as PlaceCategory,[])
         }
-        PLACES.get(val.category)!.push(val)
+        PLACES.get(val.category as PlaceCategory)!.push(val)
     })
     const CATEGORIES: PlaceCategory[] = []
     for(let c of PLACES.keys()){
@@ -271,7 +285,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     })
 
 
-    let map = createRef<YaMap>()
+    // let map = createRef<YaMap>()
 
 
 
@@ -283,7 +297,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const OnNavigateWrap = (place: Place)=>{
             setSelectedCategory('main')
             setExpanded(false)
-            props.onNavigate(place, SPECIAL_CATEGORIES.includes(place.category))
+            props.onNavigate(place, SPECIAL_CATEGORIES.includes(place.category as PlaceCategory))
         }
         const Collapsed = () => (
           <TouchableOpacity
@@ -396,12 +410,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const GetRoutes = (place: Place) => {
         Geolocation.getCurrentPosition((pos)=>{
-            map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event)=>{
-                // @ts-ignore
+            map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event:any)=>{
                 if (event.status == 'success' || event.nativeEvent?.status == 'success') {
-                    // @ts-ignore
                     setShowRoutes(event.routes || event.nativeEvent?.routes)
-                    // @ts-ignore
                     setRoutes(event.routes || event.nativeEvent?.routes)
                     setTargetPlace(place)
                     setModalShown(null)
@@ -414,35 +425,45 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    const handleMapReady = () => {
-        if (!map.current) {
-            console.warn('handleMapReady: map not linked to ref!');
-            return;
+    const fitToMarkers = useCallback(() => {
+        if (map.current && visiblePoints.length > 0) {
+            if (Platform.OS === 'ios') {
+                requestAnimationFrame(() => {
+                    map.current?.fitMarkers(visiblePoints, {
+                        // если поддерживается padding
+                        top: 50,
+                        bottom: 50,
+                        left: 50,
+                        right: 50
+                    });
+                });
+            } else {
+                map.current?.fitMarkers(visiblePoints);
+            }
         }
+    }, [visiblePoints]);
 
-        if (Platform.OS === 'ios') {
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    map.current?.fitAllMarkers();
-                }, 100);
-            });
-        } else {
-            setTimeout(() => {
-                map.current?.fitAllMarkers();
-            }, 50);
+    const handleMapReady = () => {
+        // только если уже есть маркеры
+        if (visiblePoints.length > 0) {
+            fitToMarkers();
         }
     };
+
     return (
         <Fragment>
-        <SafeYaMap
-            ref={map}
-            nightMode={dark}
-            onMapLoaded={handleMapReady}
-            style={{ flex: 1, width: '100%'}}
-        >
-            {
-                (require('./MapPoints.json') as Place[]).map((val, key)=>(
-                    <GetPlaceMarker shown={targetPlace ? val.name == targetPlace.name : isShowCategory[val.category]} place={val} key={key} onPress={(place)=>{
+            <SafeYaMap
+                ref={map}
+                nightMode={dark}
+                onMapLoaded={handleMapReady}
+                style={{ flex: 1, width: '100%' }}
+            >
+                {markersData.map((val, key) => (
+                    <GetPlaceMarker
+                        shown
+                        place={val}
+                        key={key}
+                        onPress={(place)=>{
                         if(!locationAccess) return
                         LayoutAnimation.configureNext({
                             duration: 300,
@@ -472,7 +493,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     />
                 )).reduce((a,v)=>a.concat(v),[])
             }
-        </SafeYaMap>
+            </SafeYaMap>
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
                     <TouchableOpacity onPress={()=>{setTargetPlace(null);setRoutes([]);setShowRoutes(null);setShowHowToGet(false)}}
@@ -498,14 +519,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <FIcon.default name={'navigation'} size={30} adjustsFontSizeToFit color={colors.text}/>
             </TouchableOpacity>
             <TouchableOpacity onPress={()=>{
-                map.current!.getCameraPosition((camPos)=>{
+                map.current!.getCameraPosition((camPos:any)=>{
                     map.current!.setZoom(++camPos.zoom, .3)
                 })
             }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 175 : 170, backgroundColor: colors.primary}]}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{fontWeight: 'bold', fontSize: 30, color: colors.text}}>+</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={()=>{
-                map.current!.getCameraPosition((camPos)=>{
+                map.current!.getCameraPosition((camPos:any)=>{
                     map.current!.setZoom(--camPos.zoom, .3)
                 })
             }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 125 : 105, backgroundColor: colors.primary}]}>
