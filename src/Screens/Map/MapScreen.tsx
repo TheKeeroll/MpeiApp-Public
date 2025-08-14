@@ -415,19 +415,21 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
 
     const handleMapReady = () => {
-        if (map.current) {
-            if (Platform.OS === 'ios') {
-                setTimeout(() => {
-                    // Выполнить на главном потоке
-                    requestAnimationFrame(() => {
-                        map.current?.fitAllMarkers();
-                    });
-                }, 500); // маленькая задержка на инициализацию
-            } else {
-                map.current?.fitAllMarkers();
-            }
-        } else {
+        if (!map.current) {
             console.warn('handleMapReady: map not linked to ref!');
+            return;
+        }
+
+        if (Platform.OS === 'ios') {
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    map.current?.fitAllMarkers();
+                }, 100);
+            });
+        } else {
+            setTimeout(() => {
+                map.current?.fitAllMarkers();
+            }, 50);
         }
     };
     return (

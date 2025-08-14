@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, LayoutChangeEvent, Animated } from 'react-native';
+import React, { useState, forwardRef } from 'react';
+import { View, StyleSheet } from 'react-native';
 import YaMap from 'react-native-yamap';
 import LoadingScreen from '../LoadingScreen/LoadingScreen';
-import { CustomTheme } from '../../Themes/Themes';
 
 interface SafeYaMapProps {
     nightMode?: boolean;
@@ -12,56 +11,30 @@ interface SafeYaMapProps {
     [key: string]: any;
 }
 
-export default function SafeYaMap({ style, ...props }: SafeYaMapProps) {
-    const [layout, setLayout] = useState<{ width: number; height: number } | null>(null);
+const SafeYaMap = forwardRef<any, SafeYaMapProps>(({ style, onMapLoaded, ...props }, ref) => {
     const [loading, setLoading] = useState(true);
-    const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    const onLayout = (e: LayoutChangeEvent) => {
-        const { width, height } = e.nativeEvent.layout;
-        if (width > 0 && height > 0) {
-            setLayout({ width, height });
-        }
+    const handleLoaded = (e: any) => {
+        setLoading(false);
+        onMapLoaded?.(e);
     };
 
-    useEffect(() => {
-        if (layout) {
-            setLoading(false);
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 350,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [layout, fadeAnim]);
-
-    useEffect(() => {
-        const failSafeTimeout = setTimeout(() => {
-            if (!layout) {
-                console.warn("Forcing map load end due to timeout");
-            }
-            setLoading(false);
-        }, 3000);
-        return () => clearTimeout(failSafeTimeout);
-    }, []);
-
     return (
-        <View style={[styles.container, style]} onLayout={onLayout}>
+        <View style={[styles.container, style]}>
             {loading && <LoadingScreen />}
-            {(layout  || (!loading)) && (
-                <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-                    <YaMap style={styles.map} {...props} />
-                </Animated.View>
-            )}
+            <YaMap
+                ref={ref}
+                style={styles.map}
+                {...props}
+                onMapLoaded={handleLoaded}
+            />
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    map: {
-        flex: 1,
-    },
+    container: { flex: 1 },
+    map: { flex: 1 },
 });
+
+export default SafeYaMap;
