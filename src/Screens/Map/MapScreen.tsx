@@ -416,18 +416,25 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     // Вызываем fitAllMarkers только когда готовы и карта, и маркеры
     useEffect(() => {
         if (mapReady && markersReady) {
+            console.log('Map&markers ready - final preparations before showing...')
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     if (map.current) {
                         try {
-                            map.current.fitAllMarkers();
-                            setLoading(false);
+                            if (Platform.OS !== 'ios') {
+                                map.current?.fitAllMarkers();
+                            }
                         } catch (e:any) {
-                            console.warn("fitAllMarkers failed:", e);
-                            setLoading(false);
+                            console.warn("fitAllMarkers failed: ", e);
                         }
+                        setLoading(false);
+                    } else {
+                        console.warn('No current map yet - additional timeout...')
+                        setTimeout(() => {
+                            setLoading(false);
+                        }, 650);
                     }
-                }, 500);
+                }, 350);
             });
         }
     }, [mapReady, markersReady]);
@@ -440,7 +447,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         // даём нативному слою немного времени на регистрацию объектов
         setTimeout(() => {
             setMarkersReady(true);
-        }, 150);
+        }, 75);
     };
 
     return (
@@ -453,6 +460,13 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <YaMap
                 ref={map}
                 nightMode={dark}
+                initialRegion={{
+                    lat: 55.754502,
+                    lon: 37.708299,
+                    zoom: 18,
+                    azimuth: 0,
+                    tilt: 100
+                }}
                 onMapLoaded={handleMapLoaded}
                 style={{ flex: 1, width: '100%' }}
             >
