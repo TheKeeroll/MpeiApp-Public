@@ -27,8 +27,9 @@ import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
-import SafeYaMap from "./SafeYaMap";
+// import SafeYaMap from "./SafeYaMap";
 import mapPoints from './MapPoints.json';
+import LoadingScreen from "../LoadingScreen/LoadingScreen.tsx";
 
 YaMap.init(YANDEX_MAPS_API_KEY)
 
@@ -65,28 +66,31 @@ const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>
 const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
-    const safeAreaInsets = useSafeAreaInsets();
 
-    const map = useRef<any>(null);
-    const [visiblePoints, setVisiblePoints] = useState<{ lat: number; lon: number }[]>([]);
-
-    // Собираем список точек, которые реально отрисованы
-    const markersData = mapPoints.filter((val: Place) =>
-        targetPlace ? val.name === targetPlace.name : isShowCategory[val.category as PlaceCategory]
-    );
-
-    useEffect(() => {
-        setVisiblePoints(markersData.map(val => ({ lat: val.lat, lon: val.lon })));
-    }, [markersData]);
+    const map = useRef<YaMap>(null);
+    const insets = useSafeAreaInsets()
+    const [targetPlace, setTargetPlace] = useState<Place | null>(null)
+    const [showHowToGet, setShowHowToGet] = useState<boolean>(false)
+    const [modalShown, setModalShown] = useState<Place | null>(null)
+    const [isShowCategory, setIsShowCategory] = useState({
+        'Точки интереса': true,
+        'Еда': true,
+        'Общежития': true,
+        'Корпуса': true,
+        'Кафедры': false,
+    })
+    const [mapReady, setMapReady] = useState(false);
+    const [markersReady, setMarkersReady] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     if(Platform.OS == 'android' && Platform.Version < 26) {
         return (<SafeAreaView style={{
             flex: 1,
             backgroundColor: colors.background,
-            paddingTop: safeAreaInsets.top,
-            paddingBottom: safeAreaInsets.bottom,
-            paddingLeft: safeAreaInsets.left,
-            paddingRight: safeAreaInsets.right,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
             alignItems: 'center',
             justifyContent: 'center',
             }}>
@@ -99,10 +103,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         console.warn(e)
         setLocationAccess(false)
     })
-    const insets = useSafeAreaInsets()
-    const [targetPlace, setTargetPlace] = useState<Place | null>(null)
-    const [showHowToGet, setShowHowToGet] = useState<boolean>(false)
-    const [modalShown, setModalShown] = useState<Place | null>(null)
     const [showRoutes, setShowRoutes] = useState<RouteInfo<MasstransitInfo>[] | null>(null)
     const [routes, setRoutes] = useState<RouteInfo<MasstransitInfo>[]>([])
     const [showPrintRouteBtn, setShowPrintRouteBtn] = useState<boolean>(false)
@@ -275,19 +275,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         )
     }
 
-
-    const [isShowCategory, setIsShowCategory] = useState({
-        'Точки интереса': true,
-        'Еда': true,
-        'Общежития': true,
-        'Корпуса': true,
-        'Кафедры': false,
-    })
-
-
     // let map = createRef<YaMap>()
-
-
 
     const Search: React.FC<{onNavigate:(place: Place, special: boolean)=>void}> = (props)=>{
         const {colors} = useTheme<CustomTheme>()
@@ -425,42 +413,53 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    const fitToMarkers = useCallback(() => {
-        if (map.current && visiblePoints.length > 0) {
-            if (Platform.OS === 'ios') {
-                requestAnimationFrame(() => {
-                    map.current?.fitMarkers(visiblePoints, {
-                        // если поддерживается padding
-                        top: 50,
-                        bottom: 50,
-                        left: 50,
-                        right: 50
-                    });
-                });
-            } else {
-                map.current?.fitMarkers(visiblePoints);
-            }
+    // Вызываем fitAllMarkers только когда готовы и карта, и маркеры
+    useEffect(() => {
+        if (mapReady && markersReady) {
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    if (map.current) {
+                        try {
+                            map.current.fitAllMarkers();
+                            setLoading(false);
+                        } catch (e:any) {
+                            console.warn("fitAllMarkers failed:", e);
+                            setLoading(false);
+                        }
+                    }
+                }, 500);
+            });
         }
-    }, [visiblePoints]);
+    }, [mapReady, markersReady]);
 
-    const handleMapReady = () => {
-        // только если уже есть маркеры
-        if (visiblePoints.length > 0) {
-            fitToMarkers();
-        }
+    const handleMapLoaded = () => {
+        setMapReady(true);
+    };
+
+    const handleMarkersRendered = () => {
+        // даём нативному слою немного времени на регистрацию объектов
+        setTimeout(() => {
+            setMarkersReady(true);
+        }, 150);
     };
 
     return (
         <Fragment>
-            <SafeYaMap
+            {loading && (
+                <View style={Styles.loadingOverlay}>
+                    <LoadingScreen style={{ flex: 1 }} />
+                </View>
+            )}
+            <YaMap
                 ref={map}
                 nightMode={dark}
-                onMapLoaded={handleMapReady}
+                onMapLoaded={handleMapLoaded}
                 style={{ flex: 1, width: '100%' }}
             >
-                {markersData.map((val, key) => (
+                {mapPoints.map((val, key) => (
                     <GetPlaceMarker
-                        shown
+                        // @ts-ignore
+                        shown={ targetPlace ? val.name === targetPlace.name : isShowCategory[val.category]}
                         place={val}
                         key={key}
                         onPress={(place)=>{
@@ -479,21 +478,22 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         });
                         setModalShown(place)
                     }}/>
-                ))
-            }
-            {
-                showRoutes && showRoutes.length && showRoutes.map((route, routeKey)=>route.sections.map((v,k)=>
-                    <Polyline
-                        key={routeKey * k + k + Math.random()}
-                        points={v.points}
-                        strokeColor={GetColorForRouteSelection(routeKey)}
-                        strokeWidth={5}
-                        outlineColor={'#000000'}
-                        outlineWidth={5}
-                    />
-                )).reduce((a,v)=>a.concat(v),[])
-            }
-            </SafeYaMap>
+                ))}
+                {
+                    showRoutes && showRoutes.length && showRoutes.map((route, routeKey)=>route.sections.map((v,k)=>
+                        <Polyline
+                            key={routeKey * k + k + Math.random()}
+                            points={v.points}
+                            strokeColor={GetColorForRouteSelection(routeKey)}
+                            strokeWidth={5}
+                            outlineColor={'#000000'}
+                            outlineWidth={5}
+                        />
+                    )).reduce((a,v)=>a.concat(v),[])
+                }
+                {/* фиксация момента отрисовки маркеров */}
+                <View onLayout={handleMarkersRendered} />
+            </YaMap>
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
                     <TouchableOpacity onPress={()=>{setTargetPlace(null);setRoutes([]);setShowRoutes(null);setShowHowToGet(false)}}
@@ -580,6 +580,11 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 export default MapScreen
 
 const Styles = StyleSheet.create({
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "transparent",
+        zIndex: 10,
+    },
     focusOnUserBtn:{
         aspectRatio:1,
         height: 60,
