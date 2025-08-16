@@ -8,7 +8,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    PermissionsAndroid, Alert,
+    PermissionsAndroid, Alert, LayoutChangeEvent,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Switch, useTheme } from "react-native-paper";
@@ -415,7 +415,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     // Вызываем fitAllMarkers только когда готовы и карта, и маркеры
     useEffect(() => {
-        if (mapReady && markersReady) {
+        if (mapReady) {
             console.log('Map&markers ready - final preparations before showing...')
             requestAnimationFrame(() => {
                 setTimeout(() => {
@@ -437,7 +437,19 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }, 350);
             });
         }
-    }, [mapReady, markersReady]);
+    }, [mapReady]);
+
+    useEffect(() => {
+        if (Platform.OS === "ios") {
+            const t = setTimeout(() => {
+                if (!mapReady) {
+                    console.warn("Forcing mapReady=true (iOS fallback)");
+                    setMapReady(true);
+                }
+            }, 2500);
+            return () => clearTimeout(t);
+        }
+    }, [mapReady]);
 
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
@@ -447,12 +459,22 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }, 50);
     };
 
-    const handleMarkersRendered = () => {
+    /*const handleMarkersRendered = () => {
         // даём нативному слою немного времени на регистрацию объектов
         setTimeout(() => {
             console.log('Markers rendered')
             setMarkersReady(true);
         }, 100);
+    };*/
+    const handleLayout = (e: LayoutChangeEvent) => {
+        const { width, height } = e.nativeEvent.layout;
+        if (width > 0 && height > 0 && Platform.OS === "ios") {
+            // даём нативному слою немного времени на регистрацию карты
+            setTimeout(() => {
+                console.log("YaMap layout ready on iOS");
+                setMapReady(true);
+            }, 100);
+        }
     };
 
     return (
@@ -473,6 +495,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     tilt: 100
                 }}
                 onMapLoaded={handleMapLoaded}
+                onLayout={handleLayout}
                 style={{ flex: 1, width: '100%' }}
             >
                 {mapReady && mapPoints.map((val, key) => (
@@ -511,7 +534,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     )).reduce((a,v)=>a.concat(v),[])
                 }
                 {/* фиксация момента отрисовки маркеров */}
-                <View onLayout={handleMarkersRendered} />
+                {/*<View onLayout={handleMarkersRendered} />*/}
             </YaMap>
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
