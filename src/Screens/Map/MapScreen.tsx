@@ -440,14 +440,19 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }, [mapReady, markersReady]);
 
     const handleMapLoaded = () => {
-        setMapReady(true);
+        // даём нативному слою немного времени на регистрацию карты
+        setTimeout(() => {
+            console.log('Map loaded')
+            setMapReady(true);
+        }, 50);
     };
 
     const handleMarkersRendered = () => {
         // даём нативному слою немного времени на регистрацию объектов
         setTimeout(() => {
+            console.log('Markers rendered')
             setMarkersReady(true);
-        }, 75);
+        }, 100);
     };
 
     return (
@@ -463,14 +468,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 initialRegion={{
                     lat: 55.754502,
                     lon: 37.708299,
-                    zoom: 18,
+                    zoom: 25,
                     azimuth: 0,
                     tilt: 100
                 }}
                 onMapLoaded={handleMapLoaded}
                 style={{ flex: 1, width: '100%' }}
             >
-                {mapPoints.map((val, key) => (
+                {mapReady && mapPoints.map((val, key) => (
                     <GetPlaceMarker
                         // @ts-ignore
                         shown={ targetPlace ? val.name === targetPlace.name : isShowCategory[val.category]}
