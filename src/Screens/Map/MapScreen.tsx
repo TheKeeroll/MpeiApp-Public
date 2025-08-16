@@ -416,7 +416,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     // Вызываем fitAllMarkers только когда готовы и карта, и маркеры
     useEffect(() => {
         if (mapReady) {
-            console.log('Map&markers ready - final preparations before showing...')
+            console.log('Map ready - final preparations before showing...')
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     if (map.current) {
@@ -437,7 +437,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }, 350);
             });
         }
-    }, [mapReady]);
+    }, [mapReady, setMapReady]);
 
     useEffect(() => {
         if (Platform.OS === "ios") {
@@ -449,7 +449,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             }, 2500);
             return () => clearTimeout(t);
         }
-    }, [mapReady]);
+    });
 
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
@@ -474,6 +474,12 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 console.log("YaMap layout ready on iOS");
                 setMapReady(true);
             }, 100);
+            setTimeout(() => {
+                if (loading) {
+                    console.warn("Forcing loading=false (iOS fallback 2)")
+                    setLoading(false);
+                }
+            }, 1000);
         }
     };
 
