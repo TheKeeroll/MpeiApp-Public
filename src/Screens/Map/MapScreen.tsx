@@ -80,7 +80,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         'Кафедры': false,
     })
     const [mapReady, setMapReady] = useState(false);
-    const [markersReady, setMarkersReady] = useState(false);
+    // const [markersReady, setMarkersReady] = useState(false);
     const [loading, setLoading] = useState(true);
 
     if(Platform.OS == 'android' && Platform.Version < 26) {
@@ -413,17 +413,15 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    // Вызываем fitAllMarkers только когда готовы и карта, и маркеры
+    // Вызываем fitAllMarkers только когда готова карта
     useEffect(() => {
-        if (mapReady) {
+        if (mapReady && (Platform.OS !== 'ios')) {
             console.log('Map ready - final preparations before showing...')
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     if (map.current) {
                         try {
-                            if (Platform.OS !== 'ios') {
-                                map.current?.fitAllMarkers();
-                            }
+                            map.current?.fitAllMarkers();
                         } catch (e:any) {
                             console.warn("fitAllMarkers failed: ", e);
                         }
@@ -432,9 +430,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         console.warn('No current map yet - additional timeout...')
                         setTimeout(() => {
                             setLoading(false);
-                        }, 650);
+                        }, 450);
                     }
-                }, 350);
+                }, 50);
             });
         }
     }, [mapReady, setMapReady]);
@@ -443,10 +441,11 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         if (Platform.OS === "ios") {
             const t = setTimeout(() => {
                 if (!mapReady) {
-                    console.warn("Forcing mapReady=true (iOS fallback)");
+                    console.warn("Forcing map to show (iOS fallback)");
                     setMapReady(true);
+                    setLoading(false);
                 }
-            }, 2500);
+            }, 3000);
             return () => clearTimeout(t);
         }
     });
@@ -473,13 +472,8 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             setTimeout(() => {
                 console.log("YaMap layout ready on iOS");
                 setMapReady(true);
-            }, 100);
-            setTimeout(() => {
-                if (loading) {
-                    console.warn("Forcing loading=false (iOS fallback 2)")
-                    setLoading(false);
-                }
-            }, 1000);
+                setLoading(false);
+            }, 1500);
         }
     };
 
