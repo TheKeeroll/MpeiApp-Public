@@ -483,10 +483,18 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     if (FROM_LOGIN && (Platform.OS === "ios")) {
                         setTimeout(() => {
                             requestAnimationFrame(() => {
-                                setRootViewLayout(e.nativeEvent.layout)
-                                console.log("iOS, FROM_LOGIN rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                                try {
+                                    setRootViewLayout(e.nativeEvent.layout)
+                                    console.log("iOS, FROM_LOGIN rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                                } catch (error:any) {
+                                    console.warn('iOS, FROM_LOGIN - no layout yet, additional timeout & forcing map to open triggered')
+                                    setTimeout(() => {
+                                        setRootViewLayout({x: -1, y: -1, width: (e.nativeEvent?.layout?.width || 1), height: (e.nativeEvent?.layout?.height || 1)})
+                                    }, 1500);
+                                }
+
                             });
-                        }, 250);
+                        }, 750);
                     } else {
                         setRootViewLayout(e.nativeEvent.layout)
                         console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
@@ -505,7 +513,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 initialRegion={{
                     lat: 55.754502,
                     lon: 37.708299,
-                    zoom: 25,
+                    zoom: 18,
                     azimuth: 0,
                     tilt: 100
                 }}

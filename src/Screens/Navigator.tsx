@@ -41,7 +41,7 @@ const Navigator:React.FC = () => {
                 tabBarActiveTintColor: colors.textUnderline,
               tabBarIcon: ()=>(
                   <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24, paddingTop: Platform.OS === "ios" ? 4 : 0 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24, paddingTop: Platform.OS === "ios" ? 8 : 0 }}>
                           Б
                       </Text>
                   </View>
