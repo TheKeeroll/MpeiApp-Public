@@ -1,3 +1,21 @@
+diff --git a/node_modules/react-native-yamap/RNYamap.podspec b/node_modules/react-native-yamap/RNYamap.podspec
+index 571f8d2..e8cfb6f 100644
+--- a/node_modules/react-native-yamap/RNYamap.podspec
++++ b/node_modules/react-native-yamap/RNYamap.podspec
+@@ -8,11 +8,11 @@ Pod::Spec.new do |s|
+     s.homepage     = "vvdev.ru"
+     s.license      = "MIT"
+     s.author       = { package["author"]["name"] => package["author"]["email"] }
+-    s.platform     = :ios, "12.0"
++    s.platform     = :ios, "15.1"
+     s.source       = { :git => "https://github.com/author/RNYamap.git", :tag => "master" }
+     s.source_files = "ios/**/*.{h,m,swift}"
+     # s.requires_arc = true
+ 
+     s.dependency "React"
+-    s.dependency "YandexMapsMobile", "4.8.0-full"
++    s.dependency "YandexMapsMobile", "4.19.0-full"
+ end
 diff --git a/node_modules/react-native-yamap/android/build.gradle b/node_modules/react-native-yamap/android/build.gradle
 index d9de295..f6d365b 100644
 --- a/node_modules/react-native-yamap/android/build.gradle
@@ -221,3 +239,42 @@ index 48c1cdf..a917265 100644
          }
  
          routeMetadata.putMap("transports", wTransports)
+diff --git a/node_modules/react-native-yamap/ios/ClusteredYamapView.m b/node_modules/react-native-yamap/ios/ClusteredYamapView.m
+index ce9fd1e..c3ccb15 100644
+--- a/node_modules/react-native-yamap/ios/ClusteredYamapView.m
++++ b/node_modules/react-native-yamap/ios/ClusteredYamapView.m
+@@ -186,7 +186,7 @@ - (void)setCenterForMap:(RNCYMView*)map center:(NSDictionary*)_center zoom:(floa
+         NSArray<YMKPoint*>* points = [RCTConvert Points:json[@"points"]];
+         NSMutableArray<YMKRequestPoint*>* requestPoints = [[NSMutableArray alloc] init];
+         for (int i = 0; i < [points count]; ++i) {
+-            YMKRequestPoint * requestPoint = [YMKRequestPoint requestPointWithPoint:[points objectAtIndex:i] type: YMKRequestPointTypeWaypoint pointContext:nil drivingArrivalPointId:nil];
++            YMKRequestPoint * requestPoint = [YMKRequestPoint requestPointWithPoint:[points objectAtIndex:i] type: YMKRequestPointTypeWaypoint pointContext:nil drivingArrivalPointId:nil indoorLevelId:nil];
+             [requestPoints addObject:requestPoint];
+         }
+         NSArray<NSString*>* vehicles = [RCTConvert Vehicles:json[@"vehicles"]];
+diff --git a/node_modules/react-native-yamap/ios/View/RNYMView.m b/node_modules/react-native-yamap/ios/View/RNYMView.m
+index 70691f8..9febc6b 100644
+--- a/node_modules/react-native-yamap/ios/View/RNYMView.m
++++ b/node_modules/react-native-yamap/ios/View/RNYMView.m
+@@ -64,7 +64,7 @@ - (instancetype)init {
+     drivingRouter = [[YMKDirectionsFactory instance] createDrivingRouterWithType:YMKDrivingRouterTypeOnline];
+     pedestrianRouter = [[YMKTransportFactory instance] createPedestrianRouter];
+     transitOptions = [YMKTransitOptions transitOptionsWithAvoid:YMKFilterVehicleTypesNone timeOptions:[[YMKTimeOptions alloc] init]];    acceptVehicleTypes = [[NSMutableArray<NSString *> alloc] init];
+-    routeOptions = [YMKRouteOptions routeOptionsWithFitnessOptions:[YMKFitnessOptions fitnessOptionsWithAvoidSteep:false]];
++    routeOptions = [YMKRouteOptions routeOptionsWithFitnessOptions:[YMKFitnessOptions fitnessOptionsWithAvoidSteep:false avoidStairs:false ]];
+     routes = [[NSMutableArray alloc] init];
+     currentRouteInfo = [[NSMutableArray alloc] init];
+     lastKnownRoutePoints = [[NSMutableArray alloc] init];
+diff --git a/node_modules/react-native-yamap/ios/YamapView.m b/node_modules/react-native-yamap/ios/YamapView.m
+index d9ebae4..e4ddc1b 100644
+--- a/node_modules/react-native-yamap/ios/YamapView.m
++++ b/node_modules/react-native-yamap/ios/YamapView.m
+@@ -212,7 +212,7 @@ - (void)setCenterForMap:(RNYMView*)map center:(NSDictionary*)_center zoom:(float
+         NSMutableArray<YMKRequestPoint *> *requestPoints = [[NSMutableArray alloc] init];
+ 
+         for (int i = 0; i < [points count]; ++i) {
+-            YMKRequestPoint *requestPoint = [YMKRequestPoint requestPointWithPoint:[points objectAtIndex:i] type:YMKRequestPointTypeWaypoint pointContext:nil drivingArrivalPointId:nil];
++            YMKRequestPoint *requestPoint = [YMKRequestPoint requestPointWithPoint:[points objectAtIndex:i] type:YMKRequestPointTypeWaypoint pointContext:nil drivingArrivalPointId:nil indoorLevelId:nil];
+             [requestPoints addObject:requestPoint];
+         }
+ 

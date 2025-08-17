@@ -2668,7 +2668,7 @@ PODS:
     - Yoga
   - RNYamap (4.8.3):
     - React
-    - YandexMapsMobile (= 4.8.0-full)
+    - YandexMapsMobile (= 4.19.0-full)
   - SocketRocket (0.7.1)
   - VisionCamera (4.7.1):
     - VisionCamera/Core (= 4.7.1)
@@ -2682,7 +2682,7 @@ PODS:
   - VisionCamera/React (4.7.1):
     - React-Core
     - VisionCamera/FrameProcessors
-  - YandexMapsMobile (4.8.0-full)
+  - YandexMapsMobile (4.19.0-full)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -3057,10 +3057,10 @@ SPEC CHECKSUMS:
   RNReanimated: bc1ddb7a5352648bcf0d592256069833bf935a46
   RNScreens: ee2abe7e0c548eed14e92742e81ed991165c56aa
   RNVectorIcons: ef9b4b0b786053ebdd63ee2972f48de9633ba166
-  RNYamap: e9e022763db4b546333d68af89f93d3313d028dd
+  RNYamap: 6ba7967d11110d58770b9efebe47adaa376e307c
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   VisionCamera: 7e17e56cca70c88d6fdcae0257f7c0bcc54c8b2f
-  YandexMapsMobile: 576340ead47bb112b6387eac1e605cfe7565c162
+  YandexMapsMobile: ed53491b09b8cef902329191a65db46e6ab47a12
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
 PODFILE CHECKSUM: d7edde30a4a139a06556c1f9dab8a21ddc2493ec
