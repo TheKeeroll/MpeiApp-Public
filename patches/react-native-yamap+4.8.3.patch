@@ -253,7 +253,7 @@ index ce9fd1e..c3ccb15 100644
          }
          NSArray<NSString*>* vehicles = [RCTConvert Vehicles:json[@"vehicles"]];
 diff --git a/node_modules/react-native-yamap/ios/View/RNYMView.m b/node_modules/react-native-yamap/ios/View/RNYMView.m
-index 70691f8..9febc6b 100644
+index 70691f8..cf410f5 100644
 --- a/node_modules/react-native-yamap/ios/View/RNYMView.m
 +++ b/node_modules/react-native-yamap/ios/View/RNYMView.m
 @@ -64,7 +64,7 @@ - (instancetype)init {
@@ -265,6 +265,39 @@ index 70691f8..9febc6b 100644
      routes = [[NSMutableArray alloc] init];
      currentRouteInfo = [[NSMutableArray alloc] init];
      lastKnownRoutePoints = [[NSMutableArray alloc] init];
+@@ -85,9 +85,32 @@ - (instancetype)init {
+     [self.mapWindow.map addInputListenerWithInputListener:(id<YMKMapInputListener>) self];
+     [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
+     initializedRegion = NO;
++    dispatch_async(dispatch_get_main_queue(), ^{
++      self.frame = [UIScreen mainScreen].bounds;
++      [self setNeedsLayout];
++      [self layoutIfNeeded];
++    });
+     return self;
+ }
+ 
++- (void)layoutSubviews {
++  [super layoutSubviews];
++  dispatch_async(dispatch_get_main_queue(), ^{
++    self.frame = self.superview.bounds;
++    [self setNeedsLayout];
++    [self layoutIfNeeded];
++  });
++}
++
++- (void)didMoveToWindow {
++  [super didMoveToWindow];
++  dispatch_async(dispatch_get_main_queue(), ^{
++    self.frame = self.superview.bounds;
++    [self setNeedsLayout];
++    [self layoutIfNeeded];
++  });
++}
++
+ - (NSDictionary*)convertDrivingRouteSection:(YMKDrivingRoute*)route withSection:(YMKDrivingSection*)section {
+     int routeIndex = 0;
+     YMKDrivingWeight *routeWeight = route.metadata.weight;
 diff --git a/node_modules/react-native-yamap/ios/YamapView.m b/node_modules/react-native-yamap/ios/YamapView.m
 index d9ebae4..e4ddc1b 100644
 --- a/node_modules/react-native-yamap/ios/YamapView.m
