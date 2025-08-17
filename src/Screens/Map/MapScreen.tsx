@@ -8,7 +8,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    PermissionsAndroid, Alert, LayoutChangeEvent,
+    PermissionsAndroid, Alert, LayoutChangeEvent, Dimensions,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Switch, useTheme } from "react-native-paper";
@@ -413,7 +413,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    // Вызываем fitAllMarkers только когда готова карта
+    // Вызываем fitAllMarkers только когда готова карта (и только на Android)
     useEffect(() => {
         if (mapReady && (Platform.OS !== 'ios')) {
             console.log('Map ready - final preparations before showing...')
@@ -466,25 +466,34 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }, 100);
     };*/
     const handleLayout = (e: LayoutChangeEvent) => {
-        const { width, height } = e.nativeEvent.layout;
+        const {x, y, width, height } = e.nativeEvent.layout;
         if (width > 0 && height > 0 && Platform.OS === "ios") {
-            // даём нативному слою немного времени на регистрацию карты
+            // даём нативному слою время на регистрацию карты
             setTimeout(() => {
-                console.log("YaMap layout ready on iOS");
+                console.log("YaMap layout ready on iOS: x = " + x + ", y = " + y + ", width = " + width + ", height = " + height);
                 setMapReady(true);
                 setLoading(false);
             }, 1500);
         }
     };
 
+    const [rootViewLayout, setRootViewLayout] = useState({x: 0, y: 0, width: 0, height: 0});
+
     return (
-        <Fragment>
+        <View
+            style={{flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
+            onLayout={e => {
+                setRootViewLayout(e.nativeEvent.layout)
+                console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                }
+            }
+        >
             {loading && (
-                <View style={Styles.loadingOverlay}>
+                <View style={Styles.overlay}>
                     <LoadingScreen style={{ flex: 1 }} />
                 </View>
             )}
-            <YaMap
+            {rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
                 ref={map}
                 nightMode={dark}
                 initialRegion={{
@@ -496,7 +505,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }}
                 onMapLoaded={handleMapLoaded}
                 onLayout={handleLayout}
-                style={{ flex: 1, width: '100%' }}
+                style={{ flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
             >
                 {mapReady && mapPoints.map((val, key) => (
                     <GetPlaceMarker
@@ -535,7 +544,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }
                 {/* фиксация момента отрисовки маркеров */}
                 {/*<View onLayout={handleMarkersRendered} />*/}
-            </YaMap>
+            </YaMap>)}
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
                     <TouchableOpacity onPress={()=>{setTargetPlace(null);setRoutes([]);setShowRoutes(null);setShowHowToGet(false)}}
@@ -615,14 +624,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <Text style={{padding: 5, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
                 </TouchableOpacity>
             }
-        </Fragment>
+        </View>
     )
 }
 
 export default MapScreen
 
 const Styles = StyleSheet.create({
-    loadingOverlay: {
+    overlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: "transparent",
         zIndex: 10,
