@@ -437,6 +437,15 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }
     }, [mapReady, setMapReady]);
 
+    const [renderMap, setRenderMap] = useState(Platform.OS !== "ios");
+
+    useEffect(() => {
+        if (Platform.OS === "ios") {
+            const t = setTimeout(() => setRenderMap(true), 200);
+            return () => clearTimeout(t);
+        }
+    }, []);
+
     useEffect(() => {
         if (Platform.OS === "ios") {
             const t = setTimeout(() => {
@@ -475,26 +484,36 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     };
 
     const [rootViewLayout, setRootViewLayout] = useState({x: 0, y: 0, width: 0, height: 0});
-
+    const rootView = useRef<View>(null);
     return (
         <View
             style={{flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
+            ref={rootView}
             onLayout={e => {
                     if (FROM_LOGIN && (Platform.OS === "ios")) {
-                        setTimeout(() => {
-                            requestAnimationFrame(() => {
-                                try {
-                                    setRootViewLayout(e.nativeEvent.layout)
-                                    console.log("iOS, FROM_LOGIN rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
-                                } catch (error:any) {
-                                    console.warn('iOS, FROM_LOGIN - no layout yet, additional timeout & forcing map to open triggered')
-                                    setTimeout(() => {
-                                        setRootViewLayout({x: -1, y: -1, width: (e.nativeEvent?.layout?.width || 1), height: (e.nativeEvent?.layout?.height || 1)})
-                                    }, 1500);
-                                }
-
-                            });
-                        }, 750);
+                        const layout = e?.nativeEvent?.layout;
+                        if (!layout || layout.width <= 0 || layout.height <= 0) {
+                            console.warn("Layout invalid, retrying...");
+                            let currentWidth = 0
+                            let counter = 0
+                            while (currentWidth <= 0 && counter < 5) {
+                                setTimeout(() => {
+                                    if (rootView.current) {
+                                        rootView.current.measure((x, y, width, height) => {
+                                            if (width > 0 && height > 0) {
+                                                setRootViewLayout({x, y, width, height});
+                                                currentWidth = width
+                                                console.log(`Measured layout: ${width}x${height}`);
+                                            }
+                                        });
+                                    }
+                                }, 300);
+                                counter += 1;
+                            }
+                            return;
+                        }
+                        setRootViewLayout(layout);
+                        console.log(`rootViewLayout OK: ${layout.width}x${layout.height}`);
                     } else {
                         setRootViewLayout(e.nativeEvent.layout)
                         console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
@@ -507,7 +526,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <LoadingScreen style={{ flex: 1 }} />
                 </View>
             )}
-            {rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
+            {renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
                 ref={map}
                 nightMode={dark}
                 initialRegion={{
