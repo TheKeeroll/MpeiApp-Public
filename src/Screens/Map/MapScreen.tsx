@@ -399,7 +399,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const GetRoutes = (place: Place) => {
         Geolocation.getCurrentPosition((pos)=>{
             map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event:any)=>{
-                if (event.status == 'success' || event.nativeEvent?.status == 'success') {
+                if (event.status == 'success' || event.nativeEvent?.status == 'success' || (event.success && (event.routes?.length || 0) > 0) || (event.nativeEvent?.success && (event.nativeEvent?.routes?.length || 0) > 0)) {
                     setShowRoutes(event.routes || event.nativeEvent?.routes)
                     setRoutes(event.routes || event.nativeEvent?.routes)
                     setTargetPlace(place)
@@ -455,16 +455,13 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         setTimeout(() => {
             console.log('Map loaded')
             setMapReady(true);
+            if (Platform.OS === "ios" && loading) {
+                console.log("Showing map on iOS");
+                setLoading(false);
+            }
         }, 50);
     };
 
-    /*const handleMarkersRendered = () => {
-        // даём нативному слою немного времени на регистрацию объектов
-        setTimeout(() => {
-            console.log('Markers rendered')
-            setMarkersReady(true);
-        }, 100);
-    };*/
     const handleLayout = (e: LayoutChangeEvent) => {
         const {x, y, width, height } = e.nativeEvent.layout;
         if (width > 0 && height > 0 && Platform.OS === "ios") {
@@ -473,7 +470,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 console.log("YaMap layout ready on iOS: x = " + x + ", y = " + y + ", width = " + width + ", height = " + height);
                 setMapReady(true);
                 setLoading(false);
-            }, 1500);
+            }, 500);
         }
     };
 
@@ -542,8 +539,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         />
                     )).reduce((a,v)=>a.concat(v),[])
                 }
-                {/* фиксация момента отрисовки маркеров */}
-                {/*<View onLayout={handleMarkersRendered} />*/}
             </YaMap>)}
             {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
                 <Fragment>
