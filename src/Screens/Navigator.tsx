@@ -1,6 +1,6 @@
 import React from "react";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
-import { View, Text } from "react-native";
+import {View, Text, Platform} from "react-native";
 // @ts-ignore
 import * as FIcon from 'react-native-vector-icons/Feather'
 // @ts-ignore
@@ -41,7 +41,7 @@ const Navigator:React.FC = () => {
                 tabBarActiveTintColor: colors.textUnderline,
               tabBarIcon: ()=>(
                   <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24, paddingTop: Platform.OS === "ios" ? 4 : 0 }}>
                           Б
                       </Text>
                   </View>

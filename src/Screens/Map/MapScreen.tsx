@@ -480,8 +480,17 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         <View
             style={{flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
             onLayout={e => {
-                setRootViewLayout(e.nativeEvent.layout)
-                console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                    if (FROM_LOGIN && (Platform.OS === "ios")) {
+                        setTimeout(() => {
+                            requestAnimationFrame(() => {
+                                setRootViewLayout(e.nativeEvent.layout)
+                                console.log("iOS, FROM_LOGIN rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                            });
+                        }, 250);
+                    } else {
+                        setRootViewLayout(e.nativeEvent.layout)
+                        console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                    }
                 }
             }
         >
