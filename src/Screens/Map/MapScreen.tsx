@@ -99,10 +99,16 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
     FROM_LOGIN = typeof props.route.params !== 'undefined'
     const [locationAccess, setLocationAccess] = useState<boolean>(false)
-    RequestLocationPermission((res)=>setLocationAccess(res),(e)=>{
+    const [isPermissionRequested, setPermissionRequested] = useState<boolean>(false)
+    RequestLocationPermission((res)=>{
+        setLocationAccess(res)
+        setPermissionRequested(true)
+        }, (e)=>{
         console.warn(e)
         setLocationAccess(false)
-    })
+        setPermissionRequested(true)
+        }
+    )
     const [showRoutes, setShowRoutes] = useState<RouteInfo<MasstransitInfo>[] | null>(null)
     const [routes, setRoutes] = useState<RouteInfo<MasstransitInfo>[]>([])
     const [showPrintRouteBtn, setShowPrintRouteBtn] = useState<boolean>(false)
@@ -413,8 +419,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
 
-    // Вызываем fitAllMarkers только когда готова карта (и только на Android)
-    useEffect(() => {
+    /*useEffect(() => {
         if (mapReady && (Platform.OS !== 'ios')) {
             console.log('Map ready - final preparations before showing...')
             requestAnimationFrame(() => {
@@ -435,13 +440,15 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 }, 50);
             });
         }
-    }, [mapReady, setMapReady]);
+    }, [mapReady, setMapReady]);*/
 
     const [renderMap, setRenderMap] = useState(Platform.OS !== "ios");
 
     useEffect(() => {
         if (Platform.OS === "ios") {
-            const t = setTimeout(() => setRenderMap(true), 200);
+            const t = setTimeout(() => {
+                console.log("iOS - additional timeout before working with map")
+                setRenderMap(true)}, 350);
             return () => clearTimeout(t);
         }
     }, []);
@@ -449,23 +456,27 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     useEffect(() => {
         if (Platform.OS === "ios") {
             const t = setTimeout(() => {
-                if (!mapReady) {
+                if (loading) {
                     console.warn("Forcing map to show (iOS fallback)");
                     setMapReady(true);
                     setLoading(false);
                 }
-            }, 3000);
+            }, 4000);
             return () => clearTimeout(t);
         }
-    });
+    }, []);
 
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
         setTimeout(() => {
             console.log('Map loaded')
             setMapReady(true);
-            if (Platform.OS === "ios" && loading) {
-                console.log("Showing map on iOS");
+            if (loading) {
+                if (Platform.OS === "ios") {
+                    console.log("Showing loaded map on iOS");
+                } else {
+                    console.log("Showing loaded map on Android");
+                }
                 setLoading(false);
             }
         }, 50);
@@ -526,13 +537,13 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <LoadingScreen style={{ flex: 1 }} />
                 </View>
             )}
-            {renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
+            {isPermissionRequested && renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
                 ref={map}
                 nightMode={dark}
                 initialRegion={{
                     lat: 55.754502,
                     lon: 37.708299,
-                    zoom: 18,
+                    zoom: 16,
                     azimuth: 0,
                     tilt: 100
                 }}
