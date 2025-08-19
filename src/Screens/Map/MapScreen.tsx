@@ -80,7 +80,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         'Кафедры': false,
     })
     const [mapReady, setMapReady] = useState(false);
-    // const [markersReady, setMarkersReady] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
 
     if(Platform.OS == 'android' && Platform.Version < 26) {
@@ -418,30 +418,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         },(e)=>console.warn(e))
     }
 
-
-    /*useEffect(() => {
-        if (mapReady && (Platform.OS !== 'ios')) {
-            console.log('Map ready - final preparations before showing...')
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    if (map.current) {
-                        try {
-                            map.current?.fitAllMarkers();
-                        } catch (e:any) {
-                            console.warn("fitAllMarkers failed: ", e);
-                        }
-                        setLoading(false);
-                    } else {
-                        console.warn('No current map yet - additional timeout...')
-                        setTimeout(() => {
-                            setLoading(false);
-                        }, 450);
-                    }
-                }, 50);
-            });
-        }
-    }, [mapReady, setMapReady]);*/
-
     const [renderMap, setRenderMap] = useState(Platform.OS !== "ios");
 
     useEffect(() => {
@@ -466,9 +442,19 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }
     }, []);
 
+    const [mapKey, setMapKey] = useState(0);
+
+    useEffect(() => {
+        if (FROM_LOGIN && Platform.OS === "ios" && mapReady && !mapLoaded) {
+            console.log("iOS, from login: map ready while not loaded => updating map key")
+            setTimeout(() => setMapKey(prev => prev + 1), 100);
+        }
+    }, [mapReady, setMapReady])
+
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
         setTimeout(() => {
+            setMapLoaded(true)
             console.log('Map loaded')
             setMapReady(true);
             if (loading) {
@@ -538,6 +524,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 </View>
             )}
             {isPermissionRequested && renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
+                key={mapKey}
                 ref={map}
                 nightMode={dark}
                 initialRegion={{
