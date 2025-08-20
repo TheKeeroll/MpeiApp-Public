@@ -1,33 +1,40 @@
 import {
     Alert,
     DeviceEventEmitter,
-    LayoutAnimation,
+    LayoutAnimation, ScrollView,
     Text,
     TouchableOpacity,
     View, ViewStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, {Fragment, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
 import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 // @ts-ignore
-import * as Icon from 'react-native-vector-icons/Fontisto'
+// import * as Icon from 'react-native-vector-icons/Fontisto'
+// @ts-ignore
+import * as ADIcon from 'react-native-vector-icons/AntDesign'
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
-import {createStackNavigator} from "@react-navigation/stack";
+// import {createStackNavigator} from "@react-navigation/stack";
 import MapScreen from "../Map/MapScreen";
-import {useNavigation} from "@react-navigation/native";
+// import {useNavigation} from "@react-navigation/native";
 import {openSupportChat} from "../Settings/Components";
+import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
+// @ts-ignore
+import * as FIcon from "react-native-vector-icons/Feather";
+import SettingsStack from "../Settings/SettingsStack.tsx";
 
-const Stack = createStackNavigator()
+// const Stack = createStackNavigator()
+const Stack = createBottomTabNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress:()=>void, style: ViewStyle}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
         <TouchableOpacity onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center'}, props.style]}>
             {typeof props.icon != 'undefined' ?
-                <Icon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
+                <ADIcon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
                 <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.textUnderline}}>{props.title}</Text>
             }
         </TouchableOpacity>
@@ -39,39 +46,39 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
     const insets = useSafeAreaInsets();
     return (
         <SafeAreaView style={{flex: 1, width: '90%', borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'center', overflow: 'scroll'}}>
-            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                Добро пожаловать!
-            </Text>
-            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
-                Для начала нужно ввести логин и пароль от "БАРС" - чтобы приложение могло скачивать из систем вуза всё необходимое.
-            </Text>
-            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.accent, 80)}}>
-                Логин и пароль будут надёжно сохранены на устройстве - чтобы вам не вводить их каждый раз.
-                {'\n\n'}
-                MpeiApp не передаёт данные аккаунта, как и любые другие личные сведения ни разработчику, ни кому-либо ещё!
+            <ScrollView style={{width: '90%'}}>
+                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
+                    Добро пожаловать!
+                </Text>
+                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
+                    Для начала введите логин и пароль от "БАРС" - чтобы скачивать из систем вуза всё необходимое.
+                </Text>
+                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.accent, 80)}}>
+                    Данные аккаунта будут сохранены на устройстве - чтобы не вводить их каждый раз.
+                    {'\n\n'}
+                    MpeiApp не передаёт никакие данные ни разработчику, ни кому-либо ещё!
 
-            </Text>
-            <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                Вам ещё не выдали доступ в "БАРС"?
-                {'\n'}
-                Не беда - интерактивная 3D-карта вуза и окрестностей доступна и без входа в аккаунт, просто вернитесь назад и нажмите её кнопку!
-                {'\n\n'}
-                Столкнулись с проблемой в приложении, есть вопросы/предложения?
-                {'\n'}
-                Смело связывайтесь с разработчиком: нажмите "Поддержка", чтобы открыть ЛС ВК-Сообщества MpeiApp.
-                {'\n\n'}
-                Желаю приятного использования!
-                {'\n'}
-                Ну, и успехов в учёбе!
-            </Text>
-            <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
+                </Text>
+                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
+                    Вам ещё не выдали доступ в "БАРС"?
+                    {'\n'}
+                    Не беда - 3D-карта доступна и без входа в аккаунт, просто нажмите её вкладку!
+                    {'\n\n'}
+                    Столкнулись с проблемой, есть вопросы/предложения?
+                    {'\n'}
+                    Смело связывайтесь с разработчиком по кнопке "Поддержка".
+                    {'\n\n'}
+                    Желаю приятного использования и успехов в учёбе!
+                </Text>
+                <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
+            </ScrollView>
         </SafeAreaView>
     )
 }
 
 const LoginScreen: React.FC = () => {
     const {colors} = useTheme<CustomTheme>()
-    const navigator = useNavigation();
+    // const navigator = useNavigation();
     const [login, setLogin] = useState('')
     const [password, setPassword] = useState('')
     const [showingHelp, setShowingHelp] = useState(false)
@@ -169,11 +176,11 @@ const LoginScreen: React.FC = () => {
                                 DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
                             }), 900)
                         }} style={{ width: '60%', aspectRatio: 4.8}}/>
-                        <Button title={'?'} onPress={shHCb} style={{ width: '12.5%', aspectRatio: 1}}/>
-                        <Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
+                        <Button icon={'question-circle'} onPress={shHCb} style={{ width: '15%', aspectRatio: 1}}/>
+                        {/*<Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
                             //@ts-ignore
                             navigator.navigate('mapLogin', {fromLoginScreen: true})
-                        }} style={{ width: '12.5%', aspectRatio: 1}}/>
+                        }} style={{ width: '12.5%', aspectRatio: 1}}/>*/}
                     </View>
                     <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
                         <Button title={'Поддержка'} onPress={openSupportChat} style={{ width: '60%', aspectRatio: 4.8}}/>
@@ -189,13 +196,41 @@ const LoginScreen: React.FC = () => {
 }
 
 const LoginScreenWrapper : React.FC = () => {
+    const {colors} = useTheme<CustomTheme>()
     return (
         <Stack.Navigator
             initialRouteName={'loginMain'}
-            screenOptions={{headerShown: false}}
+            screenOptions={{headerShown: false,
+                tabBarStyle:{borderTopWidth: 0, backgroundColor: colors.backdrop}}}
         >
-            <Stack.Screen name={'loginMain'} component={LoginScreen}/>
-            <Stack.Screen name={'mapLogin'} component={MapScreen}/>
+            <Stack.Screen
+                name={'loginMain'}
+                component={LoginScreen}
+                options={{
+                    title: 'Вход',
+                    tabBarActiveTintColor: colors.textUnderline,
+                    tabBarIcon: ()=><FIcon.default name={'log-in'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
+            {/*<Stack.Screen name={'mapLogin'} component={MapScreen}/>*/}
+            <Stack.Screen
+                name={'map'}
+                component={MapScreen}
+                options={{
+                    title: 'Карта',
+                    tabBarActiveTintColor: colors.textUnderline,
+                    tabBarIcon: ()=><FIcon.default name={'map-pin'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
+            <Stack.Screen
+                name={'other'}
+                component={SettingsStack}
+                options={{
+                    title: 'Настройки',
+                    tabBarActiveTintColor: colors.textUnderline,
+                    tabBarIcon: ()=><FIcon.default name={'settings'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
         </Stack.Navigator>
     )
 }
