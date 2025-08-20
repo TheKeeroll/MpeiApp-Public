@@ -253,10 +253,20 @@ index ce9fd1e..c3ccb15 100644
          }
          NSArray<NSString*>* vehicles = [RCTConvert Vehicles:json[@"vehicles"]];
 diff --git a/node_modules/react-native-yamap/ios/View/RNYMView.m b/node_modules/react-native-yamap/ios/View/RNYMView.m
-index 70691f8..cf410f5 100644
+index 70691f8..2487a4b 100644
 --- a/node_modules/react-native-yamap/ios/View/RNYMView.m
 +++ b/node_modules/react-native-yamap/ios/View/RNYMView.m
-@@ -64,7 +64,7 @@ - (instancetype)init {
+@@ -59,12 +59,17 @@ - (instancetype)init {
+     self = [super initWithFrame:CGRectZero];
+ #endif
+     
++    YMKMap *map = self.mapWindow.map;
++    if (map != nil) {
++      [map setMapLoadedListenerWithMapLoadedListener:self];
++    }
++
+     _reactSubviews = [[NSMutableArray alloc] init];
+     masstransitRouter = [[YMKTransportFactory instance] createMasstransitRouter];
      drivingRouter = [[YMKDirectionsFactory instance] createDrivingRouterWithType:YMKDrivingRouterTypeOnline];
      pedestrianRouter = [[YMKTransportFactory instance] createPedestrianRouter];
      transitOptions = [YMKTransitOptions transitOptionsWithAvoid:YMKFilterVehicleTypesNone timeOptions:[[YMKTimeOptions alloc] init]];    acceptVehicleTypes = [[NSMutableArray<NSString *> alloc] init];
@@ -265,7 +275,7 @@ index 70691f8..cf410f5 100644
      routes = [[NSMutableArray alloc] init];
      currentRouteInfo = [[NSMutableArray alloc] init];
      lastKnownRoutePoints = [[NSMutableArray alloc] init];
-@@ -85,9 +85,32 @@ - (instancetype)init {
+@@ -85,9 +90,65 @@ - (instancetype)init {
      [self.mapWindow.map addInputListenerWithInputListener:(id<YMKMapInputListener>) self];
      [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
      initializedRegion = NO;
@@ -278,16 +288,49 @@ index 70691f8..cf410f5 100644
  }
  
 +- (void)layoutSubviews {
-+  [super layoutSubviews];
++    [super layoutSubviews];
++    
++    dispatch_async(dispatch_get_main_queue(), ^{
++        // self.frame = self.superview.bounds;
++        if (self.superview != nil) {
++          self.bounds = self.superview.bounds;
++          self.center = CGPointMake(CGRectGetMidX(self.superview.bounds), CGRectGetMidY(self.superview.bounds));
++        }
++        Boolean isListenerSet = false;
++        // гарантируем, что листенер навешен только когда map уже жива
++        if (self.mapWindow != nil && self.mapWindow.map != nil) {
++            [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
++            isListenerSet = true;
++        }
++        
++        // заставляем обновить layout OpenGL-слоя
++        [self setNeedsLayout];
++        [self layoutIfNeeded];
++        // [self setNeedsDisplay];
++        
++        // повторно регистрируем listener, если карта есть, но его нет
++        if (self.mapWindow != nil && self.mapWindow.map != nil && isListenerSet == false) {
++            [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
++        }
++    });
++}
++
++- (void)didMoveToSuperview {
++  [super didMoveToSuperview];
 +  dispatch_async(dispatch_get_main_queue(), ^{
-+    self.frame = self.superview.bounds;
-+    [self setNeedsLayout];
-+    [self layoutIfNeeded];
++    if (self.mapWindow != nil && self.mapWindow.map != nil) {
++      NSLog(@"[RNYMView] didMoveToSuperview -> attaching mapLoadedListener");
++      [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
++    }
 +  });
 +}
 +
 +- (void)didMoveToWindow {
 +  [super didMoveToWindow];
++    
++  if (self.mapWindow != nil && self.mapWindow.map != nil) {
++    [self.mapWindow.map setMapLoadedListenerWithMapLoadedListener:self];
++  }
 +  dispatch_async(dispatch_get_main_queue(), ^{
 +    self.frame = self.superview.bounds;
 +    [self setNeedsLayout];
