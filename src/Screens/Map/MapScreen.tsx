@@ -442,14 +442,20 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }
     }, []);
 
-    const [mapKey, setMapKey] = useState(0);
-
     useEffect(() => {
-        if (FROM_LOGIN && Platform.OS === "ios" && mapReady && !mapLoaded) {
-            console.log("iOS, from login: map ready while not loaded => updating map key")
-            setTimeout(() => setMapKey(prev => prev + 1), 100);
+        if (FROM_LOGIN && Platform.OS === "ios" && mapReady && !mapLoaded && map.current) {
+            console.log("Forcing map redraw on iOS");
+            requestAnimationFrame(() => {
+                try {
+                    map.current?.forceUpdate()
+                    map.current?.setZoom(18, 450)
+                } catch (e) {
+                    console.warn("Force map update failed", e);
+                }
+            });
         }
-    }, [mapReady, setMapReady])
+    }, [mapReady, mapLoaded]);
+
 
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
@@ -524,7 +530,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 </View>
             )}
             {isPermissionRequested && renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
-                key={mapKey}
                 ref={map}
                 nightMode={dark}
                 initialRegion={{
