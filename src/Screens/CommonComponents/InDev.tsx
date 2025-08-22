@@ -1,9 +1,10 @@
 import React, {Fragment} from "react";
 import {SafeAreaView} from "react-native";
 import {Title, useTheme} from "react-native-paper";
+import {CustomTheme} from "../../Themes/Themes.ts";
 
 const InDev: React.FC = ()=>{
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
 
     return(
         <Fragment>

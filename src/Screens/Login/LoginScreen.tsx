@@ -1,6 +1,6 @@
 import {
     Alert,
-    DeviceEventEmitter,
+    DeviceEventEmitter, Dimensions,
     LayoutAnimation, ScrollView,
     Text,
     TouchableOpacity,
@@ -12,9 +12,9 @@ import BARSAPI from "../../Common/Globals";
 import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 // @ts-ignore
-// import * as Icon from 'react-native-vector-icons/Fontisto'
+import * as Icon from 'react-native-vector-icons/Fontisto'
 // @ts-ignore
-import * as ADIcon from 'react-native-vector-icons/AntDesign'
+// import * as ADIcon from 'react-native-vector-icons/AntDesign'
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
@@ -29,12 +29,12 @@ import SettingsStack from "../Settings/SettingsStack.tsx";
 
 // const Stack = createStackNavigator()
 const Stack = createBottomTabNavigator()
-export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress:()=>void, style: ViewStyle}> = (props) => {
+export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
         <TouchableOpacity onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center'}, props.style]}>
             {typeof props.icon != 'undefined' ?
-                <ADIcon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
+                <Icon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
                 <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.textUnderline}}>{props.title}</Text>
             }
         </TouchableOpacity>
@@ -45,8 +45,8 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets();
     return (
-        <SafeAreaView style={{flex: 1, width: '90%', borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'center', overflow: 'scroll'}}>
-            <ScrollView style={{width: '90%'}}>
+        <SafeAreaView style={{flex: 1, width: '90%', minHeight: (Dimensions.get("window").height * 0.7), borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'flex-start'}}>
+            <ScrollView style={{flex: 1, width: '100%'}}>
                 <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
                     Добро пожаловать!
                 </Text>
@@ -70,8 +70,8 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
                     {'\n\n'}
                     Желаю приятного использования и успехов в учёбе!
                 </Text>
-                <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
             </ScrollView>
+            <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
         </SafeAreaView>
     )
 }
@@ -160,30 +160,33 @@ const LoginScreen: React.FC = () => {
                     />
                     <View style={{height: '7%'}}/>
                     <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
-                        <Button title={'Войти'} onPress={()=>{
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                            setShowLoading(true)
-                            setTimeout(()=>BARSAPI.Login({login, password}).then((r)=>{
-                                BARSAPI.LoadOnlineData().finally(()=>{
-                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                                    setTimeout(()=>setShowLoading(false), 10)
-                                    DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
-                                })
-                            }, (e: any)=>{
+                        <View style={{ flexDirection: 'column',  width: '66%', alignSelf: 'flex-start', alignItems: 'flex-start'}}>
+                            <Button title={'Войти'} onPress={()=>{
                                 LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                                setShowLoading(false)
-                                Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
-                                DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
-                            }), 900)
-                        }} style={{ width: '60%', aspectRatio: 4.8}}/>
-                        <Button icon={'question-circle'} onPress={shHCb} style={{ width: '15%', aspectRatio: 1}}/>
+                                setShowLoading(true)
+                                setTimeout(()=>BARSAPI.Login({login, password}).then((r)=>{
+                                    BARSAPI.LoadOnlineData().finally(()=>{
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                                        setTimeout(()=>setShowLoading(false), 10)
+                                        DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+                                    })
+                                }, (e: any)=>{
+                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                                    setShowLoading(false)
+                                    Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
+                                    DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+                                }), 900)
+                            }} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
+
+                            <View style={{marginBottom: '4%', flexDirection: 'row', width: '100%', alignSelf: 'center', justifyContent: 'space-between'}}>
+                                <Button title={'Поддержка'} onPress={() => openSupportChat('vk')} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
+                            </View>
+                        </View>
+                        <Button icon={'question'} onPress={shHCb} style={{alignSelf: 'flex-start', width: '20%', aspectRatio: 1, marginVertical: '3%'}}/>
                         {/*<Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
-                            //@ts-ignore
-                            navigator.navigate('mapLogin', {fromLoginScreen: true})
-                        }} style={{ width: '12.5%', aspectRatio: 1}}/>*/}
-                    </View>
-                    <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
-                        <Button title={'Поддержка'} onPress={openSupportChat} style={{ width: '60%', aspectRatio: 4.8}}/>
+                                //@ts-ignore
+                                navigator.navigate('mapLogin', {fromLoginScreen: true})
+                         }} style={{ width: '12.5%', aspectRatio: 1}}/>*/}
                     </View>
                     <View style={{flexDirection: 'row'}}>
                         <Text style={{fontWeight: 'bold', color: withOpacity(colors.text, 30)}}>Версия: </Text>

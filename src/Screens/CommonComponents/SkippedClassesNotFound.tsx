@@ -1,9 +1,10 @@
 import React, {Fragment} from "react";
 import {SafeAreaView, Text} from "react-native";
 import {useTheme} from "react-native-paper";
+import {CustomTheme} from "../../Themes/Themes.ts";
 
 const SkippedClassesNotFound: React.FC = () => {
-  const {colors} = useTheme()
+  const {colors} = useTheme<CustomTheme>()
   return(
     <Fragment>
       <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>

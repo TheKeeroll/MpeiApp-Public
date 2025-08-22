@@ -11,9 +11,10 @@ import {
 } from "react-native";
 import {SCREEN_SIZE} from "../../../Common/Constants";
 import {BARSDiscipline, KM, Mark} from "../../../API/DataTypes";
-import {MarkToColor, withOpacity} from "../../../Themes/Themes";
+import {CustomTheme, MarkToColor, withOpacity} from "../../../Themes/Themes";
 import {useTheme} from "react-native-paper";
 import BARSAPI from "../../../Common/Globals";
+// @ts-ignore
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 const Moment = require('moment')
@@ -22,6 +23,17 @@ const Moment = require('moment')
 const SortMarksByDate = (marks: Mark[]) => {
      //return  marks.slice().sort((a,b)=> a.mark > b.mark ? 1 : a.mark == b.mark ? 0 : -1);
     return marks.slice().sort((a,b)=>new Moment(a.date, 'DDMMYY') - new Moment(b.date, 'DDMMYY'));
+}
+
+const WeightToColor = (weight: number) => {
+    const {colors} = useTheme<CustomTheme>()
+    if (weight < 20) {
+        return colors.accent;
+    } else if (weight >= 20 && weight <= 40) {
+        return colors.warning;
+    } else {
+        return colors.error;
+    }
 }
 
 const MarkTypeToText = (mark: Mark) => {
@@ -37,13 +49,16 @@ const MarkTypeToText = (mark: Mark) => {
 }
 
 const Cell: React.FC<{item: KM, index: number}> = (props) =>{
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
     const [prev, setPrev] = useState(false)
     const prevMark = props.item.marks.length > 1 ? props.item.marks[1] : null
     //console.log('B', props.item.marks)
     //console.log('A', SortMarksByDate(props.item.marks))
     //const sorted = SortMarksByDate(props.item.marks)
     const mark = SortMarksByDate(props.item.marks)[props.item.marks.length - 1];
+
+    const weightColor = WeightToColor(parseInt(props.item.weight.trim()))
 
     let week_color = colors.textUnderline
     let week_font: "normal" | "bold" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | undefined = "normal"
@@ -64,12 +79,12 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
                 <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
                     <Text
                       numberOfLines={1}
-                      style={{color: withOpacity(week_color, 60), fontWeight: week_font, marginTop: 2}}>
+                      style={{color: withOpacity(week_color, 80), fontWeight: week_font, marginTop: 2}}>
                         {'Неделя ' + props.item.week.trim().split(' (')[0]}
                     </Text>
                     <Text
                       numberOfLines={1}
-                      style={{color: withOpacity(colors.text, 60), marginTop: 2}}>
+                      style={{fontWeight: 'bold', color: withOpacity(weightColor, 80), marginTop: 2}}>
                         {props.item.weight.trim() + '%'}
                     </Text>
                 </View>
@@ -118,7 +133,8 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
 }
 
 const MarkCell: React.FC<{mark: Mark, index: number}> = (props) => {
-    const {colors, dark} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
+    const {dark} = useTheme()
     return (
         <View key={props.index}
               style={[Styles.markCellView, {backgroundColor: colors.primary}]}>
@@ -151,16 +167,16 @@ const ResultMarks: React.FC<{marks: Mark[]}> = (props) => {
 }
 
 const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets()
     const discipline: BARSDiscipline = props.route.params
 
     const Header = () => (
-        <View style={[Styles.header, {backgroundColor: colors.backdrop}]}>
+        <View style={[Styles.header, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: colors.backdrop}]}>
             <Text
                 numberOfLines={3}
                 adjustsFontSizeToFit
-                style={{ fontSize: 16, fontWeight: '600', alignSelf: 'center', color: colors.text}}>
+                style={{ fontSize: 16, paddingLeft: insets.left, paddingRight: insets.right, fontWeight: 'bold', textAlign: 'center', alignSelf: 'center', color: colors.text}}>
                 {discipline.name}
             </Text>
         </View>
@@ -228,6 +244,7 @@ const Styles = StyleSheet.create({
     cellView:{
         width: '90%',
         minHeight: SCREEN_SIZE.height * .1,
+        maxHeight: SCREEN_SIZE.height * 0.33,
         borderRadius: 5,
         flexDirection: 'row',
         alignItems: 'center',
@@ -241,9 +258,11 @@ const Styles = StyleSheet.create({
     kmMarkTouchable:{
         flex: .2,
         minHeight: 80,
+        maxHeight: SCREEN_SIZE.height * 0.33,
         marginVertical: 5,
         borderRadius: 5,
-        justifyContent: 'space-evenly',
+        justifyContent: 'center',
+        alignSelf: 'flex-start',
         alignItems: 'center'
     },
     markCircle:{

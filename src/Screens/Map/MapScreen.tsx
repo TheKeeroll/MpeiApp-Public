@@ -94,7 +94,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             alignItems: 'center',
             justifyContent: 'center',
             }}>
-                <Text style={{textAlign: 'center', color: colors.text}}>Для функционирования карты необходим Android 8.0 или новее!</Text>
+                <Text style={{textAlign: 'center', color: colors.text, margin: 16, fontSize: 16, fontWeight: 'bold'}}>Для функционирования карты необходим Android 8.0 или новее!</Text>
             </SafeAreaView>)
     }
     FROM_LOGIN = typeof props.route.params !== 'undefined'

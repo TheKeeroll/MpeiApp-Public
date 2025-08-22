@@ -24,56 +24,57 @@ const Navigator:React.FC = () => {
         <Stack.Navigator initialRouteName={'main'} screenOptions={{headerShown: false,
           tabBarStyle:{borderTopWidth: 0, backgroundColor: colors.backdrop}}}
         >
-          <Stack.Screen
-            name={'map'}
-            component={MapScreen}
-            options={{
-              title: 'Карта',
-                tabBarActiveTintColor: colors.textUnderline,
-              tabBarIcon: ()=><FIcon.default name={'map-pin'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
-            }}
-          />
-          <Stack.Screen
-            name={'main'}
-            component={BARSDrawer}
-            options={{
-              title: 'БАРС',
-                tabBarActiveTintColor: colors.textUnderline,
-              tabBarIcon: ()=>(
-                  <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24, paddingTop: Platform.OS === "ios" ? 8 : 0 }}>
-                          Б
-                      </Text>
-                  </View>
-              )
-            }}/>
-          <Stack.Screen
-            name={'qr'}
-            component={QRCodeScanner}
-            options={{
-              title: 'QR-Сканер',
-              tabBarActiveTintColor: colors.textUnderline,
-              tabBarIcon: ()=><MCIcon.default name={'qrcode-scan'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
-            }}
-          />
-          <Stack.Screen
-            name={'schedule'}
-            component={ScheduleStack}
-            options={{
-              title: 'Расписание',
-                tabBarActiveTintColor: colors.textUnderline,
-              tabBarIcon: ()=><FIcon.default name={'calendar'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
-            }}
+            <Stack.Screen
+                name={'main'}
+                component={BARSDrawer}
+                options={{
+                  title: 'БАРС',
+                    tabBarActiveTintColor: colors.textUnderline,
+                  tabBarIcon: ()=>(
+                      <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontWeight: 'bold', fontSize: 32, color: colors.text, lineHeight: 24, paddingTop: Platform.OS === "ios" ? 8 : 0 }}>
+                              Б
+                          </Text>
+                      </View>
+                  )
+                }}
             />
-          <Stack.Screen
-            name={'other'}
-            component={SettingsStack}
-            options={{
-              title: 'Настройки',
-                tabBarActiveTintColor: colors.textUnderline,
-              tabBarIcon: ()=><FIcon.default name={'settings'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
-            }}
-          />
+            <Stack.Screen
+                  name={'map'}
+                  component={MapScreen}
+                  options={{
+                      title: 'Карта',
+                      tabBarActiveTintColor: colors.textUnderline,
+                      tabBarIcon: ()=><FIcon.default name={'map-pin'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                  }}
+            />
+            <Stack.Screen
+                name={'qr'}
+                component={QRCodeScanner}
+                options={{
+                  title: 'QR-Сканер',
+                  tabBarActiveTintColor: colors.textUnderline,
+                  tabBarIcon: ()=><MCIcon.default name={'qrcode-scan'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
+            <Stack.Screen
+                name={'schedule'}
+                component={ScheduleStack}
+                options={{
+                  title: 'Расписание',
+                    tabBarActiveTintColor: colors.textUnderline,
+                  tabBarIcon: ()=><FIcon.default name={'calendar'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+                />
+            <Stack.Screen
+                name={'other'}
+                component={SettingsStack}
+                options={{
+                  title: 'Настройки',
+                    tabBarActiveTintColor: colors.textUnderline,
+                  tabBarIcon: ()=><FIcon.default name={'settings'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
         </Stack.Navigator>
     )
 }

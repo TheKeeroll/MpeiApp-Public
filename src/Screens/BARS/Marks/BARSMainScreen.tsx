@@ -299,78 +299,145 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
         }
         checkAvailability()
     }, [])
-    return (
-        <View style={[Styles.disciplineView, {backgroundColor: colors.surface}]}>
-            <View style={Styles.infoWrapper}>
-                <Text
+        return (
+            <View style={[Styles.disciplineView, {backgroundColor: colors.surface}]}>
+                {/* Левая часть */}
+                <View style={Styles.infoWrapper}>
+                    <Text
                         numberOfLines={2}
                         style={[
                             Styles.passUpText,
-                            {color: withOpacity((discipleTextSwitcher ? discipleTextColor : _discipleTextColor), 80),
-                             fontWeight: discipleTextSwitcher ? 'bold' : 'normal'}
+                            {
+                                color: withOpacity(
+                                    discipleTextSwitcher ? discipleTextColor : _discipleTextColor,
+                                    80,
+                                ),
+                                fontWeight: discipleTextSwitcher ? 'bold' : 'normal',
+                            },
                         ]}>
-                        {props.discipline.debt ? '' : (discipleTextSwitcher ? discipleText : _discipleText)}
-                </Text>
-                <View style={[Styles.disciplineNameView, {backgroundColor: colors.primary}]}>
-                    <TouchableOpacity
-                      onPress={()=>props.navigation.navigate('detailedMarks', props.discipline)}>
-                    <Text adjustsFontSizeToFit style={{color: colors.text}}>{props.discipline.name}</Text>
-                    </TouchableOpacity>
-                </View>
-                <View style={Styles.teacherTypeWrapper}>
-                    <TouchableOpacity
-                        onPress={()=> {
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                            props.navigation.navigate('scheduleMain', '-')
-                        }}
-                        disabled={'-' == '-'}
-                        style={[Styles.teacherBtn,{backgroundColor: colors.primary}]}>
-                        <Text adjustsFontSizeToFit={true} numberOfLines={3} style={{color: colors.textUnderline}}>
-                            {props.discipline.teacher.name.length ? (props.discipline.teacher.name.includes('руководитель') ? props.discipline.teacher.name.replace('(руководитель - ', '\n(рук.') : props.discipline.teacher.name) : '-'}
-                        </Text>
-                    </TouchableOpacity>
-                    <View style={[Styles.teacherBtn, {maxWidth: '50%', backgroundColor: props.discipline.debt ? MarkToColor(GetMainMark(), dark) : colors.primary}]}>
-                        <Text
-                            numberOfLines={2}
-                            style={{textAlign: 'center', fontWeight: 'bold', color: withOpacity(typeColor, 90)}}>
-                            {props.discipline.debt ? 'Долг' : props.discipline.examType.charAt(0).toUpperCase() + props.discipline.examType.slice(1).replace('(','').replace(')', '')}
-                        </Text>
+                        {props.discipline.debt
+                            ? ''
+                            : discipleTextSwitcher
+                                ? discipleText
+                                : _discipleText}
+                    </Text>
+
+                    <View style={[Styles.disciplineNameView, {backgroundColor: colors.primary}]}>
+                        <TouchableOpacity
+                            onPress={() =>
+                                props.navigation.navigate('detailedMarks', props.discipline)
+                            }>
+                            <Text
+                                adjustsFontSizeToFit
+                                numberOfLines={2}
+                                style={{color: colors.text}}>
+                                {props.discipline.name}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={Styles.teacherTypeWrapper}>
+                        <TouchableOpacity
+                            disabled
+                            style={[
+                                Styles.teacherBtn,
+                                {backgroundColor: colors.primary, flex: 1},
+                            ]}>
+                            <Text
+                                adjustsFontSizeToFit
+                                numberOfLines={3}
+                                style={{color: colors.textUnderline, textAlign: 'center'}}>
+                                {props.discipline.teacher.name.length
+                                    ? props.discipline.teacher.name.includes('руководитель')
+                                        ? props.discipline.teacher.name.replace(
+                                            '(руководитель - ',
+                                            '\n(рук.',
+                                        )
+                                        : props.discipline.teacher.name
+                                    : '-'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View
+                            style={[
+                                Styles.teacherBtn,
+                                {
+                                    flex: 1,
+                                    maxWidth: '48%',
+                                    backgroundColor: props.discipline.debt
+                                        ? MarkToColor(GetMainMark(), dark)
+                                        : colors.primary,
+                                },
+                            ]}>
+                            <Text
+                                numberOfLines={2}
+                                style={{
+                                    textAlign: 'center',
+                                    fontWeight: 'bold',
+                                    color: withOpacity(typeColor, 90),
+                                }}>
+                                {props.discipline.debt
+                                    ? 'Долг'
+                                    : props.discipline.examType
+                                        .charAt(0)
+                                        .toUpperCase() +
+                                    props.discipline.examType.slice(1).replace(/[()]/g, '')}
+                            </Text>
+                        </View>
                     </View>
                 </View>
-                {(discipleText.includes('оступно согласие')) &&
-                  <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 5, marginLeft: '2%', marginBottom: '2%', padding: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
-                        <Text adjustsFontSizeToFit style={{color: colors.textUnderline}}>{'Перейти на сайт БАРС'}</Text>
-                  </TouchableOpacity>
-                }
-            </View>
-            <TouchableOpacity
-                onPress={()=>props.navigation.navigate('detailedMarks', props.discipline)}
-                style={Styles.markView}>
-                <Text
-                    style={{fontWeight: '600', color: withOpacity(colors.text, 90)}}>
-                    {GetMainMark().includes(',') ? 'Балл' : 'Итог'}
-                </Text>
-                <View style={[Styles.markColorView,
-                    {backgroundColor:
-                            withOpacity(GetMainMark().includes(',') ?
-                                AverageScoreToColor(GetMainMark())
-                                : MarkToColor(GetMainMark(), dark)
-                                , 80
-                            )}]}>
+
+                {/* Правая часть (балл) */}
+                <TouchableOpacity
+                    onPress={() => props.navigation.navigate('detailedMarks', props.discipline)}
+                    style={Styles.markView}>
                     <Text
-                        style={[Styles.mainMarkText, {color: withOpacity(colors.text, 90)}]}>
-                        {GetMainMark()}
+                        style={{
+                            fontWeight: '600',
+                            color: withOpacity(colors.text, 90),
+                            // marginBottom: 4,
+                        }}>
+                        {GetMainMark().includes(',') ? 'Балл' : 'Итог'}
                     </Text>
-                </View>
-                <View style={Styles.markDotsView}>
-                    {props.discipline.kms.map((v, i)=>(
-                        <View key={i} style={[Styles.markDot, {backgroundColor: MarkToColor(SortMarksByDate(v.marks)[v.marks.length - 1].mark, dark)}]}/>
-                    ))}
-                </View>
-            </TouchableOpacity>
-        </View>
-    )
-}
+
+                    <View
+                        style={[
+                            Styles.markColorView,
+                            {
+                                backgroundColor: withOpacity(
+                                    GetMainMark().includes(',')
+                                        ? AverageScoreToColor(GetMainMark())
+                                        : MarkToColor(GetMainMark(), dark),
+                                    80,
+                                ),
+                            },
+                        ]}>
+                        <Text style={[Styles.mainMarkText, {color: withOpacity(colors.text, 90)}]}>
+                            {GetMainMark()}
+                        </Text>
+                    </View>
+
+                    <View style={Styles.markDotsView}>
+                        {props.discipline.kms.map((v, i) => (
+                            <View
+                                key={i}
+                                style={[
+                                    Styles.markDot,
+                                    {
+                                        backgroundColor: MarkToColor(
+                                            SortMarksByDate(v.marks)[v.marks.length - 1].mark,
+                                            dark,
+                                        ),
+                                    },
+                                ]}
+                            />
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </View>
+        );
+
+    }
 
 const Body: React.FC<{navigation: any}> = (props)=>{
     const marks = useSelector((state: RootState)=>state.MarkTable)
@@ -534,57 +601,62 @@ const Styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 20
     },
-    disciplineView:{
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    disciplineView: {
         flexDirection: 'row',
-        width: SCREEN_SIZE.width * .9,
-        minHeight: SCREEN_SIZE.height * .1,
-        borderRadius: 7
+        width: SCREEN_SIZE.width * 0.9,
+        borderRadius: 7,
+        padding: 8,
+        marginVertical: 6, // добавил разделитель между карточками
+        alignItems: 'stretch',
     },
-    infoWrapper:{
-        flex: .77,
+
+    infoWrapper: {
+        flex: 1, // тянется на всё доступное место
         flexDirection: 'column',
-        justifyContent: 'space-evenly'
+        justifyContent: 'flex-start',
+        paddingRight: '2%'
     },
     passUpText:{
-        paddingLeft: '4%',
-        paddingVertical: '1%'
+        paddingLeft: '1.2%',
+        // paddingVertical: '1%',
+        paddingBottom: '1%'
     },
     disciplineNameView:{
         marginBottom: '2%',
-        width: '100%',
-        marginLeft: '2%',
+        width: '98%',
+        // marginLeft: '2%',
         minHeight: SCREEN_SIZE.height * .05,
-        padding: '2%', borderRadius: 5
-    },
-    teacherTypeWrapper:{
-        marginBottom: '2%',
-        marginLeft: '2%',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly'
-    },
-    teacherBtn:{
-        borderRadius: 5,
-        minWidth: '40%',
-        marginHorizontal: '2%',
         padding: '2%',
-        alignItems: 'center',
-        justifyContent: 'center'
+        borderRadius: 5,
+        marginLeft: '1%'
     },
-    markView:{
-        flex: .2,
-        marginVertical: '.5%',
-        marginRight: '1%',
-        alignItems: 'center',
-        justifyContent: 'flex-start'
+    teacherTypeWrapper: {
+        flexDirection: 'row',
+        justifyContent: 'space-between', // вместо space-evenly
+        marginTop: 6,
     },
-    markColorView:{
+
+    teacherBtn: {
+        borderRadius: 5,
+        padding: 6,
+        marginHorizontal: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    markView: {
+        width: 70, // фиксированная ширина, чтобы не давила левую часть
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+    },
+    markColorView: {
         aspectRatio: 1,
         alignItems: 'center',
-        justifyContent :'center',
-        borderRadius: 5,
-        height: SCREEN_SIZE.height * .07
+        justifyContent: 'center',
+        borderRadius: 8,
+        width: '100%', // заполняет всю ширину блока markView
+        maxWidth: 60,
+        marginVertical: 4,
     },
     mainMarkText: {
         textAlign: 'center',

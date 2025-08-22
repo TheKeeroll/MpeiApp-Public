@@ -18,6 +18,8 @@ import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
 import * as McIcon from 'react-native-vector-icons/MaterialCommunityIcons'
 // @ts-ignore
 import * as FaIcon from 'react-native-vector-icons/FontAwesome'
+// @ts-ignore
+import * as FIcon from 'react-native-vector-icons/Fontisto'
 import {
     ListButton,
     IconSelector,
@@ -73,10 +75,15 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <McIcon.default name={'robot-love'} adjustsFontSizeToFit size={30} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
                                 title={'Благодарности'} onPress={()=>props.navigation.navigate('gratuities')}/>
+                    <ListSeparator title={'Поддержка'}/>
                     <ListButton icon={
-                        <FaIcon.default name={'support'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                        <FaIcon.default name={'vk'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
-                                title={'Поддержка'} onPress={openSupportChat}/>
+                                title={'ЛС ВК-сообщества приложения'} onPress={() => openSupportChat("vk")}/>
+                    <ListButton icon={
+                        <FaIcon.default name={'telegram'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                    }
+                                title={'ЛС разработчика в Telegram'} onPress={() => openSupportChat("tg")}/>
                     {__DEV__ &&
                     <Fragment>
                         <ListSeparator title={'Debug'}/>
@@ -105,10 +112,13 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     </Fragment>
                     }
                     <View style={{width: '100%', alignItems: 'center', marginTop: 20}}>
+                        <FIcon.default name={'yandex'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')}/>
                         <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
                         <ListText title={''}/>
                         <ListText title={'MpeiApp'} textStyle={{color: colors.text, fontWeight: 'bold', fontSize: 18, opacity: .5}}/>
                         <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{color: colors.text, fontSize: 14, opacity: .5}}/>
+                        <ListText title={''}/>
+                        <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}/>
                         <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
                     </View>
                 </ScrollView>

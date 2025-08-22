@@ -2,10 +2,11 @@ import React, {Fragment, useState} from "react";
 import {useTheme} from "react-native-paper";
 import {LayoutAnimation, StyleSheet, Text, TouchableOpacity} from "react-native";
 import {SCREEN_SIZE} from "../../Common/Constants";
+import {CustomTheme} from "../../Themes/Themes.ts";
 
 
 const OfflineDataNotification: React.FC = () => {
-    const {colors} = useTheme()
+    const {colors} = useTheme<CustomTheme>()
     const [hide, setHide] = useState(false)
 
     return (

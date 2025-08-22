@@ -15,10 +15,10 @@ const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Разработчики'}/>
                 <ScrollView style={{width: '90%'}}>
-                    <ListSeparator title={'Оригинальная идея, разработка архитектуры, pre-alpha- и alpha-версий'}/>
+                    <ListSeparator title={'Оригинальная идея, разработка pre-alpha- и alpha-версий'}/>
                     <ListAvatarItem title={`Захар 'TheKeeroll' Степанов`} link={'https://vk.com/ojevohevcoh'} textStyle={{fontWeight: 'bold', color: colors.text}} image={require('../../../assets/images/DevAvatars/Z.webp')}/>
 
-                    <ListSeparator title={'Единственный активный разработчик, админ ВК-сообщества, техподдержка'}/>
+                    <ListSeparator title={'Действующий разработчик, админ группы ВК, техподдержка'}/>
                     <ListAvatarItem title={`Антон 'DragonSavA' Савенков`} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.webp')}/>
                 </ScrollView>
             </View>

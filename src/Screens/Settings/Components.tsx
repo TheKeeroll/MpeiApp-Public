@@ -43,7 +43,7 @@ export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value
 }
 
 
-export const ListButton: React.FC<{title: string,onPress:()=>void, disabled?: boolean, icon?:JSX.Element}> = (props) => {
+export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
@@ -326,7 +326,7 @@ export const WhatsNewChange: React.FC<{title: string}> = (props) => {
     )
 }
 
-export const openSupportChat = async () => {
+export const openSupportChat = async (mode: 'vk' | 'tg') => {
   const deviceOS= Platform.OS
   let deviceModel: string
   const systemVersion= Platform.Version
@@ -344,16 +344,21 @@ export const openSupportChat = async () => {
     message = `ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS == 'android' ? 'Android API' : (deviceOS == 'ios' ? 'iOS' : '')}: ${systemVersion}\nВерсия MpeiApp: ${require('../../../package.json').version}\n-------------------------------------\n`
   }
   console.log(message)
-  // const url = `https://vk.com/im?sel=-215610947&msg=${encodeURIComponent(message)}`
-  const url = `https://vk.com/im?sel=-215610947`
+  let url = ''
+  if (mode == 'vk') {
+      url = `https://vk.com/im?sel=-215610947`
+  }  else {
+      url = 'https://t.me/DragonSavA'
+  }
+
 
   try {
     Clipboard.setString(message)
     await Linking.openURL(url)
   } catch (error: any) {
-    console.warn("Failed to open VK chat!", error)
+    console.warn("Failed to open support chat!", error)
     Alert.alert(
-      'Не удалось открыть ТП в VK!',
+      'Не удалось открыть ТП!',
       'Проверьте наличие интернета и попробуйте ещё раз. Если вы не пользуетесь VK, можно связаться с разработчиком в Telegram.',
       [
         { text: 'Telegram', onPress: openTelegram },
