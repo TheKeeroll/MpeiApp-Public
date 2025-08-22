@@ -1,4 +1,4 @@
-import React, {createRef, Fragment, useCallback, useEffect, useRef, useState} from "react";
+import React, {Fragment, useEffect, useRef, useState} from "react";
 import YaMap, {Marker, MasstransitInfo, Polyline, RouteInfo} from 'react-native-yamap';
 import {
     FlatList,
@@ -21,15 +21,17 @@ import * as FA5Icon from 'react-native-vector-icons/FontAwesome5'
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
 // @ts-ignore
 import * as IonIcon from 'react-native-vector-icons/Ionicons';
+
 import Geolocation from 'react-native-geolocation-service';
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 // @ts-ignore
 import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
-// import SafeYaMap from "./SafeYaMap";
 import mapPoints from './MapPoints.json';
+
 import LoadingScreen from "../LoadingScreen/LoadingScreen.tsx";
+
 
 YaMap.init(YANDEX_MAPS_API_KEY)
 
@@ -45,10 +47,7 @@ interface Place {
     uniqueIcon?: string
 }
 
-let FROM_LOGIN = false;
-
 const SPECIAL_CATEGORIES: PlaceCategory[]  = ['Кафедры']
-
 
 const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>void) => {
     if(Platform.OS == 'ios'){
@@ -80,7 +79,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         'Кафедры': false,
     })
     const [mapReady, setMapReady] = useState(false);
-    const [mapLoaded, setMapLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
 
     if(Platform.OS == 'android' && Platform.Version < 26) {
@@ -97,7 +95,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <Text style={{textAlign: 'center', color: colors.text, margin: 16, fontSize: 16, fontWeight: 'bold'}}>Для функционирования карты необходим Android 8.0 или новее!</Text>
             </SafeAreaView>)
     }
-    FROM_LOGIN = typeof props.route.params !== 'undefined'
     const [locationAccess, setLocationAccess] = useState<boolean>(false)
     const [isPermissionRequested, setPermissionRequested] = useState<boolean>(false)
     RequestLocationPermission((res)=>{
@@ -112,7 +109,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const [showRoutes, setShowRoutes] = useState<RouteInfo<MasstransitInfo>[] | null>(null)
     const [routes, setRoutes] = useState<RouteInfo<MasstransitInfo>[]>([])
     const [showPrintRouteBtn, setShowPrintRouteBtn] = useState<boolean>(false)
-
 
     const GetCategoryIcon: React.FC<{category: PlaceCategory}> = (props) => {
         const {colors} = useTheme<CustomTheme>()
@@ -224,7 +220,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <View style={{minHeight: 100, alignItems: 'center', alignSelf:'flex-end', width: '100%', borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: colors.background}}>
                     <Text numberOfLines={2} style={{padding: 5, color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>{props.place.name}</Text>
                     <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
-                        <Text style={{padding: 5, color: colors.text}}>Проложить маршрут</Text>
+                        <Text style={{padding: 8, color: colors.text, fontWeight: 'bold'}}>Проложить маршрут</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -243,7 +239,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     for(let c of PLACES.keys()){
         CATEGORIES.push(c)
     }
-
 
     const GetColorForRouteSelection = (index: number) => {
         const colors = ['#00FF00', '#f7ef02', '#FF0500']
@@ -281,8 +276,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         )
     }
 
-    // let map = createRef<YaMap>()
-
     const Search: React.FC<{onNavigate:(place: Place, special: boolean)=>void}> = (props)=>{
         const {colors} = useTheme<CustomTheme>()
         const [expanded, setExpanded] = useState(false)
@@ -305,9 +298,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         )
         const Expanded = () => (
           <View
-            style={[Styles.searchExpanded, {backgroundColor: colors.surface}]}>
+            style={[Styles.searchExpanded, {height: selectedCategory == 'main' ? '50%' : '75%', backgroundColor: colors.surface}]}>
               {
-                  <ScrollView style={{marginTop: 5}} contentContainerStyle={{alignItems: 'center'}}>
+                  <ScrollView style={{marginTop: 5, maxWidth: SCREEN_SIZE.width * 0.75}} contentContainerStyle={{alignItems: 'center'}}>
                       {
                           selectedCategory == 'main' ?
                             CATEGORIES.map((val, key)=><Category key={key} category={val} onPress={setSelectedCategory}/>)
@@ -330,7 +323,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
           </View>
         )
 
-
         return (
           <Fragment>
               {expanded ? <Expanded/> : <Collapsed/>}
@@ -342,14 +334,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const {colors} = useTheme<CustomTheme>()
         const isCategoryVisible = isShowCategory[props.category];
         return (
-          <View style={{flexDirection: 'row', maxWidth:SCREEN_SIZE.width * .75}}>
+          <View style={{flexDirection: 'row', maxWidth:SCREEN_SIZE.width * 0.7}}>
               <TouchableOpacity onPress={()=>{
                   props.onPress(props.category)
                   if(!isCategoryVisible){
                       handleCategoryToggle.bind(this, props.category)}
               }}
                                 style={[Styles.category,{backgroundColor: colors.primary}]}>
-                  <View style={{height: '100%', flex: .15, alignItems: 'center', justifyContent: 'center'}}>
+                  <View style={{height: '100%', flex: .15, marginHorizontal: 8, alignItems: 'center', justifyContent: 'center'}}>
                       <GetCategoryIcon category={props.category}/>
                   </View>
                   <Text numberOfLines={1} adjustsFontSizeToFit={true} style={[Styles.categoryText, {color: colors.text}]}>{props.category}</Text>
@@ -358,7 +350,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                   value={isCategoryVisible}
                   onValueChange={handleCategoryToggle.bind(this, props.category)}
                   color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
-                  style={{alignItems: 'center', justifyContent: 'center'}}
+                  style={{marginLeft: 8, alignItems: 'center', justifyContent: 'center'}}
               />
           </View>
         )
@@ -382,12 +374,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }));
     }
 
-
-
     const NavigateToPoint = (place: Place, special: boolean) =>{
         setShowPrintRouteBtn(true)
         setTargetPlace(place)
-        map.current!.setCenter({lat: place.lat, lon: place.lon}, 15, undefined,undefined, .3)
+        map.current!.setCenter({lat: place.lat, lon: place.lon}, 19, 0,90, 0.5)
     }
 
     const FocusOnUser = () => {
@@ -442,25 +432,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         }
     }, []);
 
-    useEffect(() => {
-        if (FROM_LOGIN && Platform.OS === "ios" && mapReady && !mapLoaded && map.current) {
-            console.log("Forcing map redraw on iOS");
-            requestAnimationFrame(() => {
-                try {
-                    map.current?.forceUpdate()
-                    map.current?.setZoom(18, 450)
-                } catch (e) {
-                    console.warn("Force map update failed", e);
-                }
-            });
-        }
-    }, [mapReady, mapLoaded]);
-
-
     const handleMapLoaded = () => {
         // даём нативному слою немного времени на регистрацию карты
         setTimeout(() => {
-            setMapLoaded(true)
             console.log('Map loaded')
             setMapReady(true);
             if (loading) {
@@ -493,34 +467,29 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             style={{flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
             ref={rootView}
             onLayout={e => {
-                    if (FROM_LOGIN && (Platform.OS === "ios")) {
-                        const layout = e?.nativeEvent?.layout;
-                        if (!layout || layout.width <= 0 || layout.height <= 0) {
-                            console.warn("Layout invalid, retrying...");
-                            let currentWidth = 0
-                            let counter = 0
-                            while (currentWidth <= 0 && counter < 5) {
-                                setTimeout(() => {
-                                    if (rootView.current) {
-                                        rootView.current.measure((x, y, width, height) => {
-                                            if (width > 0 && height > 0) {
-                                                setRootViewLayout({x, y, width, height});
-                                                currentWidth = width
-                                                console.log(`Measured layout: ${width}x${height}`);
-                                            }
-                                        });
+                const layout = e?.nativeEvent?.layout;
+                if (!layout || layout.width <= 0 || layout.height <= 0) {
+                    console.warn("Layout invalid, retrying...");
+                    let currentWidth = 0
+                    let counter = 0
+                    while (currentWidth <= 0 && counter < 5) {
+                        setTimeout(() => {
+                            if (rootView.current) {
+                                rootView.current.measure((x, y, width, height) => {
+                                    if (width > 0 && height > 0) {
+                                        setRootViewLayout({x, y, width, height});
+                                        currentWidth = width
+                                        console.log(`Measured layout: ${width}x${height}`);
                                     }
-                                }, 300);
-                                counter += 1;
+                                });
                             }
-                            return;
-                        }
-                        setRootViewLayout(layout);
-                        console.log(`rootViewLayout OK: ${layout.width}x${layout.height}`);
-                    } else {
-                        setRootViewLayout(e.nativeEvent.layout)
-                        console.log("rootViewLayout: height = " + e.nativeEvent.layout.height + ", width = " + e.nativeEvent.layout.width);
+                        }, 300);
+                        counter += 1;
                     }
+                    return;
+                }
+                setRootViewLayout(layout);
+                console.log(`rootViewLayout OK: ${layout.width}x${layout.height}`);
                 }
             }
         >
@@ -535,12 +504,54 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 initialRegion={{
                     lat: 55.754502,
                     lon: 37.708299,
-                    zoom: 16,
+                    zoom: 17,
                     azimuth: 0,
-                    tilt: 100
+                    tilt: 60
                 }}
                 onMapLoaded={handleMapLoaded}
                 onLayout={handleLayout}
+                onMapLongPress={(longPress) => {
+                    if(!locationAccess) return
+                    let targetPlace: Place = {
+                        category: 'Точки интереса',
+                        name: 'Пользовательская точка',
+                        lat: longPress.nativeEvent?.lat, lon: longPress.nativeEvent?.lon,
+                        howToGet: `lat. ${longPress.nativeEvent?.lat}, lon. ${longPress.nativeEvent?.lon}`
+                    }
+                    LayoutAnimation.configureNext({
+                        duration: 300,
+                        create:
+                            {
+                                type: LayoutAnimation.Types.easeInEaseOut,
+                                property: LayoutAnimation.Properties.opacity,
+                            },
+                        update:
+                            {
+                                type: LayoutAnimation.Types.easeInEaseOut,
+                            }
+                    });
+                    setModalShown(targetPlace)
+                    return <GetPlaceMarker
+                        shown={true}
+                        place={targetPlace}
+                        onPress={(place)=> {
+                            if(!locationAccess) return
+                            LayoutAnimation.configureNext({
+                                duration: 300,
+                                create:
+                                    {
+                                        type: LayoutAnimation.Types.easeInEaseOut,
+                                        property: LayoutAnimation.Properties.opacity,
+                                    },
+                                update:
+                                    {
+                                        type: LayoutAnimation.Types.easeInEaseOut,
+                                    }
+                            });
+                            setModalShown(place)}
+                        }/>
+                    }
+                }
                 style={{ flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
             >
                 {mapReady && mapPoints.map((val, key) => (
@@ -586,18 +597,11 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <Text style={{padding: 5, color: colors.text, fontSize: 18}}>Отмена</Text>
                     </TouchableOpacity>
                     {targetPlace?.howToGet && showHowToGet &&
-                        <View style={{width: '90%', minHeight: 50, borderRadius: 10, position: 'absolute', marginTop: insets.top, alignSelf: 'center', backgroundColor: colors.background}}>
+                        <View style={{width: '90%', minHeight: 50, borderRadius: 10, position: 'absolute', marginTop: insets.top, alignSelf: 'center', justifyContent: 'center', backgroundColor: colors.background}}>
                             <Text numberOfLines={3} adjustsFontSizeToFit style={{padding: 5, fontWeight: 'bold', textAlign: 'center', textAlignVertical: 'center', color: colors.text}}>{targetPlace.howToGet}</Text>
                         </View>
                     }
                 </Fragment>
-            }
-            {FROM_LOGIN &&
-                <TouchableOpacity onPress={()=>props.navigation.goBack()}
-                    style={{height: 40, width: 90, borderRadius: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', top: insets.top, left: 5}}>
-                    <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
-                    <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>Назад</Text>
-                </TouchableOpacity>
             }
             <Search onNavigate={NavigateToPoint.bind(this)}/>
             <TouchableOpacity disabled={!locationAccess} onPress={FocusOnUser} style={[Styles.focusOnUserBtn, {backgroundColor: colors.primary, opacity: !locationAccess ? .3 : 1}]}>
@@ -607,14 +611,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 map.current!.getCameraPosition((camPos:any)=>{
                     map.current!.setZoom(++camPos.zoom, .3)
                 })
-            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 175 : 170, backgroundColor: colors.primary}]}>
+            }} style={[Styles.focusOnUserBtn, {bottom: 170, backgroundColor: colors.primary}]}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{fontWeight: 'bold', fontSize: 30, color: colors.text}}>+</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={()=>{
                 map.current!.getCameraPosition((camPos:any)=>{
                     map.current!.setZoom(--camPos.zoom, .3)
                 })
-            }} style={[Styles.focusOnUserBtn, {bottom: FROM_LOGIN ? 125 : 105, backgroundColor: colors.primary}]}>
+            }} style={[Styles.focusOnUserBtn, {bottom: 105, backgroundColor: colors.primary}]}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{fontWeight: 'bold', fontSize: 30, color: colors.text}}>-</Text>
             </TouchableOpacity>
             {modalShown &&
@@ -654,8 +658,8 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             }
             {(locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
                 <TouchableOpacity onPress={()=>GetRoutes(targetPlace!)}
-                                  style={{height: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
-                    <Text style={{padding: 5, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
+                                  style={{height: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
+                    <Text style={{padding: 8, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
                 </TouchableOpacity>
             }
         </View>
@@ -677,7 +681,7 @@ const Styles = StyleSheet.create({
         alignItems:'center',
         justifyContent: 'center',
         marginRight: 5,
-        bottom: FROM_LOGIN ? 80 : 40,
+        bottom: 40,
         right: 0,
         position: 'absolute',
     },
@@ -689,24 +693,23 @@ const Styles = StyleSheet.create({
         justifyContent: 'center',
         marginLeft: 5,
         marginBottom: 5,
-        bottom: FROM_LOGIN ? 80 : 0,
+        bottom: 0,
         position: 'absolute',
     },
     searchExpanded:{
-        width: '80%',
-        height: '70%',
+        width: '75%',
+        // height: '50%',
         borderRadius: 10,
         alignItems:'center',
         justifyContent: 'center',
         marginLeft: 5,
         marginBottom: 5,
-        bottom: FROM_LOGIN ? 80 : 0,
+        bottom: 0,
         position: 'absolute'
     },
     category:{
         width: SCREEN_SIZE.width * .55,
         height: 50,
-        backgroundColor: 'red',
         marginVertical: 5,
         borderRadius: 5,
         alignItems: 'center',
@@ -714,9 +717,8 @@ const Styles = StyleSheet.create({
         flexDirection: 'row'
     },
     detailedCategory:{
-        width: SCREEN_SIZE.width * .75,
+        width: SCREEN_SIZE.width * .66,
         height: 50,
-        backgroundColor: 'red',
         marginVertical: 5,
         borderRadius: 5,
         alignItems: 'center',
