@@ -15,6 +15,8 @@ import * as EIcon from "react-native-vector-icons/Entypo";
 import * as ADIcon from "react-native-vector-icons/AntDesign";
 // @ts-ignore
 import * as FAIcon from "react-native-vector-icons/FontAwesome";
+// @ts-ignore
+import * as IonIcon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from "react-native-paper";
 import { AverageScoreToColor, withOpacity, CustomTheme } from "../../Themes/Themes";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -412,20 +414,25 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         <View style={{width: '100%', flexDirection: 'row'}}>
                             <View style={{flex: .7}}>
                                 <View style={{width: '100%', flexDirection: 'column'}}>
-                                    <View style={{width: '100%', flexDirection: 'row'}}>
+                                    <View style={{width: '100%', minHeight: '3%', justifyContent: 'center', flexDirection: 'row'}}>
+                                        <IonIcon.default name={'mail-open-outline'} size={25} adjustsFontSizeToFit
+                                            color={withOpacity(colors.text, 80)}
+                                            style={{justifySelf: 'center', marginLeft: 8, marginRight: 10, marginVertical: 8}}
+                                        />
                                         <Text
                                           numberOfLines={1}
-                                          style={{fontSize: 14, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: colors.text}}>
+                                          style={{fontSize: 14, marginTop: 5, textAlign: 'center', paddingVertical: 8, fontWeight: 'bold', color: colors.text}}>
                                             {'Почта:'}
                                         </Text>
                                         <Text
                                           numberOfLines={1}
-                                          style={{fontSize: 14, paddingTop: '1%', paddingLeft: '2%', paddingBottom: '1%', fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>{mail_str}
+                                          style={{fontSize: 14, marginTop: 5, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
+                                            {mail_str}
                                         </Text>
                                     </View>
                                     {(mail_button_flag) &&
                                       <TouchableOpacity onPress={()=> Linking.openURL(mail.data?.mode == 'legacy' ? `${URLS.MAIL_LEGACY}/owa/?ae=Folder&t=IPF.Note` : (URLS.MAIL_MODERN + '/owa/'))} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
-                                          <Text adjustsFontSizeToFit style={{fontSize: 14, color: colors.textUnderline, fontWeight: 'bold'}}>{'Перейти в ОСЭП'}</Text>
+                                          <Text adjustsFontSizeToFit style={{fontSize: 14, marginVertical: 8, color: colors.textUnderline, fontWeight: 'bold'}}>{'Перейти в ОСЭП'}</Text>
                                       </TouchableOpacity>
                                     }
                                 </View>

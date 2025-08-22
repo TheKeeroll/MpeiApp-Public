@@ -111,15 +111,21 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             }/>
                     </Fragment>
                     }
-                    <View style={{width: '100%', alignItems: 'center', marginTop: 20}}>
-                        <FIcon.default name={'yandex'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')}/>
-                        <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
+                    <View style={{width: '100%', flexDirection: 'column', alignItems: 'center', marginTop: 20}}>
                         <ListText title={''}/>
                         <ListText title={'MpeiApp'} textStyle={{color: colors.text, fontWeight: 'bold', fontSize: 18, opacity: .5}}/>
                         <ListText title={require('../../../package.json').version + (__DEV__ ? ' DEBUG' : '')} textStyle={{color: colors.text, fontSize: 14, opacity: .5}}/>
                         <ListText title={''}/>
-                        <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}/>
-                        <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
+                        <View style={{width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: "flex-start", marginVertical: 8}}>
+                            <View style={{width: '50%', flexDirection: 'column', alignItems: 'center'}}>
+                                <FIcon.default name={'yandex'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')}/>
+                                <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
+                            </View>
+                            <View style={{width: '50%', flexDirection: 'column', alignItems: 'center', marginTop: -14, justifyContent: 'flex-start'}}>
+                                <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', justifySelf: 'flex-start', color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}/>
+                                <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
+                            </View>
+                        </View>
                     </View>
                 </ScrollView>
             </View>
