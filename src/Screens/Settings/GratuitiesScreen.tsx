@@ -4,15 +4,16 @@ import {useTheme} from "react-native-paper";
 import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {ListAvatarItem, ListSeparator} from "./Components";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import {withOpacity, CustomTheme} from "../../Themes/Themes"
 
 const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     const unknown_avatar = require('../../../assets/images/Gratitudies/unknown.webp')
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Благодарности'}/>
                 <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>

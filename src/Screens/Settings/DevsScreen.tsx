@@ -9,9 +9,10 @@ import {withOpacity, CustomTheme} from "../../Themes/Themes"
 
 const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
+            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Разработчики'}/>
                 <ScrollView style={{width: '90%'}}>

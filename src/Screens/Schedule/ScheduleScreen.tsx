@@ -275,6 +275,8 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const [isShowRequestOtherSchedule, setisShowRequestOtherSchedule] = useState(false)
     const [targetSchedule, settargetSchedule] = useState('')
 
+    const insets = useSafeAreaInsets();
+
     const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
     const lastFlatListRef = useRef<FlatList | null>(null)
     // @ts-ignore
@@ -373,7 +375,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 // const flatListRef = useRef<FlatList | null>(null)
                 return (
                       <Fragment>
-                          <SafeAreaView style={{ flex: 0, paddingTop: -100, backgroundColor: colors.backdrop }} />
+                          <SafeAreaView style={{ flex: 0, paddingTop: insets.top, backgroundColor: colors.backdrop }} />
                           <View style={[{
                               alignItems: 'center',
                               justifyContent: 'center',
