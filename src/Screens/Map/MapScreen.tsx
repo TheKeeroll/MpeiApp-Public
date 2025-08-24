@@ -32,6 +32,8 @@ import mapPoints from './MapPoints.json';
 
 import LoadingScreen from "../LoadingScreen/LoadingScreen.tsx";
 
+import {Avatar} from "react-native-paper";
+
 
 YaMap.init(YANDEX_MAPS_API_KEY)
 
@@ -191,21 +193,22 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.webp')
     }
 
+    const GetRequire = (props: { shown?: boolean, place: Place, onPress: (place: Place) => void}) => {
+        switch (props.place.category) {
+            case "Точки интереса": return GetUniqueInterestsIcon(props.place);
+            case "Еда": return GetUniqueFoodIcon(props.place);
+            case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp');
+            case "Корпуса": return GetUniqueCorpsIcon(props.place);
+            case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp');
+        }
+    };
+
     const GetPlaceMarker: React.FC<{ shown: boolean; place: Place; onPress: (place: Place) => void }> = (props) => {
-        const GetRequire = () => {
-            switch (props.place.category) {
-                case "Точки интереса": return GetUniqueInterestsIcon(props.place);
-                case "Еда": return GetUniqueFoodIcon(props.place);
-                case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp');
-                case "Корпуса": return GetUniqueCorpsIcon(props.place);
-                case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp');
-            }
-        };
 
         return props.shown ? (
             <Marker
                 point={{ lat: props.place.lat, lon: props.place.lon }}
-                source={GetRequire()}
+                source={GetRequire(props)}
                 onPress={() => props.onPress(props.place)}
                 scale={Platform.OS === 'ios' ? 0.45 : 0.3}
             />
@@ -293,12 +296,12 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 setExpanded(true)
             }}
             style={[Styles.searchCollapsed, { backgroundColor: colors.primary}]}>
-              <Text style={{ fontSize: 18, color: colors.text}}>Что ищем ?</Text>
+              <Text adjustsFontSizeToFit={true} style={{ padding: 4, textAlign: 'center', fontSize: 18, color: colors.text}}>Что ищем ?</Text>
           </TouchableOpacity>
         )
         const Expanded = () => (
           <View
-            style={[Styles.searchExpanded, {height: selectedCategory == 'main' ? '50%' : '75%', backgroundColor: colors.surface}]}>
+            style={[Styles.searchExpanded, {height: selectedCategory == 'main' ? '55%' : '75%', backgroundColor: colors.surface}]}>
               {
                   <ScrollView style={{marginTop: 5, maxWidth: SCREEN_SIZE.width * 0.75}} contentContainerStyle={{alignItems: 'center'}}>
                       {
@@ -341,7 +344,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                       handleCategoryToggle.bind(this, props.category)}
               }}
                                 style={[Styles.category,{backgroundColor: colors.primary}]}>
-                  <View style={{height: '100%', flex: .15, marginHorizontal: 8, alignItems: 'center', justifyContent: 'center'}}>
+                  <View style={{width: '25%', height: '100%', flex: .15, marginHorizontal: 8, alignItems: 'center', justifyContent: 'center'}}>
                       <GetCategoryIcon category={props.category}/>
                   </View>
                   <Text numberOfLines={1} adjustsFontSizeToFit={true} style={[Styles.categoryText, {color: colors.text}]}>{props.category}</Text>
@@ -361,8 +364,14 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const {place} = props
         return (
           <TouchableOpacity onPress={props.onPress.bind(this, props.place)} style={[Styles.detailedCategory,{backgroundColor: colors.primary}]}>
-              {/*<View style={{height: '100%', flex: .15, backgroundColor: 'green'}}/>*/}
-              <Text numberOfLines={2} adjustsFontSizeToFit={true} style={[Styles.categoryText, {flex: 1, color: colors.text}]}>{place.name}</Text>
+              <View style={{width: '100%', height: '100%', padding: 8, justifyContent: 'center', flexDirection: 'row'}}>
+                <Avatar.Image
+                       size={25}
+                       source={GetRequire(props)}
+                       style={{maxWidth: '20%', maxHeight: '100%', margin: 8, alignSelf: 'flex-start'}}
+                />
+                <Text numberOfLines={2} adjustsFontSizeToFit={true} style={[Styles.categoryText, {flex: 1, color: colors.text}]}>{place.name}</Text>
+              </View>
           </TouchableOpacity>
         )
     }
@@ -659,7 +668,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             {(locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
                 <TouchableOpacity onPress={()=>GetRoutes(targetPlace!)}
                                   style={{height: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
-                    <Text style={{padding: 8, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
+                    <Text adjustsFontSizeToFit={true} style={{padding: 8, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
                 </TouchableOpacity>
             }
         </View>
@@ -728,6 +737,7 @@ const Styles = StyleSheet.create({
     categoryText:{
         paddingLeft: 5,
         alignSelf: 'center',
+        textAlignVertical: 'center',
         flex: .85
     }
 })
