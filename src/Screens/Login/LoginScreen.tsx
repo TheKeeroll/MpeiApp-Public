@@ -71,7 +71,7 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
                     Желаю приятного использования и успехов в учёбе!
                 </Text>
             </ScrollView>
-            <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{margin: '2%', alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
+            <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{marginTop: '2%', marginBottom: 36, alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
         </SafeAreaView>
     )
 }

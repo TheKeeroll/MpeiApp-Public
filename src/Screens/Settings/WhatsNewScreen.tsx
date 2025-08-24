@@ -14,6 +14,13 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} backable title={'Что нового ?'}/>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Новое начало'} version={'2.0.0'}/>
+                    <WhatsNewChange title={'Масштабное обновление всех зависимостей => полноценная поддержка свежих версий iOS и Android!'}/>
+                    <WhatsNewChange title={'Карта: построение маршрутов в любую точку по долгому нажатию, в том числе и на iOS, другие улучшения'}/>
+                    <WhatsNewChange title={'QR-Сканер: возможность зума'}/>
+                    <WhatsNewChange title={'Новый вариант получения техподдержки'}/>
+                    <WhatsNewChange title={'Множество правок интерфейсов и визуала в целом'}/>
+
                     <WhatsNewLogo title={'Сюрприз на ДР'} version={'1.4.1'}/>
                     <WhatsNewChange title={'Хотфикс получения группы => расписания после изменений в БАРС'}/>
                     <WhatsNewChange title={'Добавлен просмотр расписания по аудитории!'}/>

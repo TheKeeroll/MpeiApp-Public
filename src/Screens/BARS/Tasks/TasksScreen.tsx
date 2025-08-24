@@ -34,7 +34,7 @@ const TaskCell = ({item}: {item: BARSTask, index: number}) => {
         <View style={[Styles.statusText, {backgroundColor: colors.primary}]}>
           <Text
             numberOfLines={2}
-            style={{padding: '1%', fontWeight: 'bold', color: text_color}}>
+            style={{padding: '1%', textAlign: 'center', fontWeight: 'bold', color: text_color}}>
             {item.status}
           </Text>
         </View>
@@ -66,7 +66,7 @@ const TaskCell = ({item}: {item: BARSTask, index: number}) => {
       </Text>
       {(!item.status.includes('ознакомлен')) &&
         <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_TASKS + BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
-          <Text adjustsFontSizeToFit style={{color: colors.textUnderline, fontWeight: 'bold'}}>{'Перейти на сайт БАРС'}</Text>
+          <Text adjustsFontSizeToFit style={{color: colors.textUnderline, marginBottom: 4, fontWeight: 'bold'}}>{'Перейти на сайт БАРС'}</Text>
         </TouchableOpacity>
       }
     </View>

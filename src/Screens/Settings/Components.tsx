@@ -47,12 +47,12 @@ export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: 
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
-        <TouchableOpacity disabled={disabled} onPress={props.onPress} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+        <TouchableOpacity disabled={disabled} onPress={props.onPress} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, maxHeight: 56, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
             {typeof props.icon != 'undefined' &&
             <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
             }
             <View style={{flex: .7 + (typeof props.icon == 'undefined' ? .12 : 0), height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-                <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+                <Text adjustsFontSizeToFit={true} style={{marginLeft: 6, padding: 8, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
             <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
                 <MtIcons.default size={40} color={disabled ? withOpacity(colors.text, 30) : colors.text} name={'navigate-next'}/>

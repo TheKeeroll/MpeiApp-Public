@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     Alert,
     Linking,
-    ScrollView,
+    ScrollView, TouchableOpacity,
     View
 } from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader"
@@ -118,12 +118,16 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <ListText title={''}/>
                         <View style={{width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: "flex-start", marginVertical: 8}}>
                             <View style={{width: '50%', flexDirection: 'column', alignItems: 'center'}}>
-                                <FIcon.default name={'yandex'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')}/>
-                                <ListText textStyle={{color: colors.textUnderline}} onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
+                                <TouchableOpacity onPress={()=>Linking.openURL('https://yandex.ru/legal/maps_api/')}>
+                                    <FIcon.default name={'yandex'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: colors.textUnderline}}/>
+                                    <ListText textStyle={{color: colors.textUnderline}} title={'Условия использования\nотдельных сервисов «Яндекс.Карт»'}/>
+                                </TouchableOpacity>
                             </View>
                             <View style={{width: '50%', flexDirection: 'column', alignItems: 'center', marginTop: -14, justifyContent: 'flex-start'}}>
-                                <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', justifySelf: 'flex-start', color: colors.textUnderline}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}/>
-                                <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')} title={'Проект на GitHub'}/>
+                                <TouchableOpacity onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}>
+                                    <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', justifySelf: 'flex-start', color: colors.textUnderline}}/>
+                                    <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} title={'Проект на GitHub'}/>
+                                </TouchableOpacity>
                             </View>
                         </View>
                     </View>
