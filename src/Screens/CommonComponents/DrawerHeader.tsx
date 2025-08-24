@@ -63,7 +63,7 @@ export const NavigationHeader: React.FC<{navigation: any, title: string, beforeG
                     if(typeof props.beforeGoBack != 'undefined') props.beforeGoBack()
                     else props.navigation.goBack()
 
-                }} style={{height: '100%', zIndex: 10, position: 'absolute', top: 20, left: 0}}>
+                }} style={{height: '100%', zIndex: 10, position: 'absolute', top: Platform.OS === 'ios' ? 0 : 20, left: 0}}>
                     <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
                 </TouchableOpacity>}
             <View style={{flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center'}}>
