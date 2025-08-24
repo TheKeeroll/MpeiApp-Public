@@ -14,8 +14,8 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
+            <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <NavigationHeader {...props} backable title={'Что нового ?'}/>
                 <ScrollView style={{width: '90%'}}>
                     <WhatsNewLogo title={'Новое начало'} version={'2.0.0'}/>
                     <WhatsNewChange title={'Масштабное обновление всех зависимостей => полноценная поддержка свежих версий iOS и Android!'}/>

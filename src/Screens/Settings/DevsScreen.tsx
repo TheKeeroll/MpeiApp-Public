@@ -13,8 +13,8 @@ const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
+            <NavigationHeader {...props} backable title={'Разработчики'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <NavigationHeader {...props} backable title={'Разработчики'}/>
                 <ScrollView style={{width: '90%'}}>
                     <ListSeparator title={'Оригинальная идея, разработка pre-alpha- и alpha-версий'}/>
                     <ListAvatarItem title={`Захар 'TheKeeroll' Степанов`} link={'https://vk.com/ojevohevcoh'} textStyle={{fontWeight: 'bold', color: colors.text}} image={require('../../../assets/images/DevAvatars/Z.webp')}/>

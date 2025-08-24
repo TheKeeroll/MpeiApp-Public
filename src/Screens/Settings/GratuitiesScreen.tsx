@@ -14,8 +14,8 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     return (
         <Fragment>
             <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
+            <NavigationHeader {...props} backable title={'Благодарности'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <NavigationHeader {...props} backable title={'Благодарности'}/>
                 <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>
 
                     <ListSeparator title={'Тестеры версий pre-alpha'}/>
