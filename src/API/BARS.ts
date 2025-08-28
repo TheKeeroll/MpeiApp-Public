@@ -682,31 +682,35 @@ export default class BARS{
           } else if (!(response.includes("Оценки в БАРС"))) {
             console.warn("Not main BARS page! An attempt to redirect...")
             try {
-              let studentID = response.split('studentID=')[1].split('"')[0]
-              console.warn('studentID= ' + studentID)
-              return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+                let studentID = response.split('studentID=')[1].split('"')[0]
+                console.warn('studentID= ' + studentID)
+                return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
                 method: "GET",
                 headers: COMMON_HTTP_HEADER,
-              }).then(r => r.text()).then((response) => {
-                console.log("Successfully redirected and logged in")
-                const result = ParseStudentInfo(response)
-                if (isBARSError(result)) {
-                  console.error("BARS error detected!")
-                  throw result;
-                }
+                }).then(r => r.text()).then((response) => {
+                    console.log("Successfully redirected and logged in")
+                    const result = ParseStudentInfo(response)
+                    if (isBARSError(result)) {
+                      console.error("BARS error detected!")
+                      throw result;
+                    }
 
-                this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-                this.mCurrentData.student = result as BARSStudentInfo
-                console.timeEnd('Login&StudentInfoParser')
-                console.log(this.mCurrentData.student);
-                this.mCurrentData.student.headman = false;
-                this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-                this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
-                return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
-              })
+                    this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+                    this.mCurrentData.student = result as BARSStudentInfo
+                    console.timeEnd('Login&StudentInfoParser')
+                    console.log(this.mCurrentData.student);
+                    this.mCurrentData.student.headman = false;
+                    this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+                    this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+                    return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+                })
             } catch (e:any) {
               console.warn('ERROR: ' + e.toString())
-              throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+              if (e.toString().includes("Cannot read property 'split' of undefined")){
+                  throw CreateBARSError("STUDENTS_NOT_FOUND", "")
+              } else {
+                  throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+              }
             }
           } else if (response.includes("Рейтинг")) {
             console.log("Successfully logged in")
@@ -738,7 +742,12 @@ export default class BARS{
           } else {
             console.warn("Data download time exceeded!", e)
             if (firstStart) {
-              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также отключите двухфакторную аутентификацию в БАРС(если включена) и попробуйте ещё раз."))
+              if (isBARSError(e)) {
+                  if (e.error == 'STUDENTS_NOT_FOUND') {
+                      return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ совсем недавно, то это нормально - просто войдите снова после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
+                  }
+              }
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также отключите двухфакторную аутентификацию в БАРС(если включена) и попробуйте ещё раз. Если проблема сохраняется - свяжитесь с разработчиком(кнопка 'Поддержка')!"))
             }
             else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           }
