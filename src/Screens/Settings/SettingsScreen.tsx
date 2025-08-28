@@ -3,7 +3,7 @@ import {useTheme} from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     Alert,
-    Linking,
+    Linking, Platform,
     ScrollView, TouchableOpacity,
     View
 } from "react-native";
@@ -86,6 +86,17 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <FaIcon.default name={'telegram'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
                                 title={'ЛС разработчика в Telegram'} onPress={() => openSupportChat("tg")}/>
+                    <ListSeparator title={'Оставить оценку/отзыв'}/>
+                    {Platform.OS === 'android' && <ListButton icon={
+                        <EnIcon.default name={'google-play'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                    }
+                                title={'Страница приложения в Google Play'} onPress={()=>Linking.openURL('https://play.google.com/store/apps/details?id=com.mpeiapp')}/>
+                    }
+                    {Platform.OS === 'ios' && <ListButton icon={
+                        <FIcon.default name={'app-store'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                    }
+                                title={'Страница приложения в App Store'} onPress={()=>Linking.openURL('https://apps.apple.com/ru/app/mpeiapp/id1618910681')}/>
+                    }
                     {__DEV__ &&
                     <Fragment>
                         <ListSeparator title={'Debug'}/>
