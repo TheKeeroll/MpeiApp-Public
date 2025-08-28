@@ -29,8 +29,8 @@ const DateCell: React.FC<{
 }> = (props) =>{
     const isSelected = props.index == props.selectedIndex
     // console.log("initialDateString = " + props.item.date)
-    let dateYear = props.item.date.split('.')[2]
-    let date = new Date(parseInt(dateYear), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
+    // let dateYear = props.item.date.split('.')[2]
+    let date = new Date(parseInt(YearForFix), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
     // console.log('current month = ' + props.item.date.split('.')[1])
     // console.log('current YearForFix = ' + YearForFix)
     // date.setFullYear(Number(YearForFix))
@@ -115,7 +115,6 @@ const DateSelector: React.FC<{
         const separatorWidth = 10;
         return (screenWidth - separatorWidth * (cellsPerScreen - 1)) / cellsPerScreen;
     }, []);
-
     return (
       <View style={{ width: '100%', marginTop: 10, height: 80 }}>
           <FlatList
