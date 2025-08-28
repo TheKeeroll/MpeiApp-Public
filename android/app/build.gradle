@@ -110,7 +110,7 @@ android {
         applicationId "com.mpeiapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 72
+        versionCode 73
         versionName "2.0.0"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
@@ -176,12 +176,12 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
 
-    implementation 'androidx.work:work-runtime:2.9.1'
+    implementation 'androidx.work:work-runtime:2.10.3'
 
-    implementation 'joda-time:joda-time:2.10.14'
+    implementation 'joda-time:joda-time:2.14.0'
 
     implementation 'org.jetbrains:annotations:26.0.2'
-    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
 
     if (hermesEnabled.toBoolean()) {
             implementation("com.facebook.react:hermes-android")

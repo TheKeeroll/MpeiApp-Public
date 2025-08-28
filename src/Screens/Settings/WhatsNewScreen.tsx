@@ -21,8 +21,9 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     <WhatsNewChange title={'Масштабное обновление всех зависимостей => полноценная поддержка свежих версий iOS и Android!'}/>
                     <WhatsNewChange title={'Карта: построение маршрутов в любую точку по долгому нажатию, в том числе и на iOS, другие улучшения'}/>
                     <WhatsNewChange title={'QR-Сканер: возможность зума'}/>
+                    <WhatsNewChange title={'Доступ к разделу настроек для не выполнивших вход пользователей'}/>
                     <WhatsNewChange title={'Новый вариант получения техподдержки'}/>
-                    <WhatsNewChange title={'Множество правок интерфейсов и визуала в целом'}/>
+                    <WhatsNewChange title={'Огромное кол-во технических и визуальных правок'}/>
 
                     <WhatsNewLogo title={'Сюрприз на ДР'} version={'1.4.1'}/>
                     <WhatsNewChange title={'Хотфикс получения группы => расписания после изменений в БАРС'}/>
