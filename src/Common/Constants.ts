@@ -13,7 +13,7 @@ export const URLS = {
   BARS_SCHEDULE: 'https://bars.mpei.ru/bars_web/Timetable/RUZ/Timetable?rt=3&name=',
   BARS_TEACHER_SCHEDULE: 'https://bars.mpei.ru/bars_web/Timetable/RUZ/Timetable?rt=1&lec_oid=',
   BARS_SEMESTER: 'https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/_PartialListStudent_SemesterSheet__Mark?studentID=',
-  BARS_SKIPPED_CLASSES: 'https://bars.mpei.ru/bars_web/ST_Study/LessonSkip/ListStudent__LessonSkip?studentID=',
+  BARS_SKIPPED_CLASSES: 'https://bars.mpei.ru/bars_web/ST_Study/Lesson__Student/ListStudent__Lesson__Student?studentID=',
   BARS_QR_PRESENCE: 'https://bars.mpei.ru/bars_web/?ReturnUrl=https%3A%2F%2Fbars.mpei.ru%2Fbars_web%2FQR%2FPresence%2FConfirm%3FqrID%3D',
 
   HM_LIST_GROUP: 'https://bars.mpei.ru/bars_web/StudyGroup/StudyGroup/ListStudyGroup',
@@ -57,6 +57,28 @@ export const LOGIN_HEADER = {
   'sec-fetch-user': '?1',
   'sec-gpc': '1',
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
+}
+
+export const HEADER_WITH_USER_ID = (user_id: string)  => {
+  return {
+    'accept': `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
+    'accept-Encoding': 'gzip, deflate, br, zstd',
+    'accept-Language': 'ru,en;q=0.9',
+    'cache-Control': 'max-age=0',
+    'connection': 'keep-alive',
+    'dnt': '1',
+    'host': 'bars.mpei.ru',
+    'referer': URLS.BARS_MAIN + user_id,
+    'sec-ch-ua': `"Not)A;Brand";v="8", "Chromium";v="138", "YaBrowser";v="25.8", "Yowser";v="2.5"`,
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': `"Windows"`,
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36'
+  }
 }
 
 export const QR_PRESENCE_HEADER = (qr_combined_url: string)  => {

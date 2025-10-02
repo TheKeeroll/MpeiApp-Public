@@ -12,7 +12,7 @@ import {
   Teacher,
 } from "./DataTypes";
 import {
-  COMMON_HTTP_HEADER,
+  COMMON_HTTP_HEADER, HEADER_WITH_USER_ID,
   LOGIN_HEADER,
   STORAGE_KEYS,
   URLS,
@@ -1116,27 +1116,9 @@ export default class BARS{
           'FilterSemester': {'value': this.mCurrentData.availableSemesters![0].id}
         })
     )
-    return Timeout(2500, fetch(link,{
+    return Timeout(3500, fetch(link,{
       method: 'GET',
-      headers: {
-        'Accept': `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'ru,en;q=0.9',
-        'Cache-Control': 'max-age=0',
-        'Connection': 'keep-alive',
-        'Dnt': '1',
-        'Host': 'bars.mpei.ru',
-        'Referer': URLS.BARS_MAIN + this.mCurrentData.student!.id,
-        'Sec-Ch-Ua': `"Not.A/Brand";v="8", "Chromium";v="114", "YaBrowser";v="23"`,
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': `"Windows"`,
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 YaBrowser/23.7.0.2526 Yowser/2.5 Safari/537.36'
-      }
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id)
     }).then(r=>r.text()).then((response)=>{
       const skippedClasses = SkippedClassesParser(response)
       if(isBARSError(skippedClasses)){

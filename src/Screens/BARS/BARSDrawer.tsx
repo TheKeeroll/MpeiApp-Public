@@ -72,8 +72,8 @@ const DrawerHeader: React.FC = () => {
                 }
             }
         }
-        study_rating_text = ''  + student.study_rating
-        complex_rating_text = '' + student.complex_rating
+        study_rating_text = ''  + student.study_rating.trim()
+        complex_rating_text = '' + student.complex_rating.trim()
         if (student.study_rating.includes('не распарсилось')){
             study_rating_text = 'NO_VALUE'
         }
@@ -89,8 +89,8 @@ const DrawerHeader: React.FC = () => {
     let av_scorePA_color = colors.warning
     let av_scoreZK_color = colors.warning
     try {
-        av_scorePA_text = ''  + student.average_scorePA
-        av_scoreZK_text = '' + student.average_scoreZK
+        av_scorePA_text = ''  + student.average_scorePA.trim()
+        av_scoreZK_text = '' + student.average_scoreZK.trim()
         if (student.average_scorePA.includes('не распарсилось')){
             av_scorePA_text = 'NO_VALUE'
         }

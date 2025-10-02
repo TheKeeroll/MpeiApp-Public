@@ -12,15 +12,29 @@ const LessonTypeFromHeader = (header: string) => {
     'лекция (факультатив)',
     'консультации КП/КР'
   ]
-  for(let i of types){
-    if(header.includes(i)) return i//header.replace(', ' + i + ',', '')
+  for(let type of types){
+    if(header.includes(type)) {
+      switch(type) {
+        case 'лабораторная работа':
+          return 'Лаб. работа';
+        case 'практическое занятие':
+          return 'Практ. занятие';
+        case 'лекция':
+          return 'Лекция';
+        case 'лекция (факультатив)':
+          return 'Лекция';
+        case 'консультация':
+          return 'Консультация';
+        case 'консультации КП/КР':
+          return 'Консул. КП/КР';
+      }
+    }
   }
-  return 'NaN'
-
+  return header.split(',')[2].split('(')[0].trim()
 }
 
 const RemoveExamType = (header: string) => {
-  const testFix = [
+  const examType = [
     '(экзамен)',
     '(лекция (факультатив))',
     '(зачёт с оценкой)',
@@ -28,11 +42,10 @@ const RemoveExamType = (header: string) => {
     '(зачёт с оценкой (по билетам))',
     '(защита КП/КР)'
   ]
-  for(let i of testFix){
-    if(header.includes(i)) return header.replace(i, '')
+  for(let type of examType){
+    if(header.includes(type)) return header.replace(type, '')
   }
-  return 'NaN'
-
+  return header
 }
 
 export const LessonIndexToTime = (index: string) => {
@@ -61,7 +74,8 @@ export default function(raw: string): SkippedClass[] | BARSError{
     console.time('SkippedClassesParser - ' + Platform.OS)
 
     try {
-      $ = parse(raw).querySelector('#tbl__PartialListStudent__LessonSkip > tbody')!.querySelectorAll('tr')!
+      // $ = parse(raw).querySelector('#tbl__PartialListStudent__LessonSkip > tbody')!.querySelectorAll('tr')!
+      $ = parse(raw).querySelector('#tbl__PartialListStudent__Lesson__Student > tbody')!.querySelectorAll('tr')!
     } catch (e){
       console.log('SkippedClasses not detected.')
       console.timeEnd('SkippedClassesParser - ' + Platform.OS)
@@ -69,20 +83,20 @@ export default function(raw: string): SkippedClass[] | BARSError{
     }
 
     for(let i of $){
-      const isGoodExcuse = i.text.includes('По уважительной причине')
-      const rawHeader = RemoveExamType(i.querySelector('td:nth-child(1) > label')!.text.trim())
+      const isGoodExcuse = i.text.includes('уважительн')
+      const rawHeader = RemoveExamType(i.querySelector('td:nth-child(1) > label > a')?.text?.trim() || i.querySelector('td:nth-child(1) > label')!.text.trim())
       //#tbl__PartialListStudent__LessonSkip > tbody > tr:nth-child(4) > td:nth-child(1) > span:nth-child(6)
-      const rawCreatedBy = i.querySelector(`td > span:nth-child(${isGoodExcuse ? 4 : 3})`)!.text.split(': ')[1].split(' ')
-      const rawLastChangeBy = i.querySelector(`td > span:nth-child(${isGoodExcuse ? 6 : 5})`)!.text.split(': ')[1].split(' ')
+      const rawCreatedBy = i.querySelector(`td:nth-child(1) > span:nth-child(${isGoodExcuse ? 6 : 5})`)!.text.split(' ')
+      const rawLastChangeBy = i.querySelector(`td:nth-child(1) > span:nth-child(${isGoodExcuse ? 9 : 8})`)!.text.split(' ')
       const createdBy: SkippedClassManagedBy = {
-        date: rawCreatedBy[0],
-        time: rawCreatedBy[1],
-        name: rawCreatedBy[2] + rawCreatedBy[3]
+        date: rawCreatedBy[1],
+        time: rawCreatedBy[2],
+        name: rawCreatedBy[3] + ' ' + rawCreatedBy[4]
       }
       const lastChangeBy: SkippedClassManagedBy = {
-        date: rawLastChangeBy[0],
-        time: rawLastChangeBy[1],
-        name: rawLastChangeBy[2] + rawLastChangeBy[3]
+        date: rawLastChangeBy[1],
+        time: rawLastChangeBy[2],
+        name: rawLastChangeBy[3] + ' ' + rawLastChangeBy[4]
       }
       const skippedClass: SkippedClass = {
         date: rawHeader.split(',')[0],

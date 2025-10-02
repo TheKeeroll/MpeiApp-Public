@@ -48,17 +48,7 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
         lessonTypeColor = colors.error
     }
     else if (props.item.lessonType.includes('екция')){
-        props.item.lessonType = 'Лекция'
         lessonTypeColor = colors.accent
-    }
-    if (props.item.lessonType.includes('рактическое')){
-        props.item.lessonType = 'Практ. занятие'
-    }
-    if (props.item.lessonType.includes('абораторная')){
-        props.item.lessonType = 'Лаб. работа'
-    }
-    if (props.item.lessonType.includes('онсультации')){
-        props.item.lessonType = 'Консул. КП/КР'
     }
     return (
         <View style={{alignItems: 'center', justifyContent: 'space-evenly', minHeight: SCREEN_SIZE.height * .225, marginVertical: SCREEN_SIZE.width * .015, marginLeft: props.index % 3 == 0 ? SCREEN_SIZE.width * .015 : 0, marginRight: SCREEN_SIZE.width * .015, borderRadius: 8,  width: '31.125%', backgroundColor: colors.background}}>
