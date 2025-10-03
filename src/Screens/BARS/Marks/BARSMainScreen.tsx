@@ -11,7 +11,7 @@ import {
     View,
 } from "react-native";
 import { COMMON_HTTP_HEADER, SCREEN_SIZE, URLS } from "../../../Common/Constants";
-import { AdditionalData, BARSDiscipline, Mark, ScheduleForWidget } from "../../../API/DataTypes";
+import { AdditionalData, BARSDiscipline, BARSScheduleCell, Mark, ScheduleForWidget } from "../../../API/DataTypes";
 import { AverageScoreToColor, MarkToColor, withOpacity, CustomTheme } from "../../../Themes/Themes";
 import { createStackNavigator } from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
@@ -36,112 +36,115 @@ const group = 'group.com.mpeiapp'
 const SharedStorage = NativeModules.SharedStorage
 
 const FeedWidget = async () => {
-    try {
-        let YearForFix = String(new Date().getFullYear())
+  try {
+    let YearForFix = String(new Date().getFullYear())
+    const studentSchedule = useSelector((state: RootState) => state.Schedule)
+    const todayStr = new Date().getDDMMYY()
 
-        let studentSchedule = useSelector((state: RootState)=>state.Schedule)
-        let today = new Date().getDDMMYY()
-        let isTodayFound = false
+    const placeholderDay = (isToday = false): BARSScheduleCell => ({
+      date: "NOT_SET",
+      lessons: [{
+        name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "",
+        teacher: { name: "", lec_oid: "", fullName: "" },
+        group: "", type: "PLACEHOLDER"
+      }],
+      isEmpty: true,
+      isToday
+    })
 
-        let dataForWidget: ScheduleForWidget = {yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}, today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true}, tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}}
-        try {
-            for (let j = 0; j < studentSchedule.data!.days.length; j++) {
-                let dateYear = studentSchedule.data!.days[j]!.date.split('.')[2]
-                // console.log('dateYear = ' + dateYear)
-                if (parseInt(dateYear) > parseInt(YearForFix)) {
-                    YearForFix = studentSchedule.data!.days[j]!.date.split('.')[2]
-                    console.log('FeedWidget - YearForFix increased to ' + YearForFix)
-                }
-                if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))) {
-                    YearForFix = studentSchedule.data!.days[j]!.date.split('.')[2]
-                    console.log('FeedWidget - YearForFix decreased to ' + YearForFix)
-                }
-
-                if (studentSchedule.data!.days[j]!.date!.includes("2020")) {
-                    studentSchedule.data!.days[j]!.date! = studentSchedule.data!.days[j]!.date!.replace("2020", "" + YearForFix)
-                }
-                try {
-                    if (studentSchedule.data!.days[j + 1]!.date!.includes("2020")) {
-                        studentSchedule.data!.days[j + 1]!.date! = studentSchedule.data!.days[j + 1]!.date!.replace("2020", "" + YearForFix)
-                    }
-                } catch (e) {
-                    console.warn('studentSchedule.data!.days[j+1] not exists! j = ' + j)
-                }
-                if (today == studentSchedule.data!.days[j]!.date!) {
-                    isTodayFound = true
-                    try {
-                        console.log('Yesterday: ' + studentSchedule.data!.days[j - 1]!.date!)
-                        console.log('Tomorrow: ' + studentSchedule.data!.days[j + 1]!.date!)
-                        dataForWidget = {
-                            yesterday: studentSchedule.data!.days[j - 1]!,
-                            today: studentSchedule.data!.days[j]!,
-                            tomorrow: studentSchedule.data!.days[j + 1]!
-                        }
-                    } catch (e) {
-                        try {
-                            console.log('Tomorrow: ' + studentSchedule.data!.days[j + 1]!.date!)
-                            dataForWidget = {
-                                yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
-                                today: studentSchedule.data!.days[j]!,
-                                tomorrow: studentSchedule.data!.days[j + 1]!
-                            }
-                            console.warn('dataForWidget without yesterday!')
-                        } catch (e) {
-                            try {
-                                console.log('Yesterday: ' + studentSchedule.data!.days[j - 1]!.date!)
-                                dataForWidget = {
-                                    yesterday: studentSchedule.data!.days[j-1]!,
-                                    today: studentSchedule.data!.days[j]!,
-                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}
-                                }
-                                console.warn('dataForWidget without tomorrow!')
-                            } catch (e) {
-                                dataForWidget = {
-                                    yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
-                                    today: studentSchedule.data!.days[j]!,
-                                    tomorrow: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false}
-                                }
-                                console.warn('dataForWidget only with today!')
-                            }
-                        }
-                    }
-                    console.log('Today: ' + studentSchedule.data!.days[j]!.date!)
-                    break
-                }
-                /*dataForWidget = {
-                    yesterday: studentSchedule.data!.days[j],
-                    today: studentSchedule.data!.days[j + 1],
-                    tomorrow: studentSchedule.data!.days[j + 2]
-                }
-                console.log('Test start date: ' + studentSchedule.data!.days[j]!.date!)
-                break*/
-            }
-            if (!isTodayFound) {
-                if (convertDate(studentSchedule.data!.days[0]!.date!) > convertDate(new Date().getDDMMYY())){
-                    dataForWidget = {
-                        yesterday: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: false},
-                        today: {date: "NOT_SET", lessons: [{name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "", teacher: {name: "", lec_oid: "", fullName: ""}, group: "", type: "PLACEHOLDER"}], isEmpty: true, isToday: true},
-                        tomorrow: studentSchedule.data!.days[0]!
-                    }
-                    console.log('Only future schedule found - dataForWidget prepared accordingly');
-                } else {
-                    console.log('Suitable schedule not found - empty dataForWidget will be provided')
-                }
-            }
-
-        } catch (error) {
-            console.warn('preparing dataForWidget failed, empty schedule will be provided! Reason: ' + error)
-        }
-        if(Platform.OS == 'ios'){
-            await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)
-            console.log('iOS - dataForWidget shared')
-        } else {
-            // Android
-            SharedStorage.set(JSON.stringify({dataForWidget}))
-        }
-    } catch (error:any) {
-        console.warn( 'FeedWidget failed: ' + error.toString())
+    let dataForWidget: ScheduleForWidget = {
+      yesterday: placeholderDay(),
+      today: placeholderDay(true),
+      tomorrow: placeholderDay()
     }
+
+    const days = studentSchedule?.data?.days ?? []
+
+    if (days.length === 0) {
+      console.log('FeedWidget - no days in schedule, using placeholders')
+    } else {
+      // --- анализ годов и правка "2020" ---
+      for (let i = 0; i < days.length; i++) {
+        const d = days[i]!
+        const parts = (d.date ?? "").split('.')
+        if (parts[2]) {
+          const dateYear = parts[2]
+          if (parseInt(dateYear) > parseInt(YearForFix)) {
+            YearForFix = dateYear
+            console.log('FeedWidget - YearForFix increased to ' + YearForFix)
+          }
+          if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))) {
+            YearForFix = dateYear
+            console.log('FeedWidget - YearForFix decreased to ' + YearForFix)
+          }
+        }
+      }
+      // фиксим "2020"
+      for (let i = 0; i < days.length; i++) {
+        if (days[i]!.date?.includes("2020")) {
+          days[i]!.date = days[i]!.date!.replace("2020", YearForFix)
+        }
+      }
+
+      // --- поиск today ---
+      const idxToday = days.findIndex(d => d.date === todayStr)
+
+      if (idxToday !== -1) {
+        // есть today
+        console.log('FeedWidget - Today found at index', idxToday)
+        dataForWidget = {
+          yesterday: days[idxToday - 1] ?? placeholderDay(),
+          today: days[idxToday],
+          tomorrow: days[idxToday + 1] ?? placeholderDay()
+        }
+      } else {
+        // today нет → ищем соседей
+        const todayTime = convertDate(todayStr).getTime()
+        const prevCandidates = days.filter(d => convertDate(d.date).getTime() < todayTime)
+        const nextCandidates = days.filter(d => convertDate(d.date).getTime() > todayTime)
+
+        const prevDay = prevCandidates.length ? prevCandidates[prevCandidates.length - 1] : undefined
+        const nextDay = nextCandidates.length ? nextCandidates[0] : undefined
+
+        if (prevDay || nextDay) {
+          console.log('FeedWidget - Today missing. Prev:', prevDay?.date ?? 'none', ' Next:', nextDay?.date ?? 'none')
+          dataForWidget = {
+            yesterday: prevDay ?? placeholderDay(),
+            today: placeholderDay(true),
+            tomorrow: nextDay ?? placeholderDay()
+          }
+        } else {
+          // вообще нет соседей → ищем ближайший день по модулю
+          let nearest: { day: BARSScheduleCell, diff: number } | null = null
+          for (const d of days) {
+            const diff = Math.abs(convertDate(d.date).getTime() - todayTime)
+            if (!nearest || diff < nearest.diff) nearest = { day: d, diff }
+          }
+          if (nearest) {
+            console.log('FeedWidget - No adjacent days; using nearest available as tomorrow:', nearest.day.date)
+            dataForWidget = {
+              yesterday: placeholderDay(),
+              today: placeholderDay(true),
+              tomorrow: nearest.day
+            }
+          } else {
+            console.log('FeedWidget - No suitable schedule found - keeping placeholders')
+          }
+        }
+      }
+    }
+
+    // --- отправка ---
+    if (Platform.OS == 'ios') {
+      await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)
+      console.log('iOS - dataForWidget shared')
+    } else {
+      SharedStorage.set(JSON.stringify({ dataForWidget }))
+      console.log('Android - dataForWidget shared')
+    }
+  } catch (error: any) {
+    console.warn('FeedWidget failed: ' + error?.toString())
+  }
 }
 
 let weekDemonstration = "";
