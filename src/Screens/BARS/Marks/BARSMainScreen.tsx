@@ -37,7 +37,6 @@ const SharedStorage = NativeModules.SharedStorage
 
 const FeedWidget = async () => {
   try {
-    let YearForFix = String(new Date().getFullYear())
     const studentSchedule = useSelector((state: RootState) => state.Schedule)
     const todayStr = new Date().getDDMMYY()
 
@@ -57,41 +56,17 @@ const FeedWidget = async () => {
       today: placeholderDay(true),
       tomorrow: placeholderDay()
     }
-
-    const days = studentSchedule?.data?.days ?? []
+    // создаём копию массива, чтобы не мутировать state
+    const days = (studentSchedule?.data?.days ?? []).map(d => ({ ...d }))
 
     if (days.length === 0) {
       console.log('FeedWidget - no days in schedule, using placeholders')
     } else {
-      // --- анализ годов и правка "2020" ---
-      for (let i = 0; i < days.length; i++) {
-        const d = days[i]!
-        const parts = (d.date ?? "").split('.')
-        if (parts[2]) {
-          const dateYear = parts[2]
-          if (parseInt(dateYear) > parseInt(YearForFix)) {
-            YearForFix = dateYear
-            console.log('FeedWidget - YearForFix increased to ' + YearForFix)
-          }
-          if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))) {
-            YearForFix = dateYear
-            console.log('FeedWidget - YearForFix decreased to ' + YearForFix)
-          }
-        }
-      }
-      // фиксим "2020"
-      for (let i = 0; i < days.length; i++) {
-        if (days[i]!.date?.includes("2020")) {
-          days[i]!.date = days[i]!.date!.replace("2020", YearForFix)
-        }
-      }
-
       // --- поиск today ---
       const idxToday = days.findIndex(d => d.date === todayStr)
 
       if (idxToday !== -1) {
         // есть today
-        console.log('FeedWidget - Today found at index', idxToday)
         dataForWidget = {
           yesterday: days[idxToday - 1] ?? placeholderDay(),
           today: days[idxToday],
@@ -102,7 +77,6 @@ const FeedWidget = async () => {
         const todayTime = convertDate(todayStr).getTime()
         const prevCandidates = days.filter(d => convertDate(d.date).getTime() < todayTime)
         const nextCandidates = days.filter(d => convertDate(d.date).getTime() > todayTime)
-
         const prevDay = prevCandidates.length ? prevCandidates[prevCandidates.length - 1] : undefined
         const nextDay = nextCandidates.length ? nextCandidates[0] : undefined
 
@@ -133,7 +107,6 @@ const FeedWidget = async () => {
         }
       }
     }
-
     // --- отправка ---
     if (Platform.OS == 'ios') {
       await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)

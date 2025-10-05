@@ -31,10 +31,6 @@ const DateCell: React.FC<{
     // console.log("initialDateString = " + props.item.date)
     // let dateYear = props.item.date.split('.')[2]
     let date = new Date(parseInt(YearForFix), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
-    // console.log('current month = ' + props.item.date.split('.')[1])
-    // console.log('current YearForFix = ' + YearForFix)
-    // date.setFullYear(Number(YearForFix))
-    // console.log('Final date = ' + date.getDate().toString() + '.' + (date.getMonth() + 1).toString() + '.' + date.getFullYear().toString())
     const {isEmpty, isToday} = props.item
     const {colors} = useTheme<CustomTheme>()
 
@@ -68,7 +64,6 @@ const DateCell: React.FC<{
             dayNameOfTheWeek = 'Сб'
             break
     }
-
     // console.log(date.toString() + " : " + date.getDayName())
     return (
       <TouchableOpacity
@@ -289,30 +284,20 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     let editableScheduleData = schedule.data!
 
-
     const FindToday = (editedScheduleData: BARSSchedule) => {
-        if (isFirstTime) {
-            let today = new Date().getDDMMYY()
-
-            for (let j = 0; j < editedScheduleData.days.length; j++) {
-                if (editedScheduleData.days[j]!.date!.includes("2020")) {
-                    editedScheduleData.days[j]!.date! = editedScheduleData.days[j]!.date!.replace("2020", "" + YearForFix)
-                }
-                if (today == editedScheduleData.days[j]!.date!) {
-                    setisFirstTime(false)
-                    setSelectedDate(j)
-                    console.log('Today: ' + editedScheduleData.days[j]!.date!)
-                    break
-                }
-
-            }
+      let today = new Date().getDDMMYY()
+      for (let j = 0; j < editedScheduleData.days.length; j++) {
+        if (today == editedScheduleData.days[j]!.date!) {
+          setisFirstTime(false)
+          setSelectedDate(j)
+          console.log('Today: ' + editedScheduleData.days[j]!.date!)
+          break
         }
+      }
     }
 
     const requestMode = typeof props.route.params != 'undefined' ? props.route.params as Teacher : null
     // const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
-
-
 
     const EmptyDay = () => (
         <View style={{width: '100%', alignSelf: 'stretch', flex: 1, alignItems: 'center', justifyContent :'center'}}>
@@ -332,7 +317,6 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             Alert.alert('Ошибка', 'Not available in test mode!', [{text: 'Ok', onPress: ()=> props.navigation.goBack()}])
         }
 
-
         const IsToday = () => {
             const today = new Date().getDDMMYY()
             if (teacherSchedule.current!.days[selectedDate].date == undefined){
@@ -343,18 +327,14 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             }
         }
         if(timer.current == null){
-            //@ts-ignore
+            //@ts-expect-error
             timer.current = setTimeout(()=>BARSAPI.FetchRequestedSchedule({name: '', lec_oid: props.route.params}).then((result)=>{
-
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                    //@ts-ignore
-                    teacherSchedule.current = result
-                    /*result.days.forEach(v=>{
-                        console.log(v.lessons);
-
-                    })*/
-
-                    setLoadingState('OK')
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+              teacherSchedule.current = result
+              /*result.days.forEach(v=>{
+                console.log(v.lessons);
+              })*/
+              setLoadingState('OK')
             }, (e: any)=>{
                 if(isBARSError(e)){
                     Alert.alert('Ошибка',e.message, [{text: 'Ok', onPress: ()=> props.navigation.goBack()}])
@@ -368,9 +348,9 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
         switch (loadingState){
             case "LOADING": return <LoadingScreen/>
-            case "ERROR": return  <></>
+            case "ERROR": return <></>
             case "OK": {
-                console.log("Teachers` schedule: ", teacherSchedule.current!.days[selectedDate])
+                console.log("Requested schedule: ", teacherSchedule.current!.days[selectedDate])
                 // const flatListRef = useRef<FlatList | null>(null)
                 return (
                       <Fragment>
@@ -424,34 +404,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 const today = new Date().getDDMMYY()
                 return today == schedule.data!.days[selectedDate].date
             }
-
             if (isFirstTime){
-                let unlistedDateIndex = schedule.data!.days.findIndex(item => item.date.includes('29.02'))
-
-                if ((unlistedDateIndex >= 0) && (new Date().getFullYear() % 4 !== 0)){
-                    editableScheduleData.days = editableScheduleData.days.filter(item => !item.date.includes('29.02'))
-                    console.log("Unlisted date filtered out!")
-                }
-                let k = 0
-                for (let j = 0; j < editableScheduleData.days.length; j++) {
-                    let dateYear = editableScheduleData.days[j].date.split('.')[2]
-                    // console.log('dateYear = ' + dateYear)
-                    if (parseInt(dateYear) > parseInt(YearForFix)){
-                        YearForFix = dateYear
-                        console.log('YearForFix increased to ' + YearForFix)
-                    }
-                    if ((parseInt(dateYear) !== 2020) && (parseInt(dateYear) < parseInt(YearForFix))){
-                        YearForFix = dateYear
-                        console.log('YearForFix decreased to ' + YearForFix)
-                    }
-                    if (dateYear.includes('2020')){
-                        editableScheduleData.days[j].date = editableScheduleData.days[j].date.replace(/\d{4}$/, YearForFix)
-                        k++
-                    }
-                }
-                if (k > 0){
-                    console.log('Year fixed in ' + k + ' schedule days');
-                }
                 FindToday(editableScheduleData)
             }
             return (

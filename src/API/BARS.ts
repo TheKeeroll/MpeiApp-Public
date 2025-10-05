@@ -57,6 +57,7 @@ import OrdersParser from "./Parsers/OrdersParser";
 import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
+import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
 
 export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
 
@@ -67,169 +68,6 @@ function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" 
     }, ms);
     promise.then(resolve, reject)
   })
-}
-
-const groupBy = function(xs: any, key: any) {
-  return xs.reduce(function(rv: any, x: any) {
-    (rv[x[key]] = rv[x[key]] || []).push(x);
-    return rv;
-  }, {});
-};
-
-const ParseTsMPEISchedule = (r: any)=> {
-  let result: BARSSchedule = {
-    days: [],
-    todayIndex: -1
-  }
-  try {
-    let grouped = groupBy(r, 'date');
-    for (const [key, value] of Object.entries(grouped)) {
-      const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
-      const day: BARSScheduleCell = {
-        date: date_,
-        lessons: [],
-        isEmpty: false,
-        isToday: date_ == moment(new Date()).format('DD.MM.YYYY')
-      }
-      // console.log(date_, moment(new Date()).format('DD.MM.YYYY'))
-      for (let lesson of (value as any)) {
-
-        const c: BARSScheduleLesson = {
-          name: lesson.discipline,
-          lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
-          lessonType: lesson.kindOfWork,
-          place: lesson.building,
-          cabinet: lesson?.auditorium || '',
-          teacher: {
-            name: lesson.listOfLecturers[0].lecturer.includes('!Вакансия') ? '-' : lesson.listOfLecturers[0].lecturer,
-            lec_oid: lesson.listOfLecturers[0].lecturerUID,
-            fullName: lesson.listOfLecturers[0].lecturer_title
-          },
-          group: lesson.subGroup === null ? '' : lesson.subGroup,
-          type: 'COMMON'
-        }
-        day.lessons.push(c)
-      }
-      result.days.push(day)
-    }
-
-    for (let i = 1; i < result.days.length; i++) {
-      const prev = moment(result.days[i - 1].date, 'DD.MM.YY').toDate()
-      const curr = moment(result.days[i].date, 'DD.MM.YY').toDate()
-      const missedDaysCount = (curr.getTime() - prev.getTime()) / 8640000 / 10 - 1
-      for (let j = 0; j < missedDaysCount; j++) {
-        const missedDate = new Date(moment(result.days[i + j - 1].date, 'DD.MM.YY').toDate())
-        missedDate.addDays(1)
-        const missedDay: BARSScheduleCell = {
-          date: missedDate.getDDMMYY(),
-          lessons: [],
-          isEmpty: true,
-          isToday: missedDate.getDDMMYY().replace(/\.\d{4}/g, '') == moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, '') //TODO do better
-        }
-        //result.todayIndex = i+j
-        // console.log(missedDate.getDDMMYY().replace(/\.\d{4}/g, '') +' : '+ moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, ''))
-        result.days.splice(i + j, 0, missedDay)
-      }
-    }
-
-    for (let i = 0; i < result.days.length; i++) {
-      for (let j = 0; j < result.days[i].lessons.length - 1; j++) {
-        const a = result.days[i].lessons[j]
-        const b = result.days[i].lessons[j + 1]
-        if (a.name == b.name && a.lessonIndex == b.lessonIndex) {
-          console.log(a.teacher.fullName + '|' + b.teacher.fullName);
-
-          const c: BARSScheduleLesson = {
-            name: a.name,
-            lessonIndex: a.lessonIndex,
-            lessonType: a.lessonType,
-            place: a.place + '|' + b.place,
-            cabinet: a.cabinet + '|' + b.cabinet,
-            teacher: {
-              name: a.teacher.name + '|' + b.teacher.name,
-              lec_oid: a.teacher.lec_oid + '|' + b.teacher.lec_oid,
-              fullName: a.teacher.fullName + '|' + b.teacher.fullName
-            },
-            group: a.group + '|' + b.group,
-            type: 'COMBINED'
-          }
-          result.days[i].lessons.splice(j, 2, c)
-        }
-      }
-    }
-  } catch (e:any) {
-    console.warn('ParseTsMPEISchedule - ' + e.toString());
-  }
-  return result
-}
-
-const DealWithMeal = (schedule: BARSSchedule) : BARSSchedule => {
-  for(let i = 0; i < schedule.days.length; i++){
-    for(let j = 0; j < schedule.days[i].lessons.length; j++){
-      if(schedule.days[i].lessons[j].lessonIndex == '11:10-12:45'){
-        try {
-          if (schedule.days[i].lessons[j + 1].lessonIndex == '11:10-12:45') {
-            //@ts-ignore
-            schedule.days[i].lessons.splice(j + 2, 0, { type: 'DINNER' })
-          } else {
-            //@ts-ignore
-            schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
-          }
-        } catch (e) {
-          //@ts-ignore
-          schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
-        }
-        j++
-        break
-      }
-
-    }
-
-  }
-  for(let i = 0; i < schedule.days.length; i++) {
-    if(schedule.days[i].isEmpty) {
-      continue;
-    }
-    if(schedule.days[i].lessons[schedule.days[i].lessons.length -1].type == 'DINNER'){
-      schedule.days[i].lessons.pop()
-    }
-  }
-  return schedule
-}
-
-const DealWithRepeated = (schedule: BARSSchedule) : BARSSchedule => {
-  for(let i = 0; i < schedule.days.length; i++) {
-    for (let j = 0; j < schedule.days[i].lessons.length; j++) {
-      try {
-        if (schedule.days[i].lessons[j].name == schedule.days[i].lessons[j - 1].name && schedule.days[i].lessons[j].lessonType == schedule.days[i].lessons[j - 1].lessonType && schedule.days[i].lessons[j].cabinet == schedule.days[i].lessons[j - 1].cabinet && schedule.days[i].lessons[j].lessonIndex == schedule.days[i].lessons[j - 1].lessonIndex) {
-          schedule.days[i].lessons.splice(j, 1)
-          j--
-        }
-      } catch (e) {
-      }
-    }
-  }
-  return schedule
-}
-
-const CalculateRange = () : Date[] => {
-  let start = new Date()
-  let end = new Date()
-  const currentMonthNum = start.getMonth()
-  if (currentMonthNum == 0) {
-    start.substractDays(30)
-    end.addDays(30)
-  } else if(currentMonthNum == 1){
-    start.substractDays(28)
-    end.addDays(100)
-  } else if((currentMonthNum >= 2) && (currentMonthNum <= 6)){
-    start.substractDays(Math.floor((currentMonthNum + 1) * 2.6 * 7))
-    end.addDays(Math.floor((8 - (currentMonthNum + 1)) * 2.6 * 7))
-  } else {
-    start.substractDays(Math.floor((currentMonthNum - 6) * 2.6 * 7))
-    end.addDays(Math.floor((8 - (currentMonthNum - 6)) * 2.6 * 7))
-  }
-  return [start, end]
 }
 
 const GetAvailableSemesters = (raw: string): Semester[] => {
@@ -815,9 +653,9 @@ export default class BARS{
       return NetInfo.fetch()
     }
 
-    function classifyString(input: string): "teacher" | "group" | "auditorium" {
+    function classifyString(input: string): "person" | "group" | "auditorium" {
       if (!/\d/.test(input)) {
-        return "teacher";
+        return "person";
       }
 
       if (/\d{3}/.test(input)) {
@@ -828,18 +666,16 @@ export default class BARS{
     }
 
     const dateRange = CalculateRange()
-
-    // const end  = new Date()
-    const form = new FormData()
+    // const form = new FormData()
     let request_type = classifyString(target.lec_oid)
-    if (request_type == 'auditorium') {
+    // if (request_type == 'auditorium') {
       return CheckInternet().then((response)=> {
         if (!response.isConnected) {
           return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
         }
         else {
           try {
-            let ts_mpei_link = 'http://ts.mpei.ru/api/search?term=' + encodeURI(target.lec_oid)  + '&type=auditorium'
+            let ts_mpei_link = 'http://ts.mpei.ru/api/search?term=' + encodeURI(target.lec_oid)  + '&type=' + request_type
             return fetch(ts_mpei_link, {
               method: 'GET',
               headers: {
@@ -849,20 +685,30 @@ export default class BARS{
                 'dnt': '1',
                 'host': 'ts.mpei.ru',
                 'referer': 'http://ts.mpei.ru/ruz/main',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 YaBrowser/25.4.0.0 Safari/537.36'
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36'
               },
               credentials: 'include'
             }).then(r => r.json()).then(r => {
                 const dateStart = moment(new Date()).format('YYYY.MM.DD')
                 const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
-                const linkAuditoriumSchedule = `http://ts.mpei.ru/api/schedule/auditorium/${r[0]?.id || ''}?start=${dateStart}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-                return fetch(linkAuditoriumSchedule, {
+                const linkTargetSchedule = `http://ts.mpei.ru/api/schedule/${request_type}/${r[0]?.id || ''}?start=${dateStart}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
+                return fetch(linkTargetSchedule, {
                   method: 'GET',
                   headers: {},
                   credentials: 'include'
                 }).then(r=>r.json()).then(r=> {
                   let scheduleWithDinner = DealWithMeal(ParseTsMPEISchedule(r))
-                  scheduleWithDinner.fullTeacherName = r[0]?.auditorium || "Запрошенная аудитория не найдена"
+                  switch (request_type) {
+                    case 'person':
+                      scheduleWithDinner.fullTeacherName = (r[0]?.lecturer || r[1]?.lecturer) ? (r[0]?.listOfLecturers[0].lecturer_title || r[1]?.listOfLecturers[0].lecturer_title || target.lec_oid) : "Запрошенный преподаватель не найден"
+                      break
+                    case "group":
+                      scheduleWithDinner.fullTeacherName = r[0]?.group || r[1]?.group || r[2]?.group || r[5]?.group || r[8]?.group || "Запрошенная группа не найдена"
+                      break
+                    case "auditorium":
+                      scheduleWithDinner.fullTeacherName = r[0]?.auditorium || r[1]?.auditorium  || "Запрошенная аудитория не найдена"
+                      break
+                  }
                   console.timeEnd('ScheduleRequest')
                   return scheduleWithDinner
                 })
@@ -872,7 +718,7 @@ export default class BARS{
             }
         }
       })
-    } else {
+    /*} else {
       let normal_name = ''
       form.append('search', target.lec_oid)
       // end.addDays(APP_CONFIG.DATE_RANGE)
@@ -881,6 +727,7 @@ export default class BARS{
         if (!response.isConnected)
           return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
         else {
+        //TODO У oss.mpei.ru почему-то больше нет расписания - подобрать другой альтернативный источник расписания!
          return fetch('https://oss.mpei.ru/api/schedule/search', {
             method: 'POST',
             headers: {
@@ -958,7 +805,7 @@ export default class BARS{
           })
         }
       })
-    }
+    }*/
   }
 
   public FetchSchedule(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{

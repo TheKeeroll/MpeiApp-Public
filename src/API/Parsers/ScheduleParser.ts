@@ -1,234 +1,209 @@
-import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson, Teacher } from "../DataTypes";
-import {TEACHER_RANKS } from "../../Common/Constants";
-import {BARSError, CreateBARSError, isBARSError} from "../Error/Error";
+import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson } from "../DataTypes";
 import moment from "moment";
 
-import {parse} from 'node-html-parser'
-const DisciplineFromHeader = (header: string) => {
-    const testFix = [
-        '(Лабораторная работа)',
-        '(Практическое занятие)',
-        '(Лекция)',
-        '(Консультация)',
-        '(Экзамен)',
-        '(Лекция (факультатив))',
-        '(Зачет с оценкой)',
-        '(Зачет (по билетам))',
-        '(Зачет с оценкой (по билетам))',
-        "(Защита курсового проекта)",
-        "(Зачет с оценкой (по совокупности результатов текущего контроля))",
-        "(Практическое занятие (факультатив))", "(Зачет)", "(Защита курсовой работы)",
-        "(Зачет (по совокупности результатов текущего контроля))",
-        "(Защита курсовой работы)",
-        "(Экзамен (просмотр))"
-    ]
-    for(let i of testFix){
-      if(header.includes(i)) return header.replace(i, '')
-    }
-    return header
 
+// утилита для безопасного исправления годов
+const fixScheduleYears = (days: BARSScheduleCell[]) => {
+  let counter = 0;
+  let YearForFix = String(new Date().getFullYear());
+  for (let i = 0; i < days.length; i++) {
+    const d = days[i];
+    const initial = d.date ?? "";
+    const parts = initial.split(".");
+    if (parts.length === 3) {
+      let [dd, mm, yyyy] = parts;
+      const yearNum = parseInt(yyyy, 10);
+      const fixNum = parseInt(YearForFix, 10);
+      // динамическое обновление YearForFix
+      if (yearNum > fixNum) {
+        YearForFix = yyyy;
+        console.log(`fixScheduleYears - YearForFix increased to ${YearForFix}`);
+      } else if (yearNum !== 2020 && yearNum < fixNum) {
+        YearForFix = yyyy;
+        console.log(`fixScheduleYears - YearForFix decreased to ${YearForFix}`);
+      }
+      // исправление "2020" → YearForFix
+      if (yyyy.includes("2020") && YearForFix !== "2020") {
+        const newDate = `${dd}.${mm}.${YearForFix}`;
+        if (newDate !== d.date) {
+          d.date = newDate;
+          counter++;
+          // console.log(`fixScheduleYears - day[${i}] fixed: ${initial} → ${newDate}`);
+        }
+      }
+    }
+  }
+  console.log(`fixScheduleYears - year fixed in ${counter} days`);
+  return days;
+};
+
+const groupBy = function(xs: any, key: any) {
+  return xs.reduce(function(rv: any, x: any) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+};
+
+export const ParseTsMPEISchedule = (r: any)=> {
+  let result: BARSSchedule = {
+    days: [],
+    todayIndex: -1
+  }
+  try {
+    let grouped = groupBy(r, 'date');
+    for (const [key, value] of Object.entries(grouped)) {
+      const date_ = moment(key, 'YYYY.MM.DD').format('DD.MM.YYYY')
+      const day: BARSScheduleCell = {
+        date: date_,
+        lessons: [],
+        isEmpty: false,
+        isToday: date_ == moment(new Date()).format('DD.MM.YYYY')
+      }
+      // console.log(date_, moment(new Date()).format('DD.MM.YYYY'))
+      for (let lesson of (value as any)) {
+
+        const c: BARSScheduleLesson = {
+          name: lesson.discipline,
+          lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
+          lessonType: lesson.kindOfWork,
+          place: lesson.building,
+          cabinet: lesson?.auditorium || '',
+          teacher: {
+            name: lesson.listOfLecturers[0].lecturer.includes('!Вакансия') ? '-' : lesson.listOfLecturers[0].lecturer,
+            lec_oid: lesson.listOfLecturers[0].lecturerUID,
+            fullName: lesson.listOfLecturers[0].lecturer_title
+          },
+          group: lesson.kindOfWork.includes('екция') ? lesson.stream : (lesson.subGroup || lesson.group),
+          type: 'COMMON'
+        }
+        day.lessons.push(c)
+      }
+      result.days.push(day)
+    }
+
+    for (let i = 1; i < result.days.length; i++) {
+      const prev = moment(result.days[i - 1].date, 'DD.MM.YY').toDate()
+      const curr = moment(result.days[i].date, 'DD.MM.YY').toDate()
+      const missedDaysCount = (curr.getTime() - prev.getTime()) / 8640000 / 10 - 1
+      for (let j = 0; j < missedDaysCount; j++) {
+        const missedDate = new Date(moment(result.days[i + j - 1].date, 'DD.MM.YY').toDate())
+        missedDate.addDays(1)
+        const missedDay: BARSScheduleCell = {
+          date: missedDate.getDDMMYY(),
+          lessons: [],
+          isEmpty: true,
+          isToday: missedDate.getDDMMYY().replace(/\.\d{4}/g, '') == moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, '') //TODO do better
+        }
+        //result.todayIndex = i+j
+        // console.log(missedDate.getDDMMYY().replace(/\.\d{4}/g, '') +' : '+ moment(new Date(), 'DD.MM.YY').toDate().getDDMMYY().replace(/\.\d{4}/g, ''))
+        result.days.splice(i + j, 0, missedDay)
+      }
+    }
+
+    for (let i = 0; i < result.days.length; i++) {
+      for (let j = 0; j < result.days[i].lessons.length - 1; j++) {
+        const a = result.days[i].lessons[j]
+        const b = result.days[i].lessons[j + 1]
+        if (a.name == b.name && a.lessonIndex == b.lessonIndex) {
+          // console.log(a.teacher.fullName + '|' + b.teacher.fullName);
+
+          const c: BARSScheduleLesson = {
+            name: a.name,
+            lessonIndex: a.lessonIndex,
+            lessonType: a.lessonType,
+            place: a.place + '|' + b.place,
+            cabinet: a.cabinet + '|' + b.cabinet,
+            teacher: {
+              name: a.teacher.name + '|' + b.teacher.name,
+              lec_oid: a.teacher.lec_oid + '|' + b.teacher.lec_oid,
+              fullName: a.teacher.fullName + '|' + b.teacher.fullName
+            },
+            group: a.group + '|' + b.group,
+            type: 'COMBINED'
+          }
+          result.days[i].lessons.splice(j, 2, c)
+        }
+      }
+    }
+    result.days = fixScheduleYears(result.days);
+    // фильтруем 29.02 для невисокосных годов
+    const currentYear = new Date().getFullYear();
+    const has29Feb = result.days.some(d => d.date.includes("29.02"));
+    if (has29Feb && currentYear % 4 !== 0) {
+      result.days = result.days.filter(d => !d.date.includes("29.02"));
+      console.log("Unlisted date filtered out!");
+    }
+  } catch (e:any) {
+    console.warn('ParseTsMPEISchedule - ' + e.toString());
+  }
+  return result
 }
 
-const fixTeacherName = (nameRaw: string)=>{
-
-    for(let i of TEACHER_RANKS){
-        if(nameRaw.includes(i)){
-            return nameRaw.replace(i + ' ', '')
+export const DealWithMeal = (schedule: BARSSchedule) : BARSSchedule => {
+  for(let i = 0; i < schedule.days.length; i++){
+    for(let j = 0; j < schedule.days[i].lessons.length; j++){
+      if(schedule.days[i].lessons[j].lessonIndex == '11:10-12:45'){
+        try {
+          if (schedule.days[i].lessons[j + 1].lessonIndex == '11:10-12:45') {
+            //@ts-ignore
+            schedule.days[i].lessons.splice(j + 2, 0, { type: 'DINNER' })
+          } else {
+            //@ts-ignore
+            schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
+          }
+        } catch (e) {
+          //@ts-ignore
+          schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
         }
+        j++
+        break
+      }
+
     }
-    return nameRaw
+
+  }
+  for(let i = 0; i < schedule.days.length; i++) {
+    if(schedule.days[i].isEmpty) {
+      continue;
+    }
+    if(schedule.days[i].lessons[schedule.days[i].lessons.length -1].type == 'DINNER'){
+      schedule.days[i].lessons.pop()
+    }
+  }
+  return schedule
 }
 
-export default function(raw: string, teacherMode: boolean = false): BARSSchedule | BARSError{
-    console.time('ScheduleParser')
-
-    try {
-        const $ = parse(raw)
-        if(teacherMode){
-            const error = $.querySelector('#div-Timetable  > span')?.text
-            if(typeof error != 'undefined' && error != ''){
-                return CreateBARSError('MARK_TABLE_PARSER_FAIL','БАРС не смог предоставить расписание.')
-            }
+/*export const DealWithRepeated = (schedule: BARSSchedule) : BARSSchedule => {
+  for(let i = 0; i < schedule.days.length; i++) {
+    for (let j = 0; j < schedule.days[i].lessons.length; j++) {
+      try {
+        if (schedule.days[i].lessons[j].name == schedule.days[i].lessons[j - 1].name && schedule.days[i].lessons[j].lessonType == schedule.days[i].lessons[j - 1].lessonType && schedule.days[i].lessons[j].cabinet == schedule.days[i].lessons[j - 1].cabinet && schedule.days[i].lessons[j].lessonIndex == schedule.days[i].lessons[j - 1].lessonIndex) {
+          schedule.days[i].lessons.splice(j, 1)
+          j--
         }
-
-        const $trs = $.querySelector('#div-Timetable > div.table-responsive > table > tbody')?.querySelectorAll('tr')!
-
-        const result: BARSScheduleCell[] = []
-        let tmpCell: Partial<BARSScheduleCell> = {}
-
-        for(let i of $trs){
-            if(i.classNames == 'table-primary'){
-                if(typeof tmpCell.date != 'undefined'){
-                    result.push(tmpCell as BARSScheduleCell)
-                }
-                tmpCell = {}
-                const date = new Date().dateFromBarsFormat(i.text/*.trim()*/)
-                tmpCell.date = date.getDDMMYY()
-                tmpCell.lessons = []
-                tmpCell.isEmpty = false
-                tmpCell.isToday = false
-            } else {
-                if(i.querySelector(`td:nth-child(2) > strong`) == null) continue
-                let header = i.querySelector(`td:nth-child(2) > strong`)!.text/*.trim()*/
-                const name = DisciplineFromHeader(header)
-                const aCount = i.querySelectorAll('a').length
-                let teacher: Teacher
-                let rawGroup = '-'
-
-                if(name == 'NaN'){
-                    console.warn('No discipline found in: ' + header);
-                    return CreateBARSError('MARK_TABLE_PARSER_FAIL','No discipline found in ' + header)
-                }
-
-                switch(aCount){
-                    case 1:{
-                        console.log(i.querySelector(`td:nth-child(2) > a`)?.text)
-                        try{
-                            const fixed = fixTeacherName(i.querySelector(`td:nth-child(2) > a`)!.text/*.trim()*/)
-                            const lec_oid = i.querySelector(`td:nth-child(2) > a`)!.attributes['href'].replace('/bars_web/Timetable/RUZ/Timetable?rt=1&lec_oid=', '')
-                            teacher = {
-                                name: fixed,
-                                lec_oid
-                            }
-                            const rawRawGroup = i.querySelector(`td:nth-child(2)`)!.text
-                            rawGroup = rawRawGroup.includes(',') ? '-' : rawRawGroup.split(name)[1].split('п.')[0].split('\\')[1]/*.trim()*/
-                        } catch(e: any){
-                            console.warn('FIX ME ScheduleParser: ', e)
-                            teacher = {
-                                name: '-',
-                                lec_oid: '-'
-                            }
-                        }
-                        break
-                    }
-                    case 2:{
-
-                        try{
-                            teacher = {
-                                name: teacherMode ? '-' : fixTeacherName(i.querySelector(`td:nth-child(2) > a:nth-child(5)`)!.text),
-                                lec_oid: teacherMode ? '-' :  i.querySelector(`td:nth-child(2) > a:nth-child(5)`)!.attributes['href'].replace('/bars_web/Timetable/RUZ/Timetable?rt=1&lec_oid=', '')
-                            }
-                        } catch (e: any){
-                            console.warn('FIX ME Schedule parser')
-                            teacher = {
-                                name: '-',
-                                lec_oid: '-'
-                            }
-                        }
-                        break
-                    }
-                    default: teacher = {name:'-', lec_oid:'-'}
-                }
-
-                const time = i.querySelector(`td.col-auto > strong`)!.text
-
-                const placeAndCabinet = i.querySelector(`td.col-auto`)!.text.replace(time, '')/*.trim()*/
-
-                const lesson: BARSScheduleLesson = {
-                    name,
-                    lessonIndex: i.querySelector(`td.col-auto > strong`)!.text/*.trim()*/,
-                    lessonType: header.replace(name, '').replace('(','').replace(')', '')/*.trim()*/,
-                    place: placeAndCabinet.split(' (')[1].replace(')', ''),
-                    teacher,
-                    cabinet: placeAndCabinet.split(' (')[0],
-                    group: rawGroup,
-                    type: 'COMMON'
-                }
-                tmpCell.lessons!.push(lesson)
-            }
-
-
-        }
-        if(!teacherMode) {
-            //Комбинируем групповые пары
-            for (let i = 0; i < result.length; i++) {
-                for (let j = 0; j < result[i].lessons.length - 1; j++) {
-                    const a = result[i].lessons[j]
-                    const b = result[i].lessons[j + 1]
-                    if (a.name == b.name && a.lessonIndex == b.lessonIndex) {
-                        const c: BARSScheduleLesson = {
-                            name: a.name,
-                            lessonIndex: a.lessonIndex,
-                            lessonType: a.lessonType,
-                            place: a.place + '|' + b.place,
-                            cabinet: a.cabinet + '|' + b.cabinet,
-                            teacher: {
-                                name: a.teacher.name + '|' + b.teacher.name,
-                                lec_oid: a.teacher.lec_oid + '|' + b.teacher.lec_oid,
-                                fullName: a.teacher.fullName + '|' + b.teacher.fullName
-                            },
-                            group: a.group + '|' + b.group,
-                            type: 'COMBINED'
-                        }
-                        result[i].lessons.splice(j, 2, c)
-                    }
-                }
-            }
-        }
-        //Заполняем пропущенные дни
-        for(let i = 1; i < result.length; i++){
-            const prev = moment(result[i-1].date, 'DD.MM.YY').toDate()
-            const curr = moment(result[i].date, 'DD.MM.YY').toDate()
-            const missedDaysCount = (curr.getTime() - prev.getTime()) / 8640000  / 10 - 1
-            for(let j = 0; j < missedDaysCount; j++){
-                const missedDate = new Date(moment(result[i + j - 1].date, 'DD.MM.YY').toDate())
-                missedDate.addDays(1)
-                const missedDay: BARSScheduleCell = {
-                    date: missedDate.getDDMMYY(),
-                    lessons: [],
-                    isEmpty: true,
-                    isToday: false
-                }
-                result.splice(i+j,0,missedDay)
-            }
-        }
-        if(!teacherMode) {
-            //Не забываем пообедать и сократить эо и дот
-            for(let i = 0; i < result.length; i++){
-                for(let j = 0; j < result[i].lessons.length; j++){
-                    if(result[i].lessons[j].lessonIndex == '11:10-12:45'){
-                        //@ts-ignore
-                        result[i].lessons.splice(j+1, 0, {type: 'DINNER'})
-                        j++;
-                        break;
-                    }
-
-                }
-
-            }
-            for(let i = 0; i < result.length; i++) {
-                if(result[i].isEmpty) {
-                    continue;
-                }
-                if(result[i].lessons[result[i].lessons.length -1].type == 'DINNER'){
-                    result[i].lessons.pop()
-                }
-            }
-        }
-
-        const today = new Date().getDDMMYY()
-        let index = -1
-        for(let i = 0; i < result.length; i++){
-            if(result[i].date == today){
-                result[i].isToday = true
-                index = i
-                break;
-            }
-        }
-        console.timeEnd('ScheduleParser')
-
-        return {
-                todayIndex: index,
-                days: result,
-                fullTeacherName: '-'//teacherMode ? $.querySelector('#div-Timetable > h3')!.text/*.trim()*/ : ''
-        } as BARSSchedule
-    }    catch (e: any){
-        if(isBARSError(e)){
-            return e
-        }
-        if(e == ''){
-            e = 'unknown'
-        }
-        return CreateBARSError("SCHEDULE_PARSER_FAIL", e)
+      } catch (e) {
+      }
     }
+  }
+  return schedule
+}*/
+
+export const CalculateRange = () : Date[] => {
+  let start = new Date()
+  let end = new Date()
+  const currentMonthNum = start.getMonth()
+  if (currentMonthNum == 0) {
+    start.substractDays(30)
+    end.addDays(30)
+  } else if(currentMonthNum == 1){
+    start.substractDays(28)
+    end.addDays(100)
+  } else if((currentMonthNum >= 2) && (currentMonthNum <= 6)){
+    start.substractDays(Math.floor((currentMonthNum + 1) * 2.6 * 7))
+    end.addDays(Math.floor((8 - (currentMonthNum + 1)) * 2.6 * 7))
+  } else {
+    start.substractDays(Math.floor((currentMonthNum - 6) * 2.6 * 7))
+    end.addDays(Math.floor((8 - (currentMonthNum - 6)) * 2.6 * 7))
+  }
+  return [start, end]
 }
