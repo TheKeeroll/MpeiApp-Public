@@ -515,7 +515,7 @@ export default class BARS{
             })
           } else if (response.includes("Логин состоит из символов латинского алфавита и")) {
               isIncorrectLoginPassword = true
-              throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль!")
+              throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль, либо вы включили в аккаунте двухфакторную аутентификацию(если дело в ней - отключите её там же, где включали, на сайте БАРС МЭИ)!")
           } else if (!(response.includes("Оценки в БАРС"))) {
             console.warn("Not main BARS page! An attempt to redirect...")
             try {
@@ -575,22 +575,20 @@ export default class BARS{
           else return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
         })).catch(e => {
           if (isIncorrectLoginPassword){
-            return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
+            return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль, либо вы включили в аккаунте двухфакторную аутентификацию(если дело в ней - отключите её там же, где включали, на сайте БАРС МЭИ)!'))
           } else {
             console.warn("Data download time exceeded!", e)
             if (firstStart) {
               if (isBARSError(e)) {
                   if (e.error == 'STUDENTS_NOT_FOUND') {
-                      return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ совсем недавно, то это нормально - просто войдите снова после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
+                      return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ недавно, то это нормально - вуз заполнит ваш аккаунт в течение недели после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
                   }
               }
-              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также отключите двухфакторную аутентификацию в БАРС(если включена) и попробуйте ещё раз. Если проблема сохраняется - свяжитесь с разработчиком(кнопка 'Поддержка')!"))
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также отключите двухфакторную аутентификацию в БАРС(если включена) и попробуйте ещё раз. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
             }
             else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           }
-
       })
-
     })
   }
 
