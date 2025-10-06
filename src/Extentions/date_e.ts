@@ -98,7 +98,7 @@ Date.prototype.getDayName = function (full?: boolean): string {
       break
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   return names[this.getDay()]
 }
 

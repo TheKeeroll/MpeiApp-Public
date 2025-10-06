@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from "react";
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {useTheme} from "react-native-paper";
@@ -13,6 +13,7 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import { convertDate } from "../Marks/BARSMainScreen";
 import {useNavigation} from "@react-navigation/native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onSelect:(index: number)=>void}> =
   (props)=>{
@@ -139,7 +140,7 @@ const StipendsScreen: React.FC = () => {
   const [stipendPageIndex, setStipendPageIndex] = useState(1 ? 0 : 1)
 
   const stipend_pages = ['Назначенные', 'Заявления']
-
+  const insets = useSafeAreaInsets();
 
   const onLoad = (offline: boolean) => (
 
@@ -203,8 +204,7 @@ const StipendsScreen: React.FC = () => {
 
   return (
     <Fragment>
-      <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
-      <SafeAreaView style={[Styles.main,{backgroundColor: colors.background}]}>
+      <SafeAreaView style={[Styles.main,{paddingTop: insets.top, backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Стипендии'}/>
         {renderSwitch()}
       </SafeAreaView>

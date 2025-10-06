@@ -1,14 +1,14 @@
 import React from "react";
 import {ViewStyle} from "react-native";
 import LottieView from "lottie-react-native";
-import { AnimationObject } from "lottie-react-native";
+// import { AnimationObject } from "lottie-react-native";
 import {useTheme} from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {CustomTheme} from "../../Themes/Themes";
 
 import LoadingAnimation from '../../../assets/animations/loading.json';
 
-export const getAnimationKeypaths = (animations: AnimationObject[] | AnimationObject) => {
+/*export const getAnimationKeypaths = (animations: AnimationObject[] | AnimationObject) => {
     let keypaths: Set<string> = new Set();
 
     if(!Array.isArray(animations)) {
@@ -20,7 +20,7 @@ export const getAnimationKeypaths = (animations: AnimationObject[] | AnimationOb
     }
 
     return Array.from(keypaths);
-}
+}*/
 
 const LoadingScreen: React.FC<{style?: ViewStyle}> = (props) => {
     const source = LoadingAnimation;

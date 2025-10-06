@@ -8,17 +8,17 @@ import {
     View
 } from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader"
-// @ts-ignore
+// @ts-expect-error
 import * as IonIcon from 'react-native-vector-icons/Ionicons'
-// @ts-ignore
+// @ts-expect-error
 import * as EnIcon from 'react-native-vector-icons/Entypo'
-// @ts-ignore
+// @ts-expect-error
 import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
-// @ts-ignore
+// @ts-expect-error
 import * as McIcon from 'react-native-vector-icons/MaterialCommunityIcons'
-// @ts-ignore
+// @ts-expect-error
 import * as FaIcon from 'react-native-vector-icons/FontAwesome'
-// @ts-ignore
+// @ts-expect-error
 import * as FIcon from 'react-native-vector-icons/Fontisto'
 import {
     ListButton,

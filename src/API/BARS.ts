@@ -45,7 +45,6 @@ import {
 } from "./Redux/Slices";
 import { THEME_DARK, THEME_LIGHT } from "../Themes/Themes";
 import { CreateBARSError, isBARSError, isTimeout } from "./Error/Error";
-// @ts-ignore
 import { changeIcon, getIcon } from "react-native-change-icon";
 import NetInfo from "@react-native-community/netinfo";
 import moment from "moment/moment";
@@ -53,7 +52,7 @@ import QuestionnairesParser from "./Parsers/QuestionnairesParser";
 import TasksParser from "./Parsers/TasksParser";
 import StipendsParser from "./Parsers/StipendsParser";
 import OrdersParser from "./Parsers/OrdersParser";
-// @ts-ignore
+// @ts-expect-error
 import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
@@ -127,7 +126,7 @@ export default class BARS{
       return this.mCurrentFrame
     } else {
       try{
-        // @ts-ignore
+        // @ts-expect-error
         this.mCurrentFrame = frameRaw
         return frameRaw
       } catch (e){
@@ -148,7 +147,7 @@ export default class BARS{
         //Promise.resolve(false);
       }
       console.log('Found credentials');
-      // @ts-ignore
+      // @ts-expect-error
       return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE')=> {
         //if(backgroundMode) return this.FetchMarkTable().then(()=>Promise.resolve(true))
         if(mode == 'ONLINE'){
@@ -405,7 +404,7 @@ export default class BARS{
         return Promise.resolve<'ONLINE' | 'OFFLINE' | BARSMarks | void>('OFFLINE')
       }
       console.time('Login&StudentInfoParser')
-      let ms_bars_main = 4000
+      let ms_bars_main = 4500
       if (firstStart) ms_bars_main = 30000
       return Timeout(ms_bars_main, fetch(URLS.BARS_MAIN, {
         method: 'POST',
@@ -897,7 +896,7 @@ export default class BARS{
   public FetchRecordBook(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching record book')
     const link = URLS.BARS_RECORD_BOOK + this.mCurrentData.student!.id
-    return Timeout(5000, fetch(link, {
+    return Timeout(5500, fetch(link, {
       method: 'GET',
       headers: COMMON_HTTP_HEADER
     }).then(r=>r.text())
@@ -963,7 +962,7 @@ export default class BARS{
           'FilterSemester': {'value': this.mCurrentData.availableSemesters![0].id}
         })
     )
-    return Timeout(3500, fetch(link,{
+    return Timeout(4000, fetch(link,{
       method: 'GET',
       headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id)
     }).then(r=>r.text()).then((response)=>{
@@ -997,7 +996,7 @@ export default class BARS{
 
   public FetchReports(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching reports')
-    return Timeout(1500, fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(1750, fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const reports = ReportsParser(response)
@@ -1128,7 +1127,7 @@ export default class BARS{
       method:   'POST',
       mode:     'same-origin',
       credentials: 'include',
-      // @ts-ignore
+      // @ts-expect-error
       redirect: 'manual',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -1176,7 +1175,7 @@ export default class BARS{
             method:   'POST',
             mode:     'same-origin',
             credentials: 'include',
-            // @ts-ignore
+            // @ts-expect-error
             redirect: 'manual',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -1316,7 +1315,7 @@ export default class BARS{
 
   public FetchOrders(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching orders')
-    return Timeout(2000, fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2250, fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
       .then(r=>r.text()).then(
         (response)=>{
           const orders = OrdersParser(response)

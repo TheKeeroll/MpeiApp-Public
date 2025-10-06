@@ -2,7 +2,6 @@ import React, {Fragment, useState} from "react";
 import {
     FlatList,
     LayoutAnimation, Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -14,9 +13,9 @@ import {BARSDiscipline, KM, Mark} from "../../../API/DataTypes";
 import {CustomTheme, MarkToColor, withOpacity} from "../../../Themes/Themes";
 import {useTheme} from "react-native-paper";
 import BARSAPI from "../../../Common/Globals";
-// @ts-ignore
+// @ts-expect-error
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 const Moment = require('moment')
 
 

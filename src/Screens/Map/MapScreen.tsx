@@ -13,18 +13,18 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Switch, useTheme } from "react-native-paper";
 import {SCREEN_SIZE} from "../../Common/Constants";
-// @ts-ignore
+// @ts-expect-error
 import * as FIcon from "react-native-vector-icons/Feather";
-// @ts-ignore
+// @ts-expect-error
 import * as FA5Icon from 'react-native-vector-icons/FontAwesome5'
-// @ts-ignore
+// @ts-expect-error
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
-// @ts-ignore
+// @ts-expect-error
 import * as IonIcon from 'react-native-vector-icons/Ionicons';
 
 import Geolocation from 'react-native-geolocation-service';
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
-// @ts-ignore
+// @ts-expect-error
 import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
@@ -565,7 +565,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             >
                 {mapReady && mapPoints.map((val, key) => (
                     <GetPlaceMarker
-                        // @ts-ignore
+                        // @ts-expect-error
                         shown={ targetPlace ? val.name === targetPlace.name : isShowCategory[val.category]}
                         place={val}
                         key={key}

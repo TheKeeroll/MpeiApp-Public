@@ -273,7 +273,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
     const lastFlatListRef = useRef<FlatList | null>(null)
-    // @ts-ignore
+    // @ts-expect-error
     const wait = new Promise(resolve => setTimeout(resolve, 500))
 
     if(schedule.status == 'FAILED' && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){

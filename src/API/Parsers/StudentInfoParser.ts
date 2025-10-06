@@ -1,6 +1,6 @@
 import { BARSStudentInfo } from "../DataTypes";
 import {Platform} from "react-native";
-// @ts-ignore
+// @ts-expect-error
 import * as HTMLParser from 'fast-html-parser'
 import {BARSError, CreateBARSError} from "../Error/Error";
 export function ParseStudentInfo(raw: string): BARSStudentInfo | BARSError{

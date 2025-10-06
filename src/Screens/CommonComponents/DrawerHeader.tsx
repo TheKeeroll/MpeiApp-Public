@@ -1,10 +1,10 @@
 import React from "react";
 import {Platform, Text, TouchableOpacity, View} from "react-native";
-// @ts-ignore
+// @ts-expect-error
 import * as Icon from "react-native-vector-icons/FontAwesome";
 import {useTheme} from "react-native-paper";
 import {CustomTheme} from "../../Themes/Themes";
-// @ts-ignore
+// @ts-expect-error
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
@@ -16,7 +16,7 @@ const DrawerHeader: React.FC<{ navigation: any; title: string }> = ({ navigation
         <View
             style={{
                 paddingTop: insets.top,
-                height: insets.top + 56, // стандартная высота тулбара
+                height: insets.top + 56, // стандартная высота toolbar
                 width: '100%',
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -54,7 +54,6 @@ const DrawerHeader: React.FC<{ navigation: any; title: string }> = ({ navigation
 
 export const NavigationHeader: React.FC<{navigation: any, title: string, beforeGoBack?: ()=>void, backable?: boolean, }> = (props) => {
     const {colors} = useTheme<CustomTheme>()
-    const insets = useSafeAreaInsets();
     const backable = typeof props.backable != 'undefined' && props.backable
     return (
         <View style={{shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 4, width: 0}, width: '100%', height: Platform.OS == 'android' ? '10%' : '5%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backdrop}}>

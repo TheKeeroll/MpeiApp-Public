@@ -10,14 +10,14 @@ import {
   useCodeScanner
 } from "react-native-vision-camera";
 // import { useFrameProcessor } from "react-native-vision-camera";
-import {runOnJS} from "react-native-reanimated";
 import {useFocusEffect} from "@react-navigation/native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import {QR_PRESENCE_HEADER, URLS} from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
-// @ts-ignore
+// @ts-expect-error
 import {ImageSource} from "react-native-vector-icons/Icon";
 import {parse} from "node-html-parser";
+import { scheduleOnRN } from "react-native-worklets";
 
 function getBrightestFormat(device: CameraDevice | undefined): CameraDeviceFormat | undefined {
   if (!device?.formats?.length) return undefined;
@@ -166,7 +166,7 @@ const QRCodeScanner: React.FC = () => {
         },
       ]);
     }
-  }, []);
+  }, [handling_barcode, isHandlingBARS_QR, isAlert]);
 
   /*const frameProcessor = useFrameProcessor((frame) => {
     "worklet";
@@ -181,7 +181,7 @@ const QRCodeScanner: React.FC = () => {
     onCodeScanned: (codes) => {
       if (codes.length > 0) {
         const raw = codes[0]?.value ?? "";
-        runOnJS(handleBarcode)(raw);
+        scheduleOnRN(handleBarcode, raw);
       }
     }
   })

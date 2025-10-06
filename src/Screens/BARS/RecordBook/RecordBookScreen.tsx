@@ -1,7 +1,6 @@
 import React, {Fragment, useState} from "react";
 import {
     FlatList,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -18,6 +17,7 @@ import DrawerHeader from "../../CommonComponents/DrawerHeader";
 import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import {useNavigation} from "@react-navigation/native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
     switch (type){
@@ -111,6 +111,7 @@ const RecordBookScreen: React.FC = () => {
     const navigation = useNavigation();
     const {colors} = useTheme()
     const recordBook = useSelector((state: RootState)=>state.RecordBook)
+    const insets = useSafeAreaInsets();
     const [semIndex, setSemIndex] =
         useState(recordBook != null ? recordBook.data == null ? 0
             : recordBook.data.length -1 : 0
@@ -153,8 +154,7 @@ const RecordBookScreen: React.FC = () => {
 
     return(
         <Fragment>
-            <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[Styles.main, {backgroundColor: colors.background}]}>
+            <SafeAreaView style={[Styles.main, {paddingTop: insets.top, backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Зачётная книжка'}/>
                 {renderSwitch()}
             </SafeAreaView>

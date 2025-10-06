@@ -60,7 +60,7 @@ export const LessonIndexToTime = (index: string) => {
   }
   for(let i = 1; i < 8; i++){
     if(index.includes(i.toString())){
-      //@ts-ignore
+      //@ts-expect-error
       return times[i.toString()]
     }
   }

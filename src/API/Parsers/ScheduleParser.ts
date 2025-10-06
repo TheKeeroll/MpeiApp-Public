@@ -69,7 +69,7 @@ export const ParseTsMPEISchedule = (r: any)=> {
           place: lesson.building,
           cabinet: lesson?.auditorium || '',
           teacher: {
-            name: lesson.listOfLecturers[0].lecturer.includes('!Вакансия') ? '-' : lesson.listOfLecturers[0].lecturer,
+            name: lesson.listOfLecturers[0].lecturer.includes('!аканси') ? '-' : lesson.listOfLecturers[0].lecturer,
             lec_oid: lesson.listOfLecturers[0].lecturerUID,
             fullName: lesson.listOfLecturers[0].lecturer_title
           },

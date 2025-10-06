@@ -12,9 +12,9 @@ import {
   ViewStyle,
 } from "react-native";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
-// @ts-ignore
+// @ts-expect-error
 import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
-// @ts-ignore
+// @ts-expect-error
 import * as EtIcons from 'react-native-vector-icons/Entypo'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
 import BARSAPI, { openTelegram } from "../../Common/Globals";
@@ -344,7 +344,7 @@ export const openSupportChat = async (mode: 'vk' | 'tg') => {
     message = `ВСТАВИТЬ И ОТПРАВИТЬ - ТЕХ. ИНФО!\n${deviceModel}, версия ${deviceOS == 'android' ? 'Android API' : (deviceOS == 'ios' ? 'iOS' : '')}: ${systemVersion}\nВерсия MpeiApp: ${require('../../../package.json').version}\n-------------------------------------\n`
   }
   console.log(message)
-  let url = ''
+  let url: string
   if (mode == 'vk') {
       url = `https://vk.com/im?sel=-215610947`
   }  else {

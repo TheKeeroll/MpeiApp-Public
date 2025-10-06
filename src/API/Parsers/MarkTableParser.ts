@@ -73,7 +73,7 @@ export default function ParsMarkTable(raw: string): BARSMarks | BARSError{
         return CreateBARSError('MARK_TABLE_PARSER_FAIL', 'No discipline found in ' + headerRaw)
       }
       let examType = ExamTypeFromHeader(headerRaw)
-      // @ts-ignore
+      // @ts-expect-error
       const examAutoId = headerRaw.includes('получить оценку ПА') ? $h[i].querySelector('[data-ss-exam-auto-id]').getAttribute('data-ss-exam-auto-id') : '0'
       if (examAutoId !== '0'){
         console.log('Auto mark possibly available, id = ' + examAutoId)

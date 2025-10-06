@@ -5,7 +5,7 @@ import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {ListAvatarItem, ListSeparator} from "./Components";
 import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
-import {withOpacity, CustomTheme} from "../../Themes/Themes"
+import {CustomTheme} from "../../Themes/Themes"
 
 const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()

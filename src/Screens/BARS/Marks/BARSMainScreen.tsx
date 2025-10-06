@@ -1,10 +1,8 @@
 import React, { Fragment, useEffect, useState } from "react";
 import {
     FlatList,
-    LayoutAnimation, Linking,
     NativeModules,
     Platform,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -28,6 +26,7 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import parse from "node-html-parser";
 import { updateAdditionalData } from "../../../API/Redux/Slices";
 import SharedGroupPreferences from "react-native-shared-group-preferences";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Stack = createStackNavigator()
 
@@ -161,7 +160,7 @@ const CheckFinalMarkAvailability = async (id: string | undefined): Promise<strin
 
 const SortMarksByDate = (marks: Mark[]) => {
     //return  marks.slice().sort((a,b)=> a.mark > b.mark ? 1 : a.mark == b.mark ? 0 : -1);
-    // @ts-ignore
+    // @ts-expect-error
     return marks.slice().sort((a,b)=>new Moment(a.date, 'DDMMYY') - new Moment(b.date, 'DDMMYY'));
 }
 

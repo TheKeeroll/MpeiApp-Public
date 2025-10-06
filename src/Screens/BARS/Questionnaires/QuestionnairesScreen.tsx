@@ -1,5 +1,5 @@
 import React, {Fragment} from "react";
-import { FlatList, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {useTheme} from "react-native-paper";
@@ -13,6 +13,7 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import BARSAPI from "../../../Common/Globals";
 import {useNavigation} from "@react-navigation/native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
@@ -67,7 +68,7 @@ const QuestionnairesScreen: React.FC = () => {
   const navigation = useNavigation();
   const {colors} = useTheme()
   const questionnaires = useSelector((state: RootState)=>state.Questionnaires)
-
+  const insets = useSafeAreaInsets();
 
   const onLoad = (offline: boolean) => (
     <FlatList
@@ -102,8 +103,7 @@ const QuestionnairesScreen: React.FC = () => {
 
   return (
     <Fragment>
-      <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
-      <SafeAreaView style={[Styles.main,{backgroundColor: colors.background}]}>
+      <SafeAreaView style={[Styles.main,{paddingTop: insets.top, backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Анкеты'}/>
         {renderSwitch()}
       </SafeAreaView>

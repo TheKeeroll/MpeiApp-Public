@@ -4,18 +4,18 @@ import BARSMainScreen, { convertDate } from "./Marks/BARSMainScreen";
 import RecordBookScreen from "./RecordBook/RecordBookScreen";
 import ReportsScreen from "./Reports/ReportsScreen";
 import SkippedClassesScreen from "./SkippedClasses/SkippedClassesScreen";
-import {LayoutAnimation, Linking, SafeAreaView, Text, TouchableOpacity, View} from "react-native";
-import { DrawerActions, getFocusedRouteNameFromRoute, useNavigation } from "@react-navigation/native";
+import { Linking, Text, TouchableOpacity, View} from "react-native";
+import { DrawerActions, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import BARSAPI from "../../Common/Globals";
 import { CapitalizeFirstChar } from "../../Common/Globals";
 import { SCREEN_SIZE, URLS } from "../../Common/Constants";
-// @ts-ignore
+// @ts-expect-error
 import * as EIcon from "react-native-vector-icons/Entypo";
-// @ts-ignore
+// @ts-expect-error
 import * as ADIcon from "react-native-vector-icons/AntDesign";
-// @ts-ignore
+// @ts-expect-error
 import * as FAIcon from "react-native-vector-icons/FontAwesome";
-// @ts-ignore
+// @ts-expect-error
 import * as IonIcon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from "react-native-paper";
 import { AverageScoreToColor, withOpacity, CustomTheme } from "../../Themes/Themes";
@@ -26,8 +26,9 @@ import StipendsScreen from "./Stipends/StipendsScreen";
 import OrdersScreen from "./Orders/OrdersScreen";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
-import { BARSStipend, SkippedClass } from "../../API/DataTypes";
+import { SkippedClass } from "../../API/DataTypes";
 import BooksScreen from "./Books/BooksScreen";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Drawer = createDrawerNavigator()
 
@@ -105,13 +106,13 @@ const DrawerHeader: React.FC = () => {
 
     let status_color = colors.accent
     try {
-        if (student.status == "завершил обучение"){
+        if (student.status.includes("аверш")){
             status_color = '#33FFFF'
         }
-        else if (student.status.includes("временно")){
+        else if (student.status.includes("ременн")){
             status_color = colors.warning
         }
-        else if (student.status.includes("отчислен")){
+        else if (student.status.includes("тчислен")){
             status_color = colors.error
         }
     } catch (e:any) {
@@ -213,7 +214,6 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
             props.navigation.dispatch(DrawerActions.closeDrawer())
             requestAnimationFrame(()=> {
                 props.onPress()
-                //@ts-ignore
                 props.navigation.navigate(props.routeName)
             })
         }
@@ -236,6 +236,7 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
 const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     const [pressedId, setPressedId] = useState(0)
     const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     let mail_str = 'загрузка...'
     let mail_color = colors.warning
     let mail_button_flag = false
@@ -252,7 +253,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
             } else if (mail.data?.unreadCount == '1'){
                 mail_str = '1 новое письмо'
                 mail_button_flag = true
-            } else { // @ts-ignore
+            } else { // @ts-expect-error
                 if ((parseInt(mail.data?.unreadCount) >= 2) && (parseInt(mail.data?.unreadCount) <= 4)){
                     mail_str = mail.data?.unreadCount + ' новых письма'
                 } else {
@@ -429,8 +430,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
 
     return(
         <Fragment>
-            <SafeAreaView style={{flex: 0, backgroundColor: colors.background}}/>
-            <SafeAreaView style={{flex: 1, backgroundColor: colors.background}}>
+            <SafeAreaView style={{flex: 1, paddingTop: insets.top, backgroundColor: colors.background}}>
                 <DrawerContentScrollView>
                     <DrawerHeader/>
                     <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>

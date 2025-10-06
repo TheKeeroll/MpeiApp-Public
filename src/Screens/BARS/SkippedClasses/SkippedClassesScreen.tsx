@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Text,
     View,
-    SafeAreaView,
     Platform,
     TouchableOpacity,
     LayoutAnimation
@@ -21,6 +20,7 @@ import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import SkippedClassesNotFound from "../../CommonComponents/SkippedClassesNotFound";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import {useNavigation} from "@react-navigation/native";
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -143,7 +143,7 @@ const SkippedClassesScreen: React.FC = () => {
     const raw = useSelector((state: RootState)=> state.SkippedClasses)
     const [expanded, setExpanded] = useState(-1)
     const {colors} = useTheme()
-
+    const insets = useSafeAreaInsets();
 
     const onLoad = (offline: boolean) => {
         if(raw.data == null){
@@ -206,8 +206,7 @@ const SkippedClassesScreen: React.FC = () => {
 
     return (
         <Fragment>
-            <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <SafeAreaView style={[Styles.center, {flex: 1, backgroundColor: colors.background}]}>
+            <SafeAreaView style={[Styles.center, {flex: 1, paddingTop: insets.top, backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
             </SafeAreaView>

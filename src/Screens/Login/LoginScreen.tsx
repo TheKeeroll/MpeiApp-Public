@@ -11,9 +11,8 @@ import React, {useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
 import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-// @ts-ignore
+// @ts-expect-error
 import * as Icon from 'react-native-vector-icons/Fontisto'
-// @ts-ignore
 // import * as ADIcon from 'react-native-vector-icons/AntDesign'
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
@@ -23,7 +22,7 @@ import MapScreen from "../Map/MapScreen";
 // import {useNavigation} from "@react-navigation/native";
 import {openSupportChat} from "../Settings/Components";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
-// @ts-ignore
+// @ts-expect-error
 import * as FIcon from "react-native-vector-icons/Feather";
 import SettingsStack from "../Settings/SettingsStack.tsx";
 
@@ -184,7 +183,7 @@ const LoginScreen: React.FC = () => {
                         </View>
                         <Button icon={'question'} onPress={shHCb} style={{alignSelf: 'flex-start', width: '20%', aspectRatio: 1, marginVertical: '3%'}}/>
                         {/*<Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
-                                //@ts-ignore
+                                //@ts-expect-error
                                 navigator.navigate('mapLogin', {fromLoginScreen: true})
                          }} style={{ width: '12.5%', aspectRatio: 1}}/>*/}
                     </View>

@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {ListAvatarItem, ListSeparator} from "./Components";
-import {withOpacity, CustomTheme} from "../../Themes/Themes"
+import {CustomTheme} from "../../Themes/Themes"
 
 const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()

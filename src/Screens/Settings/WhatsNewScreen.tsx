@@ -4,7 +4,7 @@ import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {WhatsNewChange, WhatsNewLogo} from "./Components";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import {withOpacity, CustomTheme} from "../../Themes/Themes"
+import {CustomTheme} from "../../Themes/Themes"
 
 
 
