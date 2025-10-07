@@ -69,7 +69,7 @@ export const ParseTsMPEISchedule = (r: any)=> {
           place: lesson.building,
           cabinet: lesson?.auditorium || '',
           teacher: {
-            name: lesson.listOfLecturers[0].lecturer.includes('!аканси') ? '-' : lesson.listOfLecturers[0].lecturer,
+            name: lesson.listOfLecturers[0].lecturer.includes('аканси') ? '-' : lesson.listOfLecturers[0].lecturer,
             lec_oid: lesson.listOfLecturers[0].lecturerUID,
             fullName: lesson.listOfLecturers[0].lecturer_title
           },
@@ -145,14 +145,14 @@ export const DealWithMeal = (schedule: BARSSchedule) : BARSSchedule => {
       if(schedule.days[i].lessons[j].lessonIndex == '11:10-12:45'){
         try {
           if (schedule.days[i].lessons[j + 1].lessonIndex == '11:10-12:45') {
-            //@ts-ignore
+            //@ts-expect-error
             schedule.days[i].lessons.splice(j + 2, 0, { type: 'DINNER' })
           } else {
-            //@ts-ignore
+            //@ts-expect-error
             schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
           }
         } catch (e) {
-          //@ts-ignore
+          //@ts-expect-error
           schedule.days[i].lessons.splice(j + 1, 0, { type: 'DINNER' })
         }
         j++
