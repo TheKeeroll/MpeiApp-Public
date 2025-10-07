@@ -195,7 +195,7 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
     }
     let _cabinet = cabinet.split('|')[0]
     if (_cabinet.includes("Спортзал")){
-        _cabinet = "Стадион"
+        _cabinet = "Стадион/Спортзал"
     }
     if (lessonType.includes('Зачет')){
         lessonType = lessonType.replace('Зачет', 'Зачёт')
@@ -219,13 +219,18 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginTop: -5, color: colors.text}}>{lessonIndex.split('-')[1]}</Text>
                     </View>
                     <TouchableOpacity
-                        disabled={(requestMode && typeof group == "undefined") || (!requestMode && (place?.includes('-') || place?.includes('-|-') || typeof place == "undefined"))}
-                        onPress={()=>setShowPlace(p=>!p)}
+                        disabled={(requestMode && typeof group == "undefined") || (!requestMode && (place?.includes('-') || place?.includes('-|-') || _cabinet.includes('Стадион') || typeof place == "undefined"))}
+                        // onPress={()=>setShowPlace(p=>!p)}
+                        onPress={()=> {requestMode ? setShowPlace(p=>!p) : props.navigation.push('scheduleMain', _cabinet)}}
                         style={{borderRadius: 5, marginVertical: 5, alignItems: 'center', justifyContent: 'center', minWidth: 70, maxWidth: 120, marginHorizontal: 9, minHeight: 30, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
-                        <Text numberOfLines={1} style={{marginHorizontal: 5, textAlign: "center" ,color: IsNow() ? colors.highlight : colors.textUnderline}}>{showPlace ? (requestMode ? group : place.split('|')[0]) : _cabinet}</Text>
+                        <Text numberOfLines={1} style={{marginHorizontal: 5, textAlign: "center" ,color: IsNow() ? colors.highlight : colors.textUnderline}}>
+                          {showPlace ? (requestMode ? group : place.split('|')[0]) : _cabinet}
+                        </Text>
                         { type == 'COMBINED' && cabinet.split('|')[0] != cabinet.split('|')[1] &&
                             <Text adjustsFontSizeToFit numberOfLines={1}
-                                  style={{textAlign: "center", color: IsNow() ? colors.highlight : colors.textUnderline}}>{showPlace ? place.split('|')[1] : _cabinet}</Text>
+                                  style={{textAlign: "center", color: IsNow() ? colors.highlight : colors.textUnderline}}>
+                              {showPlace ? place.split('|')[1] : _cabinet}
+                            </Text>
                         }
                     </TouchableOpacity>
                 </View>
