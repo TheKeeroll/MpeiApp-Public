@@ -8,6 +8,7 @@ buildscript {
         androidXCore = "1.8.0"
 
         ndkVersion = "27.1.12297006"
+        agp_version = '8.13.0'
     }
     repositories {
         google()

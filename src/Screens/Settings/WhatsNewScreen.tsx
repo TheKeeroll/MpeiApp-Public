@@ -17,6 +17,13 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Осенняя адаптация'} version={'2.1.0'}/>
+                    <WhatsNewChange title={'Восстановлено отображение пропусков занятий'}/>
+                    <WhatsNewChange title={'Исправления расписания(как в самом приложении, так и в виджете)'}/>
+                    <WhatsNewChange title={'Улучшены описания проблем при неудачных попытках входа'}/>
+                    <WhatsNewChange title={'Запрос расписания аудитории по нажатию на неё(вместо бесполезного показа корпуса)'}/>
+                    <WhatsNewChange title={'Заключительный этап обновления зависимостей и кода проекта в целом'}/>
+
                     <WhatsNewLogo title={'Новое начало'} version={'2.0.0'}/>
                     <WhatsNewChange title={'Масштабное обновление всех зависимостей => полноценная поддержка свежих версий iOS и Android!'}/>
                     <WhatsNewChange title={'Карта: построение маршрутов в любую точку по долгому нажатию, в том числе и на iOS, другие улучшения'}/>
