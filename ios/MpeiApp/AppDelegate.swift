@@ -2,6 +2,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import ReactJSC
 
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
@@ -45,5 +46,9 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #else
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
+  }
+
+  override func createJSRuntimeFactory() -> JSRuntimeFactoryRef {
+    jsrt_create_jsc_factory() // Use JavaScriptCore runtime
   }
 }
