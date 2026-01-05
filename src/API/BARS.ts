@@ -27,7 +27,7 @@ import { APP_CONFIG } from "../Common/Config";
 import RecordBookParser from "./Parsers/RecordBookParser";
 import { TEST_DATA } from "./TestCurrentData";
 import { parse } from "node-html-parser";
-import { MMKV } from "react-native-mmkv";
+import { createMMKV } from "react-native-mmkv";
 import { Store } from "./Redux/Store";
 import {
   updateAdditionalData,
@@ -87,7 +87,8 @@ export default class BARS{
   private mTestMode = false
   public mCurrentData: Partial<BARSData>
   private mCredentials: BARSCredentials = {login: '', password: ''}
-  public mStorage = new MMKV()
+  // public mStorage = new MMKV()
+  public mStorage = createMMKV()
   private mCurrentIcon: string = 'cool'
   public mCurrentWeek = ''
   private mDebts: BARSDiscipline[] = []
@@ -220,7 +221,7 @@ export default class BARS{
 
   public ClearStorage(){
     for(const k of this.mStorage.getAllKeys()){
-      this.mStorage.delete(k)
+      this.mStorage.remove(k)
     }
     this.mStorage.clearAll()
     //for(let i of Object.entries(STORAGE_KEYS)){
