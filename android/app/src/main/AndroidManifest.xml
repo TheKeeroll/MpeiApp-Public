@@ -19,7 +19,8 @@
         android:roundIcon="@mipmap/cool_round"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="false">
         <receiver
             android:name=".ScheduleWidget"
             android:exported="false">

@@ -110,7 +110,7 @@ android {
         applicationId "com.mpeiapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 74
+        versionCode 75
         versionName "2.1.0"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
@@ -176,7 +176,7 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
 
-    implementation 'androidx.work:work-runtime:2.10.3'
+    implementation 'androidx.work:work-runtime:2.11.0'
 
     implementation 'joda-time:joda-time:2.14.0'
 
