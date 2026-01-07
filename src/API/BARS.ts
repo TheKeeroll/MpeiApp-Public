@@ -376,7 +376,174 @@ export default class BARS{
   }
   public get TestMode(){return this.mTestMode}
 
-  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks>{
+  private HandleLoginResponse(response: string, creds: BARSCredentials): Promise<"ONLINE" | "OFFLINE" | void> {
+    this.mCurrentData = {}
+    if (response.includes("Студенты") || response.includes('На главную')) { //multi-account or EditUser page
+      const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
+      return fetch(URLS.BARS_MULTI_ACCOUNT, {
+        method: "GET",
+        headers: COMMON_HTTP_HEADER,
+      }).then(r => r.text()).then((response) => {
+        const $ = cheerio.load(response);
+        const last = $("#tbl__PartialListStudent > tbody").find("tr").length;
+        let target_acc = last
+        let acc_status = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(3)`)[0].children[0].data
+        if (acc_status.includes('отчислен') || acc_status.includes('завершил обучение')){
+          console.log('"Expelled"/"Сompleted study" in the last account! An attempt to find a valid one...')
+          for (let i = (last - 1); i >= 1; i--) {
+            let textForCheck = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${i}) > td:nth-child(3)`)[0].children[0].data
+            if (!textForCheck.includes("отчислен") && !textForCheck.includes("завершил обучение")) {
+              target_acc = i
+              console.log('An active account has been detected! Authorization has been redirected to it.')
+              break
+            }
+          }
+        }
+        const id = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${target_acc}) > td:nth-child(1) > a`).attr("href").trim()
+        const link = URLS.BARS_MAIN + id.replace("/bars_web/", "")
+
+        return fetch(link, {
+          method: "GET",
+          headers: COMMON_HTTP_HEADER,
+        }).then(r => r.text()).then((response) => {
+          if (!(response.includes("Оценки в БАРС"))) {
+            console.warn("Not main BARS page during multi-account login! An attempt to redirect...")
+            try {
+              let studentID = response.split('studentID=')[1].split('"')[0]
+              console.warn('studentID= ' + studentID)
+              return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+                method: "GET",
+                headers: COMMON_HTTP_HEADER,
+              }).then(r => r.text()).then((response) => {
+                console.log("Successfully redirected and logged in multi-account")
+                const result = ParseStudentInfo(response)
+
+                if (isBARSError(result)) throw result;
+
+                this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+                this.mCurrentData.student = result as BARSStudentInfo;
+                console.timeEnd('Login&StudentInfoParser')
+                console.log(this.mCurrentData.student);
+                this.mCurrentData.student.headman = isHeadman;
+
+                this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+                this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
+
+                return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+              })
+            } catch (e:any) {
+              console.warn('ERROR: ' + e.toString())
+              throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+            }
+          } else {
+            console.log("Successfully logged in multi-account / from EditUser page");
+
+            const result = ParseStudentInfo(response)
+
+            if (isBARSError(result)) throw result;
+
+            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+            this.mCurrentData.student = result as BARSStudentInfo;
+            console.timeEnd('Login&StudentInfoParser')
+            console.log(this.mCurrentData.student);
+            this.mCurrentData.student.headman = isHeadman;
+
+            this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
+
+            return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+          }
+        })
+      })
+    } else if (response.includes("Логин состоит из символов латинского алфавита и")) {
+      throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль!")
+    } else if (!(response.includes("Оценки в БАРС"))) {
+      console.warn("Not main BARS page! An attempt to redirect...")
+      try {
+        let studentID = response.split('studentID=')[1].split('"')[0]
+        console.warn('studentID= ' + studentID)
+        return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+          method: "GET",
+          headers: COMMON_HTTP_HEADER,
+        }).then(r => r.text()).then((response) => {
+          console.log("Successfully redirected and logged in")
+          const result = ParseStudentInfo(response)
+          if (isBARSError(result)) {
+            console.error("BARS error detected!")
+            throw result;
+          }
+
+          this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+          this.mCurrentData.student = result as BARSStudentInfo
+          console.timeEnd('Login&StudentInfoParser')
+          console.log(this.mCurrentData.student);
+          this.mCurrentData.student.headman = false;
+          this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+          this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+          return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+        })
+      } catch (e:any) {
+        console.warn('ERROR: ' + e.toString())
+        if (e.toString().includes("Cannot read property 'split' of undefined")){
+          throw CreateBARSError("STUDENTS_NOT_FOUND", "")
+        } else {
+          throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+        }
+      }
+    } else if (response.includes("Рейтинг")) {
+      console.log("Successfully logged in")
+      const result = ParseStudentInfo(response)
+      if (isBARSError(result)) {
+        console.error("BARS error detected!")
+        throw result;
+      }
+
+      this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+      this.mCurrentData.student = result as BARSStudentInfo
+      console.timeEnd('Login&StudentInfoParser')
+      console.log(this.mCurrentData.student);
+      this.mCurrentData.student.headman = false;
+      this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
+      this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+      return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+    }
+    return Promise.reject(CreateBARSError('LOGIN_FAIL', "Сервер вернул неожиданный результат!"))
+  }
+
+  public Login2FA(code: string): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks > {
+    console.log('Trying to login with 2FA code');
+    const creds = this.mCredentials;
+    return Timeout(15000, fetch(URLS.BARS_LOGIN_CODE, {
+      method: 'POST',
+      headers: LOGIN_HEADER,
+      body: JSON.stringify({
+        Account: creds.login,
+        AF2_Code: code,
+        RememberMe: true
+      })
+    }).then(r => r.text())
+      .then(response => {
+        console.log(response);
+        if (response.includes("запрещён")) {
+          return Promise.reject(CreateBARSError('LOGIN_FAIL', "Не удалось войти с использованием двухфакторной аутентификации!"));
+        } else if (response.includes("Некорректный код подтверждения")) {
+          return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
+        }
+        return this.HandleLoginResponse(response, creds);
+      })
+    ).catch(e => {
+      if (e.error == 'INVALID_CREDS' || e.error == 'LOGIN_FAIL') {
+        console.warn(`Incorrect 2FA code(${code})!`, e)
+        return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
+      } else {
+        console.warn("Data download time exceeded on 2FA!", e)
+        return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети и попробуйте снова позже. Если проблема сохраняется - отключите двухфакторную аутентификацию на сайте БАРС. Если и это не поможет - сообщите разработчику(кнопка 'Поддержка')!"))
+      }
+
+    });
+  }
+
+  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
     let isIncorrectLoginPassword = false
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
       Alert.alert('Info', 'Entered test mode.')
@@ -413,7 +580,7 @@ export default class BARS{
         body: JSON.stringify({
           Account: creds.login,
           Password: creds.password,
-          RememberMe: false
+          RememberMe: true
         })
       }).then(async (response) => {
         let str = await response.text()
@@ -429,163 +596,99 @@ export default class BARS{
           body: JSON.stringify({
             Account: creds.login,
             Password: creds.password,
-            RememberMe: false
+            RememberMe: true
           })
         })
       })
         .then(r => r.text())
         .then((response) => {
-          // throw "ters";
-          this.mCurrentData = {}
-          if (response.includes("Студенты") || response.includes('На главную')) { //multi-account or EditUser page
-            const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
-            return fetch(URLS.BARS_MULTI_ACCOUNT, {
-              method: "GET",
-              headers: COMMON_HTTP_HEADER,
-            }).then(r => r.text()).then((response) => {
-              const $ = cheerio.load(response);
-              const last = $("#tbl__PartialListStudent > tbody").find("tr").length;
-              let target_acc = last
-              let acc_status = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${last}) > td:nth-child(3)`)[0].children[0].data
-              if (acc_status.includes('отчислен') || acc_status.includes('завершил обучение')){
-                console.log('"Expelled"/"Сompleted study" in the last account! An attempt to find a valid one...')
-                for (let i = (last - 1); i >= 1; i--) {
-                  let textForCheck = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${i}) > td:nth-child(3)`)[0].children[0].data
-                  if (!textForCheck.includes("отчислен") && !textForCheck.includes("завершил обучение")) {
-                    target_acc = i
-                    console.log('An active account has been detected! Authorization has been redirected to it.')
-                    break
-                  }
-                }
-              }
-              const id = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${target_acc}) > td:nth-child(1) > a`).attr("href").trim()
-              const link = URLS.BARS_MAIN + id.replace("/bars_web/", "")
-
-              return fetch(link, {
+          if (response.includes("код подтверждения")) {
+            this.mCredentials = creds;
+            try {
+              setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=1', {
                 method: "GET",
                 headers: COMMON_HTTP_HEADER,
-              }).then(r => r.text()).then((response) => {
-                if (!(response.includes("Оценки в БАРС"))) {
-                  console.warn("Not main BARS page during multi-account login! An attempt to redirect...")
+              }).then(r => r.text()).then(async (response1) => {
+                console.log('2FA code 1 requested, res: ' + response1);
+                if (response1.includes('false') || !response1.includes('success')) {
                   try {
-                    let studentID = response.split('studentID=')[1].split('"')[0]
-                    console.warn('studentID= ' + studentID)
-                    return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+                    setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
                       method: "GET",
                       headers: COMMON_HTTP_HEADER,
-                    }).then(r => r.text()).then((response) => {
-                      console.log("Successfully redirected and logged in multi-account")
-                      const result = ParseStudentInfo(response)
-
-                      if (isBARSError(result)) throw result;
-
-                      this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-                      this.mCurrentData.student = result as BARSStudentInfo;
-                      console.timeEnd('Login&StudentInfoParser')
-                      console.log(this.mCurrentData.student);
-                      this.mCurrentData.student.headman = isHeadman;
-
-                      this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-                      this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-
-                      return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
-                    })
+                    }).then(r => r.text()).then(async (response3) => {
+                      console.log('2FA code 3 requested, res: ' + response3);
+                      if (response3.includes('false') || !response3.includes('success')) {
+                        try {
+                          setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                            method: "GET",
+                            headers: COMMON_HTTP_HEADER,
+                          }).then(r => r.text()).then(async (response2) => {
+                            console.log('2FA code 2 requested, res: ' + response2);
+                          }), 100)
+                        } catch (e:any) {
+                          console.warn('2FA code 2 request failed! ', e);
+                        }
+                      }
+                    }), 100)
                   } catch (e:any) {
-                    console.warn('ERROR: ' + e.toString())
-                    throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+                    console.warn('2FA code 3 request failed! ', e);
                   }
-                } else {
-                  console.log("Successfully logged in multi-account / from EditUser page");
-
-                  const result = ParseStudentInfo(response)
-
-                  if (isBARSError(result)) throw result;
-
-                  this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-                  this.mCurrentData.student = result as BARSStudentInfo;
-                  console.timeEnd('Login&StudentInfoParser')
-                  console.log(this.mCurrentData.student);
-                  this.mCurrentData.student.headman = isHeadman;
-
-                  this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-                  this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-
-                  return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
                 }
-              })
-            })
-          } else if (response.includes("Логин состоит из символов латинского алфавита и")) {
-              isIncorrectLoginPassword = true
-              throw CreateBARSError("INVALID_CREDS", "Неверный логин/пароль, либо вы включили в аккаунте двухфакторную аутентификацию(если дело в ней - отключите её там же, где включали, на сайте БАРС МЭИ)!")
-          } else if (!(response.includes("Оценки в БАРС"))) {
-            console.warn("Not main BARS page! An attempt to redirect...")
-            try {
-                let studentID = response.split('studentID=')[1].split('"')[0]
-                console.warn('studentID= ' + studentID)
-                return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
-                method: "GET",
-                headers: COMMON_HTTP_HEADER,
-                }).then(r => r.text()).then((response) => {
-                    console.log("Successfully redirected and logged in")
-                    const result = ParseStudentInfo(response)
-                    if (isBARSError(result)) {
-                      console.error("BARS error detected!")
-                      throw result;
-                    }
-
-                    this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-                    this.mCurrentData.student = result as BARSStudentInfo
-                    console.timeEnd('Login&StudentInfoParser')
-                    console.log(this.mCurrentData.student);
-                    this.mCurrentData.student.headman = false;
-                    this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-                    this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
-                    return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
-                })
+              }), 100)
             } catch (e:any) {
-              console.warn('ERROR: ' + e.toString())
-              if (e.toString().includes("Cannot read property 'split' of undefined")){
-                  throw CreateBARSError("STUDENTS_NOT_FOUND", "")
-              } else {
-                  throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
+              console.warn('2FA code 1 request failed: ', e);
+              try {
+                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
+                  method: "GET",
+                  headers: COMMON_HTTP_HEADER,
+                }).then(r => r.text()).then(async (response3) => {
+                  console.log('2FA code 3 requested, res: ' + response3);
+                  if (response3.includes('false') || !response3.includes('success')) {
+                    try {
+                      setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                        method: "GET",
+                        headers: COMMON_HTTP_HEADER,
+                      }).then(r => r.text()).then(async (response2) => {
+                        console.log('2FA code 2 requested, res: ' + response2);
+                      }), 100)
+                    } catch (e:any) {
+                      console.warn('2FA code 2 request failed! ', e);
+                    }
+                  }
+                }), 100)
+              } catch (e:any) {
+                console.warn('2FA code 3 request failed! ', e);
+                try {
+                  setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                    method: "GET",
+                    headers: COMMON_HTTP_HEADER,
+                  }).then(r => r.text()).then(async (response2) => {
+                    console.log('2FA code 2 requested, res: ' + response2);
+                  }), 100)
+                } catch (e:any) {
+                  console.warn('2FA code 2 request failed! ', e);
+                }
               }
             }
-          } else if (response.includes("Рейтинг")) {
-            console.log("Successfully logged in")
-            const result = ParseStudentInfo(response)
-            if (isBARSError(result)) {
-              console.error("BARS error detected!")
-              throw result;
-            }
-
-            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-            this.mCurrentData.student = result as BARSStudentInfo
-            console.timeEnd('Login&StudentInfoParser')
-            console.log(this.mCurrentData.student);
-            this.mCurrentData.student.headman = false;
-            this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
-            return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+            return Promise.resolve("NEED_2FA" as any);
           }
+          return this.HandleLoginResponse(response, creds);
         }).catch((e: any) => {
-          //Оффлайн мод
-          //this.LoadOnlineData()
-          //console.log('Offline mode.', e)
-          //return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           if (isBARSError(e)) return Promise.reject(e)
           else return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
         })).catch(e => {
           if (isIncorrectLoginPassword){
-            return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль, либо вы включили в аккаунте двухфакторную аутентификацию(если дело в ней - отключите её там же, где включали, на сайте БАРС МЭИ)!'))
+            return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
           } else {
             console.warn("Data download time exceeded!", e)
             if (firstStart) {
               if (isBARSError(e)) {
-                  if (e.error == 'STUDENTS_NOT_FOUND') {
-                      return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ недавно, то это нормально - вуз заполнит ваш аккаунт в течение недели после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
-                  }
+                if (e.error == 'STUDENTS_NOT_FOUND') {
+                  return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ недавно, то это нормально - вуз заполнит ваш аккаунт в течение недели после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
+                }
+                return Promise.reject(e);
               }
-              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также отключите двухфакторную аутентификацию в БАРС(если включена) и попробуйте ещё раз. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети и попробуйте снова позже. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
             }
             else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
           }

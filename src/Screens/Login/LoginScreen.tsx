@@ -17,16 +17,14 @@ import * as Icon from 'react-native-vector-icons/Fontisto'
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
-// import {createStackNavigator} from "@react-navigation/stack";
 import MapScreen from "../Map/MapScreen";
-// import {useNavigation} from "@react-navigation/native";
 import {openSupportChat} from "../Settings/Components";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 // @ts-expect-error
 import * as FIcon from "react-native-vector-icons/Feather";
 import SettingsStack from "../Settings/SettingsStack.tsx";
+import AF2Screen from "./AF2Screen";
 
-// const Stack = createStackNavigator()
 const Stack = createBottomTabNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -77,11 +75,11 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
 
 const LoginScreen: React.FC = () => {
     const {colors} = useTheme<CustomTheme>()
-    // const navigator = useNavigation();
     const [login, setLogin] = useState('')
     const [password, setPassword] = useState('')
     const [showingHelp, setShowingHelp] = useState(false)
     const [showLoading, setShowLoading] = useState(false)
+    const [showingAF2, setShowingAF2] = useState(false)
     let isMounted = false
     useEffect(()=>{
         isMounted = true
@@ -131,6 +129,10 @@ const LoginScreen: React.FC = () => {
                   </View>
               </View>
               {showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
+                showingAF2 ? <AF2Screen onBack={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                    setShowingAF2(false)
+                }}/> :
                 <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
                     <TextInput
                       onChangeText={t=>setLogin(t)}
@@ -164,6 +166,12 @@ const LoginScreen: React.FC = () => {
                                 LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                 setShowLoading(true)
                                 setTimeout(()=>BARSAPI.Login({login, password}).then((r)=>{
+                                    if (r === "NEED_2FA") {
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+                                        setShowLoading(false)
+                                        setShowingAF2(true)
+                                        return
+                                    }
                                     BARSAPI.LoadOnlineData().finally(()=>{
                                         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                         setTimeout(()=>setShowLoading(false), 10)
@@ -178,14 +186,10 @@ const LoginScreen: React.FC = () => {
                             }} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
 
                             <View style={{marginBottom: '4%', flexDirection: 'row', width: '100%', alignSelf: 'center', justifyContent: 'space-between'}}>
-                                <Button title={'Поддержка'} onPress={() => openSupportChat('vk')} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
+                                <Button title={'Поддержка'} onPress={() => openSupportChat('vk')} style={{ width: '66%', aspectRatio: 4.8, marginVertical: '5%' }}/>
                             </View>
                         </View>
                         <Button icon={'question'} onPress={shHCb} style={{alignSelf: 'flex-start', width: '20%', aspectRatio: 1, marginVertical: '3%'}}/>
-                        {/*<Button icon={'map-marker-alt'} iconSize={25} onPress={()=>{
-                                //@ts-expect-error
-                                navigator.navigate('mapLogin', {fromLoginScreen: true})
-                         }} style={{ width: '12.5%', aspectRatio: 1}}/>*/}
                     </View>
                     <View style={{flexDirection: 'row'}}>
                         <Text style={{fontWeight: 'bold', color: withOpacity(colors.text, 30)}}>Версия: </Text>
@@ -214,7 +218,6 @@ const LoginScreenWrapper : React.FC = () => {
                     tabBarIcon: ()=><FIcon.default name={'log-in'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
                 }}
             />
-            {/*<Stack.Screen name={'mapLogin'} component={MapScreen}/>*/}
             <Stack.Screen
                 name={'map'}
                 component={MapScreen}
