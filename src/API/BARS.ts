@@ -58,7 +58,7 @@ import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
 
-export type LoginState = 'LOGGED_IN' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
+export type LoginState = 'LOGGED_IN' | 'NEED_2FA' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
 
 function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks> {
   return new Promise(function(resolve, reject) {
@@ -149,8 +149,7 @@ export default class BARS{
       }
       console.log('Found credentials');
       // @ts-expect-error
-      return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE')=> {
-        //if(backgroundMode) return this.FetchMarkTable().then(()=>Promise.resolve(true))
+      return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE' | 'NEED_2FA')=> {
         if(mode == 'ONLINE'){
           return this.LoadOnlineData().finally(()=>{
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
@@ -158,8 +157,10 @@ export default class BARS{
           })
         } else if (mode == 'OFFLINE'){
           this.LoadOfflineData()
-          //LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
           setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'LOGGED_IN'), 500)
+        } else if (mode == 'NEED_2FA'){
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+          setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'NEED_2FA'), 100)
         } else {
           console.warn('VOID MODE !')
           throw 'VOID MODE'

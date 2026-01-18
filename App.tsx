@@ -14,6 +14,7 @@ import {Provider as ReduxProvider} from 'react-redux'
 import {Store} from "./src/API/Redux/Store";
 import {} from './src/Extentions/date_e';
 import LoginScreenWrapper from "./src/Screens/Login/LoginScreen";
+import AF2Screen from "./src/Screens/Login/AF2Screen";
 const App: React.FC = () =>{
 
   const [loggedIn, setLoggedIn] = useState<LoginState>('NOT_INITIATED')
@@ -24,6 +25,12 @@ const App: React.FC = () =>{
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
       case "NOT_INITIATED": return <LoadingScreen/>
+      case "NEED_2FA": return <AF2Screen onBack={function(): void {
+        console.warn("Need 2FA, going back to login screen");
+        setLoggedIn(
+          "NOT_LOGGED_IN"
+        )
+      } }/>
       case "LOGGED_IN": return <Navigator/>
   }
 }
@@ -35,8 +42,8 @@ const App: React.FC = () =>{
 const AppEntry: React.FC = () => {
     const [theme, setTheme] = useState(BARSAPI.Theme)
     DeviceEventEmitter.addListener('SET_THEME', (themeName: string)=>{
-        console.log("Theme set")
-        setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
+      setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
+      console.log("Current theme: " + themeName)
     })
     return (
         <SafeAreaProvider>
