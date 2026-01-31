@@ -9,12 +9,11 @@ import {CustomTheme} from "../../Themes/Themes"
 
 const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()
-    const insets = useSafeAreaInsets();
     const unknown_avatar = require('../../../assets/images/Gratitudies/unknown.webp')
     return (
-        <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
-            <NavigationHeader {...props} backable title={'Благодарности'}/>
+      // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
+      <Fragment>
+          <NavigationHeader {...props} backable title={'Благодарности'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>
 
@@ -72,8 +71,9 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListSeparator title={''}/>
                 </ScrollView>
             </View>
-        </Fragment>
-    )
+      </Fragment>
+      // </SafeAreaView>
+          )
 }
 
 export default GratuitiesScreen

@@ -358,43 +358,39 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 console.log("Requested schedule: ", teacherSchedule.current!.days[selectedDate])
                 // const flatListRef = useRef<FlatList | null>(null)
                 return (
-                      <Fragment>
-                          <SafeAreaView style={{ flex: 0, paddingTop: insets.top, backgroundColor: colors.backdrop }} />
-                          <View style={[{
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flex: 1,
-                              backgroundColor: colors.background
-                          }]}>
-                              <NavigationHeader backable {...props} title={teacherSchedule.current!.fullTeacherName!} />
-                              <DateSelector days={teacherSchedule.current!.days} selectedIndex={selectedDate}
-                                            onDateSelect={setSelectedDate.bind(this)}
-                                            initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate} />
-                              {typeof teacherSchedule.current!.days[selectedDate] != 'undefined' ?
-                                <FlatList
-                                  // ref={flatListRef}
-                                  style={{ width: '100%', marginTop: 10 }}
-                                  contentContainerStyle={{ alignItems: 'center' }}
-                                  data={teacherSchedule.current!.days[selectedDate].lessons}
-                                  renderItem={({ item, index }: { item: BARSScheduleLesson, index: number }) =>
-                                    <LessonCell requestMode {...props} item={item} index={index} isToday={IsToday()} />
-                                  }
-                                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-                                  getItemLayout={(data, index) => (
-                                    { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
-                                  )}
-                                  /*onScrollToIndexFailed={(info) => {
-                                      // Обработка ошибки прокрутки к индексу
-                                      console.warn("Failed to scroll to index!")
-                                      const wait = new Promise(resolve => setTimeout(resolve, 500))
-                                      wait.then(() => {
-                                          flatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
-                                  }}*/
-                                />
-                                : <EmptyDay />}
-                          </View>
-                      </Fragment>
-
+                      <View style={[{
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flex: 1,
+                          backgroundColor: colors.background
+                      }]}>
+                          <NavigationHeader backable {...props} title={teacherSchedule.current!.fullTeacherName!} />
+                          <DateSelector days={teacherSchedule.current!.days} selectedIndex={selectedDate}
+                                        onDateSelect={setSelectedDate.bind(this)}
+                                        initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate} />
+                          {typeof teacherSchedule.current!.days[selectedDate] != 'undefined' ?
+                            <FlatList
+                              // ref={flatListRef}
+                              style={{ width: '100%', marginTop: 10 }}
+                              contentContainerStyle={{ alignItems: 'center' }}
+                              data={teacherSchedule.current!.days[selectedDate].lessons}
+                              renderItem={({ item, index }: { item: BARSScheduleLesson, index: number }) =>
+                                <LessonCell requestMode {...props} item={item} index={index} isToday={IsToday()} />
+                              }
+                              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                              getItemLayout={(data, index) => (
+                                { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
+                              )}
+                              /*onScrollToIndexFailed={(info) => {
+                                  // Обработка ошибки прокрутки к индексу
+                                  console.warn("Failed to scroll to index!")
+                                  const wait = new Promise(resolve => setTimeout(resolve, 500))
+                                  wait.then(() => {
+                                      flatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
+                              }}*/
+                            />
+                            : <EmptyDay />}
+                      </View>
                     )
                 }
             }
@@ -413,59 +409,57 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 FindToday(editableScheduleData)
             }
             return (
-                <Fragment>
-                    <SafeAreaView style={{flex:0, paddingTop: -100, backgroundColor: colors.backdrop}}/>
-                    <View style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                        <NavigationHeader {...props} title={'Расписание'}/>
+                <View style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+                    <NavigationHeader {...props} title={'Расписание'}/>
 
-                        <TouchableOpacity
-                          onPress={()=>setisShowRequestOtherSchedule(p=>!p)}
-                          style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'flex-start', justifyContent: 'flex-start'}}>
-                            {isShowRequestOtherSchedule &&
-                              <View style={{padding: 16, flexDirection: 'row'}}>
-                                  <TextInput
-                                    onChangeText={t=>settargetSchedule(t)}
-                                    value={targetSchedule}
-                                    textColor={colors.text}
-                                    placeholder={'Укажите искомое'}
-                                    textContentType={'name'}
-                                    placeholderTextColor={withOpacity(colors.text, 40)}
-                                    underlineColor={colors.text}
-                                    activeUnderlineColor={colors.textUnderline}
-                                    style={{backgroundColor: colors.background, width: '75%', height:'5%', borderRadius: 5, justifyContent:'center'}}
-                                    theme={{colors}}
-                                  />
-                                  <Button title={'Найти'} onPress={()=>props.navigation.push('scheduleMain', targetSchedule)} style={{ width: '20%', height:'5%', aspectRatio: 1}}/>
-                              </View>}
-                            {!isShowRequestOtherSchedule &&
-                              <Text style={{color: colors.textUnderline, marginHorizontal: 5, marginVertical:5, fontSize: 16}}>{'Другая группа/препод./ауд.'}</Text>
+                    <TouchableOpacity
+                      onPress={()=>setisShowRequestOtherSchedule(p=>!p)}
+                      style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'flex-start', justifyContent: 'flex-start'}}>
+                        {isShowRequestOtherSchedule &&
+                          <View style={{padding: 16, flexDirection: 'row'}}>
+                              <TextInput
+                                onChangeText={t=>settargetSchedule(t)}
+                                value={targetSchedule}
+                                textColor={colors.text}
+                                placeholder={'Укажите искомое'}
+                                textContentType={'name'}
+                                placeholderTextColor={withOpacity(colors.text, 40)}
+                                underlineColor={colors.text}
+                                activeUnderlineColor={colors.textUnderline}
+                                style={{backgroundColor: colors.background, width: '75%', height:'5%', borderRadius: 5, justifyContent:'center'}}
+                                theme={{colors}}
+                              />
+                              <Button title={'Найти'} onPress={()=>props.navigation.push('scheduleMain', targetSchedule)} style={{ width: '20%', height:'5%', aspectRatio: 1}}/>
+                          </View>}
+                        {!isShowRequestOtherSchedule &&
+                          <Text style={{color: colors.textUnderline, marginHorizontal: 5, marginVertical:5, fontSize: 16}}>{'Другая группа/препод./ауд.'}</Text>
+                        }
+                    </TouchableOpacity>
+
+                    <DateSelector days={editableScheduleData?.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
+                    {typeof schedule.data!.days[selectedDate] != 'undefined' ?
+                        <FlatList
+                            ref={lastFlatListRef}
+                            style={{width: '100%', marginTop: 10}}
+                            contentContainerStyle={{alignItems: 'center'}}
+                            data={editableScheduleData.days[selectedDate].lessons}
+                            renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
+                                <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
                             }
-                        </TouchableOpacity>
-
-                        <DateSelector days={editableScheduleData?.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
-                        {typeof schedule.data!.days[selectedDate] != 'undefined' ?
-                            <FlatList
-                                ref={lastFlatListRef}
-                                style={{width: '100%', marginTop: 10}}
-                                contentContainerStyle={{alignItems: 'center'}}
-                                data={editableScheduleData.days[selectedDate].lessons}
-                                renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
-                                    <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
-                                }
-                                ItemSeparatorComponent={()=><View style={{height: 10}}/>}
-                                getItemLayout={(data, index) => (
-                                  { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
-                                )}
-                                onScrollToIndexFailed={(info) => {
-                                    // Обработка ошибки прокрутки к индексу
-                                    console.warn("Failed to scroll to index!")
-                                    wait.then(() => {
-                                        lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
-                                }}
-                            />
-                            : <EmptyDay/>}
-                    </View>
-                </Fragment>
+                            ItemSeparatorComponent={()=><View style={{height: 10}}/>}
+                            getItemLayout={(data, index) => (
+                              { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
+                            )}
+                            onScrollToIndexFailed={(info) => {
+                                // Обработка ошибки прокрутки к индексу
+                                console.warn("Failed to scroll to index!")
+                                const wait = new Promise(resolve => setTimeout(resolve, 500))
+                                wait.then(() => {
+                                    lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
+                            }}
+                        />
+                        : <EmptyDay/>}
+                </View>
             )
         }
         default: return <></>

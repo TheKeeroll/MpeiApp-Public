@@ -114,7 +114,7 @@ const BooksScreen: React.FC = () => {
 
   return (
     <Fragment>
-      <SafeAreaView style={[Styles.main, {paddingTop: insets.top, backgroundColor: colors.background}]}>
+      <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Книги'}/>
         {renderSwitch()}
       </SafeAreaView>

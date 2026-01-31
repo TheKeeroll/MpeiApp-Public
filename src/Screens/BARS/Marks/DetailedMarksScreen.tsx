@@ -190,7 +190,7 @@ const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => 
                   <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
               </TouchableOpacity>
             }
-            <SafeAreaView style={{flex: 0, backgroundColor: colors.backdrop}}/>
+            <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex: 1, backgroundColor: colors.backdrop}}/>
             <Header/>
             <FlatList
                 showsVerticalScrollIndicator={false}

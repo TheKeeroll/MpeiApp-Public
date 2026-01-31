@@ -9,21 +9,21 @@ import {CustomTheme} from "../../Themes/Themes"
 
 const DevsScreen: React.FC<{navigation: any, route: any}> = (props)=>{
     const {colors} = useTheme<CustomTheme>()
-    const insets = useSafeAreaInsets();
     return (
-        <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
-            <NavigationHeader {...props} backable title={'Разработчики'}/>
-            <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <ScrollView style={{width: '90%'}}>
-                    <ListSeparator title={'Оригинальная идея, разработка pre-alpha- и alpha-версий'}/>
-                    <ListAvatarItem title={`Захар 'TheKeeroll' Степанов`} link={'https://vk.com/ojevohevcoh'} textStyle={{fontWeight: 'bold', color: colors.text}} image={require('../../../assets/images/DevAvatars/Z.webp')}/>
+      // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
+      <Fragment>
+        <NavigationHeader {...props} backable title={'Разработчики'}/>
+          <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+              <ScrollView style={{width: '90%'}}>
+                  <ListSeparator title={'Оригинальная идея, разработка pre-alpha- и alpha-версий'}/>
+                  <ListAvatarItem title={`Захар 'TheKeeroll' Степанов`} link={'https://vk.com/ojevohevcoh'} textStyle={{fontWeight: 'bold', color: colors.text}} image={require('../../../assets/images/DevAvatars/Z.webp')}/>
 
-                    <ListSeparator title={'Действующий разработчик, админ группы ВК, техподдержка'}/>
-                    <ListAvatarItem title={`Антон 'DragonSavA' Савенков`} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.webp')}/>
-                </ScrollView>
-            </View>
-        </Fragment>
+                  <ListSeparator title={'Действующий разработчик, админ группы ВК, техподдержка'}/>
+                  <ListAvatarItem title={`Антон 'DragonSavA' Савенков`} link={'https://vk.com/dragonsava'} textStyle={{fontWeight: 'bold', color: colors.accent}} image={require('../../../assets/images/DevAvatars/A.webp')}/>
+              </ScrollView>
+          </View>
+      </Fragment>
+      // </SafeAreaView>
     )
 }
 

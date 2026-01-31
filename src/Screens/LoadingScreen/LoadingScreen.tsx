@@ -28,17 +28,17 @@ const LoadingScreen: React.FC<{style?: ViewStyle}> = (props) => {
     const insets = useSafeAreaInsets();
     return (
         <SafeAreaView
-            style={[
-                {
-                    flex: 1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingTop: insets.top,
-                    paddingBottom: insets.bottom,
-                    backgroundColor: colors.background,
-                },
-                props.style,
-            ]}
+          edges={['left', 'right', 'bottom']}
+          style={[
+            {
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingBottom: insets.bottom,
+              backgroundColor: colors.background,
+            },
+            props.style,
+          ]}
         >
             <LottieView
                 loop

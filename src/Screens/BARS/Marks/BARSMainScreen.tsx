@@ -541,13 +541,10 @@ const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     const {colors} = useTheme()
     FeedWidget().then(r => console.log('Schedule provided to widget'))
     return (
-        <Fragment>
-            <SafeAreaView style={{flex:0, backgroundColor: colors.backdrop}}/>
-            <View style={[Styles.mainView, {backgroundColor: colors.background}]}>
-                <DrawerHeader {...props} title={'Оценки'}/>
-                <Body {...props}/>
-            </View>
-        </Fragment>
+        <View style={[Styles.mainView, {backgroundColor: colors.background, flex: 1}]}>
+            <DrawerHeader {...props} title={'Оценки'}/>
+            <Body {...props}/>
+        </View>
     )
 }
 

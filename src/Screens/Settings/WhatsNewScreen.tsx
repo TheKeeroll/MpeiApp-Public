@@ -12,8 +12,8 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets();
     return (
-        <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
+      // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
+      <Fragment>
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
@@ -205,7 +205,8 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
                 </ScrollView>
             </View>
-        </Fragment>
+      </Fragment>
+     // </SafeAreaView>
     )
 }
 

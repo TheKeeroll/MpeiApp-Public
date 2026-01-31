@@ -206,7 +206,7 @@ const SkippedClassesScreen: React.FC = () => {
 
     return (
         <Fragment>
-            <SafeAreaView style={[Styles.center, {flex: 1, paddingTop: insets.top, backgroundColor: colors.background}]}>
+            <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.center, {flex: 1, backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
             </SafeAreaView>

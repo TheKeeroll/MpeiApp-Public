@@ -54,15 +54,30 @@ const DrawerHeader: React.FC<{ navigation: any; title: string }> = ({ navigation
 
 export const NavigationHeader: React.FC<{navigation: any, title: string, beforeGoBack?: ()=>void, backable?: boolean, }> = (props) => {
     const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     const backable = typeof props.backable != 'undefined' && props.backable
     return (
-        <View style={{shadowOpacity: .4, shadowColor: '#00000040', shadowOffset: {height: 4, width: 0}, width: '100%', height: Platform.OS == 'android' ? '10%' : '5%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backdrop}}>
+        <View
+            style={{
+                paddingTop: insets.top,
+                height: insets.top + 56,
+                shadowOpacity: .4,
+                shadowColor: '#00000040',
+                shadowOffset: {height: 4, width: 0},
+                width: '100%',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.backdrop,
+                zIndex: 10
+            }}
+        >
             {backable &&
                 <TouchableOpacity onPress={()=>{
                     if(typeof props.beforeGoBack != 'undefined') props.beforeGoBack()
                     else props.navigation.goBack()
 
-                }} style={{height: '100%', zIndex: 10, position: 'absolute', top: Platform.OS === 'ios' ? 0 : 20, left: 0}}>
+                }} style={{height: '100%', zIndex: 10, position: 'absolute', top: insets.top, left: 0, justifyContent: 'center'}}>
                     <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
                 </TouchableOpacity>}
             <View style={{flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center'}}>

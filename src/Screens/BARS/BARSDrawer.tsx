@@ -430,7 +430,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
 
     return(
         <Fragment>
-            <SafeAreaView style={{flex: 1, paddingTop: insets.top, backgroundColor: colors.background}}>
+            <SafeAreaView edges={['left', 'bottom']} style={{flex: 1, backgroundColor: colors.background}}>
                 <DrawerContentScrollView>
                     <DrawerHeader/>
                     <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>

@@ -38,15 +38,13 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {dark} = useTheme()
     const [isDark, setDark] = useState(dark)
 
-    const insets = useSafeAreaInsets();
-
     const onThemeChange = (value: boolean) => {
         setDark(p=>!p)
         BARSAPI.SetTheme(value ? 'dark' : 'light')
     }
     return (
-        <Fragment>
-            <SafeAreaView style={{flex:0, paddingTop: insets.top, backgroundColor: colors.backdrop}}/>
+      // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
+      <Fragment>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} title={'Настройки'}/>
                 <ScrollView style={{width: '90%'}}>
@@ -146,7 +144,8 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     </View>
                 </ScrollView>
             </View>
-        </Fragment>
+      </Fragment>
+      // </SafeAreaView>
     )
 }
 
