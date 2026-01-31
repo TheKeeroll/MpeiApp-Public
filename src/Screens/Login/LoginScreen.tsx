@@ -73,6 +73,38 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
     )
 }
 
+export const LoginScreenHeader: React.FC = () => {
+  const {colors} = useTheme<CustomTheme>()
+  return (
+    <View style={{ width: '85%', maxWidth: 400, alignItems: 'center' }}>
+      <Text style={{
+        fontWeight: 'bold',
+        fontSize: 48,
+        marginBottom: '5%',
+        color: withOpacity(colors.text, 90),
+        textAlign: 'center',
+        flexWrap: 'wrap'
+      }}>
+        MpeiApp
+      </Text>
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Кросплатформенный </Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>БАРС</Text>
+      </View>
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>c </Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>расписанием</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}> и </Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>картой </Text>
+      </View>
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>в кармане</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>.</Text>
+      </View>
+    </View>
+  )
+}
+
 const LoginScreen: React.FC = () => {
     const {colors} = useTheme<CustomTheme>()
     const [login, setLogin] = useState('')
@@ -102,32 +134,7 @@ const LoginScreen: React.FC = () => {
             paddingRight: insets.right,
             alignItems: 'center',
         }}>
-            <View style={{ width: '85%', maxWidth: 400, alignItems: 'center' }}>
-                  <Text style={{
-                      fontWeight: 'bold',
-                      fontSize: 48,
-                      marginBottom: '5%',
-                      color: withOpacity(colors.text, 90),
-                      textAlign: 'center',
-                      flexWrap: 'wrap'
-                  }}>
-                      MpeiApp
-                  </Text>
-                  <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Кросплатформенный </Text>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>БАРС</Text>
-                  </View>
-                  <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>c </Text>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>расписанием</Text>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}> и </Text>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>картой </Text>
-                  </View>
-                  <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>в кармане</Text>
-                      <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>.</Text>
-                  </View>
-              </View>
+          <LoginScreenHeader/>
               {showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
                 showingAF2 ? <AF2Screen onBack={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
