@@ -6,7 +6,8 @@ export default function(raw: string): BARSQuestionnaire[] | BARSError {
   console.time('QuestionnairesParser')
   try{
     const result: BARSQuestionnaire[] = []
-    const $ = parse(raw).querySelectorAll('#tbl__PartialListStudent__QuestionnaireAnswer > tbody > tr')//!.querySelectorAll('tr')
+    // const $ = parse(raw).querySelectorAll('#tbl__PartialListStudent__QuestionnaireAnswer > tbody > tr')
+    const $ = parse(raw).querySelectorAll('#tbl__PartialListQuestionnaireAnswer > tbody > tr')
     for(let i of $){
       const questionnaire: BARSQuestionnaire = {
         name: i.querySelector(`td:nth-child(1) > a`)!.text.trim(),

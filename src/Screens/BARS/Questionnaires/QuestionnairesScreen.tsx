@@ -1,5 +1,5 @@
-import React, {Fragment} from "react";
-import { FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, {Fragment, memo, useCallback, useMemo} from "react";
+import { FlatList, Linking, StyleSheet, Text, TouchableOpacity, View, ListRenderItem } from "react-native";
 
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {useTheme} from "react-native-paper";
@@ -13,18 +13,40 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import BARSAPI from "../../../Common/Globals";
 import {useNavigation} from "@react-navigation/native";
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => {
+const QuestionnaireCell = memo(({item}: {item: BARSQuestionnaire, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
-  let dates = ''
-  let text_color = colors.warning
-  if (item.status.includes('завершено')){
-    dates = 'Заполнена ' + item.completed
-    text_color = colors.accent
-  }else if (item.fill_until.length > 1){
-    dates = 'Доступна до ' + item.fill_until
-  }
+
+  const {dates, text_color, isCompleted, isExpired} = useMemo(() => {
+    let datesValue = ''
+    let textColorValue = colors.warning
+
+    const completed = item.status.includes('завершено');
+    const expired = item.status.includes('истёк');
+
+    if (completed){
+      datesValue = 'Заполнена ' + item.completed
+      textColorValue = colors.accent
+    } else if (item.fill_until.length > 1){
+      datesValue = (expired ? 'Была доступна до ' : 'Доступна до ') + item.fill_until
+    }
+
+    if (expired){
+      textColorValue = colors.error
+    }
+
+    return {
+      dates: datesValue,
+      text_color: textColorValue,
+      isCompleted: completed,
+      isExpired: expired
+    }
+  }, [item.status, item.completed, item.fill_until, colors.warning, colors.accent, colors.error])
+
+  const onNavigateToBars = useCallback(() => {
+    Linking.openURL(URLS.BARS_QUESTIONNAIRES + BARSAPI.mCredentials.login)
+  }, [])
 
   return (
     <View style={[Styles.wrapper, {backgroundColor: colors.surface}]}>
@@ -55,59 +77,65 @@ const QuestionnaireCell = ({item}: {item: BARSQuestionnaire, index: number}) => 
         style={{paddingBottom: '1%', paddingLeft: '2%', fontWeight: 'bold', color: withOpacity(text_color, 60)}}>
         {dates}
       </Text>
-      {(!item.status.includes('завершено')) &&
-        <TouchableOpacity onPress={()=> Linking.openURL(URLS.BARS_QUESTIONNAIRES +  BARSAPI.mCurrentData.student?.id)} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>
+      {(!isCompleted && !isExpired) &&
+        <TouchableOpacity onPress={onNavigateToBars} style={[Styles.barsButton, {backgroundColor: colors.surface}]}>
           <Text adjustsFontSizeToFit style={{color: colors.textUnderline, marginBottom: 4, fontWeight: 'bold'}}>{'Перейти на сайт БАРС'}</Text>
         </TouchableOpacity>
       }
     </View>
   )
-}
+})
 
 const QuestionnairesScreen: React.FC = () => {
   const navigation = useNavigation();
   const {colors} = useTheme()
   const questionnaires = useSelector((state: RootState)=>state.Questionnaires)
-  const insets = useSafeAreaInsets();
 
-  const onLoad = (offline: boolean) => (
-    <FlatList
-      style={{width: '100%'}}
-      contentContainerStyle={{alignItems: 'center'}}
-      data={questionnaires.data!}
-      renderItem={({item, index}:{item: BARSQuestionnaire, index: number})=><QuestionnaireCell item={item} index={index}/> }
-      ItemSeparatorComponent={()=><View style={{height: 20}}/>}
-      ListHeaderComponent={
-        <Fragment>
-          {offline &&
-            <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-              <OfflineDataNotification/>
-            </View>
-          }
-          <View style={{height: 20}}/>
-        </Fragment>
+  const renderItem: ListRenderItem<BARSQuestionnaire> = useCallback(({item, index}) => (
+    <QuestionnaireCell item={item} index={index}/>
+  ), [])
+
+  const keyExtractor = useCallback((item: BARSQuestionnaire) => item.name + item.status, [])
+
+  const ItemSeparator = useCallback(() => <View style={Styles.separator}/>, [])
+  const ListFooter = useCallback(() => <View style={Styles.separator}/>, [])
+
+  const ListHeader = useCallback(() => (
+    <Fragment>
+      {questionnaires.status === 'OFFLINE' &&
+        <View style={Styles.offlineNotification}>
+          <OfflineDataNotification/>
+        </View>
       }
-      ListFooterComponent={()=><View style={{height: 20}}/>}
-    />
-  )
+      <View style={Styles.separator}/>
+    </Fragment>
+  ), [questionnaires.status])
 
   const renderSwitch = () => {
     switch (questionnaires.status){
       case "LOADING": return <LoadingScreen/>
       case "FAILED": return <FetchFailed/>
       case "OFFLINE":
-      case "LOADED": return onLoad(questionnaires.status == 'OFFLINE')
+      case "LOADED": return (
+        <FlatList
+          style={Styles.list}
+          contentContainerStyle={Styles.listContent}
+          data={questionnaires.data!}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ItemSeparatorComponent={ItemSeparator}
+          ListHeaderComponent={ListHeader}
+          ListFooterComponent={ListFooter}
+        />
+      )
     }
   }
 
-
   return (
-    <Fragment>
-      <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main,{backgroundColor: colors.background}]}>
-        <DrawerHeader navigation={navigation} title={'Анкеты'}/>
-        {renderSwitch()}
-      </SafeAreaView>
-    </Fragment>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main,{backgroundColor: colors.background}]}>
+      <DrawerHeader navigation={navigation} title={'Анкеты'}/>
+      {renderSwitch()}
+    </SafeAreaView>
   )
 }
 
@@ -145,6 +173,26 @@ const Styles = StyleSheet.create({
     marginBottom: '1%',
     borderRadius: 5,
     alignSelf: 'center'
+  },
+  barsButton: {
+    borderRadius: 15,
+    paddingLeft: '2%',
+    alignItems: 'flex-start',
+    justifyContent: 'space-evenly'
+  },
+  separator: {
+    height: 20
+  },
+  offlineNotification: {
+    alignItems: 'center',
+    marginTop: 10,
+    justifyContent: 'center'
+  },
+  list: {
+    width: '100%'
+  },
+  listContent: {
+    alignItems: 'center'
   }
 })
 

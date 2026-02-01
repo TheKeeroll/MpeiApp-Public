@@ -86,8 +86,7 @@ export default class BARS{
   private mBackgroundMode = false
   private mTestMode = false
   public mCurrentData: Partial<BARSData>
-  private mCredentials: BARSCredentials = {login: '', password: ''}
-  // public mStorage = new MMKV()
+  public mCredentials: BARSCredentials = {login: '', password: ''}
   public mStorage = createMMKV()
   private mCurrentIcon: string = 'cool'
   public mCurrentWeek = ''
@@ -1348,9 +1347,14 @@ export default class BARS{
 
   public FetchQuestionnaires(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching questionnaires')
-    return Timeout(3000, fetch(URLS.BARS_QUESTIONNAIRES + this.mCurrentData.student!.id + '&query=%7B%22ID%22%3Anull%2C%22State%22%3Anull%2C%22SortOrder%22%3A%22EditEndDate%20desc%2CQuestionnaire.Name%22%2C%22Page%22%3A%221%22%2C%22PageSize%22%3A%22500%22%2C%22SearchText%22%3A%22%22%7D&_=1706828837554', {method: 'GET', headers: COMMON_HTTP_HEADER})
-      .then(r=>r.text()).then(
+    return Timeout(3000, fetch(URLS.BARS_QUESTIONNAIRES + this.mCredentials.login + '&query=%7B"ID"%3Anull%2C"State"%3Anull%2C"SortOrder"%3A"EditEndDate%20desc%2CQuestionnaire.Name"%2C"Page"%3A"1"%2C"PageSize"%3A"500"%7D', {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+    }).then(r=>r.text()).then(
         (response)=>{
+          // console.log('Questionnaires resp text: ' + response);
           const questionnaires = QuestionnairesParser(response)
           if(isBARSError(questionnaires)){
             console.warn('Failed to fetch questionnaires! Trying to use offline data... ')
