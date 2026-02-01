@@ -148,36 +148,36 @@ const DrawerHeader: React.FC = () => {
                     }
                     {((!study_rating_text.includes('NO_VALUE')) || (!complex_rating_text.includes('NO_VALUE'))) && <>
                         <Text style={{fontSize: 14, fontWeight: 'bold', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Рейтинги: '}</Text>
-                        <View style={{width: '90%', flexDirection: 'row'}}>
+                        <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap'}}>
                             {(!study_rating_text.includes('NO_VALUE')) &&
-                                <View style={{width: '100%', flexDirection: 'row'}}>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Учебный: '}</Text>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(study_rating_color, 90)}}>{study_rating_text}</Text>
-                                </View>
+                                <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', marginRight: 8}}>
+                                    <Text style={{color: withOpacity(colors.text, 90)}}>{'Учебный: '}</Text>
+                                    <Text style={{color: withOpacity(study_rating_color, 90)}}>{study_rating_text}</Text>
+                                </Text>
                             }
                             {(!complex_rating_text.includes('NO_VALUE')) &&
-                                <View style={{width: '66%', flexDirection: 'row', alignItems: 'flex-end', marginRight: 4, paddingRight: '2%'}}>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Комплексный: '}</Text>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', marginRight:'4%', color: withOpacity(complex_rating_color, 90)}}>{complex_rating_text}</Text>
-                                </View>
+                                <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%'}}>
+                                    <Text style={{color: withOpacity(colors.text, 90)}}>{'Компл.: '}</Text>
+                                    <Text style={{color: withOpacity(complex_rating_color, 90)}}>{complex_rating_text}</Text>
+                                </Text>
                             }
                         </View>
                     </>
                     }
                     {((!av_scorePA_text.includes('NO_VALUE')) || (!av_scoreZK_text.includes('NO_VALUE'))) && <>
                         <Text style={{fontSize: 14, fontWeight: 'bold', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'Средние баллы: '}</Text>
-                        <View style={{width: '100%', flexDirection: 'row'}}>
+                        <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap'}}>
                             {(!av_scorePA_text.includes('NO_VALUE')) &&
-                                <View style={{width: '100%', flexDirection: 'row'}}>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'ПА: '}</Text>
-                                    <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scorePA_color, 90)}}>{av_scorePA_text}</Text>
-                                </View>
+                                <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', marginRight: 8}}>
+                                    <Text style={{color: withOpacity(colors.text, 90)}}>{'ПА: '}</Text>
+                                    <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', color: withOpacity(av_scorePA_color, 90)}}>{av_scorePA_text}</Text>
+                                </Text>
                             }
                             {(!av_scoreZK_text.includes('NO_VALUE')) &&
-                                <View style={{width: '100%', flexDirection: 'row', alignItems: 'flex-end'}}>
-                                    <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>{'ЗК: '}</Text>
-                                    <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(av_scoreZK_color, 90)}}>{av_scoreZK_text}</Text>
-                                </View>
+                                <Text style={{fontSize: 12, paddingTop: '1%', paddingLeft: '2%'}}>
+                                    <Text style={{color: withOpacity(colors.text, 90)}}>{'ЗК: '}</Text>
+                                    <Text style={{fontSize: 12, fontWeight: 'bold', fontStyle: 'italic', color: withOpacity(av_scoreZK_color, 90)}}>{av_scoreZK_text}</Text>
+                                </Text>
                             }
                         </View>
                     </>
@@ -437,19 +437,19 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                         <View style={{width: '100%', flexDirection: 'row'}}>
                             <View style={{flex: .7}}>
                                 <View style={{width: '100%', flexDirection: 'column'}}>
-                                    <View style={{width: '100%', minHeight: '2%', justifyContent: 'center', flexDirection: 'row'}}>
+                                    <View style={{width: '100%', minHeight: '2%', alignItems: 'center', flexDirection: 'row'}}>
                                         <IonIcon.default name={'mail-open-outline'} size={25} adjustsFontSizeToFit
                                             color={withOpacity(colors.text, 80)}
-                                            style={{width: '12.5%', alignItems: 'center', placeSelf: 'center', justifyContent: 'center', borderRadius: 5, height: 35, marginLeft: 22, marginRight: 8, marginVertical: 8}}
+                                            style={{alignItems: 'flex-start', justifyContent: 'flex-start', borderRadius: 5, height: 35, marginLeft: 8, marginRight: 8, marginVertical: 8}}
                                         />
                                         <Text
                                           numberOfLines={1}
-                                          style={{fontSize: 14, marginTop: 5, textAlign: 'center', paddingVertical: 8, fontWeight: 'bold', color: colors.text}}>
+                                          style={{fontSize: 14, textAlign: 'center', paddingVertical: 8, fontWeight: 'bold', color: colors.text}}>
                                             {'Почта:'}
                                         </Text>
                                         <Text
                                           numberOfLines={1}
-                                          style={{fontSize: 14, marginTop: 5, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
+                                          style={{fontSize: 14, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
                                             {mail_str}
                                         </Text>
                                     </View>

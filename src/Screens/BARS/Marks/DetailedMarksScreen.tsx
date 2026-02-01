@@ -20,7 +20,6 @@ const Moment = require('moment')
 
 
 const SortMarksByDate = (marks: Mark[]) => {
-     //return  marks.slice().sort((a,b)=> a.mark > b.mark ? 1 : a.mark == b.mark ? 0 : -1);
     return marks.slice().sort((a,b)=>new Moment(a.date, 'DDMMYY') - new Moment(b.date, 'DDMMYY'));
 }
 
@@ -28,7 +27,7 @@ const WeightToColor = (weight: number) => {
     const {colors} = useTheme<CustomTheme>()
     if (weight < 20) {
         return colors.accent;
-    } else if (weight >= 20 && weight <= 40) {
+    } else if (weight >= 20 && weight < 34) {
         return colors.warning;
     } else {
         return colors.error;
@@ -52,9 +51,6 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
     const {dark} = useTheme()
     const [prev, setPrev] = useState(false)
     const prevMark = props.item.marks.length > 1 ? props.item.marks[1] : null
-    //console.log('B', props.item.marks)
-    //console.log('A', SortMarksByDate(props.item.marks))
-    //const sorted = SortMarksByDate(props.item.marks)
     const mark = SortMarksByDate(props.item.marks)[props.item.marks.length - 1];
 
     const weightColor = WeightToColor(parseInt(props.item.weight.trim()))
