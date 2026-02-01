@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-push-notification/android/build.gradle b/node_modules/react-native-push-notification/android/build.gradle
-index d6019f6..60cefef 100644
+index d6019f6..980a228 100644
 --- a/node_modules/react-native-push-notification/android/build.gradle
 +++ b/node_modules/react-native-push-notification/android/build.gradle
 @@ -1,19 +1,17 @@
@@ -12,7 +12,7 @@ index d6019f6..60cefef 100644
      }
      dependencies {
 -        classpath 'com.android.tools.build:gradle:3.2.0'
-+        classpath 'com.android.tools.build:gradle:7.3.1'
++        classpath 'com.android.tools.build:gradle:8.13.2'
      }
  }
  
@@ -25,25 +25,27 @@ index d6019f6..60cefef 100644
      }
  }
  
-@@ -24,8 +22,8 @@ def safeExtGet(prop, fallback) {
+@@ -24,20 +22,21 @@ def safeExtGet(prop, fallback) {
  }
  
  android {
 -    compileSdkVersion safeExtGet('compileSdkVersion', 28)
 -    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
-+    compileSdk safeExtGet('compileSdkVersion', 35)
-+    buildToolsVersion safeExtGet('buildToolsVersion', '35.0.0')
++    compileSdk safeExtGet('compileSdkVersion', 36)
++    buildToolsVersion safeExtGet('buildToolsVersion', '36.1.0')
  
      compileOptions {
-         sourceCompatibility JavaVersion.VERSION_1_8
-@@ -33,11 +31,12 @@ android {
+-        sourceCompatibility JavaVersion.VERSION_1_8
+-        targetCompatibility JavaVersion.VERSION_1_8
++        sourceCompatibility JavaVersion.VERSION_17
++        targetCompatibility JavaVersion.VERSION_17
      }
  
      defaultConfig {
 -        minSdkVersion safeExtGet('minSdkVersion', 16)
 -        targetSdkVersion safeExtGet('targetSdkVersion', 28)
 +        minSdkVersion safeExtGet('minSdkVersion', 23)
-+        targetSdkVersion safeExtGet('targetSdkVersion', 35)
++        targetSdkVersion safeExtGet('targetSdkVersion', 36)
          versionCode 1
          versionName "1.0"
          ndk {
@@ -68,7 +70,7 @@ index d6019f6..60cefef 100644
 +    implementation 'com.facebook.react:react-native:0.68.1'
      implementation 'me.leolin:ShortcutBadger:1.1.22@aar'
 -    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '21.1.0')}"
-+    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '23.1.1')}"
++    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '25.0.1')}"
  }
 diff --git a/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml b/node_modules/react-native-push-notification/android/src/main/AndroidManifest.xml
 index 85ef0b3..2496984 100644

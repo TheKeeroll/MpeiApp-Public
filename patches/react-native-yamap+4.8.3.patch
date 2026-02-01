@@ -17,7 +17,7 @@ index 571f8d2..e8cfb6f 100644
 +    s.dependency "YandexMapsMobile", "4.19.0-full"
  end
 diff --git a/node_modules/react-native-yamap/android/build.gradle b/node_modules/react-native-yamap/android/build.gradle
-index d9de295..f6d365b 100644
+index d9de295..b016f76 100644
 --- a/node_modules/react-native-yamap/android/build.gradle
 +++ b/node_modules/react-native-yamap/android/build.gradle
 @@ -1,7 +1,7 @@
@@ -51,9 +51,9 @@ index d9de295..f6d365b 100644
 -    implementation 'com.yandex.android:maps.mobile:4.8.0-full'
 -    implementation 'androidx.core:core-ktx:1.13.1'
 +    implementation 'com.google.android.gms:play-services-location:21.3.0'
-+    implementation 'com.facebook.react:react-native:0.20.1'
-+    implementation 'com.yandex.android:maps.mobile:4.19.0-full'
-+    implementation 'androidx.core:core-ktx:1.16.0'
++    implementation 'com.facebook.react:react-native:0.83.1'
++    implementation 'com.yandex.android:maps.mobile:4.29.0-full'
++    implementation 'androidx.core:core-ktx:1.17.0'
  }
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt
 index 54d8a0f..a2c6355 100644
