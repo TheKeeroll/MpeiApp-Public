@@ -3,20 +3,24 @@ import {useTheme} from "react-native-paper";
 import {ScrollView, View} from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {WhatsNewChange, WhatsNewLogo} from "./Components";
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {CustomTheme} from "../../Themes/Themes"
 
 
 
 const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
-    const insets = useSafeAreaInsets();
     return (
       // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
       <Fragment>
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Второй фактор'} version={'2.2.0'}/>
+                    <WhatsNewChange title={'Поддержка входа с включённой 2ФА с любым провайдером!'}/>
+                    <WhatsNewChange title={'Восстановлено отображение приказов и анкет'}/>
+                    <WhatsNewChange title={'Исправлены чрезмерные отступы сверху на свежих iOS и Android и иные визуальные недочёты'}/>
+                    <WhatsNewChange title={'Актуализация зависимостей во избежание проблем'}/>
+
                     <WhatsNewLogo title={'Осенняя адаптация'} version={'2.1.0'}/>
                     <WhatsNewChange title={'Восстановлено отображение пропусков занятий'}/>
                     <WhatsNewChange title={'Исправления расписания(как в самом приложении, так и в виджете)'}/>
