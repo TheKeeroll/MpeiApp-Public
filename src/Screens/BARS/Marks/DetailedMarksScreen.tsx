@@ -53,11 +53,11 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
     const prevMark = props.item.marks.length > 1 ? props.item.marks[1] : null
     const mark = SortMarksByDate(props.item.marks)[props.item.marks.length - 1];
 
-    const weightColor = WeightToColor(parseInt(props.item.weight.trim()))
+    const weightColor = WeightToColor(parseInt(props.item?.weight?.trim() || '0'))
 
     let week_color = colors.textUnderline
     let week_font: "normal" | "bold" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | undefined = "normal"
-    if (parseInt(props.item.week.trim().split(' (')[0]) == parseInt(BARSAPI.mCurrentWeek)){
+    if (parseInt(props.item?.week?.trim().split(' (')[0] || '1') == parseInt(BARSAPI.mCurrentWeek)){
         week_color = colors.notification
         week_font = "bold"
     }
@@ -68,19 +68,19 @@ const Cell: React.FC<{item: KM, index: number}> = (props) =>{
                     <Text
                         numberOfLines={8}
                         style={{padding: '2%', width: '100%', color: withOpacity(colors.text, 80)}}>
-                        {props.item.name.trim()}
+                        {(props.item?.name?.trim() || '')}
                     </Text>
                 </View>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
                     <Text
                       numberOfLines={1}
                       style={{color: withOpacity(week_color, 80), fontWeight: week_font, marginTop: 2}}>
-                        {'Неделя ' + props.item.week.trim().split(' (')[0]}
+                        {'Неделя ' + (props.item?.week?.trim().split(' (')[0] || '')}
                     </Text>
                     <Text
                       numberOfLines={1}
                       style={{fontWeight: 'bold', color: withOpacity(weightColor, 80), marginTop: 2}}>
-                        {props.item.weight.trim() + '%'}
+                        {(props.item?.weight?.trim() || '0') + '%'}
                     </Text>
                 </View>
             </View>

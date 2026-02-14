@@ -128,7 +128,7 @@ const DrawerHeader: React.FC = () => {
                         <Text
                           numberOfLines={2}
                           style={{fontSize: 16, fontWeight: '600', paddingTop: '1%', paddingLeft: '2%', color: colors.text}}>
-                            {(student?.name.includes('не распарсилось') ? '' : student?.name) + ' ' + (student?.surname.includes('не распарсилось') ? '' : student?.surname)}
+                            {(student?.name?.includes('не распарсилось') ? '' : student?.name) + ' ' + (student?.surname?.includes('не распарсилось') ? '' : student?.surname)}
                         </Text>
                         }
                     </View>
@@ -137,7 +137,7 @@ const DrawerHeader: React.FC = () => {
                             <TouchableOpacity style={{flexDirection: 'row'}} onPress={()=> Clipboard.setString(student?.indexBook ?? ' ')}>
                                 <Text
                                     style={{fontSize: 12, textDecorationLine: 'underline', paddingTop: '1%', paddingLeft: '2%', color: withOpacity(colors.text, 90)}}>
-                                    {'№ ЗК ' + (student?.indexBook.includes('не распарсилось') ? '' : student?.indexBook)}
+                                    {'№ ЗК ' + (student?.indexBook?.includes('не распарсилось') ? '' : student?.indexBook)}
                                 </Text>
                                 <IonIcon.default name={'copy-outline'} size={18} adjustsFontSizeToFit
                                     color={withOpacity(colors.text, 80)}
@@ -183,15 +183,15 @@ const DrawerHeader: React.FC = () => {
                     </>
                     }
                     {(student?.status) &&
-                    <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status.includes('не распарсилось') ? '' : student?.status)}</Text>
+                    <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status?.includes('не распарсилось') ? '' : student?.status)}</Text>
                     }
                 </View>
                 <View style={{flex: .6, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
                     {(student?.group) &&
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group.includes('не распарсилось') ? '' : student?.group}</Text>
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group?.includes('не распарсилось') ? '' : student?.group}</Text>
                     }
                     {(student?.direction) &&
-                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 90)}}>{CapitalizeFirstChar(student?.direction.includes('не распарсилось') ? '' : student?.direction)}</Text>
+                    <Text adjustsFontSizeToFit numberOfLines={1} style={{ paddingTop: '1%', paddingRight: '4%', color: withOpacity(colors.textUnderline, 90)}}>{CapitalizeFirstChar(student?.direction?.includes('не распарсилось') ? '' : student?.direction)}</Text>
                     }
                 </View>
             </View>
@@ -378,8 +378,10 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     if (marks.status != 'LOADING'){
         try {
             for (let l = 0; l <= (marks.data!.disciplines.length - 1); l++) {
-                let closeBARSDate = convertDate(marks.data!.disciplines[l].passUpUntil.split('\n')[0].trim())
-                if (((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) && !(marks.data!.disciplines[l].passUpUntil.split('\n')[0].trim() == '-' && (todayDate.getMonth() == 7 || todayDate.getMonth() == 1 ))) {
+                let passUpUntil = marks.data!.disciplines[l].passUpUntil
+                if (!passUpUntil) continue
+                let closeBARSDate = convertDate(passUpUntil.split('\n')[0].trim())
+                if (((todayDate >= closeBARSDate) || ((closeBARSDate.toString() == "Invalid Date") && (todayDate >= new Date(todayDate.getFullYear(), todayDate.getMonth() == 11 ? 11 : 5, todayDate.getMonth() == 11 ? 23 : 5)))) && !(passUpUntil.split('\n')[0].trim() == '-' && (todayDate.getMonth() == 7 || todayDate.getMonth() == 1 ))) {
                     let breaker = false
                     for (let i = 0; i < marks.data!.disciplines[l].kms.length; i++) {
                         for (let j = 0; j < marks.data!.disciplines[l].kms[i].marks.length; j++) {

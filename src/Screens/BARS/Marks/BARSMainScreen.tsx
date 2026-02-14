@@ -27,6 +27,7 @@ import parse from "node-html-parser";
 import { updateAdditionalData } from "../../../API/Redux/Slices";
 import SharedGroupPreferences from "react-native-shared-group-preferences";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { APP_CONFIG } from "../../../Common/Config.ts";
 
 const Stack = createStackNavigator()
 
@@ -34,9 +35,8 @@ const group = 'group.com.mpeiapp'
 
 const SharedStorage = NativeModules.SharedStorage
 
-const FeedWidget = async () => {
+const FeedWidget = async (studentSchedule: any) => {
   try {
-    const studentSchedule = useSelector((state: RootState) => state.Schedule)
     const todayStr = new Date().getDDMMYY()
 
     const placeholderDay = (isToday = false): BARSScheduleCell => ({
@@ -176,13 +176,16 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const GetMainMark = () => {
-        const m = props.discipline.resultMarks[props.discipline.resultMarks.length - 1].mark
+        const lastResultMark = props.discipline.resultMarks[props.discipline.resultMarks.length - 1]
+        const m = lastResultMark ? lastResultMark.mark : undefined
         //console.log(m == '-' ? props.discipline.sredBall : typeof m == 'undefined' ? '-' : m)
         //if(APP_CONFIG.TEST_MODE) return '-'
-        return m == '-' ? props.discipline.sredBall : typeof m == 'undefined' ? '-' : m
+        return m == '-' ? (props.discipline.sredBall ?? '-') : (typeof m == 'undefined' ? '-' : m)
 
     }
-    closeBARSDate = convertDate(props.discipline.passUpUntil.split('\n')[0].trim())
+    if (props.discipline.passUpUntil) {
+        closeBARSDate = convertDate(props.discipline.passUpUntil.split('\n')[0].trim())
+    }
     let todayDate= convertDate(new Date().getDDMMYY())
 
     const [discipleTextColor, setDiscipleTextColor] = useState<string>('#FFFFFF')
@@ -197,12 +200,12 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     if (_discipleText.includes('-')) _discipleText = ' '
     let _discipleTextColor = (_discipleText.includes('Все КМ') || _discipleText.includes('СДАНА')) ? colors.accent : (todayDate >= new Date(closeBARSDate.getFullYear(), (closeBARSDate.getDate() - 7) > 0 ? closeBARSDate.getMonth() : (closeBARSDate.getMonth() - 1),(closeBARSDate.getDate() - 7) > 0 ? (closeBARSDate.getDate() - 7) : 26 )) ? colors.warning : colors.text
     let typeColor : string
-    let _type = props.discipline.debt ? 'Долг' : props.discipline.examType.charAt(0).toUpperCase() + props.discipline.examType.slice(1)
+    let _type = props.discipline.debt ? 'Долг' : (props.discipline.examType ? props.discipline.examType.charAt(0).toUpperCase() + props.discipline.examType.slice(1) : '')
     if (_type.includes('без оценки')) typeColor = colors.accent
     else if (_type.includes('с оценкой')) typeColor = colors.warning
     else if (_type.includes('Долг')) typeColor = colors.highlight
     else typeColor = colors.error
-    if (props.discipline.examMarks[0].mark.includes('П')) {
+    if (props.discipline.examMarks[0]?.mark?.includes('П')) {
 
         _discipleText = 'Предоставлено согласие на получение оценки ПА!'
         _discipleTextColor = colors.accent
@@ -253,7 +256,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
 
     useEffect(() => {
         const checkAvailability = async () => {
-            if (marks.status !== "OFFLINE" && props.discipline.examAutoId !== '0') {
+            if (marks.status !== "OFFLINE" && !BARSAPI.TestMode && props.discipline.examAutoId && props.discipline.examAutoId !== '0') {
                 const finalMarkCheckRes = await CheckFinalMarkAvailability(props.discipline.examAutoId)
                 if (!finalMarkCheckRes.includes('NO CONDITIONS')) {
                     setDiscipleTextColor('#33FFFF')
@@ -323,7 +326,7 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                                 numberOfLines={3}
                                 style={{color: colors.textUnderline, textAlign: 'center'}}>
                                 {props.discipline.teacher.name.length
-                                    ? props.discipline.teacher.name.includes('руководитель')
+                                    ? props.discipline.teacher.name?.includes('руководитель')
                                         ? props.discipline.teacher.name.replace(
                                             '(руководитель - ',
                                             '\n(рук.',
@@ -421,10 +424,10 @@ const Body: React.FC<{navigation: any}> = (props)=>{
     if (!sessionStarted){
         weekDColor = colors.text
     }
-    if (marks.status !== "OFFLINE") {
+    if (marks.status !== "OFFLINE" && !BARSAPI.TestMode) {
         useEffect(() => {
 
-            BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters![0].id)
+            BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters?.[0]?.id)
               .then()
               .catch(e=>{
                   console.warn(' useEffect: ' + e.toString())
@@ -489,9 +492,9 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                 <FlatList
                     refreshing={refreshing}
                     onRefresh={()=>{
-                        if(marks.status == 'OFFLINE') return
+                        if(marks.status == 'OFFLINE' || BARSAPI.TestMode) return
                         setRefreshing(true)
-                        BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters![0].id)
+                        BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters?.[0]?.id)
                             .then(()=>setRefreshing(false))
                     }}
 
@@ -539,7 +542,10 @@ const BARSMainScreen: React.FC<{navigation: any, route: any}> = () => {
 
 const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     const {colors} = useTheme()
-    FeedWidget().then(r => console.log('Schedule provided to widget'))
+    const studentSchedule = useSelector((state: RootState) => state.Schedule)
+    useEffect(() => {
+        FeedWidget(studentSchedule).then(r => console.log('Schedule provided to widget'))
+    }, [studentSchedule])
     return (
         <View style={[Styles.mainView, {backgroundColor: colors.background, flex: 1}]}>
             <DrawerHeader {...props} title={'Оценки'}/>

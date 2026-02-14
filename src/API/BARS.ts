@@ -546,16 +546,24 @@ export default class BARS{
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
     let isIncorrectLoginPassword = false
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
-      Alert.alert('Info', 'Entered test mode.')
+      // Alert.alert('Info', 'Entered test mode.')
       this.mCredentials = creds
       this.mCurrentData = require('../Common/TestData.json')
       this.mTestMode = true
       console.log('Dispatching test data...')
-      Store.dispatch(updateSchedule({status: "LOADED", data: this.mCurrentData.schedule!}))
+      this.FetchSchedule()
       Store.dispatch(updateSkippedClasses({status: "LOADED", data: this.mCurrentData.skippedClasses!}))
       Store.dispatch(updateRecordBook({status: "LOADED", data: this.mCurrentData.records!}))
       Store.dispatch(updateReports({status: "LOADED", data: this.mCurrentData.reports!}))
       Store.dispatch(updateMarkTable({status: "LOADED", data: this.mCurrentData.marks!}))
+
+      Store.dispatch(updateBooks({status: "OFFLINE", data: { books: [], library_card: 'empty' }}))
+      Store.dispatch(updateMail({status: "OFFLINE", data: { mode: 'legacy', unreadCount: '0' }}))
+      Store.dispatch(updateOrders({status: "OFFLINE", data: []}))
+      Store.dispatch(updateQuestionnaires({status: "OFFLINE", data: []}))
+      Store.dispatch(updateStipends({status: "OFFLINE", data: { stipends: [], petitions: [] }}))
+      Store.dispatch(updateTasks({status: "OFFLINE", data: []}))
+
       DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
       console.log('Dispatched test data.')
       return Promise.resolve('ONLINE')
@@ -930,7 +938,10 @@ export default class BARS{
       headers: {},
       credentials: 'include'
     }).then(r=>r.json()).then(r=>{
-      const linkSchedule = `http://ts.mpei.ru/api/schedule/group/${r[0].id}?start=${dateStart.format('YYYY.MM.DD')}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
+      if (!r || r.length === 0) {
+        throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Группа не найдена на сервере расписания!');
+      }
+      const linkSchedule = `http://ts.mpei.ru/api/schedule/group/${r[0]?.id || ''}?start=${dateStart.format('YYYY.MM.DD')}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
       return fetch(linkSchedule, {
         method: 'GET',
         headers: {},
