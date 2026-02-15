@@ -623,61 +623,61 @@ export default class BARS{
                 console.log('2FA code 1 requested, res: ' + response1);
                 if (response1.includes('false') || !response1.includes('success')) {
                   try {
-                    setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
+                    setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
                       method: "GET",
                       headers: COMMON_HTTP_HEADER,
-                    }).then(r => r.text()).then(async (response3) => {
-                      console.log('2FA code 3 requested, res: ' + response3);
-                      if (response3.includes('false') || !response3.includes('success')) {
+                    }).then(r => r.text()).then(async (response2) => {
+                      console.log('2FA code 2 requested, res: ' + response2);
+                      if (response2.includes('false') || !response2.includes('success')) {
                         try {
-                          setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                          setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
                             method: "GET",
                             headers: COMMON_HTTP_HEADER,
-                          }).then(r => r.text()).then(async (response2) => {
-                            console.log('2FA code 2 requested, res: ' + response2);
+                          }).then(r => r.text()).then(async (response3) => {
+                            console.log('2FA code 3 requested, res: ' + response3);
                           }), 100)
                         } catch (e:any) {
-                          console.warn('2FA code 2 request failed! ', e);
+                          console.warn('2FA code 3 request failed! ', e);
                         }
                       }
                     }), 100)
                   } catch (e:any) {
-                    console.warn('2FA code 3 request failed! ', e);
+                    console.warn('2FA code 2 request failed! ', e);
                   }
                 }
               }), 100)
             } catch (e:any) {
               console.warn('2FA code 1 request failed: ', e);
               try {
-                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
+                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
                   method: "GET",
                   headers: COMMON_HTTP_HEADER,
-                }).then(r => r.text()).then(async (response3) => {
-                  console.log('2FA code 3 requested, res: ' + response3);
-                  if (response3.includes('false') || !response3.includes('success')) {
+                }).then(r => r.text()).then(async (response2) => {
+                  console.log('2FA code 2 requested, res: ' + response2);
+                  if (response2.includes('false') || !response2.includes('success')) {
                     try {
-                      setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                      setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
                         method: "GET",
                         headers: COMMON_HTTP_HEADER,
-                      }).then(r => r.text()).then(async (response2) => {
-                        console.log('2FA code 2 requested, res: ' + response2);
+                      }).then(r => r.text()).then(async (response3) => {
+                        console.log('2FA code 3 requested, res: ' + response3);
                       }), 100)
                     } catch (e:any) {
-                      console.warn('2FA code 2 request failed! ', e);
+                      console.warn('2FA code 3 request failed! ', e);
                     }
                   }
                 }), 100)
               } catch (e:any) {
-                console.warn('2FA code 3 request failed! ', e);
+                console.warn('2FA code 2 request failed! ', e);
                 try {
-                  setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
+                  setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
                     method: "GET",
                     headers: COMMON_HTTP_HEADER,
-                  }).then(r => r.text()).then(async (response2) => {
-                    console.log('2FA code 2 requested, res: ' + response2);
+                  }).then(r => r.text()).then(async (response3) => {
+                    console.log('2FA code 3 requested, res: ' + response3);
                   }), 100)
                 } catch (e:any) {
-                  console.warn('2FA code 2 request failed! ', e);
+                  console.warn('2FA code 3 request failed! ', e);
                 }
               }
             }
