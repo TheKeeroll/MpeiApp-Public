@@ -249,7 +249,10 @@ export default class BARS{
     console.time('CurrentWeek ' + Platform.OS)
     return Timeout(15000, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
       try{
-        this.mCurrentWeek = parse(r).querySelector('#ctl00_g_06da9461_ac13_4827_a73a_ec9ca4dd6498 > div > div')!.text
+        const doc = parse(r)
+        this.mCurrentWeek = doc.querySelector('.nb-week')?.textContent?.trim() ??
+          doc.querySelector('.current-study-week')?.textContent?.match(/\d+/)?.[0] ??
+          '?';
         console.timeEnd('CurrentWeek ' + Platform.OS)
       } catch (e: any){
         this.mCurrentWeek = '?'
