@@ -189,7 +189,7 @@ const LoginScreen: React.FC = () => {
                                     setShowLoading(false)
                                     Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
                                     DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
-                                }), 900)
+                                }), 250)
                             }} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
 
                             <View style={{marginBottom: '4%', flexDirection: 'row', width: '100%', alignSelf: 'center', justifyContent: 'space-between'}}>

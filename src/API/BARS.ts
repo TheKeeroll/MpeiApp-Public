@@ -386,6 +386,8 @@ export default class BARS{
       return fetch(URLS.BARS_MULTI_ACCOUNT, {
         method: "GET",
         headers: COMMON_HTTP_HEADER,
+        mode: 'same-origin',
+        credentials: 'include'
       }).then(r => r.text()).then((response) => {
         const $ = cheerio.load(response);
         const last = $("#tbl__PartialListStudent > tbody").find("tr").length;
@@ -408,6 +410,8 @@ export default class BARS{
         return fetch(link, {
           method: "GET",
           headers: COMMON_HTTP_HEADER,
+          mode: 'same-origin',
+          credentials: 'include'
         }).then(r => r.text()).then((response) => {
           if (!(response.includes("Оценки в БАРС"))) {
             console.warn("Not main BARS page during multi-account login! An attempt to redirect...")
@@ -417,6 +421,8 @@ export default class BARS{
               return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
                 method: "GET",
                 headers: COMMON_HTTP_HEADER,
+                mode: 'same-origin',
+                credentials: 'include'
               }).then(r => r.text()).then((response) => {
                 console.log("Successfully redirected and logged in multi-account")
                 const result = ParseStudentInfo(response)
@@ -468,6 +474,8 @@ export default class BARS{
         return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
           method: "GET",
           headers: COMMON_HTTP_HEADER,
+          mode: 'same-origin',
+          credentials: 'include'
         }).then(r => r.text()).then((response) => {
           console.log("Successfully redirected and logged in")
           const result = ParseStudentInfo(response)
@@ -583,7 +591,7 @@ export default class BARS{
         return Promise.resolve<'ONLINE' | 'OFFLINE' | BARSMarks | void>('OFFLINE')
       }
       console.time('Login&StudentInfoParser')
-      let ms_bars_main = 4500
+      let ms_bars_main = 6500
       if (firstStart) ms_bars_main = 30000
       return Timeout(ms_bars_main, fetch(URLS.BARS_MAIN, {
         method: 'POST',
@@ -1014,7 +1022,9 @@ export default class BARS{
     const link = URLS.BARS_RECORD_BOOK + this.mCurrentData.student!.id
     return Timeout(5500, fetch(link, {
       method: 'GET',
-      headers: COMMON_HTTP_HEADER
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
     }).then(r=>r.text())
     .then((response)=>{
       const semPromises: Promise<string>[] = []
@@ -1080,7 +1090,9 @@ export default class BARS{
     )
     return Timeout(4000, fetch(link,{
       method: 'GET',
-      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id)
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
     }).then(r=>r.text()).then((response)=>{
       const skippedClasses = SkippedClassesParser(response)
       if(isBARSError(skippedClasses)){
@@ -1112,7 +1124,12 @@ export default class BARS{
 
   public FetchReports(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching reports')
-    return Timeout(1750, fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(1750, fetch(URLS.BARS_REPORTS + this.mCurrentData.student!.id, {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+    })
       .then(r=>r.text()).then(
         (response)=>{
           const reports = ReportsParser(response)
@@ -1147,7 +1164,12 @@ export default class BARS{
 
   public FetchTasks(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching tasks')
-    return Timeout(2000, fetch(URLS.BARS_TASKS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2000, fetch(URLS.BARS_TASKS + this.mCurrentData.student!.id, {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+    })
       .then(r=>r.text()).then(
         (response)=>{
           const tasks = TasksParser(response)
@@ -1182,7 +1204,12 @@ export default class BARS{
 
   public FetchBooks(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching books')
-    return Timeout(2000, fetch(URLS.BARS_BOOKS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2000, fetch(URLS.BARS_BOOKS + this.mCurrentData.student!.id, {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+    })
       .then(r=>r.text()).then(
         (response)=>{
           const books = BooksParser(response)
@@ -1401,7 +1428,12 @@ export default class BARS{
 
   public FetchStipends(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching stipends')
-    return Timeout(2500, fetch(URLS.BARS_STIPENDS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(3000, fetch(URLS.BARS_STIPENDS + this.mCurrentData.student!.id, {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+      })
       .then(r=>r.text()).then(
         (response)=>{
           const stipends = StipendsParser(response)
@@ -1436,7 +1468,12 @@ export default class BARS{
 
   public FetchOrders(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching orders')
-    return Timeout(2250, fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return Timeout(2250, fetch(URLS.BARS_ORDERS + this.mCurrentData.student!.id, {
+      method: 'GET',
+      headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+      mode: 'same-origin',
+      credentials: 'include'
+    })
       .then(r=>r.text()).then(
         (response)=>{
           const orders = OrdersParser(response)
@@ -1471,7 +1508,6 @@ export default class BARS{
 
   public FetchMarkTable(semesterID?: string, forPast: boolean = false): Promise<void | BARSMarks>{
     console.log('Fetching mark table...')
-    // console.warn(this.mCurrentData)
     let link = URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + this.mCurrentData.student!.id
     if(typeof semesterID != "undefined"){
       link+= '&query='+
@@ -1481,7 +1517,12 @@ export default class BARS{
         })
     }
     link = encodeURI(link)
-    return fetch(link, {method: 'GET', headers: COMMON_HTTP_HEADER})
+    return fetch(link, {
+      method: 'GET',
+      headers: COMMON_HTTP_HEADER,
+      mode: 'same-origin',
+      credentials: 'include'
+    })
       .then(r=>r.text()).then(
         (response)=>{
           const marks = ParsMarkTable(response)
