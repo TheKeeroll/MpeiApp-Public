@@ -35,11 +35,11 @@ export default function(raw: string[]): BARSRecordBookSemester[] | BARSError{
               let weirdValue = k.querySelector('td:nth-child(2)')?.text
               typeof weirdValue == 'undefined' ? weirdValue = '-_' : weirdValue = weirdValue.trim()
 
-              let rawCellType = k.querySelector('td:nth-child(3)')?.text
-              if (rawCellType?.includes('Зачет с оценкой')){
+              let rawCellType = k.querySelector('td:nth-child(3)')?.text?.toLowerCase()
+              if (rawCellType?.includes('зачет с оценкой')){
                 cellType = 'MARK_TEST'
               }
-              else if (rawCellType?.includes('Зачёт')){
+              else if (rawCellType?.includes('зачёт')){
                 cellType = 'NO_MARK_TEST'
               }
               else {
