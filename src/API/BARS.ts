@@ -548,7 +548,7 @@ export default class BARS{
         return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
       } else {
         console.warn("Data download time exceeded on 2FA!", e)
-        return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети и попробуйте снова позже. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
+        return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети, а также настройки 2ФА на сайте БАРС МЭИ(в том числе, привязку MAX), и попробуйте снова позже. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
       }
 
     });
@@ -694,7 +694,12 @@ export default class BARS{
           return this.HandleLoginResponse(response, creds);
         }).catch((e: any) => {
           if (isBARSError(e)) return Promise.reject(e)
-          else return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
+          else {
+            if (e.toString().includes('querySelector')){
+              return Promise.reject(CreateBARSError('LOGIN_FAIL', 'Нет доступа к личному кабинету студента - вы не настроили 2ФА/не привязали MAX/не выбрали MAX как одного из провайдеров на сайте БАРС МЭИ!'))
+            }
+            return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
+          }
         })).catch(e => {
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
