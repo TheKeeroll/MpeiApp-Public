@@ -170,7 +170,6 @@ const SkippedClassesScreen: React.FC = () => {
 
 
         return (
-            <View style={{height: Platform.OS == 'android' ? '90%' : '95%', width: '100%', alignItems: 'center'}}>
                 <FlatList
                     style={{width: '100%'}}
                     contentContainerStyle={{alignItems: 'center'}}
@@ -192,7 +191,6 @@ const SkippedClassesScreen: React.FC = () => {
                     )}
                     ListFooterComponent={()=><View style={{height: 20}}/>}
                 />
-            </View>
         )
     }
     const renderSwitch = () => {
@@ -206,7 +204,7 @@ const SkippedClassesScreen: React.FC = () => {
 
     return (
         <Fragment>
-            <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.center, {flex: 1, backgroundColor: colors.background}]}>
+            <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
             </SafeAreaView>
@@ -216,9 +214,10 @@ const SkippedClassesScreen: React.FC = () => {
 }
 
 const Styles = StyleSheet.create({
-    center:{
-        alignItems: 'center',
-        justifyContent: 'center'
+    main:{
+        flex: 1,
+        alignItems:'center',
+        justifyContent: 'flex-start'
     },
     shadow:{
         //shadowOpacity: .3,

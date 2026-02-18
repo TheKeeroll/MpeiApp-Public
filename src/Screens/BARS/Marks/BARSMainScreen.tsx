@@ -56,13 +56,13 @@ const FeedWidget = async (studentSchedule: any) => {
       tomorrow: placeholderDay()
     }
     // создаём копию массива, чтобы не мутировать state
-    const days = (studentSchedule?.data?.days ?? []).map(d => ({ ...d }))
+    const days = (studentSchedule?.data?.days ?? []).map((d:any) => ({ ...d }))
 
     if (days.length === 0) {
       console.log('FeedWidget - no days in schedule, using placeholders')
     } else {
       // --- поиск today ---
-      const idxToday = days.findIndex(d => d.date === todayStr)
+      const idxToday = days.findIndex((d:any) => d.date === todayStr)
 
       if (idxToday !== -1) {
         // есть today
@@ -74,8 +74,8 @@ const FeedWidget = async (studentSchedule: any) => {
       } else {
         // today нет → ищем соседей
         const todayTime = convertDate(todayStr).getTime()
-        const prevCandidates = days.filter(d => convertDate(d.date).getTime() < todayTime)
-        const nextCandidates = days.filter(d => convertDate(d.date).getTime() > todayTime)
+        const prevCandidates = days.filter((d:any) => convertDate(d.date).getTime() < todayTime)
+        const nextCandidates = days.filter((d:any) => convertDate(d.date).getTime() > todayTime)
         const prevDay = prevCandidates.length ? prevCandidates[prevCandidates.length - 1] : undefined
         const nextDay = nextCandidates.length ? nextCandidates[0] : undefined
 
@@ -547,10 +547,10 @@ const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
         FeedWidget(studentSchedule).then(r => console.log('Schedule provided to widget'))
     }, [studentSchedule])
     return (
-        <View style={[Styles.mainView, {backgroundColor: colors.background, flex: 1}]}>
+      <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.mainView,{backgroundColor: colors.background}]}>
             <DrawerHeader {...props} title={'Оценки'}/>
             <Body {...props}/>
-        </View>
+      </SafeAreaView>
     )
 }
 
@@ -562,7 +562,7 @@ export default BARSMainScreen
 const Styles = StyleSheet.create({
     mainView:{
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         flex: 1
     },
     listWrapper:{

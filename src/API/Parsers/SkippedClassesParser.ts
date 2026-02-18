@@ -13,7 +13,7 @@ const LessonTypeFromHeader = (header: string) => {
     'консультации КП/КР'
   ]
   for(let type of types){
-    if(header.includes(type)) {
+    if(header.toLowerCase().includes(type)) {
       switch(type) {
         case 'лабораторная работа':
           return 'Лаб. работа';
