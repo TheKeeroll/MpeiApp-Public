@@ -247,7 +247,11 @@ export default class BARS{
 
   private FetchCurrentWeek(){
     console.time('CurrentWeek ' + Platform.OS)
-    return Timeout(15000, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{method: 'GET', headers: COMMON_HTTP_HEADER}).then(r=>r.text()).then((r)=>{
+    return Timeout(15000, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{
+      method: 'GET',
+      headers: COMMON_HTTP_HEADER,
+      credentials: 'include'
+    }).then(r=>r.text()).then((r)=>{
       try{
         const doc = parse(r)
         this.mCurrentWeek = doc.querySelector('.nb-week')?.textContent?.trim() ??
@@ -344,7 +348,12 @@ export default class BARS{
             })
       }
       link = encodeURI(link)
-      return fetch(link, {method: 'GET', headers: COMMON_HTTP_HEADER}).then((r=>r.text())).then((response)=>{
+      return fetch(link, {
+        method: 'GET',
+        headers: COMMON_HTTP_HEADER,
+        mode: 'same-origin',
+        credentials: 'include'
+      }).then((r=>r.text())).then((response)=>{
         try {
           const $ = parse(response).querySelectorAll('.hr-separator')!
 
@@ -600,7 +609,8 @@ export default class BARS{
           Account: creds.login,
           Password: creds.password,
           RememberMe: true
-        })
+        }),
+        credentials: 'include'
       }).then(async (response) => {
         let str = await response.text()
         if (str.includes("sod=1")) {
@@ -608,6 +618,7 @@ export default class BARS{
           return fetch('https://bars.mpei.ru/bars_web/?sod=1', {
             method: "GET",
             headers: COMMON_HTTP_HEADER,
+            credentials: 'include'
           })
         } else return fetch(URLS.BARS_MAIN, {
           method: 'POST',
@@ -616,7 +627,8 @@ export default class BARS{
             Account: creds.login,
             Password: creds.password,
             RememberMe: true
-          })
+          }),
+          credentials: 'include'
         })
       })
         .then(r => r.text())
@@ -1035,7 +1047,12 @@ export default class BARS{
       const semPromises: Promise<string>[] = []
       const fetchSemester = (id: number) => {
         const semLink = `https://bars.mpei.ru/bars_web/ST_LK/RecordBook/ListStudent__RecordBook?studentID=${this.mCurrentData.student!.id}&query=%7B%22ID%22%3A%22${this.mCurrentData.student!.id}%22%2C%22SortOrder%22%3Anull%2C%22Page%22%3Anull%2C%22DisplayMode%22%3A%22%22%2C%22FilterRecordBookPage%22%3A%7B%22Code%22%3A%22sem%3A${id}%22%7D%7D`
-        return fetch(semLink).then(r=>r.text()).then((response)=>{
+        return fetch(semLink, {
+          method: 'GET',
+          headers: HEADER_WITH_USER_ID(this.mCurrentData.student!.id),
+          mode: 'same-origin',
+          credentials: 'include'
+        }).then(r=>r.text()).then((response)=>{
           return Promise.resolve(response)
         })
       }
