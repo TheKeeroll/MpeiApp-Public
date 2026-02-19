@@ -70,13 +70,13 @@ const QRCodeScanner: React.FC = () => {
     const main_info = $.querySelector('body > div.row.mt-2 > div:nth-child(1) > span > span.fw-bold')?.text.trim()
     const status = $.querySelector('body > div.row.mt-2 > div:nth-child(2) > span')?.text.trim()
     console.log('main_info: ' + main_info + ' status: ' + status);
-    let headline = 'Успешная регистрация присутствия!'
+    let headline = 'Успешная регистрация!'
     let mes = 'QR ID - ' + (main_info || '') + '\n' + (status || '')
     if (status?.includes('не действительна')) {
-      headline = 'Не удалось зарегистрировать присутствие'
+      headline = 'Не удалось зарегистрироваться'
       mes = status
     } else if (typeof main_info == 'undefined') {
-      headline = 'Не удалось зарегистрировать присутствие'
+      headline = 'Не удалось зарегистрироваться'
       mes = 'Попробуйте ещё раз. Если проблема сохраняется, пожалуйста, сообщите разработчику!'
     }
     Alert.alert(headline, mes, [{
@@ -103,8 +103,9 @@ const QRCodeScanner: React.FC = () => {
       body: JSON.stringify({
         Account: user_creds.login,
         Password: user_creds.password,
-        RememberMe: false
-      })
+        RememberMe: true
+      }),
+      credentials: 'include'
     }).then(async (response) => {
       const response_text = await response.text();
       if (response_text.includes('Учёба')){
@@ -112,6 +113,7 @@ const QRCodeScanner: React.FC = () => {
         const additional_response = await fetch(qr_link, {
           method: 'GET',
           headers: QR_PRESENCE_HEADER(qr_combined_url),
+          credentials: 'include'
         }).then(async (res) => {
           const res_text = await res.text();
           HandlePresenceQRResponse(res_text);
