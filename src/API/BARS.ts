@@ -655,9 +655,31 @@ export default class BARS{
                             headers: COMMON_HTTP_HEADER,
                           }).then(r => r.text()).then(async (response3) => {
                             console.log('2FA code 3 requested, res: ' + response3);
+                            if (response3.includes('false') || !response3.includes('success')) {
+                              try {
+                                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=4', {
+                                  method: "GET",
+                                  headers: COMMON_HTTP_HEADER,
+                                }).then(r => r.text()).then(async (response4) => {
+                                  console.log('2FA code 4 requested, res: ' + response4);
+                                }), 100)
+                              } catch (e:any) {
+                                console.warn('2FA code 4 request failed! ', e);
+                              }
+                            }
                           }), 100)
                         } catch (e:any) {
                           console.warn('2FA code 3 request failed! ', e);
+                          try {
+                            setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=4', {
+                              method: "GET",
+                              headers: COMMON_HTTP_HEADER,
+                            }).then(r => r.text()).then(async (response4) => {
+                              console.log('2FA code 4 requested, res: ' + response4);
+                            }), 100)
+                          } catch (e:any) {
+                            console.warn('2FA code 4 request failed! ', e);
+                          }
                         }
                       }
                     }), 100)
