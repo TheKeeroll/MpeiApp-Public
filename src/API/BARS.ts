@@ -147,34 +147,71 @@ export default class BARS{
         //Promise.resolve(false);
       }
       console.log('Found credentials');
-      // @ts-expect-error
-      return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE' | 'NEED_2FA')=> {
-        if(mode == 'ONLINE'){
-          return this.LoadOnlineData().finally(()=>{
+      const loginFlow = () => {
+        // @ts-expect-error
+        return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE' | 'NEED_2FA')=> {
+          if(mode == 'ONLINE'){
+            return this.LoadOnlineData().finally(()=>{
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+              DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+            })
+          } else if (mode == 'OFFLINE'){
+            this.LoadOfflineData()
+            setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'LOGGED_IN'), 500)
+          } else if (mode == 'NEED_2FA'){
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-            DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+            setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'NEED_2FA'), 100)
+          } else {
+            console.warn('VOID MODE !')
+            throw 'VOID MODE'
+          }
+        }).catch((e)=>{
+          if(isBARSError(e)){
+            Alert.alert('Ошибка', e.message)
+          } else {
+            console.error('BARSAPI::Login()', e)
+          }
+          if(!backgroundMode){
+            DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+          }
+          return Promise.resolve(false);
+        })
+      }
+      try{
+        const student = this.mStorage.getString(STORAGE_KEYS.STUDENT_INFO);
+        if(typeof student != 'undefined' && student != ''){
+          const studentID = JSON.parse(student).id
+          const link = 'https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID
+          return fetch(link, {
+            method: 'GET',
+            headers: COMMON_HTTP_HEADER,
+            mode: 'same-origin',
+            credentials: 'include'
+          }).then(r=>r.text()).then((response)=>{
+            const result = ParseStudentInfo(response)
+            if (isBARSError(result)) {
+              throw result
+            }
+            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+            this.mCurrentData.student = result as BARSStudentInfo;
+            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
+            console.log('Successfully restored session and updated student info! Loading account data...');
+            return this.LoadOnlineData().finally(()=>{
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+              DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
+            })
+          }).catch(()=>{
+            console.warn('Failed to restore session(request failed/bad response)! Trying to login again...');
+            return loginFlow()
           })
-        } else if (mode == 'OFFLINE'){
-          this.LoadOfflineData()
-          setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'LOGGED_IN'), 500)
-        } else if (mode == 'NEED_2FA'){
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-          setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'NEED_2FA'), 100)
         } else {
-          console.warn('VOID MODE !')
-          throw 'VOID MODE'
+          console.warn('Failed to restore session(no student info)! Trying to login again...');
+          return loginFlow()
         }
-      }).catch((e)=>{
-        if(isBARSError(e)){
-          Alert.alert('Ошибка', e.message)
-        } else {
-          console.error('BARSAPI::Login()', e)
-        }
-        if(!backgroundMode){
-          DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
-        }
-        return Promise.resolve(false);
-      })
+      } catch (e:any) {
+        console.warn('Trying to login again - failed to restore session: ' + e.toString() + '');
+        return loginFlow()
+      }
     } else {
       console.log('Credentials not found');
       this.mCredentials = {login: '', password: ''}
@@ -543,7 +580,6 @@ export default class BARS{
       })
     }).then(r => r.text())
       .then(response => {
-        console.log(response);
         if (response.includes("запрещён")) {
           return Promise.reject(CreateBARSError('LOGIN_FAIL', "Не удалось войти с использованием двухфакторной аутентификации!"));
         } else if (response.includes("Некорректный код подтверждения")) {
@@ -561,6 +597,27 @@ export default class BARS{
       }
 
     });
+  }
+
+  private async Request2FACode() {
+    for (let tid = 1; tid <= 4; tid++) {
+      try {
+        // @ts-expect-error
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const response = await fetch(URLS.BARS_REQUEST_CODE + `?tid=${tid}`, {
+          method: "GET",
+          headers: COMMON_HTTP_HEADER,
+        });
+        const text = await response.text();
+        console.log(`2FA code ${tid} requested, res: ${text}`);
+
+        if (text.includes('success') && !text.includes('false')) {
+          break;
+        }
+      } catch (e: any) {
+        console.warn(`2FA code ${tid} request failed!`, e);
+      }
+    }
   }
 
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
@@ -635,94 +692,7 @@ export default class BARS{
         .then((response) => {
           if (response.includes("код подтверждения")) {
             this.mCredentials = creds;
-            try {
-              setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=1', {
-                method: "GET",
-                headers: COMMON_HTTP_HEADER,
-              }).then(r => r.text()).then(async (response1) => {
-                console.log('2FA code 1 requested, res: ' + response1);
-                if (response1.includes('false') || !response1.includes('success')) {
-                  try {
-                    setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
-                      method: "GET",
-                      headers: COMMON_HTTP_HEADER,
-                    }).then(r => r.text()).then(async (response2) => {
-                      console.log('2FA code 2 requested, res: ' + response2);
-                      if (response2.includes('false') || !response2.includes('success')) {
-                        try {
-                          setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
-                            method: "GET",
-                            headers: COMMON_HTTP_HEADER,
-                          }).then(r => r.text()).then(async (response3) => {
-                            console.log('2FA code 3 requested, res: ' + response3);
-                            if (response3.includes('false') || !response3.includes('success')) {
-                              try {
-                                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=4', {
-                                  method: "GET",
-                                  headers: COMMON_HTTP_HEADER,
-                                }).then(r => r.text()).then(async (response4) => {
-                                  console.log('2FA code 4 requested, res: ' + response4);
-                                }), 100)
-                              } catch (e:any) {
-                                console.warn('2FA code 4 request failed! ', e);
-                              }
-                            }
-                          }), 100)
-                        } catch (e:any) {
-                          console.warn('2FA code 3 request failed! ', e);
-                          try {
-                            setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=4', {
-                              method: "GET",
-                              headers: COMMON_HTTP_HEADER,
-                            }).then(r => r.text()).then(async (response4) => {
-                              console.log('2FA code 4 requested, res: ' + response4);
-                            }), 100)
-                          } catch (e:any) {
-                            console.warn('2FA code 4 request failed! ', e);
-                          }
-                        }
-                      }
-                    }), 100)
-                  } catch (e:any) {
-                    console.warn('2FA code 2 request failed! ', e);
-                  }
-                }
-              }), 100)
-            } catch (e:any) {
-              console.warn('2FA code 1 request failed: ', e);
-              try {
-                setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=2', {
-                  method: "GET",
-                  headers: COMMON_HTTP_HEADER,
-                }).then(r => r.text()).then(async (response2) => {
-                  console.log('2FA code 2 requested, res: ' + response2);
-                  if (response2.includes('false') || !response2.includes('success')) {
-                    try {
-                      setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
-                        method: "GET",
-                        headers: COMMON_HTTP_HEADER,
-                      }).then(r => r.text()).then(async (response3) => {
-                        console.log('2FA code 3 requested, res: ' + response3);
-                      }), 100)
-                    } catch (e:any) {
-                      console.warn('2FA code 3 request failed! ', e);
-                    }
-                  }
-                }), 100)
-              } catch (e:any) {
-                console.warn('2FA code 2 request failed! ', e);
-                try {
-                  setTimeout(()=>fetch(URLS.BARS_REQUEST_CODE + '?tid=3', {
-                    method: "GET",
-                    headers: COMMON_HTTP_HEADER,
-                  }).then(r => r.text()).then(async (response3) => {
-                    console.log('2FA code 3 requested, res: ' + response3);
-                  }), 100)
-                } catch (e:any) {
-                  console.warn('2FA code 3 request failed! ', e);
-                }
-              }
-            }
+            this.Request2FACode();
             return Promise.resolve("NEED_2FA" as any);
           }
           return this.HandleLoginResponse(response, creds);
@@ -1123,7 +1093,7 @@ export default class BARS{
 
   public FetchSkippedClasses(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
     console.log('Fetching skipped classes')
-    let link = encodeURI( //TODO Забирать не 10 а все
+    let link = encodeURI(
       URLS.BARS_SKIPPED_CLASSES +  this.mCurrentData.student!.id +'&query=' +
         JSON.stringify({
           'ID': this.mCurrentData.student!.id,
