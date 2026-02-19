@@ -134,20 +134,15 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const ICONS = {
             "bubbletea": require('../../../assets/images/MapMarkers/Bubble_Tea.webp'),
             "rostics": require('../../../assets/images/MapMarkers/Rostics.webp'),
-            "bbcc": require('../../../assets/images/MapMarkers/Big_Black_Cup_coffee.webp'),
-            "1&2": require('../../../assets/images/MapMarkers/1&2.webp'),
             "harvard": require('../../../assets/images/MapMarkers/Harvard.webp'),
             "subway": require('../../../assets/images/MapMarkers/Subway.webp'),
             "bk": require('../../../assets/images/MapMarkers/Burger_King.webp'),
             "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.webp'),
             "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.webp'),
-            "domino": require('../../../assets/images/MapMarkers/Domino.webp'),
             "trlefortovo": require('../../../assets/images/MapMarkers/TraktirLefortovo.webp'),
             "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.webp'),
             "olen": require('../../../assets/images/MapMarkers/Tayojny.webp'),
-            "terem": require('../../../assets/images/MapMarkers/teremok.webp'),
-            "imonutsa": require('../../../assets/images/MapMarkers/Imonutsa.webp'),
-            "yakit": require('../../../assets/images/MapMarkers/Yakitoria.webp'),
+            "terem": require('../../../assets/images/MapMarkers/teremok.webp')
         }
         return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.webp')
     }

@@ -310,7 +310,7 @@
   {
     "lat":55.753371, "lon":37.716444,
     "category": "Точки интереса",
-    "name": "Мегафон",
+    "name": "МегаФон-Yota",
     "uniqueIcon": "megaphone"
   },
   {
@@ -348,18 +348,6 @@
     "name": "Сквер Героям Отечественной Войны"
   },
   {
-    "lat":55.753849, "lon":37.710329,
-    "category": "Еда",
-    "name": "Big Black Cup Coffee",
-    "uniqueIcon": "bbcc"
-  },
-  {
-    "lat":55.752827, "lon":37.716034,
-    "category": "Еда",
-    "name": "One and Double",
-    "uniqueIcon": "1&2"
-  },
-  {
     "lat":55.764577, "lon":37.700793,
     "category": "Еда",
     "name": "Pub Daddy",
@@ -389,6 +377,11 @@
     "uniqueIcon": "bubbletea"
   },
   {
+    "lat":55.757683, "lon":37.712157,
+    "category": "Еда",
+    "name": "Алло! Пицца"
+  },
+  {
     "lat":55.753420, "lon":37.716662,
     "category": "Еда",
     "name": "Бургер Кинг",
@@ -412,23 +405,6 @@
     "uniqueIcon": "dodo"
   },
   {
-    "lat":55.757683, "lon":37.712157,
-    "category": "Еда",
-    "name": "Домино Пицца",
-    "uniqueIcon": "domino"
-  },
-  {
-    "lat":55.758782, "lon":37.709421,
-    "category": "Еда",
-    "name": "Имонуца",
-    "uniqueIcon": "imonutsa"
-  },
-  {
-    "lat":55.756415, "lon":37.711740,
-    "category": "Еда",
-    "name": "Столовая №10"
-  },
-  {
     "lat":55.759071, "lon":37.709613,
     "category": "Еда",
     "name": "Столовая ЦИАМ"
@@ -446,9 +422,19 @@
     "uniqueIcon": "olen"
   },
   {
+    "lat":55.752356, "lon":37.716314,
+    "category": "Еда",
+    "name": "Клэр, Cofix и другое"
+  },
+  {
     "lat":55.758480, "lon":37.694614,
     "category": "Еда",
     "name": "Корчма"
+  },
+  {
+    "lat":55.756415, "lon":37.711740,
+    "category": "Еда",
+    "name": "Космо Бургерс"
   },
   {
     "lat":55.758286, "lon":37.700594,
@@ -473,14 +459,8 @@
     "name": "Шарманка"
   },
   {
-    "lat":55.752356, "lon":37.716314,
+    "lat":55.758782, "lon":37.709421,
     "category": "Еда",
-    "name": "Шеф (и другое)"
-  },
-  {
-    "lat":55.753560, "lon":37.716308,
-    "category": "Еда",
-    "name": "Якитория",
-    "uniqueIcon": "yakit"
+    "name": "Энергия"
   }
 ]
