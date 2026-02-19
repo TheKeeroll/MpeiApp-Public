@@ -59,7 +59,7 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
               <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                 При необходимости(если в аккаунте включена 2ФА), приложение будет запрашивать коды подтверждения.
                 {'\n'}
-                К сожалению, такое может требоваться при каждом входе в MpeiApp по не зависящим от разработчика причинам.
+                К сожалению, в некоторых случаях такое может требоваться при каждом входе в MpeiApp по не зависящим от разработчика причинам.
               </Text>
                 <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
                     Вам ещё не выдали доступ в "БАРС"?
@@ -93,7 +93,7 @@ export const LoginScreenHeader: React.FC = () => {
         MpeiApp
       </Text>
       <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
-        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Кросплатформенный </Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 40)}}>Кроссплатформенный </Text>
         <Text style={{fontWeight: 'bold', fontSize: 20, color: withOpacity(colors.text, 90)}}>БАРС</Text>
       </View>
       <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>

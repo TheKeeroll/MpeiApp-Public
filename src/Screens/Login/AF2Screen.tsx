@@ -46,7 +46,10 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
           <SafeAreaView style={{flex: 1, width: '90%', minHeight: (Dimensions.get("window").height * 0.7), borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'flex-start'}}>
               <ScrollView style={{flex: 1, width: '100%'}}>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                      Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, либо от ВК-сообщества БАРС МЭИ.
+                      Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, или от ВК-сообщества БАРС МЭИ, либо быть у вас на руках(если получили временный).
+                  </Text>
+                  <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
+                      Если не получается войти с временным кодом, убедитесь, что у него не истёк срок действия!
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                       Если код приходит, но войти с ним не получается, убедитесь, что на сайте БАРС МЭИ у вас привязан MAX и что он выбран как один из провайдеров!
