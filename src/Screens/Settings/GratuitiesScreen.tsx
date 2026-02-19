@@ -27,6 +27,9 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Егор Клишин'} link={'https://vk.com/astralcheak'} image={require('../../../assets/images/Gratitudies/Klishin.webp')}/>
                     <ListAvatarItem title={'Вы тоже можете поддержать проект!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
+                    <ListSeparator title={'Помощь с реализацией поддержки временных кодов 2ФА'}/>
+                    <ListAvatarItem title={'Максим Агафошин'} link={'https://vk.com/inclydeahaha'} image={require('../../../assets/images/Gratitudies/MaxAgafoshin.webp')}/>
+
                     <ListSeparator title={'Предоставили аккаунт БАРС'}/>
                     <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
                     <ListAvatarItem title={'Иван'} link={'https://vk.com/iva_derevo'} image={require('../../../assets/images/Gratitudies/Ivan.webp')}/>
@@ -52,6 +55,7 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Егор Афанасьев'} link={'https://vk.com/egoraffonya'} image={require('../../../assets/images/Gratitudies/EgorAfanasyev.webp')}/>
                     <ListAvatarItem title={'Никита Тимофеев'} link={'https://vk.com/no_mercy_or_forgiveness'} image={require('../../../assets/images/Gratitudies/NickTimofeev.webp')}/>
                     <ListAvatarItem title={'Яша Рубинова'} link={'https://vk.com/trancqiue'} image={require('../../../assets/images/Gratitudies/YashaRuby.webp')}/>
+                    <ListAvatarItem title={'Кирилл Дедов'} link={'https://vk.com/dedov_k'} image={require('../../../assets/images/Gratitudies/KirillDed.webp')}/>
                     <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
                     <ListSeparator title={'Наполнение/уточнение карты'}/>
