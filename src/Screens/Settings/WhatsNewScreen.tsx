@@ -15,6 +15,17 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Новые реалии'} version={'2.3.0'}/>
+                    <WhatsNewChange title={'Восстановление сессии при открытии приложения - больше не нужно вводить код каждый раз!'}/>
+                    <WhatsNewChange title={'Добавлена поддержка временных кодов подтверждения!'}/>
+                    <WhatsNewChange title={'Изменён приоритет провайдеров 2ФА - код будет приходить через ВК чаще, чем через MAX(если ВК привязан)'}/>
+                    <WhatsNewChange title={'Добавлен раздел помощи(кнопка "?") на экран ввода кода с описанием возможных проблем и путей их решения'}/>
+                    <WhatsNewChange title={'Актуализированы сообщения при неуспешных попытках входа и иные тексты'}/>
+                    <WhatsNewChange title={'Исправлен слишком маленький отступ сверху, нарушавший доступность бокового меню на iOS'}/>
+                    <WhatsNewChange title={'Восстановлен показ учебной недели и стипендий, повышена устойчивость к их изменениям'}/>
+                    <WhatsNewChange title={'Актуализированы точки на карте'}/>
+                    <WhatsNewChange title={'Мелкие исправления и улучшения'}/>
+
                     <WhatsNewLogo title={'Второй фактор'} version={'2.2.0'}/>
                     <WhatsNewChange title={'Поддержка входа с включённой 2ФА с любым провайдером!'}/>
                     <WhatsNewChange title={'Восстановлено отображение приказов и анкет'}/>
