@@ -611,8 +611,15 @@ export default class BARS{
         const text = await response.text();
         console.log(`2FA code ${tid} requested, res: ${text}`);
 
-        if (text.includes('success') && !text.includes('false')) {
+        if (text.includes("success") && !text.includes("false")) {
           break;
+        }
+
+        // Проверяем на ошибку отправки и добавляем задержку перед следующей попыткой
+        if (text.toLowerCase().includes("ошибка при отправке")) {
+          console.warn(`2FA code ${tid} send error detected, waiting 10 seconds before next attempt`);
+          // @ts-expect-error
+          await new Promise(resolve => setTimeout(resolve, 10000));
         }
       } catch (e: any) {
         console.warn(`2FA code ${tid} request failed!`, e);

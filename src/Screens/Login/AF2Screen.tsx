@@ -48,6 +48,13 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
                       Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, или от ВК-сообщества БАРС МЭИ, либо быть у вас на руках(если получили временный).
                   </Text>
+                  <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
+                      Обычно, код приходит почти сразу, но иногда может потребоваться 10 - 30 секунд.
+                  </Text>
+                  <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
+                      Если вы часто долго ждёте код, и у вас привязан Telegram - отвяжите его на сайте
+                      (из-за блокировок РКН код может долго грузиться/не отправляться, а БАРС пытается это сделать, прежде чем пробовать другого провайдера)!
+                  </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                       Если не получается войти с временным кодом, убедитесь, что у него не истёк срок действия!
                   </Text>
