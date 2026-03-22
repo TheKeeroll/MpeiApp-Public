@@ -832,10 +832,10 @@ export default class BARS{
                       scheduleWithDinner.fullTeacherName = (r[0]?.lecturer || r[1]?.lecturer) ? (r[0]?.listOfLecturers[0].lecturer_title || r[1]?.listOfLecturers[0].lecturer_title || target.lec_oid) : "Запрошенный преподаватель не найден"
                       break
                     case "group":
-                      scheduleWithDinner.fullTeacherName = r[0]?.group || r[1]?.group || r[2]?.group || r[5]?.group || r[8]?.group || "Запрошенная группа не найдена"
+                      scheduleWithDinner.fullTeacherName = r[0]?.group || r[1]?.group || r[2]?.group || r[5]?.group || r[8]?.group || target.lec_oid || "Запрошенная группа не найдена"
                       break
                     case "auditorium":
-                      scheduleWithDinner.fullTeacherName = r[0]?.auditorium || r[1]?.auditorium  || "Запрошенная аудитория не найдена"
+                      scheduleWithDinner.fullTeacherName = r[0]?.auditorium || r[1]?.auditorium  || target.lec_oid || "Запрошенная аудитория не найдена"
                       break
                   }
                   console.timeEnd('ScheduleRequest')
