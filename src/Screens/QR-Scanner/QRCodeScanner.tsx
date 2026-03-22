@@ -94,33 +94,16 @@ const QRCodeScanner: React.FC = () => {
     const qrID = qr_link.split('=')[1].split('&')[0]
     const s = qr_link.split('=')[2]
     console.log('QR ID: ' + qrID + ' s: ' + s);
-    let user_creds = BARSAPI.GetCreds()
+    // let user_creds = BARSAPI.GetCreds()
     const qr_combined_url = URLS.BARS_QR_PRESENCE + qrID + '%26s%3D' + s
     console.log('qr_combined_url = ' + qr_combined_url);
-    const response = await fetch(qr_combined_url, {
-      method: 'POST',
+    const response = await fetch(qr_link, {
+      method: 'GET',
       headers: QR_PRESENCE_HEADER(qr_combined_url),
-      body: JSON.stringify({
-        Account: user_creds.login,
-        Password: user_creds.password,
-        RememberMe: true
-      }),
       credentials: 'include'
-    }).then(async (response) => {
-      const response_text = await response.text();
-      if (response_text.includes('Учёба')){
-        console.log('Presence QR: additional fetch performing');
-        const additional_response = await fetch(qr_link, {
-          method: 'GET',
-          headers: QR_PRESENCE_HEADER(qr_combined_url),
-          credentials: 'include'
-        }).then(async (res) => {
-          const res_text = await res.text();
-          HandlePresenceQRResponse(res_text);
-        })
-      } else {
-        HandlePresenceQRResponse(response_text);
-      }
+    }).then(async (res) => {
+      const res_text = await res.text();
+      HandlePresenceQRResponse(res_text);
     })
   };
 
