@@ -15,6 +15,11 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Второй фактор и места, где он обитает'} version={'2.3.1'}/>
+                    <WhatsNewChange title={'Восстановлен вход с 2ФА: добавлены задержки перед запросами кода через следующих провайдеров при провале отправки'}/>
+                    <WhatsNewChange title={'Восстановлена авторегистрация при сканировании QR-кодов БАРС для аккаунтов с 2ФА'}/>
+                    <WhatsNewChange title={'Использование ввода пользователя в качестве названия запрошенного расписания при его отсутствии'}/>
+
                     <WhatsNewLogo title={'Новые реалии'} version={'2.3.0'}/>
                     <WhatsNewChange title={'Восстановление сессии при открытии приложения - больше не нужно вводить код каждый раз!'}/>
                     <WhatsNewChange title={'Добавлена поддержка временных кодов подтверждения!'}/>
