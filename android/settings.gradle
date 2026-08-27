@@ -27,5 +27,9 @@ project(':react-native-reanimated').projectDir = new File(rootProject.projectDir
 
 /*apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesSettingsGradle(settings)*/
+
+include ':react-native-nitro-modules'
+project(':react-native-nitro-modules').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-nitro-modules/android')
+
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
