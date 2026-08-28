@@ -2,6 +2,7 @@
   "name": "MpeiApp",
   "version": "2.3.1",
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
@@ -72,6 +73,6 @@
     "@types/react": "^19"
   },
   "engines": {
-    "node": ">=19"
+    "node": ">=24 <25"
   }
 }
