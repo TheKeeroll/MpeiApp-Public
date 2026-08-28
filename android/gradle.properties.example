@@ -1,0 +1,25 @@
+# Copy this file to android/gradle.properties before building locally.
+# Keep the resulting gradle.properties untracked: it may contain local signing data.
+
+org.gradle.jvmargs=-Xmx4608m -XX:MaxMetaspaceSize=1024m
+android.useAndroidX=true
+android.enableJetifier=true
+
+reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+newArchEnabled=true
+hermesEnabled=true
+edgeToEdgeEnabled=true
+
+# Temporary AGP 9 compatibility switches for legacy third-party modules.
+# Both switches must be removed before moving to AGP 10.
+android.builtInKotlin=false
+android.newDsl=false
+
+VisionCamera_enableCodeScanner=true
+VisionCamera_enableFrameProcessors=false
+
+# Optional local release-signing settings. Do not commit their values.
+# MYAPP_UPLOAD_STORE_FILE=
+# MYAPP_UPLOAD_KEY_ALIAS=
+# MYAPP_UPLOAD_STORE_PASSWORD=
+# MYAPP_UPLOAD_KEY_PASSWORD=

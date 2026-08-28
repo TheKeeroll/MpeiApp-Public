@@ -453,7 +453,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             onScrollToIndexFailed={(info) => {
                                 // Обработка ошибки прокрутки к индексу
                                 console.warn("Failed to scroll to index!")
-                                const wait = new Promise(resolve => setTimeout(resolve, 500))
+                                const wait = new Promise<void>(resolve => setTimeout(resolve, 500))
                                 wait.then(() => {
                                     lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
                             }}

@@ -20,9 +20,13 @@ const App: React.FC = () =>{
   const {colors} = useTheme<CustomTheme>()
   const insets = useSafeAreaInsets();
   const [loggedIn, setLoggedIn] = useState<LoginState>('NOT_INITIATED')
-  DeviceEventEmitter.addListener('LoginState', (state: LoginState)=>{
+  React.useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('LoginState', (state: LoginState)=>{
       setLoggedIn(state)
-  })
+    })
+
+    return () => subscription.remove()
+  }, [])
 
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
@@ -56,10 +60,14 @@ const App: React.FC = () =>{
 
 const AppEntry: React.FC = () => {
     const [theme, setTheme] = useState(BARSAPI.Theme)
-    DeviceEventEmitter.addListener('SET_THEME', (themeName: string)=>{
-      setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
-      console.log("Current theme: " + themeName)
-    })
+    React.useEffect(() => {
+      const subscription = DeviceEventEmitter.addListener('SET_THEME', (themeName: string)=>{
+        setTheme(themeName == 'dark' ? THEME_DARK : THEME_LIGHT)
+        console.log("Current theme: " + themeName)
+      })
+
+      return () => subscription.remove()
+    }, [])
     return (
         <SafeAreaProvider>
             <NavigationContainer>

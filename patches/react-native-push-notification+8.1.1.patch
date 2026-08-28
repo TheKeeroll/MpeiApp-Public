@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-push-notification/android/build.gradle b/node_modules/react-native-push-notification/android/build.gradle
-index d6019f6..980a228 100644
+index d6019f6..6466ef5 100644
 --- a/node_modules/react-native-push-notification/android/build.gradle
 +++ b/node_modules/react-native-push-notification/android/build.gradle
 @@ -1,19 +1,17 @@
@@ -12,7 +12,7 @@ index d6019f6..980a228 100644
      }
      dependencies {
 -        classpath 'com.android.tools.build:gradle:3.2.0'
-+        classpath 'com.android.tools.build:gradle:8.13.2'
++        classpath 'com.android.tools.build:gradle:9.2.1'
      }
  }
  
@@ -25,14 +25,14 @@ index d6019f6..980a228 100644
      }
  }
  
-@@ -24,20 +22,21 @@ def safeExtGet(prop, fallback) {
+@@ -24,41 +22,42 @@ def safeExtGet(prop, fallback) {
  }
  
  android {
 -    compileSdkVersion safeExtGet('compileSdkVersion', 28)
 -    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
 +    compileSdk safeExtGet('compileSdkVersion', 36)
-+    buildToolsVersion safeExtGet('buildToolsVersion', '36.1.0')
++    buildToolsVersion safeExtGet('buildToolsVersion', '37.0.0')
  
      compileOptions {
 -        sourceCompatibility JavaVersion.VERSION_1_8
@@ -53,7 +53,14 @@ index d6019f6..980a228 100644
              abiFilters "armeabi-v7a", "x86"
          }
      }
-@@ -51,14 +50,14 @@ android {
+     buildTypes {
+         release {
+             minifyEnabled false
+-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
++            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+         }
+     }
+ }
  
  dependencies {
      // Use either AndroidX library names or old/support library names based on major version of support lib
@@ -67,7 +74,7 @@ index d6019f6..980a228 100644
 +    testImplementation 'junit:junit:4.13.2'
      implementation "$appCompatLibName:$supportLibVersion"
 -    implementation 'com.facebook.react:react-native:+'
-+    implementation 'com.facebook.react:react-native:0.68.1'
++    implementation("com.facebook.react:react-android")
      implementation 'me.leolin:ShortcutBadger:1.1.22@aar'
 -    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '21.1.0')}"
 +    implementation "com.google.firebase:firebase-messaging:${safeExtGet('firebaseMessagingVersion', '25.0.1')}"

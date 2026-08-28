@@ -8,7 +8,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    PermissionsAndroid, Alert, LayoutChangeEvent, Dimensions,
+    PermissionsAndroid, Alert, LayoutChangeEvent, Dimensions, HostInstance,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Switch, useTheme } from "react-native-paper";
@@ -465,7 +465,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     };
 
     const [rootViewLayout, setRootViewLayout] = useState({x: 0, y: 0, width: 0, height: 0});
-    const rootView = useRef<View>(null);
+    const rootView = useRef<HostInstance | null>(null);
     return (
         <View
             style={{flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
@@ -479,7 +479,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     while (currentWidth <= 0 && counter < 5) {
                         setTimeout(() => {
                             if (rootView.current) {
-                                rootView.current.measure((x, y, width, height) => {
+                                rootView.current.measure((x: number, y: number, width: number, height: number) => {
                                     if (width > 0 && height > 0) {
                                         setRootViewLayout({x, y, width, height});
                                         currentWidth = width
@@ -674,7 +674,7 @@ export default MapScreen
 
 const Styles = StyleSheet.create({
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: "transparent",
         zIndex: 10,
     },

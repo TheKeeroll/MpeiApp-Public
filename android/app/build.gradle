@@ -148,7 +148,7 @@ android {
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
     packagingOptions {
@@ -167,8 +167,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-
-    implementation project(':lottie-react-native')
 
     // implementation platform('com.google.firebase:firebase-bom:33.1.2')
     // implementation 'com.google.firebase:firebase-crashlytics'
