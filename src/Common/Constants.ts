@@ -115,7 +115,8 @@ export const STORAGE_KEYS = {
   SKIPPED_CLASSES: 'skippedClasses',
   RECORD_BOOK: 'recordBook',
   MAIL: 'mail',
-  ADDITIONAL_DATA: 'additionalData'
+  ADDITIONAL_DATA: 'additionalData',
+  VPN_VERIFICATION_STATE: 'vpnVerificationState'
 }
 
 export const TEACHER_RANKS: string[] = [

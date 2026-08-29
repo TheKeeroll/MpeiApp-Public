@@ -15,15 +15,18 @@ import {Store} from "./src/API/Redux/Store";
 import {} from './src/Extentions/date_e';
 import LoginScreenWrapper, { LoginScreenHeader } from "./src/Screens/Login/LoginScreen";
 import AF2Screen from "./src/Screens/Login/AF2Screen";
+import {AdsProvider} from "./src/Ads/AdsProvider";
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()
   const insets = useSafeAreaInsets();
-  const [loggedIn, setLoggedIn] = useState<LoginState>('NOT_INITIATED')
+  const [loggedIn, setLoggedIn] = useState<LoginState>(BARSAPI.LoginState)
   React.useEffect(() => {
     const subscription = DeviceEventEmitter.addListener('LoginState', (state: LoginState)=>{
       setLoggedIn(state)
     })
+
+    setLoggedIn(BARSAPI.LoginState)
 
     return () => subscription.remove()
   }, [])
@@ -31,6 +34,7 @@ const App: React.FC = () =>{
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
       case "NOT_INITIATED": return <LoadingScreen/>
+      case "AUTHENTICATED_LOADING_DATA": return <LoadingScreen showStickyAd/>
       case "NEED_2FA": return (
         <SafeAreaView style={{
           flex: 1,
@@ -44,9 +48,7 @@ const App: React.FC = () =>{
           <LoginScreenHeader/>
           <AF2Screen onBack={function(): void {
           console.warn("Need 2FA, going back to login screen");
-          setLoggedIn(
-            "NOT_LOGGED_IN"
-          )
+          BARSAPI.SetLoginState("NOT_LOGGED_IN")
           } }/>
         </SafeAreaView>
       )
@@ -74,7 +76,9 @@ const AppEntry: React.FC = () => {
                 <ReduxProvider store={Store}>
                     <PaperProvider theme={theme}>
                         <GestureHandlerRootView style={{flex:1}}>
-                            <App/>
+                            <AdsProvider>
+                                <App/>
+                            </AdsProvider>
                         </GestureHandlerRootView>
                     </PaperProvider>
                 </ReduxProvider>

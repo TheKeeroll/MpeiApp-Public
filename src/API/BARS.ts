@@ -58,7 +58,14 @@ import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
 
-export type LoginState = 'LOGGED_IN' | 'NEED_2FA' | 'NOT_LOGGED_IN' | 'NOT_INITIATED'
+export type LoginState =
+  | 'LOGGED_IN'
+  | 'NEED_2FA'
+  | 'NOT_LOGGED_IN'
+  | 'NOT_INITIATED'
+  | 'AUTHENTICATED_LOADING_DATA'
+
+type PostOnlineDataTask = () => Promise<void> | void
 
 function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks> {
   return new Promise(function(resolve, reject) {
@@ -92,8 +99,12 @@ export default class BARS{
   public mCurrentWeek = ''
   private mDebts: BARSDiscipline[] = []
   private mCurrentFrame: "qr-frame" | "empty" | "qr-frame-black" | "qr-frame-green" | "qr-frame-red" = 'qr-frame';
+  private mLoginState: LoginState = 'NOT_INITIATED'
+  private mOnlineDataLoadPromise?: Promise<void>
+  private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
 
   public get Debts() { return this.mDebts }
+  public get LoginState() { return this.mLoginState }
 
   constructor() {
     //this.mStorage.clearAll()
@@ -103,6 +114,29 @@ export default class BARS{
     })
   }
   public get Week(){return this.mCurrentWeek}
+  public SetLoginState(state: LoginState){
+    if(this.mLoginState === state) return
+    this.mLoginState = state
+    DeviceEventEmitter.emit('LoginState', state)
+  }
+  /**
+   * A task registered here runs after every BARS Fetch/parsing task and before
+   * the single LOGGED_IN transition. VPN revalidation is registered here in
+   * stage 6, so it cannot be bypassed by an early Navigator render.
+   */
+  public RegisterPostOnlineDataTask(name: string, task: PostOnlineDataTask){
+    this.mPostOnlineDataTasks.set(name, task)
+    return () => this.mPostOnlineDataTasks.delete(name)
+  }
+  private async RunPostOnlineDataTasks(){
+    for(const [name, task] of this.mPostOnlineDataTasks){
+      try{
+        await task()
+      } catch {
+        console.warn(`Post-online data task "${name}" failed`)
+      }
+    }
+  }
   public ChangeIcon(name: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign'){
     changeIcon(name).then(()=>{
       return getIcon().then((i: string = 'cool')=>{
@@ -153,14 +187,13 @@ export default class BARS{
           if(mode == 'ONLINE'){
             return this.LoadOnlineData().finally(()=>{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-              DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
             })
           } else if (mode == 'OFFLINE'){
             this.LoadOfflineData()
-            setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'LOGGED_IN'), 500)
+            setTimeout(()=>this.SetLoginState('LOGGED_IN'), 500)
           } else if (mode == 'NEED_2FA'){
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-            setTimeout(()=>DeviceEventEmitter.emit('LoginState', 'NEED_2FA'), 100)
+            setTimeout(()=>this.SetLoginState('NEED_2FA'), 100)
           } else {
             console.warn('VOID MODE !')
             throw 'VOID MODE'
@@ -172,7 +205,7 @@ export default class BARS{
             console.error('BARSAPI::Login()', e)
           }
           if(!backgroundMode){
-            DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+            this.SetLoginState('NOT_LOGGED_IN')
           }
           return Promise.resolve(false);
         })
@@ -198,7 +231,6 @@ export default class BARS{
             console.log('Successfully restored session and updated student info! Loading account data...');
             return this.LoadOnlineData().finally(()=>{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-              DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
             })
           }).catch(()=>{
             console.warn('Failed to restore session(request failed/bad response)! Trying to login again...');
@@ -217,7 +249,7 @@ export default class BARS{
       this.mCredentials = {login: '', password: ''}
       if(!backgroundMode){
         setTimeout(()=>{
-          DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+          this.SetLoginState('NOT_LOGGED_IN')
         }, 500)
       }
       return Promise.resolve(false);
@@ -277,7 +309,7 @@ export default class BARS{
     Store.dispatch(updateQuestionnaires({status: "LOADING", data: null}))
     Store.dispatch(updateMarkTable({status: "LOADING", data: null}))
     Store.dispatch(updateAdditionalData({status: "LOADING", data: null}))
-    DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN')
+    this.SetLoginState('NOT_LOGGED_IN')
     this.mCurrentData = {}
     this.mTestMode = false
   }
@@ -308,73 +340,98 @@ export default class BARS{
     })
   }
 
-  public LoadOnlineData(): Promise<void | BARSMarks | "ONLINE" | "OFFLINE">{
-    if (APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, this.mCredentials)) {
-      this.mCurrentData = TEST_DATA
-      return Promise.resolve();
-    }
+  public LoadOnlineData(): Promise<void>{
+    if(this.mOnlineDataLoadPromise) return this.mOnlineDataLoadPromise
 
-    let initialAddData: AdditionalData = {
-      finalMarkAvailabilityCounter: 0
-    }
-    Store.dispatch(updateAdditionalData({status: "LOADED", data: initialAddData}))
-    this.mStorage.set(STORAGE_KEYS.ADDITIONAL_DATA, JSON.stringify(initialAddData))
-
-
-    return this.FetchCurrentWeek().finally(
-            () => this.FetchMarkTable().finally(()=>{
-
-              const Con = () =>  {
-                    DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
-                    console.log('Main fetch completed')
-                    return this.FetchMail().finally(
-                      () => this.FetchSchedule().finally(
-                        () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!).finally(
-                          () => this.FetchSkippedClasses().finally(
-                            () => this.FetchRecordBook().finally(
-                              () => this.FetchTasks().finally(
-                                () => this.FetchReports().finally(
-                                  () => this.FetchStipends().finally(
-                                    () => this.FetchOrders().finally(
-                                      () => this.FetchBooks().finally(
-                                        () => this.FetchQuestionnaires().finally(
-                                          () => console.log('Extra fetch completed')
-                                )))))))))))
-                  }
-
-              //Долги
-              const l = this.mCurrentData.availableSemesters?.length;
-              if(typeof l != 'undefined' && l > 1){
-                return this.FetchMarkTable(this.mCurrentData.availableSemesters![1].id, true).then((result)=>{
-                  const res = result as BARSMarks //Couldn't be void anyway
-                  const debts: BARSDiscipline[] = []
-                  for(let discipline of res.disciplines) {
-                    const mark = discipline.resultMarks[discipline.resultMarks.length - 1].mark;
-                    if (new RegExp(/[0-2]/gm).test(mark)) {
-                      discipline.debt = true
-                      debts.push(discipline);
-                      console.log('Pushed debt: ' + discipline.name + ' - ' + mark)
-                    }
-                  }
-                  this.mDebts = debts
-                }).catch(()=>{
-                }).finally(Con)
-              } else {
-                return Con();
-              }
-
-            }))
-        .catch((e:any) => {
-          const current_month = parseInt(moment().format("M"))
-          if (((current_month > 2 && current_month < 6) ?? ( current_month > 8)) && !(isTimeout(e))) {
-            Alert.alert("Внимание!", "Проблемы при получении данных, " +
-                "возможно отсутствие части информации! Сообщите разработчикам.")
-          }
-          return Promise.resolve();
-        })
+    this.mOnlineDataLoadPromise = this.LoadOnlineDataInternal().finally(()=>{
+      this.mOnlineDataLoadPromise = undefined
+    })
+    return this.mOnlineDataLoadPromise
   }
 
-  public FilterAvailableSemesters(sems: Semester[]):Promise<void>{
+  private async LoadOnlineDataInternal(): Promise<void>{
+    this.SetLoginState('AUTHENTICATED_LOADING_DATA')
+    let firstOnlineDataError: any
+
+    const runTask = async (name: string, task: () => Promise<unknown>) => {
+      try{
+        await task()
+      } catch(error){
+        firstOnlineDataError ??= error
+        console.warn(`Online data task "${name}" failed`)
+      }
+    }
+
+    try{
+      if (APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, this.mCredentials)) {
+        this.mCurrentData = TEST_DATA
+        return
+      }
+
+      const initialAddData: AdditionalData = {
+        finalMarkAvailabilityCounter: 0
+      }
+      Store.dispatch(updateAdditionalData({status: "LOADED", data: initialAddData}))
+      this.mStorage.set(STORAGE_KEYS.ADDITIONAL_DATA, JSON.stringify(initialAddData))
+
+      await runTask('current week', () => this.FetchCurrentWeek())
+      await runTask('current marks', () => this.FetchMarkTable())
+
+      const availableSemesters = this.mCurrentData.availableSemesters
+      if(availableSemesters && availableSemesters.length > 1){
+        await runTask('past marks and debts', async () => {
+          const result = await this.FetchMarkTable(availableSemesters[1].id, true)
+          const marks = result as BARSMarks | void
+          if(!marks?.disciplines) return
+
+          const debts: BARSDiscipline[] = []
+          for(const discipline of marks.disciplines) {
+            const lastMark = discipline.resultMarks[discipline.resultMarks.length - 1]?.mark
+            if(lastMark && new RegExp(/[0-2]/gm).test(lastMark)) {
+              discipline.debt = true
+              debts.push(discipline)
+              console.log('Pushed debt: ' + discipline.name + ' - ' + lastMark)
+            }
+          }
+          this.mDebts = debts
+        })
+      }
+
+      await runTask('mail', () => this.FetchMail())
+      await runTask('schedule', () => this.FetchSchedule())
+
+      if(this.mCurrentData.availableSemesters?.length){
+        await runTask('available semesters', () => this.FilterAvailableSemesters(this.mCurrentData.availableSemesters!))
+      }
+
+      await runTask('skipped classes', () => this.FetchSkippedClasses())
+      await runTask('record book', () => this.FetchRecordBook())
+      await runTask('tasks', () => this.FetchTasks())
+      await runTask('reports', () => this.FetchReports())
+      await runTask('stipends', () => this.FetchStipends())
+      await runTask('orders', () => this.FetchOrders())
+      await runTask('books', () => this.FetchBooks())
+      await runTask('questionnaires', () => this.FetchQuestionnaires())
+      console.log('Online data fetch completed')
+    } catch(error){
+      firstOnlineDataError ??= error
+      console.warn('Online data loading failed before all tasks could start')
+    } finally {
+      if(firstOnlineDataError){
+        const currentMonth = parseInt(moment().format("M"))
+        if(((currentMonth > 2 && currentMonth < 6) || currentMonth > 8) && !isTimeout(firstOnlineDataError)) {
+          Alert.alert("Внимание!", "Проблемы при получении данных, " +
+            "возможно отсутствие части информации! Сообщите разработчикам.")
+        }
+      }
+
+      // Registered VPN revalidation runs here, after every BARS Fetch/parsing task.
+      await this.RunPostOnlineDataTasks()
+      this.SetLoginState('LOGGED_IN')
+    }
+  }
+
+  public async FilterAvailableSemesters(sems: Semester[]): Promise<void>{
     const check = (sem: Semester) => {
       let link = URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + this.mCurrentData.student!.id
       if(typeof sem.id != "undefined"){
@@ -400,28 +457,15 @@ export default class BARS{
         }
       })
     }
-    const promises: Promise<{sem: Semester, available: boolean}>[] = []
-    try{
-      for(let i of sems){
-        promises.push(check(i))
+    const results = await Promise.all(sems.map(check))
+    const available: Semester[] = []
+    for(const result of results){
+      if(result.available){
+        available.push(result.sem)
       }
-      return Promise.all(promises).then((res)=>{
-        const result: Semester[] = []
-        for(let i of res){
-          if(i.available){
-            result.push(i.sem)
-          }
-        }
-        this.mCurrentData.availableSemesters = result
-        DeviceEventEmitter.emit('refresh_semSelector')
-      })
-    } catch (e: any){
-      //console.warn(e);
-      //if(isBARSError(e)) return Promise.reject(e)
-      //else return Promise.reject(CreateBARSError('SEMESTER_FILTER_FAIL', e.toString()))
-    } finally {
-      return Promise.resolve()
     }
+    this.mCurrentData.availableSemesters = available
+    DeviceEventEmitter.emit('refresh_semSelector')
   }
   public get TestMode(){return this.mTestMode}
 
@@ -648,7 +692,6 @@ export default class BARS{
       Store.dispatch(updateStipends({status: "OFFLINE", data: { stipends: [], petitions: [] }}))
       Store.dispatch(updateTasks({status: "OFFLINE", data: []}))
 
-      DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
       console.log('Dispatched test data.')
       return Promise.resolve('ONLINE')
     }
@@ -750,7 +793,7 @@ export default class BARS{
     //console.warn(schedule,marks,skippedClasses,recordBook,student, reports)
 
     if(typeof student == 'undefined'){
-      DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+      this.SetLoginState('NOT_LOGGED_IN')
       console.log('Student data not found. NOT_LOGGED_IN state emitted.')
       return
     } else {
@@ -775,7 +818,6 @@ export default class BARS{
     Store.dispatch(updateQuestionnaires({status: "OFFLINE", data: typeof questionnaires != 'undefined' ? JSON.parse(questionnaires) : null}))
     Store.dispatch(updateAdditionalData({status: "OFFLINE", data: typeof addData != 'undefined' ? JSON.parse(addData) : null}))
     console.log('All offline data dispatched.')
-    //DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
   }
 
   public get CurrentData(){
@@ -989,7 +1031,6 @@ export default class BARS{
           throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Both online and offline schedules are empty!');
         } else {
           Store.dispatch(updateSchedule({ status: "OFFLINE", data: JSON.parse(scheduleRaw) }))
-          DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
         }
       } else {
           if (result.days.length == 0 && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
@@ -999,7 +1040,6 @@ export default class BARS{
           }
           this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(result))
           // console.log('Fetched schedule')
-          DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
         }
     }).catch((error: any)=>{
       if(isBARSError(error)){
@@ -1016,7 +1056,6 @@ export default class BARS{
         throw error;
       } else {
         Store.dispatch(updateSchedule({status: "OFFLINE", data: JSON.parse(scheduleRaw)}))
-        DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
       }
     })).catch(e =>{
       console.warn('Data download time exceeded on Schedule!', e)
@@ -1027,7 +1066,6 @@ export default class BARS{
         throw e;
       } else {
         Store.dispatch(updateSchedule({status: "OFFLINE", data: JSON.parse(scheduleRaw)}))
-        DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
       }
     })
   }

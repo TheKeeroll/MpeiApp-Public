@@ -1,13 +1,12 @@
 import {
     Alert,
-    DeviceEventEmitter, Dimensions,
+    Dimensions,
     LayoutAnimation, Linking, ScrollView,
     Text, TouchableOpacity,
     View,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import BARSAPI from "../../Common/Globals";
-import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
@@ -92,11 +91,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
         setShowLoading(true)
         setTimeout(() => BARSAPI.Login2FA(code).then((r) => {
-            BARSAPI.LoadOnlineData().finally(() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                setTimeout(() => setShowLoading(false), 10)
-                DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
-            })
+            void BARSAPI.LoadOnlineData()
         }, (e: any) => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             setShowLoading(false)
@@ -105,7 +100,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                 props.onBack()
             } else {
                 Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
-                DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+                BARSAPI.SetLoginState('NOT_LOGGED_IN')
             }
         }), 250)
     }

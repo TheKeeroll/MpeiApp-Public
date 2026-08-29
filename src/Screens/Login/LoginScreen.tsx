@@ -1,6 +1,6 @@
 import {
     Alert,
-    DeviceEventEmitter, Dimensions,
+    Dimensions,
     LayoutAnimation, ScrollView,
     Text,
     TouchableOpacity,
@@ -9,7 +9,6 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, {useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
-import {LoginState} from "../../API/BARS";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 // @ts-expect-error
 import * as Icon from 'react-native-vector-icons/Fontisto'
@@ -184,16 +183,12 @@ const LoginScreen: React.FC = () => {
                                         setShowingAF2(true)
                                         return
                                     }
-                                    BARSAPI.LoadOnlineData().finally(()=>{
-                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-                                        setTimeout(()=>setShowLoading(false), 10)
-                                        DeviceEventEmitter.emit('LoginState', 'LOGGED_IN')
-                                    })
+                                    void BARSAPI.LoadOnlineData()
                                 }, (e: any)=>{
                                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                     setShowLoading(false)
                                     Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
-                                    DeviceEventEmitter.emit('LoginState', 'NOT_LOGGED_IN' as LoginState)
+                                    BARSAPI.SetLoginState('NOT_LOGGED_IN')
                                 }), 250)
                             }} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
 

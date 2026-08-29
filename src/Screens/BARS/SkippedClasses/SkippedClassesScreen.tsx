@@ -20,7 +20,9 @@ import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import SkippedClassesNotFound from "../../CommonComponents/SkippedClassesNotFound";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import {useNavigation} from "@react-navigation/native";
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {AD_PLACEMENTS, useAds} from "../../../Ads/AdsProvider";
+import StickyBannerSlot from "../../../Ads/StickyBannerSlot";
 
 const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -143,7 +145,8 @@ const SkippedClassesScreen: React.FC = () => {
     const raw = useSelector((state: RootState)=> state.SkippedClasses)
     const [expanded, setExpanded] = useState(-1)
     const {colors} = useTheme()
-    const insets = useSafeAreaInsets();
+    const {getStickyReservedHeight} = useAds();
+    const stickyReservedHeight = getStickyReservedHeight(AD_PLACEMENTS.skippedClasses);
 
     const onLoad = (offline: boolean) => {
         if(raw.data == null){
@@ -172,7 +175,7 @@ const SkippedClassesScreen: React.FC = () => {
         return (
                 <FlatList
                     style={{width: '100%'}}
-                    contentContainerStyle={{alignItems: 'center'}}
+                    contentContainerStyle={{alignItems: 'center', paddingBottom: 20 + stickyReservedHeight}}
                     data={skippedClasses}
                     renderItem={({item, index}: {item: SkippedClass[], index: number})=>(
                         <Card expandedCardIndex={expanded} onExpand={onExpand.bind(this)} item={item} index={index}/>
@@ -207,6 +210,7 @@ const SkippedClassesScreen: React.FC = () => {
             <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
+                <StickyBannerSlot placement={AD_PLACEMENTS.skippedClasses}/>
             </SafeAreaView>
         </Fragment>
     )
