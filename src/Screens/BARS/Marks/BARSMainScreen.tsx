@@ -425,21 +425,15 @@ const Body: React.FC<{navigation: any}> = (props)=>{
     if (!sessionStarted){
         weekDColor = colors.text
     }
-    if (marks.status !== "OFFLINE" && !BARSAPI.TestMode) {
-        useEffect(() => {
-
+    useEffect(() => {
+        if (marks.status !== "OFFLINE" && !BARSAPI.TestMode) {
             BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters?.[0]?.id)
               .then()
               .catch(e=>{
                   console.warn(' useEffect: ' + e.toString())
-            })
-        }, [])
-
-        if (refreshing){
-            setRefreshing(false)
+              })
         }
-
-    }
+    }, [])
     switch (marks.status){
         case "FAILED": return <FetchFailed/>
         case "OFFLINE":
@@ -497,6 +491,10 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                         setRefreshing(true)
                         BARSAPI.FetchMarkTable(BARSAPI.CurrentData.availableSemesters?.[0]?.id)
                             .then(()=>setRefreshing(false))
+                            .catch(error => {
+                                console.warn('Refresh mark table failed: ' + error)
+                                setRefreshing(false)
+                            })
                     }}
 
                     data={BARSAPI.Debts.length ? BARSAPI.Debts.concat(marks.data!.disciplines) : marks.data!.disciplines}
@@ -520,10 +518,12 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                             </View>
                         </View>
                     }
-                    ListFooterComponent={() => <>
-                        <InlineBannerAd/>
-                        <View style={{height: 20}}/>
-                    </>}
+                    ListFooterComponent={() => (
+                        <View style={{width: '100%', alignSelf: 'stretch'}}>
+                            <InlineBannerAd/>
+                            <View style={{height: 20}}/>
+                        </View>
+                    )}
                 />
             </View>
         )

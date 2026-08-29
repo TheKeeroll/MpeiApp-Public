@@ -13,7 +13,6 @@ import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import BARSAPI from "../../Common/Globals";
 import FetchFailed from "../CommonComponents/FetchFailed";
 import { isBARSError } from "../../API/Error/Error";
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Holidays from "../CommonComponents/Holidays";
 import { Button } from "../Login/LoginScreen";
 import InlineBannerAd from "../../Ads/InlineBannerAd";
@@ -269,38 +268,40 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
 
 const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
-    let schedule = useSelector((state: RootState)=>state.Schedule)
+    const schedule = useSelector((state: RootState)=>state.Schedule)
     const current_month = parseInt(moment().format("M"))
     const [isFirstTime, setisFirstTime] = useState(true)
     const [isShowRequestOtherSchedule, setisShowRequestOtherSchedule] = useState(false)
     const [targetSchedule, settargetSchedule] = useState('')
-
-    const insets = useSafeAreaInsets();
-
     const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
     const lastFlatListRef = useRef<FlatList | null>(null)
-    // @ts-expect-error
-    const wait = new Promise(resolve => setTimeout(resolve, 500))
 
-    if(schedule.status == 'FAILED' && ((current_month > 5 && current_month < 9) ?? ( current_month < 3))){
+    React.useEffect(() => {
+        if (
+            !isFirstTime
+            || (schedule.status !== 'OFFLINE' && schedule.status !== 'LOADED')
+            || !schedule.data
+        ) {
+            return
+        }
+
+        const today = new Date().getDDMMYY()
+        const todayIndex = schedule.data.days.findIndex(day => day.date === today)
+        setisFirstTime(false)
+        if (todayIndex >= 0) {
+            setSelectedDate(previous => previous === todayIndex ? previous : todayIndex)
+            console.log('Today: ' + schedule.data.days[todayIndex]!.date)
+        }
+    }, [isFirstTime, schedule.data, schedule.status])
+
+    const isVacationPeriod = current_month === 1 || current_month === 2 || (current_month > 5 && current_month < 9)
+    if(schedule.status == 'FAILED' && isVacationPeriod){
         return <Holidays/>
     } else if(schedule.status == 'FAILED'){
         return <FetchFailed/>
     }
 
     let editableScheduleData = schedule.data!
-
-    const FindToday = (editedScheduleData: BARSSchedule) => {
-      let today = new Date().getDDMMYY()
-      for (let j = 0; j < editedScheduleData.days.length; j++) {
-        if (today == editedScheduleData.days[j]!.date!) {
-          setisFirstTime(false)
-          setSelectedDate(j)
-          console.log('Today: ' + editedScheduleData.days[j]!.date!)
-          break
-        }
-      }
-    }
 
     const requestMode = typeof props.route.params != 'undefined' ? props.route.params as Teacher : null
     // const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
@@ -405,9 +406,6 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             const IsToday = () => {
                 const today = new Date().getDDMMYY()
                 return today == schedule.data!.days[selectedDate].date
-            }
-            if (isFirstTime){
-                FindToday(editableScheduleData)
             }
             return (
                 <View style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>

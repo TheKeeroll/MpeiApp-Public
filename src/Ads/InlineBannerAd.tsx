@@ -59,7 +59,7 @@ const InlineBannerAd: React.FC<InlineBannerAdProps> = ({maxHeight = 250, style})
     <View
       collapsable={false}
       onLayout={handleLayout}
-      style={[{width: '100%', alignItems: 'center', marginTop: isLoaded ? 12 : 0}, style]}
+      style={[{width: '100%', alignSelf: 'stretch', alignItems: 'center', marginTop: isLoaded ? 12 : 0}, style]}
     >
       {adSize ? (
         <View style={{width: adSize.width, height: isLoaded ? adSize.height : 0, overflow: 'hidden'}}>
