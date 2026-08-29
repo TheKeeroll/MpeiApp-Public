@@ -65,7 +65,25 @@ export type LoginState =
   | 'NOT_INITIATED'
   | 'AUTHENTICATED_LOADING_DATA'
 
+export type AppIconName =
+  | 'cool'
+  | 'dragons'
+  | 'simple'
+  | 'matterial'
+  | 'gold'
+  | 'crymat'
+  | 'crysign'
+
 type PostOnlineDataTask = () => Promise<void> | void
+
+const isIconAlreadyUsedError = (error: unknown) => {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as {code?: unknown}).code
+    return typeof code === 'string' && code.startsWith('ANDROID:ICON_ALREADY_USED')
+  }
+
+  return error instanceof Error && error.message.includes('ANDROID:ICON_ALREADY_USED')
+}
 
 function Timeout(ms:number, promise:Promise<any>): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks> {
   return new Promise(function(resolve, reject) {
@@ -137,13 +155,22 @@ export default class BARS{
       }
     }
   }
-  public ChangeIcon(name: 'cool' | 'dragons' | 'simple' | 'matterial' | 'gold' | 'crymat' | 'crysign'){
-    changeIcon(name).then(()=>{
-      return getIcon().then((i: string = 'cool')=>{
-        this.mCurrentIcon = i
-        console.log('Icon changed to ' + i)
-      })
-    })
+  public async ChangeIcon(name: AppIconName): Promise<boolean>{
+    if(this.mCurrentIcon === name) return false
+
+    try{
+      await changeIcon(name)
+    } catch(error){
+      if(isIconAlreadyUsedError(error)){
+        this.mCurrentIcon = name
+        return false
+      }
+      throw error
+    }
+
+    this.mCurrentIcon = name
+    console.log('Icon changed to ' + name)
+    return true
   }
   public ChangeFrame(name: 'qr-frame' | 'empty' | 'qr-frame-black' | 'qr-frame-green' | 'qr-frame-red'){
     this.mCurrentFrame = name

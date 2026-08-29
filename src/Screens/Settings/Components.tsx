@@ -18,6 +18,7 @@ import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
 import * as EtIcons from 'react-native-vector-icons/Entypo'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
 import BARSAPI, { openTelegram } from "../../Common/Globals";
+import type {AppIconName} from "../../API/BARS";
 import Clipboard from "@react-native-clipboard/clipboard";
 
 export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value: boolean)=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
@@ -105,6 +106,39 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
 
+    const requestIconChange = (iconName: AppIconName) => {
+        if(icon === iconName) return
+
+        const applyIconChange = () => {
+            void BARSAPI.ChangeIcon(iconName)
+                .then((changed) => {
+                    if(!changed) return
+
+                    setIcon(iconName)
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                    setExpanded(false)
+                })
+                .catch((error) => {
+                    console.warn('Failed to change app icon', error)
+                    Alert.alert('Не удалось сменить иконку', 'Попробуйте ещё раз.')
+                })
+        }
+
+        if(Platform.OS === 'android'){
+            Alert.alert(
+                'Перезапуск приложения',
+                'Для применения новой иконки приложение будет закрыто и автоматически перезапущено.',
+                [
+                    {text: 'Отмена', style: 'cancel'},
+                    {text: 'Да, перезапустить', onPress: applyIconChange},
+                ],
+            )
+            return
+        }
+
+        applyIconChange()
+    }
+
     const Collapsed = () => (
         <TouchableOpacity disabled={disabled} onPress={()=>{
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -132,73 +166,38 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                 contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}
             >
                 <TouchableOpacity
-                    onPress={()=>{
-                        setIcon('cool')
-                        BARSAPI.ChangeIcon('cool')
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                        setExpanded(false)
-                    }}
+                    onPress={()=>requestIconChange('cool')}
                     style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                     <Avatar.Image  source={require(`../../../assets/images/cool.webp`)} style={{borderRadius: 50 }} size={80}/>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    onPress={()=>{
-                        setIcon('dragons')
-                        BARSAPI.ChangeIcon('dragons')
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                        setExpanded(false)
-                    }}
+                    onPress={()=>requestIconChange('dragons')}
                     style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                     <Avatar.Image  source={require(`../../../assets/images/dragons.webp`)} style={{borderRadius: 50 }} size={80}/>
                 </TouchableOpacity>
                     <Fragment>
                         <TouchableOpacity
-                            onPress={()=>{
-                                setIcon('simple')
-                                BARSAPI.ChangeIcon('simple')
-                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                                setExpanded(false)
-                            }}
+                            onPress={()=>requestIconChange('simple')}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                             <Avatar.Image  source={require(`../../../assets/images/simple.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={()=>{
-                                setIcon('matterial')
-                                BARSAPI.ChangeIcon('matterial')
-                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                                setExpanded(false)
-                            }}
+                            onPress={()=>requestIconChange('matterial')}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                             <Avatar.Image  source={require(`../../../assets/images/matterial.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={()=>{
-                                setIcon('gold')
-                                BARSAPI.ChangeIcon('gold')
-                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                                setExpanded(false)
-                            }}
+                            onPress={()=>requestIconChange('gold')}
                             style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                             <Avatar.Image  source={require(`../../../assets/images/gold.webp`)} style={{borderRadius: 50 }} size={80}/>
                         </TouchableOpacity>
                       <TouchableOpacity
-                        onPress={()=>{
-                          setIcon('crymat')
-                          BARSAPI.ChangeIcon('crymat')
-                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                          setExpanded(false)
-                        }}
+                        onPress={()=>requestIconChange('crymat')}
                         style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                         <Avatar.Image  source={require(`../../../assets/images/crymat.webp`)} style={{borderRadius: 50 }} size={80}/>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        onPress={()=>{
-                          setIcon('crysign')
-                          BARSAPI.ChangeIcon('crysign')
-                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-                          setExpanded(false)
-                        }}
+                        onPress={()=>requestIconChange('crysign')}
                         style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
                         <Avatar.Image  source={require(`../../../assets/images/crysign.webp`)} style={{borderRadius: 50 }} size={80}/>
                       </TouchableOpacity>
