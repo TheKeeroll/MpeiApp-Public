@@ -16,6 +16,7 @@ import { isBARSError } from "../../API/Error/Error";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Holidays from "../CommonComponents/Holidays";
 import { Button } from "../Login/LoginScreen";
+import InlineBannerAd from "../../Ads/InlineBannerAd";
 
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
@@ -447,6 +448,10 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
                             }
                             ItemSeparatorComponent={()=><View style={{height: 10}}/>}
+                            ListFooterComponent={() => <>
+                                {IsToday() && editableScheduleData.days[selectedDate].lessons.length > 0 && <InlineBannerAd/>}
+                                <View style={{height: 20}}/>
+                            </>}
                             getItemLayout={(data, index) => (
                               { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
                             )}

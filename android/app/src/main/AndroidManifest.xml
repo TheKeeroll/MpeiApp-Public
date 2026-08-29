@@ -21,6 +21,9 @@
         android:usesCleartextTraffic="true"
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="false">
+        <meta-data
+            android:name="com.yandex.mobile.ads.AUTOMATIC_SDK_INITIALIZATION"
+            android:value="false" />
         <receiver
             android:name=".ScheduleWidget"
             android:exported="false">

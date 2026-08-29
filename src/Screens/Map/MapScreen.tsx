@@ -29,6 +29,8 @@ import {ImageSource} from "react-native-vector-icons/Icon";
 
 import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
 import mapPoints from './MapPoints.json';
+import {INITIAL_MAP_REGION} from '../../Common/MapRegion';
+import {useAds} from '../../Ads/AdsProvider';
 
 import LoadingScreen from "../LoadingScreen/LoadingScreen.tsx";
 
@@ -67,6 +69,7 @@ const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>
 const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
+    const {setSessionLocation} = useAds()
 
     const map = useRef<YaMap>(null);
     const insets = useSafeAreaInsets()
@@ -388,7 +391,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         Geolocation.getCurrentPosition(
             (pos)=>{
                 console.log('GOT', pos)
-                map.current!.setCenter({lat: pos.coords.latitude, lon: pos.coords.longitude}, 15, undefined,undefined, .3)
+                const userLocation = {lat: pos.coords.latitude, lon: pos.coords.longitude}
+                setSessionLocation(userLocation)
+                map.current!.setCenter(userLocation, 15, undefined,undefined, .3)
             },
             (error)=>{
                 console.warn('Failure', error)
@@ -398,7 +403,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
     const GetRoutes = (place: Place) => {
         Geolocation.getCurrentPosition((pos)=>{
-            map.current!.findPedestrianRoutes([{lat: pos.coords.latitude, lon: pos.coords.longitude},{lat: place.lat, lon: place.lon}],(event:any)=>{
+            const userLocation = {lat: pos.coords.latitude, lon: pos.coords.longitude}
+            setSessionLocation(userLocation)
+            map.current!.findPedestrianRoutes([userLocation,{lat: place.lat, lon: place.lon}],(event:any)=>{
                 if (event.status == 'success' || event.nativeEvent?.status == 'success' || (event.success && (event.routes?.length || 0) > 0) || (event.nativeEvent?.success && (event.nativeEvent?.routes?.length || 0) > 0)) {
                     setShowRoutes(event.routes || event.nativeEvent?.routes)
                     setRoutes(event.routes || event.nativeEvent?.routes)
@@ -505,13 +512,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             {isPermissionRequested && renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap
                 ref={map}
                 nightMode={dark}
-                initialRegion={{
-                    lat: 55.754502,
-                    lon: 37.708299,
-                    zoom: 17,
-                    azimuth: 0,
-                    tilt: 60
-                }}
+                initialRegion={INITIAL_MAP_REGION}
                 onMapLoaded={handleMapLoaded}
                 onLayout={handleLayout}
                 onMapLongPress={(longPress) => {

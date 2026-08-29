@@ -116,7 +116,8 @@ export const STORAGE_KEYS = {
   RECORD_BOOK: 'recordBook',
   MAIL: 'mail',
   ADDITIONAL_DATA: 'additionalData',
-  VPN_VERIFICATION_STATE: 'vpnVerificationState'
+  VPN_VERIFICATION_STATE: 'vpnVerificationState',
+  AD_USER_CONSENT: 'adUserConsent'
 }
 
 export const TEACHER_RANKS: string[] = [

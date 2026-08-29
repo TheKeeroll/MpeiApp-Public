@@ -28,6 +28,7 @@ import { updateAdditionalData } from "../../../API/Redux/Slices";
 import SharedGroupPreferences from "react-native-shared-group-preferences";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_CONFIG } from "../../../Common/Config.ts";
+import InlineBannerAd from "../../../Ads/InlineBannerAd";
 
 const Stack = createStackNavigator()
 
@@ -519,7 +520,10 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                             </View>
                         </View>
                     }
-                    ListFooterComponent={()=><View style={{height: 20}}/> }
+                    ListFooterComponent={() => <>
+                        <InlineBannerAd/>
+                        <View style={{height: 20}}/>
+                    </>}
                 />
             </View>
         )

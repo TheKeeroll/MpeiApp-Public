@@ -5,3 +5,16 @@
  * Secrets.ts: it is intentionally ignored by Git.
  */
 export const YANDEX_MAPS_API_KEY = '';
+
+export const YANDEX_AD_UNIT_IDS = {
+  android: {
+    inlineBanner: '',
+    stickyBanner: '',
+    rewarded: '',
+  },
+  ios: {
+    inlineBanner: '',
+    stickyBanner: '',
+    rewarded: '',
+  },
+} as const;

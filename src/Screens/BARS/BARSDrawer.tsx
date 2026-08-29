@@ -29,6 +29,7 @@ import { RootState } from "../../API/Redux/Store";
 import { SkippedClass } from "../../API/DataTypes";
 import BooksScreen from "./Books/BooksScreen";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import InlineBannerAd from "../../Ads/InlineBannerAd";
 
 const Drawer = createDrawerNavigator()
 
@@ -555,6 +556,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       counter={unhandledQuestionnairesCounter}
                       counterColor={colors.warning}
                     />
+                    <InlineBannerAd/>
 
                 </DrawerContentScrollView>
                 <DrawerButton {...props} presserId={-1} id={-2} onPress={()=>{}} title={'Выйти'} routeName={'exit'} counter={0} counterColor={colors.text} iconComponent={

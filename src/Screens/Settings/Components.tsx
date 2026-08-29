@@ -126,11 +126,11 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
 
         if(Platform.OS === 'android'){
             Alert.alert(
-                'Перезапуск приложения',
-                'Для применения новой иконки приложение будет закрыто и автоматически перезапущено.',
+                'Закрытие приложения',
+                'Для применения новой иконки приложение будет закрыто.',
                 [
                     {text: 'Отмена', style: 'cancel'},
-                    {text: 'Да, перезапустить', onPress: applyIconChange},
+                    {text: 'Да, закрыть', onPress: applyIconChange},
                 ],
             )
             return

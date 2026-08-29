@@ -1,31 +1,41 @@
 import React from 'react';
-import { LayoutChangeEvent, View } from 'react-native';
-import { StickyAdPlacement, useAds } from './AdsProvider';
+import {View} from 'react-native';
+import {StickyAdPlacement, useAds} from './AdsProvider';
+import StickyBannerAd from './StickyBannerAd';
 
 type StickyBannerSlotProps = {
   placement: StickyAdPlacement;
 };
 
-/**
- * A single gated layout host for a sticky banner.  The Yandex renderer is
- * intentionally introduced only after consent handling in stage 4; screens
- * already have their final, safe placement now.
- */
-const StickyBannerSlot: React.FC<StickyBannerSlotProps> = ({ placement }) => {
-  const { isStickyPlacementEnabled, setStickyReservedHeight } = useAds();
-  const enabled = isStickyPlacementEnabled(placement);
+/** A single gated layout host for an adaptive sticky banner. */
+const StickyBannerSlot: React.FC<StickyBannerSlotProps> = ({placement}) => {
+  const {
+    adsEnabled,
+    isStickyPlacementEnabled,
+    registerStickyPlacement,
+    setStickyReservedHeight,
+  } = useAds();
+
+  React.useEffect(() => {
+    if (!adsEnabled) {
+      setStickyReservedHeight(placement, 0);
+      return;
+    }
+
+    return registerStickyPlacement(placement);
+  }, [adsEnabled, placement, registerStickyPlacement, setStickyReservedHeight]);
 
   React.useEffect(() => () => setStickyReservedHeight(placement, 0), [placement, setStickyReservedHeight]);
 
-  const handleLayout = React.useCallback((event: LayoutChangeEvent) => {
-    setStickyReservedHeight(placement, event.nativeEvent.layout.height);
-  }, [placement, setStickyReservedHeight]);
-
-  if (!enabled) {
+  if (!isStickyPlacementEnabled(placement)) {
     return null;
   }
 
-  return <View collapsable={false} onLayout={handleLayout} testID={`sticky-banner-slot-${placement}`} />;
+  return (
+    <View collapsable={false} testID={`sticky-banner-slot-${placement}`}>
+      <StickyBannerAd placement={placement}/>
+    </View>
+  );
 };
 
 export default StickyBannerSlot;
