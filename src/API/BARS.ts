@@ -76,6 +76,29 @@ export type AppIconName =
 
 type PostOnlineDataTask = () => Promise<void> | void
 
+type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
+
+type SavedTemporary2FACode = {
+  account: string
+  code: string
+}
+
+type InvalidTwoFactorCodeError = ReturnType<typeof CreateBARSError> & {
+  isInvalidTwoFactorCode: true
+}
+
+const createInvalidTwoFactorCodeError = (): InvalidTwoFactorCodeError => ({
+  ...CreateBARSError('LOGIN_FAIL', 'Некорректный код подтверждения!'),
+  isInvalidTwoFactorCode: true,
+})
+
+const isInvalidTwoFactorCodeError = (error: unknown): error is InvalidTwoFactorCodeError => (
+  typeof error === 'object'
+  && error !== null
+  && isBARSError(error)
+  && (error as {isInvalidTwoFactorCode?: unknown}).isInvalidTwoFactorCode === true
+)
+
 const isIconAlreadyUsedError = (error: unknown) => {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = (error as {code?: unknown}).code
@@ -120,6 +143,7 @@ export default class BARS{
   private mLoginState: LoginState = 'NOT_INITIATED'
   private mOnlineDataLoadPromise?: Promise<void>
   private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
+  private mLastRequested2FAProvider?: TwoFactorProviderTid
 
   public get Debts() { return this.mDebts }
   public get LoginState() { return this.mLoginState }
@@ -339,6 +363,7 @@ export default class BARS{
     this.SetLoginState('NOT_LOGGED_IN')
     this.mCurrentData = {}
     this.mTestMode = false
+    this.mLastRequested2FAProvider = undefined
   }
 
   private FetchCurrentWeek(){
@@ -638,6 +663,63 @@ export default class BARS{
     return Promise.reject(CreateBARSError('LOGIN_FAIL', "Сервер вернул неожиданный результат!"))
   }
 
+  private GetSavedTemporary2FACode(account: string): string | undefined {
+    const savedCodeRaw = this.mStorage.getString(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+    if (!savedCodeRaw) {
+      return undefined
+    }
+
+    try {
+      const savedCode = JSON.parse(savedCodeRaw) as Partial<SavedTemporary2FACode>
+      if (typeof savedCode.account !== 'string' || typeof savedCode.code !== 'string' || !savedCode.code.trim()) {
+        this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+        return undefined
+      }
+
+      return savedCode.account === account ? savedCode.code : undefined
+    } catch {
+      this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+      return undefined
+    }
+  }
+
+  private SaveTemporary2FACode(account: string, code: string) {
+    const normalizedCode = code.trim()
+    if (!account || !normalizedCode) {
+      return
+    }
+
+    this.mStorage.set(STORAGE_KEYS.TEMPORARY_2FA_CODE, JSON.stringify({account, code: normalizedCode}))
+    console.log('Saved temporary 2FA code for the next session')
+  }
+
+  private ClearSavedTemporary2FACode() {
+    this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+  }
+
+  private async HandleTwoFactorChallenge(): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks> {
+    const savedTemporaryCode = this.GetSavedTemporary2FACode(this.mCredentials.login)
+    if (!savedTemporaryCode) {
+      void this.Request2FACode()
+      return 'NEED_2FA'
+    }
+
+    console.log('Trying saved temporary 2FA code')
+    this.mLastRequested2FAProvider = 4
+    try {
+      return await this.Login2FA(savedTemporaryCode)
+    } catch (error) {
+      if (!isInvalidTwoFactorCodeError(error)) {
+        throw error
+      }
+
+      console.warn('Saved temporary 2FA code was rejected; falling back to configured providers')
+      this.ClearSavedTemporary2FACode()
+      void this.Request2FACode()
+      return 'NEED_2FA'
+    }
+  }
+
   public Login2FA(code: string): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks > {
     console.log('Trying to login with 2FA code');
     const creds = this.mCredentials;
@@ -654,13 +736,22 @@ export default class BARS{
         if (response.includes("запрещён")) {
           return Promise.reject(CreateBARSError('LOGIN_FAIL', "Не удалось войти с использованием двухфакторной аутентификации!"));
         } else if (response.includes("Некорректный код подтверждения")) {
-          return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
+          return Promise.reject(createInvalidTwoFactorCodeError())
         }
         return this.HandleLoginResponse(response, creds);
       })
-    ).catch(e => {
+    ).then(result => {
+      if (this.mLastRequested2FAProvider === 4) {
+        this.SaveTemporary2FACode(creds.login, code)
+      }
+      return result
+    }).catch(e => {
+      if (isInvalidTwoFactorCodeError(e)) {
+        return Promise.reject(e)
+      }
+
       if (e.error == 'INVALID_CREDS' || e.error == 'LOGIN_FAIL') {
-        console.warn(`Incorrect 2FA code(${code})!`, e)
+        console.warn('Incorrect 2FA code!', e)
         return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
       } else {
         console.warn("Data download time exceeded on 2FA!", e)
@@ -670,11 +761,21 @@ export default class BARS{
     });
   }
 
-  private async Request2FACode() {
-    for (let tid = 1; tid <= 4; tid++) {
+  /**
+   * Запрашивает код только у следующего провайдера после неуспеха предыдущего.
+   * tid 1 — Telegram, 2 — ВКонтакте, 3 — MAX, 4 — временные коды, 5 — TOTP.
+   * Порядок 5 → 2 → 3 → 4 → 1 ставит первыми TOTP и VK как наиболее удобные
+   * независимые варианты, затем обязательный для многих MAX и временные коды;
+   * Telegram остаётся последним, поскольку сейчас доставка кодов из БАРС
+   * блокируется в РФ.
+   */
+  private async Request2FACode(): Promise<TwoFactorProviderTid | undefined> {
+    const providerOrder: TwoFactorProviderTid[] = [5, 2, 3, 4, 1]
+    this.mLastRequested2FAProvider = undefined
+
+    for (const tid of providerOrder) {
       try {
-        // @ts-expect-error
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
         const response = await fetch(URLS.BARS_REQUEST_CODE + `?tid=${tid}`, {
           method: "GET",
           headers: COMMON_HTTP_HEADER,
@@ -683,23 +784,26 @@ export default class BARS{
         console.log(`2FA code ${tid} requested, res: ${text}`);
 
         if (text.includes("success") && !text.includes("false")) {
-          break;
+          this.mLastRequested2FAProvider = tid
+          return tid
         }
 
         // Проверяем на ошибку отправки и добавляем задержку перед следующей попыткой
         if (text.toLowerCase().includes("ошибка при отправке")) {
           console.warn(`2FA code ${tid} send error detected, waiting 10 seconds before next attempt`);
-          // @ts-expect-error
-          await new Promise(resolve => setTimeout(resolve, 10000));
+          await new Promise<void>(resolve => setTimeout(resolve, 10000));
         }
       } catch (e: any) {
         console.warn(`2FA code ${tid} request failed!`, e);
       }
     }
+
+    return undefined
   }
 
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
     let isIncorrectLoginPassword = false
+    this.mLastRequested2FAProvider = undefined
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
       // Alert.alert('Info', 'Entered test mode.')
       this.mCredentials = creds
@@ -769,7 +873,6 @@ export default class BARS{
         .then((response) => {
           if (response.includes("код подтверждения")) {
             this.mCredentials = creds;
-            this.Request2FACode();
             return Promise.resolve("NEED_2FA" as any);
           }
           return this.HandleLoginResponse(response, creds);
@@ -781,7 +884,10 @@ export default class BARS{
             }
             return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
           }
-        })).catch(e => {
+        })).then(result => {
+          const loginResult = result as "ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks
+          return loginResult === "NEED_2FA" ? this.HandleTwoFactorChallenge() : loginResult
+        }).catch(e => {
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
           } else {

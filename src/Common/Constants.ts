@@ -101,6 +101,7 @@ export const QR_PRESENCE_HEADER = (qr_combined_url: string)  => {
 }
 export const STORAGE_KEYS = {
   CREDENTIALS: 'credentials',
+  TEMPORARY_2FA_CODE: 'temporary2FACode',
   THEME: 'theme',
   FRAME: 'frame',
   SCHEDULE: 'schedule',
