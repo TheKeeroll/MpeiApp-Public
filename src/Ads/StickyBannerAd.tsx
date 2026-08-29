@@ -61,7 +61,11 @@ const StickyBannerAd: React.FC<StickyBannerAdProps> = ({placement}) => {
   }
 
   return (
-    <View collapsable={false} onLayout={handleLayout} style={{width: '100%', alignItems: 'center'}}>
+    <View
+      collapsable={false}
+      onLayout={handleLayout}
+      style={{width: '100%', alignSelf: 'stretch', alignItems: 'center'}}
+    >
       {adSize ? (
         <View style={{width: adSize.width, height: isLoaded ? adSize.height : 0, overflow: 'hidden'}}>
           <BannerView

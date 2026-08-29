@@ -106,6 +106,14 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.mpeiapp"
+    externalNativeBuild {
+        cmake {
+            // CMake 4.1.2 ships Ninja 1.12.1, which supports Win32 long paths.
+            // The previously selected CMake 3.22.1 bundled Ninja 1.10.2 and
+            // failed while stat'ing React Native's generated codegen objects.
+            version "4.1.2"
+        }
+    }
     defaultConfig {
         applicationId "com.mpeiapp"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -114,6 +122,13 @@ android {
         versionName "2.3.1"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+        externalNativeBuild {
+            cmake {
+                // Let the long-path-capable Ninja retain deterministic object
+                // names for React Native's deeply nested generated sources.
+                arguments '-DCMAKE_OBJECT_PATH_MAX=1024'
+            }
         }
     }
 

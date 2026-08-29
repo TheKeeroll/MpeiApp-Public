@@ -518,8 +518,9 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                             </View>
                         </View>
                     }
+                    ListFooterComponentStyle={{width: '100%', alignSelf: 'stretch'}}
                     ListFooterComponent={() => (
-                        <View style={{width: '100%', alignSelf: 'stretch'}}>
+                        <View collapsable={false} style={{width: '100%', alignSelf: 'stretch'}}>
                             <InlineBannerAd/>
                             <View style={{height: 20}}/>
                         </View>

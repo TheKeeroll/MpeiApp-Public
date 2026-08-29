@@ -32,7 +32,11 @@ const StickyBannerSlot: React.FC<StickyBannerSlotProps> = ({placement}) => {
   }
 
   return (
-    <View collapsable={false} testID={`sticky-banner-slot-${placement}`}>
+    <View
+      collapsable={false}
+      testID={`sticky-banner-slot-${placement}`}
+      style={{width: '100%', alignSelf: 'stretch', flexShrink: 0}}
+    >
       <StickyBannerAd placement={placement}/>
     </View>
   );

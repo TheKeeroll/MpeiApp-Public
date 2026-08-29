@@ -28,19 +28,25 @@ const getConfiguredAdUnitId = (format: YandexAdFormat): string | undefined => {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 };
 
-/** Never send an empty production ID to the SDK. */
+/**
+ * Debug builds always use Yandex demo IDs. A release build uses a configured
+ * production ID when present, otherwise the demo ID so internal APK testing
+ * never turns an ad placement into an empty request.
+ */
 export const getYandexAdUnitId = (format: YandexAdFormat): string | undefined => {
   if (__DEV__) {
     return DEMO_AD_UNIT_IDS[format];
   }
 
   const id = getConfiguredAdUnitId(format);
-  if (!id) {
-    const warningKey = `${Platform.OS}:${format}`;
-    if (!warnedMissingIds.has(warningKey)) {
-      warnedMissingIds.add(warningKey);
-      console.warn(`Yandex ${format} ad slot is disabled: production ad unit ID is not configured.`);
-    }
+  if (id) {
+    return id;
   }
-  return id;
+
+  const warningKey = `${Platform.OS}:${format}`;
+  if (!warnedMissingIds.has(warningKey)) {
+    warnedMissingIds.add(warningKey);
+    console.warn(`Yandex ${format} ad slot uses a demo ID because no production ID is configured.`);
+  }
+  return DEMO_AD_UNIT_IDS[format];
 };
