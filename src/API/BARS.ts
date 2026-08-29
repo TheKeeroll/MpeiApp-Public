@@ -76,7 +76,7 @@ export type AppIconName =
 
 type PostOnlineDataTask = () => Promise<void> | void
 
-type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
+export type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
 
 type SavedTemporary2FACode = {
   account: string
@@ -144,6 +144,7 @@ export default class BARS{
   private mOnlineDataLoadPromise?: Promise<void>
   private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
   private mLastRequested2FAProvider?: TwoFactorProviderTid
+  private m2FACodeRequestPromise?: Promise<TwoFactorProviderTid | undefined>
 
   public get Debts() { return this.mDebts }
   public get LoginState() { return this.mLoginState }
@@ -364,6 +365,7 @@ export default class BARS{
     this.mCurrentData = {}
     this.mTestMode = false
     this.mLastRequested2FAProvider = undefined
+    this.m2FACodeRequestPromise = undefined
   }
 
   private FetchCurrentWeek(){
@@ -700,7 +702,7 @@ export default class BARS{
   private async HandleTwoFactorChallenge(): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks> {
     const savedTemporaryCode = this.GetSavedTemporary2FACode(this.mCredentials.login)
     if (!savedTemporaryCode) {
-      void this.Request2FACode()
+      void this.Start2FACodeRequest()
       return 'NEED_2FA'
     }
 
@@ -715,7 +717,7 @@ export default class BARS{
 
       console.warn('Saved temporary 2FA code was rejected; falling back to configured providers')
       this.ClearSavedTemporary2FACode()
-      void this.Request2FACode()
+      void this.Start2FACodeRequest()
       return 'NEED_2FA'
     }
   }
@@ -801,9 +803,19 @@ export default class BARS{
     return undefined
   }
 
+  private Start2FACodeRequest(): Promise<TwoFactorProviderTid | undefined> {
+    this.m2FACodeRequestPromise = this.Request2FACode()
+    return this.m2FACodeRequestPromise
+  }
+
+  public WaitFor2FACodeRequest(): Promise<TwoFactorProviderTid | undefined> {
+    return this.m2FACodeRequestPromise ?? Promise.resolve(this.mLastRequested2FAProvider)
+  }
+
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
     let isIncorrectLoginPassword = false
     this.mLastRequested2FAProvider = undefined
+    this.m2FACodeRequestPromise = undefined
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
       // Alert.alert('Info', 'Entered test mode.')
       this.mCredentials = creds

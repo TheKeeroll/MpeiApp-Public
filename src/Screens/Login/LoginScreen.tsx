@@ -25,10 +25,10 @@ import SettingsStack from "../Settings/SettingsStack.tsx";
 import AF2Screen from "./AF2Screen";
 
 const Stack = createBottomTabNavigator()
-export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle}> = (props) => {
+export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
-        <TouchableOpacity onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center'}, props.style]}>
+        <TouchableOpacity disabled={props.disabled} onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center', opacity: props.disabled ? 0.45 : 1}, props.style]}>
             {typeof props.icon != 'undefined' ?
                 <Icon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
                 <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.textUnderline}}>{props.title}</Text>

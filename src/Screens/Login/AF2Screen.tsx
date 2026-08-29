@@ -16,9 +16,33 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 // @ts-expect-error
 import * as FaIcon from "react-native-vector-icons/Fontisto";
 import { ListText } from "../Settings/Components.tsx";
+import type { TwoFactorProviderTid } from "../../API/BARS";
 
 interface AF2ScreenProps {
     onBack: () => void;
+}
+
+const CODE_SENT_TO = 'Код отправлен в '
+const VK = 'VK'
+const MAX = 'MAX'
+const TELEGRAM = 'Telegram'
+const ENTER = 'Введите '
+const TEMPORARY_CODE = 'временный код'
+const TOTP_CODE = 'код из приложения для аутентификации (TOTP)'
+
+const Get2FACodeMessage = (tid: TwoFactorProviderTid): string => {
+    switch (tid) {
+        case 1:
+            return CODE_SENT_TO + TELEGRAM
+        case 2:
+            return CODE_SENT_TO + VK
+        case 3:
+            return CODE_SENT_TO + MAX
+        case 4:
+            return ENTER + TEMPORARY_CODE
+        case 5:
+            return ENTER + TOTP_CODE
+    }
 }
 
 const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
@@ -26,12 +50,26 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
     const [code, setCode] = useState('')
     const [showLoading, setShowLoading] = useState(false)
     const [showingHelp, setShowingHelp] = useState(false)
+    const [codeProviderTid, setCodeProviderTid] = useState<TwoFactorProviderTid>()
+    const [isCodeRequestFinished, setIsCodeRequestFinished] = useState(false)
 
     let isMounted = false
     useEffect(()=>{
         isMounted = true
         return ()=>{isMounted = false}
     })
+
+    useEffect(() => {
+        let isActive = true
+
+        void BARSAPI.WaitFor2FACodeRequest().then(tid => {
+            if (!isActive) return
+            setCodeProviderTid(tid)
+            setIsCodeRequestFinished(true)
+        })
+
+        return () => { isActive = false }
+    }, [])
 
     const shHCb = ()=> {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -45,20 +83,20 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
           <SafeAreaView style={{flex: 1, width: '90%', minHeight: (Dimensions.get("window").height * 0.7), borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'flex-start'}}>
               <ScrollView style={{flex: 1, width: '100%'}}>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                      Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, или от ВК-сообщества БАРС МЭИ, либо быть у вас на руках(если получили временный).
+                      Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, в ЛС ВК от сообщества БАРС МЭИ, либо быть доступен в вашем приложении для аутентификации(TOTP)/быть у вас на руках(если получили временный).
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
                       Обычно, код приходит почти сразу, но иногда может потребоваться 10 - 30 секунд.
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
-                      Если вы часто долго ждёте код, и у вас привязан Telegram - отвяжите его на сайте
-                      (из-за блокировок РКН код может долго грузиться/не отправляться, а БАРС пытается это сделать, прежде чем пробовать другого провайдера)!
+                      Если вы часто долго ждёте код, и у вас привязан Telegram - отвяжите его/привяжите другие провайдеры
+                      (из-за блокировок РКН код может не отправляться, но БАРС всё равно долго пытается это сделать, прежде чем пробовать другого провайдера)!
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                       Если не получается войти с временным кодом, убедитесь, что у него не истёк срок действия!
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
-                      Если код приходит, но войти с ним не получается, убедитесь, что на сайте БАРС МЭИ у вас привязан MAX и что он выбран как один из провайдеров!
+                      Если код приходит, но войти с ним не получается, убедитесь, что на сайте БАРС МЭИ у вас привязан MAX и что он или VK выбран как один из провайдеров!
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                       Если код не приходит, проверьте возможность его получения!
@@ -88,6 +126,8 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
     }
 
     const handleLogin = () => {
+        if (!codeProviderTid || !code.trim()) return
+
         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
         setShowLoading(true)
         setTimeout(() => BARSAPI.Login2FA(code).then((r) => {
@@ -108,6 +148,13 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
     if (showLoading) return <LoadingScreen/>
     if (showingHelp) return <Help onBack={shHCb}/>
 
+    const canSubmit = Boolean(codeProviderTid && code.trim())
+    const codeRequestMessage = codeProviderTid
+        ? Get2FACodeMessage(codeProviderTid)
+        : isCodeRequestFinished
+            ? 'Не удалось запросить код подтверждения.'
+            : 'Запрашиваем код подтверждения…'
+
     return (
         <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
             <Text style={{
@@ -118,6 +165,15 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                 textAlign: 'center'
             }}>
                 Двухфакторная аутентификация
+            </Text>
+            <Text style={{
+                fontSize: 16,
+                fontWeight: 'bold',
+                marginBottom: '2%',
+                color: withOpacity(codeProviderTid ? colors.text : colors.warning, 85),
+                textAlign: 'center'
+            }}>
+                {codeRequestMessage}
             </Text>
             <TextInput
                 onChangeText={t => setCode(t)}
@@ -134,7 +190,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
             <View style={{height: '7%'}}/>
             <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
                 <View style={{ flexDirection: 'column',  width: '66%', alignSelf: 'flex-start', alignItems: 'flex-start'}}>
-                    <Button title={'Войти'} onPress={handleLogin} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
+                    <Button disabled={!canSubmit} title={'Войти'} onPress={handleLogin} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
                     <Button title={'Назад'} onPress={props.onBack} style={{ width: '66%', aspectRatio: 4.8, marginVertical: '5%' }}/>
                 </View>
                 <Button icon={'question'} onPress={shHCb} style={{alignSelf: 'flex-start', width: '20%', aspectRatio: 1, marginVertical: '3%'}}/>
