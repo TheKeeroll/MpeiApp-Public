@@ -7,6 +7,7 @@ import {STORAGE_KEYS} from '../Common/Constants';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
 import {createAdsTargeting} from './AdTargeting';
 import {getYandexAdUnitId, type YandexAdFormat} from './AdUnitIds';
+import {useLoyalty} from '../Loyalty/LoyaltyProvider';
 
 /** Every enabled sticky location must be declared here before it can render. */
 export const AD_PLACEMENTS = {
@@ -130,6 +131,7 @@ const disabledAdsContext: AdsContextValue = {
 const AdsContext = React.createContext<AdsContextValue>(disabledAdsContext);
 
 export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
+  const {adsRemovalUnlocked} = useLoyalty();
   const [vpnEntitlementStatus, setVpnEntitlementStatus] = React.useState<VpnEntitlementStatus>(
     getCachedVpnEntitlementStatus,
   );
@@ -160,7 +162,11 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     };
   }, []);
 
-  const entitlementAllowsAds = vpnEntitlementStatus !== 'ACTIVE' && vpnEntitlementStatus !== 'GRACE';
+  const entitlementAllowsAds = (
+    vpnEntitlementStatus !== 'ACTIVE'
+    && vpnEntitlementStatus !== 'GRACE'
+    && !adsRemovalUnlocked
+  );
 
   React.useEffect(() => {
     if (!entitlementAllowsAds) {

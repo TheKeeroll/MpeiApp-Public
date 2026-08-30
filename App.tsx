@@ -16,6 +16,8 @@ import {} from './src/Extentions/date_e';
 import LoginScreenWrapper, { LoginScreenHeader } from "./src/Screens/Login/LoginScreen";
 import AF2Screen from "./src/Screens/Login/AF2Screen";
 import {AdsProvider} from "./src/Ads/AdsProvider";
+import {LoyaltyProvider} from "./src/Loyalty/LoyaltyProvider";
+import TokenBalanceBadge from "./src/Loyalty/TokenBalanceBadge";
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()
@@ -76,9 +78,12 @@ const AppEntry: React.FC = () => {
                 <ReduxProvider store={Store}>
                     <PaperProvider theme={theme}>
                         <GestureHandlerRootView style={{flex:1}}>
-                            <AdsProvider>
-                                <App/>
-                            </AdsProvider>
+                            <LoyaltyProvider>
+                                <AdsProvider>
+                                    <App/>
+                                    <TokenBalanceBadge/>
+                                </AdsProvider>
+                            </LoyaltyProvider>
                         </GestureHandlerRootView>
                     </PaperProvider>
                 </ReduxProvider>

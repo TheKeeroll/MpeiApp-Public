@@ -31,6 +31,9 @@ import { YANDEX_MAPS_API_KEY } from '../../config/Secrets';
 import mapPoints from './MapPoints.json';
 import {INITIAL_MAP_REGION} from '../../Common/MapRegion';
 import {useAds} from '../../Ads/AdsProvider';
+import DailyUsageBadge from '../../Loyalty/DailyUsageBadge';
+import {showInsufficientTokensAlert} from '../../Loyalty/LoyaltyAlerts';
+import {useLoyalty} from '../../Loyalty/LoyaltyProvider';
 
 import LoadingScreen from "../LoadingScreen/LoadingScreen.tsx";
 
@@ -70,6 +73,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const {setSessionLocation} = useAds()
+    const {getFeatureStatus, recordSuccessfulFeatureUse} = useLoyalty()
 
     const map = useRef<YaMap>(null);
     const insets = useSafeAreaInsets()
@@ -114,6 +118,8 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const [showRoutes, setShowRoutes] = useState<RouteInfo<MasstransitInfo>[] | null>(null)
     const [routes, setRoutes] = useState<RouteInfo<MasstransitInfo>[]>([])
     const [showPrintRouteBtn, setShowPrintRouteBtn] = useState<boolean>(false)
+    const [isBuildingRoute, setBuildingRoute] = useState(false)
+    const isBuildingRouteRef = useRef(false)
 
     const GetCategoryIcon: React.FC<{category: PlaceCategory}> = (props) => {
         const {colors} = useTheme<CustomTheme>()
@@ -220,6 +226,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 <TouchableOpacity onPress={props.onDismiss.bind(this)} style={{flexGrow: 1, width: '100%'}}/>
                 <View style={{minHeight: 100, alignItems: 'center', alignSelf:'flex-end', width: '100%', borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: colors.background}}>
                     <Text numberOfLines={2} style={{padding: 5, color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>{props.place.name}</Text>
+                    <DailyUsageBadge feature="route" style={{marginBottom: 2}}/>
                     <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
                         <Text style={{padding: 8, color: colors.text, fontWeight: 'bold'}}>Проложить маршрут</Text>
                     </TouchableOpacity>
@@ -402,13 +409,45 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
 
     const GetRoutes = (place: Place) => {
+        if (isBuildingRouteRef.current) return
+
+        const routeStatus = getFeatureStatus('route')
+        if (!routeStatus.canStart) {
+            showInsufficientTokensAlert(
+                'построения маршрута',
+                routeStatus.tokenCost,
+                'Бесплатные попытки на сегодня закончились.',
+            )
+            return
+        }
+
+        isBuildingRouteRef.current = true
+        setBuildingRoute(true)
+        const finishBuildingRoute = () => {
+            isBuildingRouteRef.current = false
+            setBuildingRoute(false)
+        }
         Geolocation.getCurrentPosition((pos)=>{
             const userLocation = {lat: pos.coords.latitude, lon: pos.coords.longitude}
             setSessionLocation(userLocation)
-            map.current!.findPedestrianRoutes([userLocation,{lat: place.lat, lon: place.lon}],(event:any)=>{
-                if (event.status == 'success' || event.nativeEvent?.status == 'success' || (event.success && (event.routes?.length || 0) > 0) || (event.nativeEvent?.success && (event.nativeEvent?.routes?.length || 0) > 0)) {
-                    setShowRoutes(event.routes || event.nativeEvent?.routes)
-                    setRoutes(event.routes || event.nativeEvent?.routes)
+            if (!map.current) {
+                finishBuildingRoute()
+                return
+            }
+
+            map.current.findPedestrianRoutes([userLocation,{lat: place.lat, lon: place.lon}],(event:any)=>{
+                const foundRoutes = event.routes || event.nativeEvent?.routes
+                const hasRoutes = Array.isArray(foundRoutes) && foundRoutes.length > 0
+                const isSuccessful = event.status == 'success'
+                    || event.nativeEvent?.status == 'success'
+                    || (event.success && hasRoutes)
+                    || (event.nativeEvent?.success && hasRoutes)
+
+                finishBuildingRoute()
+                if (isSuccessful && hasRoutes) {
+                    recordSuccessfulFeatureUse('route')
+                    setShowRoutes(foundRoutes)
+                    setRoutes(foundRoutes)
                     setTargetPlace(place)
                     setModalShown(null)
                 } else {
@@ -416,7 +455,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     Alert.alert('Нет маршрутов!','Не удалось построить ни одного маршрута от вашего местоположения к выбранной точке. Попробуйте позже, если проблема сохранится - сообщите разработчику!', [{text: 'ОК', onPress: ()=> setModalShown(null)}])
                 }
             })
-        },(e)=>console.warn(e))
+        },(e)=>{
+            console.warn(e)
+            finishBuildingRoute()
+        })
     }
 
     const [renderMap, setRenderMap] = useState(Platform.OS !== "ios");
@@ -662,9 +704,10 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
             }
             {(locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
-                <TouchableOpacity onPress={()=>GetRoutes(targetPlace!)}
-                                  style={{height: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
-                    <Text adjustsFontSizeToFit={true} style={{padding: 8, color: colors.text, fontSize: 18}}>Проложить маршрут</Text>
+                <TouchableOpacity disabled={isBuildingRoute} onPress={()=>GetRoutes(targetPlace!)}
+                                  style={{minHeight: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexDirection: 'row', backgroundColor: colors.primary, opacity: isBuildingRoute ? .55 : 1, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
+                    <Text adjustsFontSizeToFit={true} style={{paddingHorizontal: 8, paddingTop: 5, color: colors.text, fontSize: 18}}>{isBuildingRoute ? 'Строим…' : 'Проложить маршрут'}</Text>
+                    <DailyUsageBadge feature="route" style={{marginHorizontal: 5, marginBottom: 4}}/>
                 </TouchableOpacity>
             }
         </View>

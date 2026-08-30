@@ -21,25 +21,42 @@ import BARSAPI, { openTelegram } from "../../Common/Globals";
 import type {AppIconName} from "../../API/BARS";
 import Clipboard from "@react-native-clipboard/clipboard";
 
-export const ListSwitch: React.FC<{title: string, value: boolean, onPress:(value: boolean)=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
+export const ListSwitch: React.FC<{
+    title: string,
+    value: boolean,
+    onPress: (value: boolean) => void,
+    disabled?: boolean,
+    locked?: boolean,
+    onLockedPress?: () => void,
+    icon?: JSX.Element,
+}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
-        <View style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: disabled ? withOpacity(colors.primary, 30) : colors.primary}}>
-            {typeof props.icon != 'undefined' &&
-            <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
-            }
-            <View style={{flex: .7, height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-                <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+        <TouchableOpacity
+            disabled={!disabled || typeof props.onLockedPress === 'undefined'}
+            onPress={props.onLockedPress}
+            activeOpacity={0.8}
+            style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: disabled ? withOpacity(colors.primary, 30) : colors.primary}}
+        >
+            <View pointerEvents={disabled ? 'none' : 'auto'} style={{alignItems: 'center', flexDirection: 'row', width: '100%', height: '100%'}}>
+                {typeof props.icon != 'undefined' &&
+                <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
+                }
+                <View style={{flex: .7, height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
+                    <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+                </View>
+                <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+                    <Switch
+                        value={props.value}
+                        disabled={disabled}
+                        onValueChange={props.onPress}
+                        color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
+                    />
+                    {props.locked && <MtIcons.default name="lock" size={18} color={colors.warning} style={{position: 'absolute', right: 10}}/>}
+                </View>
             </View>
-            <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
-                <Switch
-                    value={props.value}
-                    onValueChange={props.onPress.bind(this)}
-                    color={Platform.OS == 'ios' ? colors.marks['5'] : colors.text}
-                />
-            </View>
-        </View>
+        </TouchableOpacity>
     )
 }
 
@@ -100,7 +117,15 @@ export const ListAvatarItem: React.FC<{title: string, link: string, textStyle?: 
     )
 }
 
-export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JSX.Element[], disabled?: boolean, style?: ViewStyle}> = (props)=>{
+export const IconSelector: React.FC<{
+    title: string,
+    icon: JSX.Element,
+    items: JSX.Element[],
+    disabled?: boolean,
+    style?: ViewStyle,
+    availableIcons?: AppIconName[],
+    onLockedIconPress?: (iconName: Exclude<AppIconName, 'cool'>) => void,
+}> = (props)=>{
     const [expanded, setExpanded] = useState(false)
     const [icon, setIcon] = useState(BARSAPI.Icon)
     const {colors} = useTheme<CustomTheme>()
@@ -139,6 +164,39 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
         applyIconChange()
     }
 
+    const IconOption: React.FC<{iconName: AppIconName}> = ({iconName}) => {
+        const isLocked = iconName !== 'cool'
+            && typeof props.availableIcons !== 'undefined'
+            && !props.availableIcons.includes(iconName)
+        const source = iconName === 'dragons' ? require(`../../../assets/images/dragons.webp`)
+            : iconName === 'simple' ? require(`../../../assets/images/simple.webp`)
+              : iconName === 'matterial' ? require(`../../../assets/images/matterial.webp`)
+                : iconName === 'gold' ? require(`../../../assets/images/gold.webp`)
+                  : iconName === 'crymat' ? require(`../../../assets/images/crymat.webp`)
+                    : iconName === 'crysign' ? require(`../../../assets/images/crysign.webp`)
+                      : require(`../../../assets/images/cool.webp`)
+
+        return (
+            <TouchableOpacity
+                onPress={() => {
+                    if (isLocked) {
+                        props.onLockedIconPress?.(iconName as Exclude<AppIconName, 'cool'>)
+                        return
+                    }
+                    requestIconChange(iconName)
+                }}
+                style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}
+            >
+                <Avatar.Image source={source} style={{borderRadius: 50, opacity: isLocked ? 0.45 : 1}} size={80}/>
+                {isLocked && (
+                    <View style={{position: 'absolute', right: -3, top: -3, padding: 4, borderRadius: 14, backgroundColor: colors.backdrop}}>
+                        <MtIcons.default name="lock" size={20} color={colors.warning}/>
+                    </View>
+                )}
+            </TouchableOpacity>
+        )
+    }
+
     const Collapsed = () => (
         <TouchableOpacity disabled={disabled} onPress={()=>{
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -165,43 +223,13 @@ export const IconSelector: React.FC<{title: string, icon: JSX.Element, items: JS
                 style={{flex: 1, height: '100%'}}
                 contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}
             >
-                <TouchableOpacity
-                    onPress={()=>requestIconChange('cool')}
-                    style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                    <Avatar.Image  source={require(`../../../assets/images/cool.webp`)} style={{borderRadius: 50 }} size={80}/>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={()=>requestIconChange('dragons')}
-                    style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                    <Avatar.Image  source={require(`../../../assets/images/dragons.webp`)} style={{borderRadius: 50 }} size={80}/>
-                </TouchableOpacity>
-                    <Fragment>
-                        <TouchableOpacity
-                            onPress={()=>requestIconChange('simple')}
-                            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/simple.webp`)} style={{borderRadius: 50 }} size={80}/>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={()=>requestIconChange('matterial')}
-                            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/matterial.webp`)} style={{borderRadius: 50 }} size={80}/>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={()=>requestIconChange('gold')}
-                            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                            <Avatar.Image  source={require(`../../../assets/images/gold.webp`)} style={{borderRadius: 50 }} size={80}/>
-                        </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={()=>requestIconChange('crymat')}
-                        style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                        <Avatar.Image  source={require(`../../../assets/images/crymat.webp`)} style={{borderRadius: 50 }} size={80}/>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={()=>requestIconChange('crysign')}
-                        style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-                        <Avatar.Image  source={require(`../../../assets/images/crysign.webp`)} style={{borderRadius: 50 }} size={80}/>
-                      </TouchableOpacity>
-                    </Fragment>
+                <IconOption iconName="cool"/>
+                <IconOption iconName="dragons"/>
+                <IconOption iconName="simple"/>
+                <IconOption iconName="matterial"/>
+                <IconOption iconName="gold"/>
+                <IconOption iconName="crymat"/>
+                <IconOption iconName="crysign"/>
             </ScrollView>
         </TouchableOpacity>
     )

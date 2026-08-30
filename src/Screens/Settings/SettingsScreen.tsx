@@ -32,27 +32,59 @@ import {
 import {withOpacity, CustomTheme} from "../../Themes/Themes"
 import BARSAPI from "../../Common/Globals"
 import {APP_CONFIG} from "../../Common/Config"
+import type {AppIconName} from "../../API/BARS";
+import {getIconLoyaltyCatalogItem, getLoyaltyCatalogItem} from "../../Loyalty/LoyaltyCatalog";
+import {showInsufficientTokensAlert} from "../../Loyalty/LoyaltyAlerts";
+import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const [isDark, setDark] = useState(dark)
+    const {canUseIcon, canUseLightTheme, state} = useLoyalty()
+    const allIcons: AppIconName[] = ['cool', 'dragons', 'simple', 'matterial', 'gold', 'crymat', 'crysign']
+    const availableIcons = allIcons.filter(canUseIcon)
+
+    React.useEffect(() => {
+        setDark(dark)
+    }, [dark])
 
     const onThemeChange = (value: boolean) => {
-        setDark(p=>!p)
+        if (!value && !canUseLightTheme) return
+        setDark(value)
         BARSAPI.SetTheme(value ? 'dark' : 'light')
+    }
+
+    const onLockedThemePress = () => {
+        const item = getLoyaltyCatalogItem('light-theme')
+        if (state.balance < item.price) {
+            showInsufficientTokensAlert(item.title, item.price)
+            return
+        }
+
+        Alert.alert('Тема заблокирована', `Откройте «${item.title}» за ${item.price} токенов на экране «Лояльность».`)
+    }
+
+    const onLockedIconPress = (iconName: Exclude<AppIconName, 'cool'>) => {
+        const item = getIconLoyaltyCatalogItem(iconName)
+        if (state.balance < item.price) {
+            showInsufficientTokensAlert(item.title, item.price)
+            return
+        }
+
+        Alert.alert('Иконка заблокирована', `Откройте «${item.title}» за ${item.price} токенов на экране «Лояльность».`)
     }
     return (
       // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
       <Fragment>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <NavigationHeader {...props} title={'Настройки'}/>
+                <NavigationHeader {...props} title={'Прочее'}/>
                 <ScrollView style={{width: '90%'}}>
                     <ListSeparator title={'Оформление'}/>
                     <ListSwitch icon={
                         <McIcon.default name={'theme-light-dark'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
-                    } title={'Тема'} value={isDark} onPress={onThemeChange.bind(this)}/>
-                    <IconSelector items={[]}
+                    } title={'Тема'} value={isDark} disabled={!canUseLightTheme} locked={!canUseLightTheme} onLockedPress={onLockedThemePress} onPress={onThemeChange}/>
+                    <IconSelector items={[]} availableIcons={availableIcons} onLockedIconPress={onLockedIconPress}
                         icon={
                             <IonIcon.default name={'image'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'Иконка'}
@@ -62,7 +94,11 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             <IonIcon.default name={'scan'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'QR-Сканер'}
                     />
-                    <ListSeparator title={'Прочее'}/>
+                    <ListSeparator title={'Разное'}/>
+                    <ListButton icon={
+                        <MtIcon.default name={'loyalty'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
+                    }
+                                title={'Лояльность'} onPress={()=>props.navigation.navigate('loyalty')}/>
                     <ListButton icon={
                         <EnIcon.default name={'new'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }

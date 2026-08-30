@@ -18,6 +18,8 @@ import BARSAPI from "../../Common/Globals";
 import {ImageSource} from "react-native-vector-icons/Icon";
 import {parse} from "node-html-parser";
 import { scheduleOnRN } from "react-native-worklets";
+import DailyUsageBadge from "../../Loyalty/DailyUsageBadge";
+import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 
 function getBrightestFormat(device: CameraDevice | undefined): CameraDeviceFormat | undefined {
   if (!device?.formats?.length) return undefined;
@@ -40,6 +42,7 @@ const QRCodeScanner: React.FC = () => {
   const [cameraKey, setCameraKey] = useState(0);
   const [isHandlingBARS_QR, setHandlingBARS_QR] = useState(false);
   const { colors } = useTheme();
+  const {recordSuccessfulFeatureUse} = useLoyalty();
   const devices = useCameraDevices();
   const device = getCameraDevice(devices, 'back', {
     physicalDevices: [
@@ -79,6 +82,11 @@ const QRCodeScanner: React.FC = () => {
       headline = 'Не удалось зарегистрироваться'
       mes = 'Попробуйте ещё раз. Если проблема сохраняется, пожалуйста, сообщите разработчику!'
     }
+    const isSuccessfulRegistration = !status?.includes('недействительна') && typeof main_info !== 'undefined'
+    if (isSuccessfulRegistration && !mes.toLowerCase().includes('ранее')) {
+      recordSuccessfulFeatureUse('qrRegistration')
+    }
+
     Alert.alert(headline, mes, [{
       text: 'ОК',
       onPress: () => {
@@ -214,6 +222,7 @@ const QRCodeScanner: React.FC = () => {
             <LoadingScreen />
         ) : (
             <View style={styles.overlayContainer}>
+              <DailyUsageBadge feature="qrRegistration" style={{position: 'absolute', top: 20, left: 16}}/>
               <Image source={GetSelectedQRFrame()} style={styles.scanOverlay} />
             </View>
         )}

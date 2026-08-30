@@ -5,6 +5,8 @@ import {View, Text, Platform} from "react-native";
 import * as FIcon from 'react-native-vector-icons/Feather'
 // @ts-expect-error
 import * as MCIcon from 'react-native-vector-icons/MaterialCommunityIcons'
+// @ts-expect-error
+import * as MtIcon from 'react-native-vector-icons/MaterialIcons'
 import MapScreen from './Map/MapScreen'
 import BARSDrawer from "./BARS/BARSDrawer";
 import ScheduleStack from "./Schedule/ScheduleStack";
@@ -69,9 +71,9 @@ const Navigator:React.FC = () => {
                 name={'other'}
                 component={SettingsStack}
                 options={{
-                  title: 'Настройки',
+                  title: 'Прочее',
                     tabBarActiveTintColor: colors.textUnderline,
-                  tabBarIcon: ()=><FIcon.default name={'settings'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                  tabBarIcon: ()=><MtIcon.default name={'miscellaneous-services'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
                 }}
             />
         </Stack.Navigator>

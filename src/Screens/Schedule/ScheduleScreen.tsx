@@ -16,6 +16,8 @@ import { isBARSError } from "../../API/Error/Error";
 import Holidays from "../CommonComponents/Holidays";
 import { Button } from "../Login/LoginScreen";
 import InlineBannerAd from "../../Ads/InlineBannerAd";
+import DailyUsageBadge from "../../Loyalty/DailyUsageBadge";
+import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
@@ -268,6 +270,7 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
 
 const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
+    const {recordSuccessfulFeatureUse} = useLoyalty()
     const schedule = useSelector((state: RootState)=>state.Schedule)
     const current_month = parseInt(moment().format("M"))
     const [isFirstTime, setisFirstTime] = useState(true)
@@ -337,6 +340,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
             //@ts-expect-error
             timer.current = setTimeout(()=>BARSAPI.FetchRequestedSchedule({name: '', lec_oid: props.route.params}).then((result)=>{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+              recordSuccessfulFeatureUse('scheduleSearch')
               teacherSchedule.current = result
               /*result.days.forEach(v=>{
                 console.log(v.lessons);
@@ -415,7 +419,7 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                       onPress={()=>setisShowRequestOtherSchedule(p=>!p)}
                       style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'flex-start', justifyContent: 'flex-start'}}>
                         {isShowRequestOtherSchedule &&
-                          <View style={{padding: 16, flexDirection: 'row'}}>
+                          <View style={{padding: 16, flexDirection: 'row', alignItems: 'center'}}>
                               <TextInput
                                 onChangeText={t=>settargetSchedule(t)}
                                 value={targetSchedule}
@@ -425,10 +429,13 @@ const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 placeholderTextColor={withOpacity(colors.text, 40)}
                                 underlineColor={colors.text}
                                 activeUnderlineColor={colors.textUnderline}
-                                style={{backgroundColor: colors.background, width: '75%', height:'5%', borderRadius: 5, justifyContent:'center'}}
+                                style={{backgroundColor: colors.background, width: '72%', height:'5%', borderRadius: 5, justifyContent:'center'}}
                                 theme={{colors}}
                               />
-                              <Button title={'Найти'} onPress={()=>props.navigation.push('scheduleMain', targetSchedule)} style={{ width: '20%', height:'5%', aspectRatio: 1}}/>
+                              <View style={{width: '25%', marginLeft: '3%', alignItems: 'center'}}>
+                                <Button disabled={!targetSchedule.trim()} title={'Найти'} onPress={()=>props.navigation.push('scheduleMain', targetSchedule.trim())} style={{ width: '100%', height:'5%', aspectRatio: 1}}/>
+                                <DailyUsageBadge feature="scheduleSearch" style={{marginTop: 5}}/>
+                              </View>
                           </View>}
                         {!isShowRequestOtherSchedule &&
                           <Text style={{color: colors.textUnderline, marginHorizontal: 5, marginVertical:5, fontSize: 16}}>{'Другая группа/препод./ауд.'}</Text>

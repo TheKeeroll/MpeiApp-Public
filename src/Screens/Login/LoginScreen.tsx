@@ -21,6 +21,8 @@ import {openSupportChat} from "../Settings/Components";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 // @ts-expect-error
 import * as FIcon from "react-native-vector-icons/Feather";
+// @ts-expect-error
+import * as MtIcon from "react-native-vector-icons/MaterialIcons";
 import SettingsStack from "../Settings/SettingsStack.tsx";
 import AF2Screen from "./AF2Screen";
 
@@ -238,9 +240,9 @@ const LoginScreenWrapper : React.FC = () => {
                 name={'other'}
                 component={SettingsStack}
                 options={{
-                    title: 'Настройки',
+                    title: 'Прочее',
                     tabBarActiveTintColor: colors.textUnderline,
-                    tabBarIcon: ()=><FIcon.default name={'settings'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                    tabBarIcon: ()=><MtIcon.default name={'miscellaneous-services'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
                 }}
             />
         </Stack.Navigator>

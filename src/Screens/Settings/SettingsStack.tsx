@@ -5,6 +5,7 @@ import GratuitiesScreen from "./GratuitiesScreen";
 import WhatsNewScreen from "./WhatsNewScreen";
 import DevsScreen from "./DevsScreen";
 import TestScreen from "./TestScreen";
+import LoyaltyScreen from "./LoyaltyScreen";
 
 const Stack = createStackNavigator()
 
@@ -16,6 +17,7 @@ const SettingsStack: React.FC = ()=>{
             <Stack.Screen name={'gratuities'} component={GratuitiesScreen}/>
             <Stack.Screen name={'whatsNew'} component={WhatsNewScreen}/>
             <Stack.Screen name={'devs'} component={DevsScreen}/>
+            <Stack.Screen name={'loyalty'} component={LoyaltyScreen}/>
             {__DEV__ && <Stack.Screen name={'test'} component={TestScreen}/> }
         </Stack.Navigator>
     )
