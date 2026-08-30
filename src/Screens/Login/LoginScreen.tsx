@@ -25,6 +25,7 @@ import * as FIcon from "react-native-vector-icons/Feather";
 import * as MtIcon from "react-native-vector-icons/MaterialIcons";
 import SettingsStack from "../Settings/SettingsStack.tsx";
 import AF2Screen from "./AF2Screen";
+import {GuestScheduleStack} from "../Schedule/ScheduleStack";
 
 const Stack = createBottomTabNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
@@ -234,6 +235,15 @@ const LoginScreenWrapper : React.FC = () => {
                     title: 'Карта',
                     tabBarActiveTintColor: colors.textUnderline,
                     tabBarIcon: ()=><FIcon.default name={'map-pin'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
+                }}
+            />
+            <Stack.Screen
+                name={'schedule'}
+                component={GuestScheduleStack}
+                options={{
+                    title: 'Расписание',
+                    tabBarActiveTintColor: colors.textUnderline,
+                    tabBarIcon: ()=><FIcon.default name={'calendar'} adjustsFontSizeToFit size={25} style={{color: colors.text}}/>
                 }}
             />
             <Stack.Screen
