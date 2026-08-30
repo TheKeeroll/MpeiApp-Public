@@ -705,9 +705,9 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
             }
             {(locationAccess && targetPlace && showPrintRouteBtn && !modalShown) &&
                 <TouchableOpacity disabled={isBuildingRoute} onPress={()=>GetRoutes(targetPlace!)}
-                                  style={{minHeight: 50, minWidth: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexDirection: 'row', backgroundColor: colors.primary, opacity: isBuildingRoute ? .55 : 1, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325}}>
-                    <Text adjustsFontSizeToFit={true} style={{paddingHorizontal: 8, paddingTop: 5, color: colors.text, fontSize: 18}}>{isBuildingRoute ? 'Строим…' : 'Проложить маршрут'}</Text>
-                    <DailyUsageBadge feature="route" style={{marginHorizontal: 5, marginBottom: 4}}/>
+                                  style={{minHeight: 88, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', paddingVertical: 6, backgroundColor: colors.primary, opacity: isBuildingRoute ? .55 : 1, position: 'absolute', bottom: 5, left: SCREEN_SIZE.width * .325, right: 16}}>
+                    <Text adjustsFontSizeToFit={true} style={{paddingHorizontal: 8, color: colors.text, fontSize: 18}}>{isBuildingRoute ? 'Строим…' : 'Проложить маршрут'}</Text>
+                    <DailyUsageBadge feature="route" style={{marginTop: 4}}/>
                 </TouchableOpacity>
             }
         </View>

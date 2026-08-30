@@ -74,6 +74,25 @@ export type AppIconName =
   | 'crymat'
   | 'crysign'
 
+export type QRFrameName =
+  | 'qr-frame'
+  | 'empty'
+  | 'qr-frame-black'
+  | 'qr-frame-green'
+  | 'qr-frame-red'
+
+const QR_FRAME_NAMES: readonly QRFrameName[] = [
+  'qr-frame',
+  'empty',
+  'qr-frame-black',
+  'qr-frame-green',
+  'qr-frame-red',
+]
+
+const isQRFrameName = (value: unknown): value is QRFrameName => (
+  typeof value === 'string' && QR_FRAME_NAMES.includes(value as QRFrameName)
+)
+
 type PostOnlineDataTask = () => Promise<void> | void
 
 export type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
@@ -139,7 +158,7 @@ export default class BARS{
   private mCurrentIcon: string = 'cool'
   public mCurrentWeek = ''
   private mDebts: BARSDiscipline[] = []
-  private mCurrentFrame: "qr-frame" | "empty" | "qr-frame-black" | "qr-frame-green" | "qr-frame-red" = 'qr-frame';
+  private mCurrentFrame: QRFrameName = 'qr-frame';
   private mLoginState: LoginState = 'NOT_INITIATED'
   private mOnlineDataLoadPromise?: Promise<void>
   private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
@@ -197,28 +216,23 @@ export default class BARS{
     console.log('Icon changed to ' + name)
     return true
   }
-  public ChangeFrame(name: 'qr-frame' | 'empty' | 'qr-frame-black' | 'qr-frame-green' | 'qr-frame-red'){
+  public ChangeFrame(name: QRFrameName){
     this.mCurrentFrame = name
     this.mStorage.set(STORAGE_KEYS.FRAME, name)
     console.log('QR Scanner frame changed to ' + name)
   }
   public get Icon(){return this.mCurrentIcon}
 
-  public get QRFrame(){
+  public get QRFrame(): QRFrameName {
     const frameRaw = this.mStorage.getString(STORAGE_KEYS.FRAME)
-    if(typeof frameRaw == 'undefined' && frameRaw != ''){
-      this.mStorage.set(STORAGE_KEYS.FRAME, 'qr-frame')
-      this.mCurrentFrame = 'qr-frame'
-      return this.mCurrentFrame
-    } else {
-      try{
-        // @ts-expect-error
-        this.mCurrentFrame = frameRaw
-        return frameRaw
-      } catch (e){
-        return 'qr-frame'
-      }
+    if (isQRFrameName(frameRaw)) {
+      this.mCurrentFrame = frameRaw
+      return frameRaw
     }
+
+    this.mCurrentFrame = 'qr-frame'
+    this.mStorage.set(STORAGE_KEYS.FRAME, this.mCurrentFrame)
+    return this.mCurrentFrame
   }
 
   public Init(backgroundMode: boolean){

@@ -3,10 +3,11 @@ import {Alert, DeviceEventEmitter, Platform} from 'react-native';
 import BARSAPI from '../Common/Globals';
 import {APP_EVENTS, type VpnEntitlementChangedEvent, type VpnEntitlementStatus} from '../Common/AppEvents';
 import {STORAGE_KEYS} from '../Common/Constants';
-import type {AppIconName, LoginState} from '../API/BARS';
+import type {AppIconName, LoginState, QRFrameName} from '../API/BARS';
 import {
   getIconLoyaltyCatalogItem,
   getLoyaltyCatalogItem,
+  getQRFrameLoyaltyCatalogItem,
   type LoyaltyCatalogItem,
   type LoyaltyItemId,
 } from './LoyaltyCatalog';
@@ -37,9 +38,11 @@ type LoyaltyContextValue = {
   adsRemovalUnlocked: boolean;
   canUseLightTheme: boolean;
   canUseIcon: (iconName: AppIconName) => boolean;
+  canUseQRFrame: (frameName: QRFrameName) => boolean;
   isCatalogItemOwned: (item: LoyaltyCatalogItem) => boolean;
   getCatalogItem: (itemId: LoyaltyItemId) => LoyaltyCatalogItem;
   getIconCatalogItem: (iconName: Exclude<AppIconName, 'cool'>) => LoyaltyCatalogItem;
+  getQRFrameCatalogItem: (frameName: Exclude<QRFrameName, 'qr-frame'>) => LoyaltyCatalogItem;
   getFeatureStatus: (feature: LoyaltyFeature) => LoyaltyFeatureStatus;
   recordSuccessfulFeatureUse: (
     feature: LoyaltyFeature,
@@ -75,9 +78,11 @@ const unavailableContext: LoyaltyContextValue = {
   adsRemovalUnlocked: false,
   canUseLightTheme: false,
   canUseIcon: iconName => iconName === 'cool',
+  canUseQRFrame: frameName => frameName === 'qr-frame',
   isCatalogItemOwned: () => false,
   getCatalogItem: getLoyaltyCatalogItem,
   getIconCatalogItem: getIconLoyaltyCatalogItem,
+  getQRFrameCatalogItem: getQRFrameLoyaltyCatalogItem,
   getFeatureStatus: feature => ({
     feature,
     dailyLimit: DAILY_FREE_ATTEMPT_LIMITS[feature],
@@ -151,6 +156,18 @@ export const LoyaltyProvider: React.FC<React.PropsWithChildren> = ({children}) =
     || state.unlockedIconIds.includes(iconName as Exclude<AppIconName, 'cool'>)
   ), [effectiveContentAccess, state.unlockedIconIds]);
 
+  const canUseQRFrame = React.useCallback((frameName: QRFrameName): boolean => (
+    frameName === 'qr-frame'
+    || effectiveContentAccess
+    || state.unlockedQRFrameIds.includes(frameName as Exclude<QRFrameName, 'qr-frame'>)
+  ), [effectiveContentAccess, state.unlockedQRFrameIds]);
+
+  React.useEffect(() => {
+    if (!canUseQRFrame(BARSAPI.QRFrame)) {
+      BARSAPI.ChangeFrame('qr-frame');
+    }
+  }, [canUseQRFrame]);
+
   const hadVpnContentAccess = React.useRef(effectiveContentAccess);
   React.useEffect(() => {
     const lostVpnContentAccess = hadVpnContentAccess.current && !effectiveContentAccess;
@@ -188,10 +205,18 @@ export const LoyaltyProvider: React.FC<React.PropsWithChildren> = ({children}) =
         return state.lightThemeUnlocked;
       case 'icon':
         return item.iconName ? state.unlockedIconIds.includes(item.iconName) : false;
+      case 'qr-frame':
+        return item.frameName ? state.unlockedQRFrameIds.includes(item.frameName) : false;
       case 'ads-removal':
         return state.adsRemovalUnlocked;
     }
-  }, [effectiveContentAccess, state.adsRemovalUnlocked, state.lightThemeUnlocked, state.unlockedIconIds]);
+  }, [
+    effectiveContentAccess,
+    state.adsRemovalUnlocked,
+    state.lightThemeUnlocked,
+    state.unlockedIconIds,
+    state.unlockedQRFrameIds,
+  ]);
 
   const getFeatureStatus = React.useCallback((feature: LoyaltyFeature): LoyaltyFeatureStatus => {
     const dailyLimit = DAILY_FREE_ATTEMPT_LIMITS[feature];
@@ -235,9 +260,11 @@ export const LoyaltyProvider: React.FC<React.PropsWithChildren> = ({children}) =
     adsRemovalUnlocked: state.adsRemovalUnlocked,
     canUseLightTheme,
     canUseIcon,
+    canUseQRFrame,
     isCatalogItemOwned,
     getCatalogItem: getLoyaltyCatalogItem,
     getIconCatalogItem: getIconLoyaltyCatalogItem,
+    getQRFrameCatalogItem: getQRFrameLoyaltyCatalogItem,
     getFeatureStatus,
     recordSuccessfulFeatureUse,
     getNextRewardedReward: () => loyaltyService.getNextRewardedReward(),
@@ -245,6 +272,7 @@ export const LoyaltyProvider: React.FC<React.PropsWithChildren> = ({children}) =
     purchase,
   }), [
     canUseIcon,
+    canUseQRFrame,
     canUseLightTheme,
     effectiveContentAccess,
     getFeatureStatus,

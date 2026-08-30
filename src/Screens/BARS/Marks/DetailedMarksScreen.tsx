@@ -1,4 +1,4 @@
-import React, {Fragment, useState} from "react";
+import React, {useState} from "react";
 import {
     FlatList,
     LayoutAnimation, Platform,
@@ -16,6 +16,8 @@ import BARSAPI from "../../../Common/Globals";
 // @ts-expect-error
 import * as MtIcons from "react-native-vector-icons/MaterialIcons";
 import {SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {AD_PLACEMENTS, useAds} from "../../../Ads/AdsProvider";
+import StickyBannerSlot from "../../../Ads/StickyBannerSlot";
 const Moment = require('moment')
 
 
@@ -164,6 +166,8 @@ const ResultMarks: React.FC<{marks: Mark[]}> = (props) => {
 const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets()
+    const {getStickyReservedHeight} = useAds()
+    const stickyReservedHeight = getStickyReservedHeight(AD_PLACEMENTS.detailedMarks)
     const discipline: BARSDiscipline = props.route.params
 
     const Header = () => (
@@ -179,18 +183,18 @@ const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => 
 
 
     return (
-        <Fragment>
+        <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex: 1, backgroundColor: colors.backdrop}}>
             {Platform.OS == 'ios' &&
               <TouchableOpacity onPress={()=>props.navigation.goBack()}
                                 style={{height: 40, width: 90, borderRadius: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', top: insets.top, left: 5}}>
                   <MtIcons.default size={40} color={colors.text} name={'navigate-before'} adjustsFontSizeToFit/>
               </TouchableOpacity>
             }
-            <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex: 1, backgroundColor: colors.backdrop}}/>
             <Header/>
             <FlatList
                 showsVerticalScrollIndicator={false}
                 style={[Styles.listResultMarks, {backgroundColor: colors.background}]}
+                contentContainerStyle={{paddingBottom: 20 + stickyReservedHeight}}
                 data={discipline.kms}
                 renderItem={({item, index}: {item: KM, index: number})=><Cell item={item} index={index}/>}
                 ListHeaderComponent={()=>{
@@ -202,7 +206,8 @@ const DetailedMarksScreen: React.FC<{navigation: any, route: any}> = (props) => 
                 }}
                 ItemSeparatorComponent={()=><View style={{height: 20}}/>}
             />
-        </Fragment>
+            <StickyBannerSlot placement={AD_PLACEMENTS.detailedMarks}/>
+        </SafeAreaView>
     )
 }
 
@@ -213,7 +218,7 @@ const Styles = StyleSheet.create({
         justifyContent: 'center'
     },
     listResultMarks:{
-        height: SCREEN_SIZE.height * .92,
+        flex: 1,
         width: '100%'
     },
     resultMarksView:{

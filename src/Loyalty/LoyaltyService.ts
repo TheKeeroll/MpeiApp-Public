@@ -1,5 +1,5 @@
 import {createMMKV, type MMKV} from 'react-native-mmkv';
-import type {AppIconName} from '../API/BARS';
+import type {AppIconName, QRFrameName} from '../API/BARS';
 import {
   getLoyaltyCatalogItem,
   type LoyaltyCatalogItem,
@@ -25,6 +25,7 @@ export type LoyaltyState = {
   dailyUsageDay: string;
   dailyFeatureUses: Record<LoyaltyFeature, number>;
   unlockedIconIds: Exclude<AppIconName, 'cool'>[];
+  unlockedQRFrameIds: Exclude<QRFrameName, 'qr-frame'>[];
   lightThemeUnlocked: boolean;
   adsRemovalUnlocked: boolean;
 };
@@ -44,12 +45,6 @@ export type LoyaltyPurchaseResult =
 type LoyaltyStorage = Pick<MMKV, 'getString' | 'set'>;
 type LoyaltyListener = (state: LoyaltyState) => void;
 
-const emptyFeatureUses = (): Record<LoyaltyFeature, number> => ({
-  route: 0,
-  qrRegistration: 0,
-  scheduleSearch: 0,
-});
-
 export const getLocalDay = (date = new Date()): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -65,6 +60,7 @@ const cloneState = (state: LoyaltyState): LoyaltyState => ({
   ...state,
   dailyFeatureUses: {...state.dailyFeatureUses},
   unlockedIconIds: [...state.unlockedIconIds],
+  unlockedQRFrameIds: [...state.unlockedQRFrameIds],
 });
 
 const normalizeState = (rawState: Partial<LoyaltyState>, day: string): LoyaltyState => {
@@ -73,6 +69,12 @@ const normalizeState = (rawState: Partial<LoyaltyState>, day: string): LoyaltySt
     ? rawState.unlockedIconIds.filter((icon): icon is Exclude<AppIconName, 'cool'> => (
       typeof icon === 'string'
       && ['dragons', 'simple', 'matterial', 'gold', 'crymat', 'crysign'].includes(icon)
+    ))
+    : [];
+  const unlockedQRFrameIds = Array.isArray(rawState.unlockedQRFrameIds)
+    ? rawState.unlockedQRFrameIds.filter((frame): frame is Exclude<QRFrameName, 'qr-frame'> => (
+      typeof frame === 'string'
+      && ['empty', 'qr-frame-black', 'qr-frame-green', 'qr-frame-red'].includes(frame)
     ))
     : [];
 
@@ -90,6 +92,7 @@ const normalizeState = (rawState: Partial<LoyaltyState>, day: string): LoyaltySt
       scheduleSearch: toNonNegativeInteger(rawFeatureUses?.scheduleSearch),
     },
     unlockedIconIds: [...new Set(unlockedIconIds)],
+    unlockedQRFrameIds: [...new Set(unlockedQRFrameIds)],
     lightThemeUnlocked: rawState.lightThemeUnlocked === true,
     adsRemovalUnlocked: rawState.adsRemovalUnlocked === true,
   };
@@ -235,6 +238,11 @@ export class LoyaltyService {
             state.unlockedIconIds.push(item.iconName);
           }
           break;
+        case 'qr-frame':
+          if (item.frameName && !state.unlockedQRFrameIds.includes(item.frameName)) {
+            state.unlockedQRFrameIds.push(item.frameName);
+          }
+          break;
         case 'ads-removal':
           state.adsRemovalUnlocked = true;
           break;
@@ -307,6 +315,8 @@ export class LoyaltyService {
         return state.lightThemeUnlocked;
       case 'icon':
         return item.iconName ? state.unlockedIconIds.includes(item.iconName) : false;
+      case 'qr-frame':
+        return item.frameName ? state.unlockedQRFrameIds.includes(item.frameName) : false;
       case 'ads-removal':
         return state.adsRemovalUnlocked;
     }

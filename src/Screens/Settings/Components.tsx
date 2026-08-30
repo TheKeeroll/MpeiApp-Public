@@ -1,4 +1,4 @@
-import React, {Fragment, JSX, useState} from "react";
+import React, {Fragment, JSX, useEffect, useState} from "react";
 import {Avatar, Switch, useTheme} from "react-native-paper";
 import {
   Alert,
@@ -18,7 +18,7 @@ import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
 import * as EtIcons from 'react-native-vector-icons/Entypo'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
 import BARSAPI, { openTelegram } from "../../Common/Globals";
-import type {AppIconName} from "../../API/BARS";
+import type {AppIconName, QRFrameName} from "../../API/BARS";
 import Clipboard from "@react-native-clipboard/clipboard";
 
 export const ListSwitch: React.FC<{
@@ -240,11 +240,84 @@ export const IconSelector: React.FC<{
     )
 }
 
-export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items: JSX.Element[], disabled?: boolean, style?: ViewStyle}> = (props)=>{
+const QR_FRAME_OPTIONS: readonly QRFrameName[] = [
+  'qr-frame',
+  'empty',
+  'qr-frame-black',
+  'qr-frame-green',
+  'qr-frame-red',
+]
+
+const getQRFramePreview = (frameName: QRFrameName) => {
+  switch (frameName) {
+    case 'qr-frame':
+      return require('../../../assets/images/QRScan/qr-frame.webp')
+    case 'empty':
+      return require('../../../assets/images/QRScan/qr-no_frame_text.webp')
+    case 'qr-frame-black':
+      return require('../../../assets/images/QRScan/qr-frame-black.webp')
+    case 'qr-frame-green':
+      return require('../../../assets/images/QRScan/qr-frame-green.webp')
+    case 'qr-frame-red':
+      return require('../../../assets/images/QRScan/qr-frame-red.webp')
+  }
+}
+
+export const QRFrameSelector: React.FC<{
+  title: string,
+  frame: JSX.Element,
+  items: JSX.Element[],
+  disabled?: boolean,
+  style?: ViewStyle,
+  availableFrames?: QRFrameName[],
+  onLockedFramePress?: (frameName: Exclude<QRFrameName, 'qr-frame'>) => void,
+}> = (props)=>{
   const [expanded, setExpanded] = useState(false)
-  const [frame, setFrame] = useState(BARSAPI.QRFrame)
+  const [frame, setFrame] = useState<QRFrameName>(BARSAPI.QRFrame)
   const {colors} = useTheme<CustomTheme>()
   const disabled = typeof props.disabled != 'undefined' && props.disabled
+
+  useEffect(() => {
+    const selectedFrame = BARSAPI.QRFrame
+    if (selectedFrame !== frame) {
+      setFrame(selectedFrame)
+    }
+  }, [frame, props.availableFrames])
+
+  const requestFrameChange = (frameName: QRFrameName) => {
+    if (frame === frameName) return
+
+    BARSAPI.ChangeFrame(frameName)
+    setFrame(frameName)
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpanded(false)
+  }
+
+  const FrameOption: React.FC<{frameName: QRFrameName}> = ({frameName}) => {
+    const isLocked = frameName !== 'qr-frame'
+      && typeof props.availableFrames !== 'undefined'
+      && !props.availableFrames.includes(frameName)
+
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          if (isLocked) {
+            props.onLockedFramePress?.(frameName as Exclude<QRFrameName, 'qr-frame'>)
+            return
+          }
+          requestFrameChange(frameName)
+        }}
+        style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}
+      >
+        <Avatar.Image source={getQRFramePreview(frameName)} style={{borderRadius: 50, opacity: isLocked ? .45 : 1}} size={80}/>
+        {isLocked && (
+          <View style={{position: 'absolute', right: -3, top: -3, padding: 4, borderRadius: 14, backgroundColor: colors.backdrop}}>
+            <MtIcons.default name="lock" size={20} color={colors.warning}/>
+          </View>
+        )}
+      </TouchableOpacity>
+    )
+  }
 
   const Collapsed = () => (
     <TouchableOpacity disabled={disabled} onPress={()=>{
@@ -258,7 +331,7 @@ export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items
         <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
       </View>
       <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
-        <Avatar.Image source={frame == 'qr-frame' ? require(`../../../assets/images/QRScan/qr-frame.webp`) : ( frame == 'empty' ? require(`../../../assets/images/QRScan/qr-no_frame_text.webp`) : ( frame == 'qr-frame-black' ? require(`../../../assets/images/QRScan/qr-frame-black.webp`) : ( frame == 'qr-frame-green' ? require(`../../../assets/images/QRScan/qr-frame-green.webp`) : require(`../../../assets/images/QRScan/qr-frame-red.webp`))))} style={{borderRadius: 4 }} size={40}/>
+        <Avatar.Image source={getQRFramePreview(frame)} style={{borderRadius: 4 }} size={40}/>
       </View>
     </TouchableOpacity>
   )
@@ -272,58 +345,7 @@ export const QRFrameSelector: React.FC<{title: string, frame: JSX.Element, items
         style={{flex: 1, height: '100%'}}
         contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}
       >
-        <TouchableOpacity
-          onPress={()=>{
-            setFrame('qr-frame')
-            BARSAPI.ChangeFrame('qr-frame')
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-            setExpanded(false)
-          }}
-          style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-          <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame.webp`)} style={{borderRadius: 50 }} size={80}/>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={()=>{
-            setFrame('empty')
-            BARSAPI.ChangeFrame('empty')
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-            setExpanded(false)
-          }}
-          style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-          <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-no_frame_text.webp`)} style={{borderRadius: 50 }} size={80}/>
-        </TouchableOpacity>
-        <Fragment>
-          <TouchableOpacity
-            onPress={()=>{
-              setFrame('qr-frame-black')
-              BARSAPI.ChangeFrame('qr-frame-black')
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-              setExpanded(false)
-            }}
-            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-black.webp`)} style={{borderRadius: 50 }} size={80}/>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={()=>{
-              setFrame('qr-frame-green')
-              BARSAPI.ChangeFrame('qr-frame-green')
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-              setExpanded(false)
-            }}
-            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-green.webp`)} style={{borderRadius: 50 }} size={80}/>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={()=>{
-              setFrame('qr-frame-red')
-              BARSAPI.ChangeFrame('qr-frame-red')
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-              setExpanded(false)
-            }}
-            style={{height: '100%', width: 80, marginHorizontal: 10, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50}}>
-            <Avatar.Image  source={require(`../../../assets/images/QRScan/qr-frame-red.webp`)} style={{borderRadius: 50 }} size={80}/>
-          </TouchableOpacity>
-        </Fragment>
+        {QR_FRAME_OPTIONS.map(frameName => <FrameOption key={frameName} frameName={frameName}/>) }
       </ScrollView>
     </TouchableOpacity>
   )

@@ -20,6 +20,7 @@ import {parse} from "node-html-parser";
 import { scheduleOnRN } from "react-native-worklets";
 import DailyUsageBadge from "../../Loyalty/DailyUsageBadge";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 function getBrightestFormat(device: CameraDevice | undefined): CameraDeviceFormat | undefined {
   if (!device?.formats?.length) return undefined;
@@ -42,7 +43,8 @@ const QRCodeScanner: React.FC = () => {
   const [cameraKey, setCameraKey] = useState(0);
   const [isHandlingBARS_QR, setHandlingBARS_QR] = useState(false);
   const { colors } = useTheme();
-  const {recordSuccessfulFeatureUse} = useLoyalty();
+  const insets = useSafeAreaInsets();
+  const {canUseQRFrame, recordSuccessfulFeatureUse} = useLoyalty();
   const devices = useCameraDevices();
   const device = getCameraDevice(devices, 'back', {
     physicalDevices: [
@@ -65,7 +67,9 @@ const QRCodeScanner: React.FC = () => {
       "qr-frame-green": require("../../../assets/images/QRScan/qr-frame-green.webp"),
       "qr-frame-red": require("../../../assets/images/QRScan/qr-frame-red.webp"),
     };
-    return (FRAMES as any)[BARSAPI.QRFrame];
+    const selectedFrame = BARSAPI.QRFrame;
+    const availableFrame = canUseQRFrame(selectedFrame) ? selectedFrame : 'qr-frame';
+    return (FRAMES as any)[availableFrame];
   };
 
   const HandlePresenceQRResponse = (response_text: string) => {
@@ -222,7 +226,7 @@ const QRCodeScanner: React.FC = () => {
             <LoadingScreen />
         ) : (
             <View style={styles.overlayContainer}>
-              <DailyUsageBadge feature="qrRegistration" style={{position: 'absolute', top: 20, left: 16}}/>
+              <DailyUsageBadge feature="qrRegistration" style={{position: 'absolute', top: insets.top + 8, left: 16}}/>
               <Image source={GetSelectedQRFrame()} style={styles.scanOverlay} />
             </View>
         )}

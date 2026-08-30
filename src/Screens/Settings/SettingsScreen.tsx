@@ -32,8 +32,12 @@ import {
 import {withOpacity, CustomTheme} from "../../Themes/Themes"
 import BARSAPI from "../../Common/Globals"
 import {APP_CONFIG} from "../../Common/Config"
-import type {AppIconName} from "../../API/BARS";
-import {getIconLoyaltyCatalogItem, getLoyaltyCatalogItem} from "../../Loyalty/LoyaltyCatalog";
+import type {AppIconName, QRFrameName} from "../../API/BARS";
+import {
+    getIconLoyaltyCatalogItem,
+    getLoyaltyCatalogItem,
+    getQRFrameLoyaltyCatalogItem,
+} from "../../Loyalty/LoyaltyCatalog";
 import {showInsufficientTokensAlert} from "../../Loyalty/LoyaltyAlerts";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 
@@ -41,9 +45,11 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const [isDark, setDark] = useState(dark)
-    const {canUseIcon, canUseLightTheme, state} = useLoyalty()
+    const {canUseIcon, canUseLightTheme, canUseQRFrame, state} = useLoyalty()
     const allIcons: AppIconName[] = ['cool', 'dragons', 'simple', 'matterial', 'gold', 'crymat', 'crysign']
+    const allQRFrames: QRFrameName[] = ['qr-frame', 'empty', 'qr-frame-black', 'qr-frame-green', 'qr-frame-red']
     const availableIcons = allIcons.filter(canUseIcon)
+    const availableQRFrames = allQRFrames.filter(canUseQRFrame)
 
     React.useEffect(() => {
         setDark(dark)
@@ -74,6 +80,16 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
 
         Alert.alert('Иконка заблокирована', `Откройте «${item.title}» за ${item.price} токенов на экране «Лояльность».`)
     }
+
+    const onLockedQRFramePress = (frameName: Exclude<QRFrameName, 'qr-frame'>) => {
+        const item = getQRFrameLoyaltyCatalogItem(frameName)
+        if (state.balance < item.price) {
+            showInsufficientTokensAlert(item.title, item.price)
+            return
+        }
+
+        Alert.alert('Рамка заблокирована', `Откройте «${item.title}» за ${item.price} токенов на экране «Лояльность».`)
+    }
     return (
       // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
       <Fragment>
@@ -89,7 +105,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             <IonIcon.default name={'image'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'Иконка'}
                     />
-                    <QRFrameSelector items={[]}
+                    <QRFrameSelector items={[]} availableFrames={availableQRFrames} onLockedFramePress={onLockedQRFramePress}
                         frame={
                             <IonIcon.default name={'scan'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
                         } title={'QR-Сканер'}

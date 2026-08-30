@@ -13,6 +13,7 @@ import {useLoyalty} from '../Loyalty/LoyaltyProvider';
 export const AD_PLACEMENTS = {
   loading: 'loading',
   skippedClasses: 'skippedClasses',
+  detailedMarks: 'detailedMarks',
 } as const;
 
 export type StickyAdPlacement = (typeof AD_PLACEMENTS)[keyof typeof AD_PLACEMENTS];
@@ -36,6 +37,7 @@ type AdsContextValue = {
 const initialStickyReservedHeights: StickyReservedHeights = {
   [AD_PLACEMENTS.loading]: 0,
   [AD_PLACEMENTS.skippedClasses]: 0,
+  [AD_PLACEMENTS.detailedMarks]: 0,
 };
 
 let mobileAdsInitializationPromise: Promise<void> | undefined;
