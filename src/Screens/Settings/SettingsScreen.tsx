@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     Alert,
     Linking, Platform,
-    ScrollView, TouchableOpacity,
+    ScrollView, Text, TouchableOpacity,
     View
 } from "react-native";
 import {NavigationHeader} from "../CommonComponents/DrawerHeader"
@@ -45,6 +45,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {dark} = useTheme()
     const [isDark, setDark] = useState(dark)
+    const [isMonetizationExplanationVisible, setMonetizationExplanationVisible] = useState(false)
     const {canUseIcon, canUseLightTheme, canUseQRFrame, state} = useLoyalty()
     const allIcons: AppIconName[] = ['cool', 'dragons', 'simple', 'matterial', 'gold', 'crymat', 'crysign']
     const allQRFrames: QRFrameName[] = ['qr-frame', 'empty', 'qr-frame-black', 'qr-frame-green', 'qr-frame-red']
@@ -127,6 +128,26 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         <McIcon.default name={'robot-love'} adjustsFontSizeToFit size={30} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>
                     }
                                 title={'Благодарности'} onPress={()=>props.navigation.navigate('gratuities')}/>
+                    <ListButton
+                        icon={
+                            <MtIcon.default name={'help-outline'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
+                        }
+                        title={'Почему появилась реклама и токены?'}
+                        trailingIcon={isMonetizationExplanationVisible ? 'expand-less' : 'expand-more'}
+                        onPress={() => setMonetizationExplanationVisible(visible => !visible)}
+                    />
+                    {isMonetizationExplanationVisible &&
+                        <View style={{width: '100%', marginTop: 10, padding: 14, borderRadius: 5, backgroundColor: colors.primary, borderWidth: 1, borderColor: withOpacity(colors.text, 15)}}>
+                            <Text style={{color: colors.text, fontSize: 17, fontWeight: 'bold'}}>Независимый проект</Text>
+                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>MpeiApp — неофициальное приложение. Переговоры с представителями МЭИ неоднократно начинались, но не привели к совместной работе: университет никогда не оказывал проекту финансовой или иной поддержки.</Text>
+
+                            <Text style={{color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 14}}>Поддерживать стало сложнее</Text>
+                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Разработчик уже давно не является студентом МЭИ. Личный аккаунт БАРС больше недоступен, поэтому об изменениях БАРС и других связанных систем иногда удаётся узнать не сразу — даже если их нужно отразить в приложении.</Text>
+
+                            <Text style={{color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 14}}>Как это поможет приложению</Text>
+                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Полностью некоммерческий статус не позволял компенсировать расходы и усилия на поддержку, включая ежегодную оплату Apple Developer, чтобы MpeiApp оставался доступен в App Store. Реклама и будущая интеграция с другими проектами разработчика помогут покрывать эти затраты и сохранять бесплатную доступность приложения в магазинах.</Text>
+                        </View>
+                    }
                     <ListSeparator title={'Поддержка'}/>
                     <ListButton icon={
                         <FaIcon.default name={'vk'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>

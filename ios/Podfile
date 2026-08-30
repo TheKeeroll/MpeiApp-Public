@@ -17,6 +17,9 @@ end
 target 'MpeiApp' do
   config = use_native_modules!
 
+  # yandex-mobile-ads is registered by React Native autolinking here; its
+  # podspec installs the matching YandexMobileAds 8.3.0 native SDK.
+
   use_react_native!(
     :path => config[:reactNativePath],
 

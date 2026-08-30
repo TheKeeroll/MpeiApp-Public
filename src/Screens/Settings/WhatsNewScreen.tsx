@@ -15,6 +15,12 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}}>
+                    <WhatsNewLogo title={'Поддержка продолжается'} version={'2.4.0'}/>
+                    <WhatsNewChange title={'Улучшения 2ФА: добавлены поддержка TOTP, оптимальный порядок перебора и сообщение, откуда брать код'}/>
+                    <WhatsNewChange title={'Поиск расписаний теперь доступен всегда, в том числе во время каникул и без входа в БАРС'}/>
+                    <WhatsNewChange title={'Добавлены реклама и токены для открытия кастомизаций - чтобы поддерживать существование проекта'}/>
+                    <WhatsNewChange title={'Обновлены ключевые зависимости, исправлен ряд визуальных и технических проблем'}/>
+
                     <WhatsNewLogo title={'Второй фактор и места, где он обитает'} version={'2.3.1'}/>
                     <WhatsNewChange title={'Восстановлен вход с 2ФА: добавлены задержки перед запросами кода через следующих провайдеров при провале отправки'}/>
                     <WhatsNewChange title={'Восстановлена авторегистрация при сканировании QR-кодов БАРС для аккаунтов с 2ФА'}/>

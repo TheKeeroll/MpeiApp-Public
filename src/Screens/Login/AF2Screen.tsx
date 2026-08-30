@@ -83,7 +83,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
           <SafeAreaView style={{flex: 1, width: '90%', minHeight: (Dimensions.get("window").height * 0.7), borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'flex-start'}}>
               <ScrollView style={{flex: 1, width: '100%'}}>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                      Введите код подтверждения - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, в ЛС ВК от сообщества БАРС МЭИ, либо быть доступен в вашем приложении для аутентификации(TOTP)/быть у вас на руках(если получили временный).
+                      Введите код подтверждения из источника, который будет указан - он должен прийти вам через бота БАРС МЭИ в Telegram/MAX, в ЛС ВК от сообщества БАРС МЭИ, либо быть доступен в вашем приложении для аутентификации(TOTP)/быть у вас на руках(если получили временный).
                   </Text>
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
                       Обычно, код приходит почти сразу, но иногда может потребоваться 10 - 30 секунд.

@@ -61,7 +61,7 @@ export const ListSwitch: React.FC<{
 }
 
 
-export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: boolean, icon?: JSX.Element}> = (props) => {
+export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: boolean, icon?: JSX.Element, trailingIcon?: string}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
@@ -73,7 +73,7 @@ export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: 
                 <Text adjustsFontSizeToFit={true} style={{marginLeft: 6, padding: 8, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
             <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
-                <MtIcons.default size={40} color={disabled ? withOpacity(colors.text, 30) : colors.text} name={'navigate-next'}/>
+                <MtIcons.default size={40} color={disabled ? withOpacity(colors.text, 30) : colors.text} name={props.trailingIcon ?? 'navigate-next'}/>
             </View>
         </TouchableOpacity>
     )
