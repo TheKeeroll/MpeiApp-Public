@@ -1,0 +1,72 @@
+diff --git a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
+--- a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
++++ b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
+@@ -1,26 +1,42 @@
+-import Foundation
+-import CoreLocation
+-import React
+-
+-class LocationFactory {
+-    func createFromDictionary(_ dict: [String: Any]?) -> CLLocation? {
+-        guard let dict,
+-              let latitude = dict[Constants.Key.latitude],
+-              let longitude = dict[Constants.Key.longitude]
+-        else {
+-            return nil
+-        }
+-        let latitudeDegrees = RCTConvert.clLocationDegrees(latitude)
+-        let longitudeDegrees = RCTConvert.clLocationDegrees(longitude)
+-        return CLLocation(
+-            coordinate: CLLocationCoordinate2D(
+-                latitude: latitudeDegrees,
+-                longitude: longitudeDegrees
+-            ),
+-            altitude: 0,
+-            horizontalAccuracy: 0.1,
+-            verticalAccuracy: 0.1,
+-            timestamp: Date()
+-        )
+-    }
+-}
++import Foundation
++import CoreLocation
++
++class LocationFactory {
++    func createFromDictionary(_ dict: [String: Any]?) -> CLLocation? {
++        guard let dict,
++              let latitude = coordinateDegrees(from: dict[Constants.Key.latitude]),
++              let longitude = coordinateDegrees(from: dict[Constants.Key.longitude])
++        else {
++            return nil
++        }
++        return CLLocation(
++            coordinate: CLLocationCoordinate2D(
++                latitude: latitude,
++                longitude: longitude
++            ),
++            altitude: 0,
++            horizontalAccuracy: 0.1,
++            verticalAccuracy: 0.1,
++            timestamp: Date()
++        )
++    }
++
++    /**
++     * React Native serializes JavaScript numbers as NSNumber. Accept a numeric
++     * string too, but deliberately avoid RCTConvert's CoreLocation category:
++     * it is no longer exposed by the React module in React Native 0.87.
++     */
++    private func coordinateDegrees(from value: Any?) -> CLLocationDegrees? {
++        if let number = value as? NSNumber {
++            return number.doubleValue.isFinite ? number.doubleValue : nil
++        }
++
++        if let string = value as? String,
++           let degrees = Double(string),
++           degrees.isFinite {
++            return degrees
++        }
++
++        return nil
++    }
++}
