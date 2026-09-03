@@ -1,7 +1,7 @@
 import {
     Alert,
     Dimensions,
-    LayoutAnimation, ScrollView,
+    LayoutAnimation, Linking, ScrollView,
     Text,
     TouchableOpacity,
     View, ViewStyle,
@@ -29,6 +29,8 @@ import {GuestScheduleStack} from "../Schedule/ScheduleStack";
 import {maskSavedPassword} from "../../Login/StudentAccountState";
 
 const Stack = createBottomTabNavigator()
+const BARS_REGISTRATION_URL = 'https://mpei.ru/Pages/registration.aspx'
+
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
@@ -41,42 +43,116 @@ export const Button: React.FC<{title?: string, icon?: string, iconSize?: number,
     )
 }
 
+type HelpSection = 'credentials' | 'twoFactor' | 'guestAccess' | 'privacy' | 'support'
+
+const HelpAccordion: React.FC<{
+    title: string
+    expanded: boolean
+    onPress: () => void
+    children: React.ReactNode
+}> = ({title, expanded, onPress, children}) => {
+    const {colors} = useTheme<CustomTheme>()
+    return (
+        <View style={{backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, overflow: 'hidden'}}>
+            <TouchableOpacity
+                accessible
+                accessibilityRole={'button'}
+                accessibilityLabel={`${title}. ${expanded ? 'Развёрнутый раздел' : 'Свёрнутый раздел'}`}
+                accessibilityState={{expanded}}
+                onPress={onPress}
+                style={{minHeight: 52, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center'}}
+            >
+                <Text style={{flex: 1, fontSize: 16, fontWeight: 'bold', color: colors.text}}>{title}</Text>
+                <Text accessible={false} style={{fontSize: 24, color: colors.textUnderline, marginLeft: 12}}>{expanded ? '−' : '+'}</Text>
+            </TouchableOpacity>
+            {expanded && <View style={{paddingHorizontal: 16, paddingBottom: 16}}>{children}</View>}
+        </View>
+    )
+}
+
 const Help: React.FC<{onBack: ()=>void}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets();
+    const [expandedSection, setExpandedSection] = useState<HelpSection>()
+
+    const toggleSection = (section: HelpSection) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+        setExpandedSection(current => current === section ? undefined : section)
+    }
+
+    const openBarsRegistration = async () => {
+        try {
+            const canOpen = await Linking.canOpenURL(BARS_REGISTRATION_URL)
+            if (!canOpen) {
+                throw new Error('Registration URL cannot be opened')
+            }
+            await Linking.openURL(BARS_REGISTRATION_URL)
+        } catch {
+            Alert.alert('Не удалось открыть страницу', 'Попробуйте открыть её позже через браузер.')
+        }
+    }
+
+    const paragraphStyle = {fontSize: 15, lineHeight: 22, color: withOpacity(colors.text, 85), marginBottom: 12}
+    const warningStyle = {...paragraphStyle, color: withOpacity(colors.warning, 90)}
     return (
         <SafeAreaView style={{flex: 1, width: '90%', minHeight: (Dimensions.get("window").height * 0.7), borderRadius: 5, paddingTop: insets.top, paddingBottom: insets.bottom + 36, alignSelf: 'center', justifyContent: 'flex-start'}}>
-            <ScrollView style={{flex: 1, width: '100%'}}>
-                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                    Добро пожаловать!
+            <ScrollView style={{flex: 1, width: '100%'}} contentContainerStyle={{paddingVertical: '2%'}}>
+                <Text style={{fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 8}}>Добро пожаловать!</Text>
+                <Text style={{fontSize: 16, lineHeight: 23, color: withOpacity(colors.text, 85), marginBottom: 18}}>
+                    Для работы с личными данными нужны логин и пароль БАРС. Они сохраняются только на устройстве, чтобы не вводить их при каждом запуске. Карта с навигатором и поиск расписания доступны и без входа.
                 </Text>
-                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
-                    Для начала, введите логин и пароль от "БАРС" - чтобы скачивать из систем вуза всё необходимое.
-                </Text>
-                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.accent, 80)}}>
-                    Данные аккаунта будут сохранены на устройстве - чтобы не вводить их каждый раз.
-                    {'\n\n'}
-                    MpeiApp по-умолчанию не передаёт никаких личных сведений ни разработчику, ни кому-либо постороннему!
-                    {'\n'}
-                    В случае согласия пользователя, в рекламные интеграции передаются лишь приблизительные сведения о поле, возрасте, а также о местонахождении (лишь в случае согласия с передачей геопозиции в разделе карты).
 
-                </Text>
-              <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
-                При необходимости(если в аккаунте включена 2ФА), приложение будет запрашивать коды подтверждения.
-                {'\n'}
-                К сожалению, в некоторых случаях такое может требоваться при каждом входе в MpeiApp по не зависящим от разработчика причинам.
-              </Text>
-                <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.text, 80)}}>
-                    Вам ещё не выдали доступ в "БАРС"?
-                    {'\n'}
-                    Не беда - 3D-карта с навигатором и поиск любых расписаний доступны и без входа в аккаунт, просто перейдите на их вкладки!
-                    {'\n\n'}
-                    Столкнулись с проблемой, есть вопросы/предложения?
-                    {'\n'}
-                    Смело связывайтесь с разработчиком по кнопке "Поддержка".
-                    {'\n\n'}
-                    Желаю приятного использования и успехов в учёбе!
-                </Text>
+                <HelpAccordion title={'Где взять логин и пароль БАРС?'} expanded={expandedSection === 'credentials'} onPress={() => toggleSection('credentials')}>
+                    <Text style={paragraphStyle}>
+                        Проверьте личный кабинет абитуриента на сайте приёмной комиссии. Важно: логин и пароль от него не подходят для БАРС — это разные системы.
+                    </Text>
+                    <Text style={paragraphStyle}>
+                        Проверьте основную почту и папку «Спам». Вам могли прислать приветственное сообщение с логином и идентификационным номером.
+                    </Text>
+                    <Text style={paragraphStyle}>
+                        Если эти данные есть, зарегистрируйтесь в БАРС, чтобы получить пароль.
+                    </Text>
+                    <Button title={'Зарегистрироваться в БАРС'} onPress={openBarsRegistration} style={{width: '100%', aspectRatio: 4.8, marginBottom: 14}}/>
+                    <Text style={warningStyle}>
+                        Не рассчитывайте на активацию через 20 минут: на практике ожидание занимает минимум сутки, а иногда и неделю.
+                    </Text>
+                    <Text style={{...paragraphStyle, marginBottom: 0}}>
+                        Если этот путь не подходит и других сведений вам не передали, дождитесь информации от старосты или представителей вуза и периодически проверяйте личный кабинет приёмной комиссии. Доступ могут выдать уже после начала учёбы, в том числе не на первой учебной неделе: единого способа для всех групп нет.
+                    </Text>
+                </HelpAccordion>
+
+                <HelpAccordion title={'Как работает двухфакторная аутентификация?'} expanded={expandedSection === 'twoFactor'} onPress={() => toggleSection('twoFactor')}>
+                    <Text style={paragraphStyle}>
+                        Если в вашем аккаунте включена 2ФА, MpeiApp запросит код подтверждения и подскажет, где его искать: в VK, MAX, Telegram, приложении-аутентификаторе или среди временных кодов.
+                    </Text>
+                    <Text style={paragraphStyle}>
+                        Обычно код приходит быстро, но иногда нужно подождать 10–30 секунд. По причинам на стороне БАРС запрос 2ФА может потребоваться при каждом входе.
+                    </Text>
+                    <Text style={{...warningStyle, marginBottom: 0}}>
+                        Если код приходит, но вход не выполняется, проверьте на сайте БАРС привязанные способы 2ФА и выбранных провайдеров. Временный код должен быть действующим.
+                    </Text>
+                </HelpAccordion>
+
+                <HelpAccordion title={'Что доступно без входа?'} expanded={expandedSection === 'guestAccess'} onPress={() => toggleSection('guestAccess')}>
+                    <Text style={{...paragraphStyle, marginBottom: 0}}>
+                        Без аккаунта остаются доступны 3D-карта с навигатором и поиск расписаний. Перейдите на соответствующие вкладки внизу экрана.
+                    </Text>
+                </HelpAccordion>
+
+                <HelpAccordion title={'Конфиденциальность и реклама'} expanded={expandedSection === 'privacy'} onPress={() => toggleSection('privacy')}>
+                    <Text style={paragraphStyle}>
+                        По умолчанию MpeiApp не передаёт личные сведения разработчику или посторонним лицам. Данные БАРС нужны приложению только для работы ваших экранов.
+                    </Text>
+                    <Text style={{...paragraphStyle, marginBottom: 0}}>
+                        При отдельном согласии в рекламные интеграции могут передаваться приблизительные данные о поле и возрасте, а геопозиция — только если вы разрешили её для карты.
+                    </Text>
+                </HelpAccordion>
+
+                <HelpAccordion title={'Нужна помощь?'} expanded={expandedSection === 'support'} onPress={() => toggleSection('support')}>
+                    <Text style={{...paragraphStyle, marginBottom: 0}}>
+                        Если что-то не получается, закройте справку и нажмите «Поддержка» на экране входа. Там можно сообщить о проблеме, задать вопрос или предложить улучшение.
+                    </Text>
+                </HelpAccordion>
             </ScrollView>
             <Button title={'Назад'} onPress={props.onBack.bind(this)} style={{marginTop: '2%', marginBottom: 36, alignSelf: 'center', width: '60%', aspectRatio: 4.8}}/>
         </SafeAreaView>
