@@ -57,6 +57,10 @@ import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
+import {
+  shouldEnterStudentsNotFoundState,
+  type StudentAccountAuthenticationPhase,
+} from "../Login/StudentAccountState";
 
 export type LoginState =
   | 'LOGGED_IN'
@@ -64,6 +68,16 @@ export type LoginState =
   | 'NOT_LOGGED_IN'
   | 'NOT_INITIATED'
   | 'AUTHENTICATED_LOADING_DATA'
+  | 'STUDENTS_NOT_FOUND'
+
+export type LoginResult =
+  | 'ONLINE'
+  | 'OFFLINE'
+  | 'NEED_2FA'
+  | 'STUDENTS_NOT_FOUND'
+  | 'CANCELLED'
+  | void
+  | BARSMarks
 
 export type AppIconName =
   | 'cool'
@@ -89,11 +103,37 @@ const QR_FRAME_NAMES: readonly QRFrameName[] = [
   'qr-frame-red',
 ]
 
+const BARS_ACCOUNT_STORAGE_KEYS = [
+  STORAGE_KEYS.SCHEDULE,
+  STORAGE_KEYS.MARKS,
+  STORAGE_KEYS.STUDENT_INFO,
+  STORAGE_KEYS.TASKS,
+  STORAGE_KEYS.REPORTS,
+  STORAGE_KEYS.BOOKS,
+  STORAGE_KEYS.QUESTIONNAIRES,
+  STORAGE_KEYS.STIPENDS,
+  STORAGE_KEYS.ORDERS,
+  STORAGE_KEYS.SKIPPED_CLASSES,
+  STORAGE_KEYS.RECORD_BOOK,
+  STORAGE_KEYS.MAIL,
+  STORAGE_KEYS.ADDITIONAL_DATA,
+] as const
+
 const isQRFrameName = (value: unknown): value is QRFrameName => (
   typeof value === 'string' && QR_FRAME_NAMES.includes(value as QRFrameName)
 )
 
 type PostOnlineDataTask = () => Promise<void> | void
+
+type StudentAccountLoginAttempt = {
+  generation: number
+  credentials: BARSCredentials
+  isPrimaryOnlineAttempt: boolean
+  authenticationPhase: StudentAccountAuthenticationPhase
+  hasStudentData: boolean
+}
+
+class SessionInvalidatedError extends Error {}
 
 export type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
 
@@ -161,9 +201,12 @@ export default class BARS{
   private mCurrentFrame: QRFrameName = 'qr-frame';
   private mLoginState: LoginState = 'NOT_INITIATED'
   private mOnlineDataLoadPromise?: Promise<void>
+  private mOnlineDataLoadGeneration?: number
   private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
   private mLastRequested2FAProvider?: TwoFactorProviderTid
   private m2FACodeRequestPromise?: Promise<TwoFactorProviderTid | undefined>
+  private mSessionGeneration = 0
+  private mStudentAccountLoginAttempt?: StudentAccountLoginAttempt
 
   public get Debts() { return this.mDebts }
   public get LoginState() { return this.mLoginState }
@@ -180,6 +223,82 @@ export default class BARS{
     if(this.mLoginState === state) return
     this.mLoginState = state
     DeviceEventEmitter.emit('LoginState', state)
+  }
+
+  private BeginSessionGeneration(): number {
+    this.mSessionGeneration += 1
+    this.mStudentAccountLoginAttempt = undefined
+    return this.mSessionGeneration
+  }
+
+  private BeginLoginAttempt(
+    credentials: BARSCredentials,
+    isPrimaryOnlineAttempt: boolean,
+  ): StudentAccountLoginAttempt {
+    const attempt: StudentAccountLoginAttempt = {
+      generation: this.BeginSessionGeneration(),
+      credentials: {...credentials},
+      isPrimaryOnlineAttempt,
+      authenticationPhase: 'PASSWORD_SUBMITTED',
+      hasStudentData: false,
+    }
+    this.mStudentAccountLoginAttempt = attempt
+    this.mCredentials = {...credentials}
+    return attempt
+  }
+
+  private IsCurrentGeneration(generation: number): boolean {
+    return generation === this.mSessionGeneration
+  }
+
+  private IsCurrentStudentAccountAttempt(attempt: StudentAccountLoginAttempt): boolean {
+    return this.IsCurrentGeneration(attempt.generation)
+      && this.mStudentAccountLoginAttempt === attempt
+  }
+
+  private MarkTwoFactorAccepted(attempt: StudentAccountLoginAttempt) {
+    if (this.IsCurrentStudentAccountAttempt(attempt)) {
+      attempt.authenticationPhase = 'TWO_FACTOR_ACCEPTED'
+    }
+  }
+
+  private GetStudentsNotFoundResult(attempt: StudentAccountLoginAttempt): LoginResult | undefined {
+    if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+      return 'CANCELLED'
+    }
+
+    if (shouldEnterStudentsNotFoundState({
+      isPrimaryOnlineAttempt: attempt.isPrimaryOnlineAttempt,
+      authenticationPhase: attempt.authenticationPhase,
+      hasStudentData: attempt.hasStudentData,
+    })) {
+      console.warn('Student account is not available after accepted 2FA')
+      return 'STUDENTS_NOT_FOUND'
+    }
+
+    return undefined
+  }
+
+  private SaveStudentAccount(
+    response: string,
+    parsedStudent: BARSStudentInfo,
+    credentials: BARSCredentials,
+    isHeadman: boolean,
+    attempt: StudentAccountLoginAttempt,
+  ): Extract<LoginResult, 'ONLINE' | 'CANCELLED'> {
+    if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+      return 'CANCELLED'
+    }
+
+    const availableSemesters = GetAvailableSemesters(response)
+    const student = {...parsedStudent, headman: isHeadman}
+    this.mCurrentData.availableSemesters = availableSemesters
+    this.mCurrentData.student = student
+    attempt.hasStudentData = true
+    attempt.authenticationPhase = 'STUDENT_DATA_READY'
+    this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(credentials))
+    this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(student))
+    return 'ONLINE'
   }
   /**
    * A task registered here runs after every BARS Fetch/parsing task and before
@@ -248,18 +367,29 @@ export default class BARS{
       }
       console.log('Found credentials');
       const loginFlow = () => {
-        // @ts-expect-error
-        return this.Login(this.mCredentials, false).then((mode: 'ONLINE' | 'OFFLINE' | 'NEED_2FA')=> {
+        return this.Login(this.mCredentials, false).then((mode: LoginResult)=> {
           if(mode == 'ONLINE'){
             return this.LoadOnlineData().finally(()=>{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             })
           } else if (mode == 'OFFLINE'){
+            const generation = this.mSessionGeneration
             this.LoadOfflineData()
-            setTimeout(()=>this.SetLoginState('LOGGED_IN'), 500)
+            setTimeout(()=>{
+              if (this.IsCurrentGeneration(generation)) {
+                this.SetLoginState('LOGGED_IN')
+              }
+            }, 500)
           } else if (mode == 'NEED_2FA'){
+            const generation = this.mSessionGeneration
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
-            setTimeout(()=>this.SetLoginState('NEED_2FA'), 100)
+            setTimeout(()=>{
+              if (this.IsCurrentGeneration(generation)) {
+                this.SetLoginState('NEED_2FA')
+              }
+            }, 100)
+          } else if (mode == 'CANCELLED') {
+            return
           } else {
             console.warn('VOID MODE !')
             throw 'VOID MODE'
@@ -273,9 +403,10 @@ export default class BARS{
           if(!backgroundMode){
             this.SetLoginState('NOT_LOGGED_IN')
           }
-          return Promise.resolve(false);
+          return
         })
       }
+      const restoreGeneration = this.BeginSessionGeneration()
       try{
         const student = this.mStorage.getString(STORAGE_KEYS.STUDENT_INFO);
         if(typeof student != 'undefined' && student != ''){
@@ -287,11 +418,18 @@ export default class BARS{
             mode: 'same-origin',
             credentials: 'include'
           }).then(r=>r.text()).then((response)=>{
+            if (!this.IsCurrentGeneration(restoreGeneration)) {
+              return
+            }
             const result = ParseStudentInfo(response)
             if (isBARSError(result)) {
               throw result
             }
-            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
+            const availableSemesters = GetAvailableSemesters(response)
+            if (!this.IsCurrentGeneration(restoreGeneration)) {
+              return
+            }
+            this.mCurrentData.availableSemesters = availableSemesters
             this.mCurrentData.student = result as BARSStudentInfo;
             this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
             console.log('Successfully restored session and updated student info! Loading account data...');
@@ -299,6 +437,9 @@ export default class BARS{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             })
           }).catch(()=>{
+            if (!this.IsCurrentGeneration(restoreGeneration)) {
+              return
+            }
             console.warn('Failed to restore session(request failed/bad response)! Trying to login again...');
             return loginFlow()
           })
@@ -312,10 +453,13 @@ export default class BARS{
       }
     } else {
       console.log('Credentials not found');
+      const generation = this.BeginSessionGeneration()
       this.mCredentials = {login: '', password: ''}
       if(!backgroundMode){
         setTimeout(()=>{
-          this.SetLoginState('NOT_LOGGED_IN')
+          if (this.IsCurrentGeneration(generation)) {
+            this.SetLoginState('NOT_LOGGED_IN')
+          }
         }, 500)
       }
       return Promise.resolve(false);
@@ -354,15 +498,10 @@ export default class BARS{
     return user_creds
 }
 
-  public ClearStorage(){
-    for(const k of this.mStorage.getAllKeys()){
-      this.mStorage.remove(k)
+  private ClearBARSAccountData(){
+    for(const key of BARS_ACCOUNT_STORAGE_KEYS){
+      this.mStorage.remove(key)
     }
-    this.mStorage.clearAll()
-    //for(let i of Object.entries(STORAGE_KEYS)){
-    //  this.mStorage.delete(i[1])
-    //  console.log(this.mStorage.getString(i[1]))
-    //}
     Store.dispatch(updateSchedule({status: "LOADING", data: null}))
     Store.dispatch(updateMail({status: "LOADING", data: null}))
     Store.dispatch(updateSkippedClasses({status: "LOADING", data: null}))
@@ -375,11 +514,87 @@ export default class BARS{
     Store.dispatch(updateQuestionnaires({status: "LOADING", data: null}))
     Store.dispatch(updateMarkTable({status: "LOADING", data: null}))
     Store.dispatch(updateAdditionalData({status: "LOADING", data: null}))
-    this.SetLoginState('NOT_LOGGED_IN')
     this.mCurrentData = {}
+    this.mCurrentWeek = ''
+    this.mDebts = []
     this.mTestMode = false
+  }
+
+  public Logout(){
+    this.BeginSessionGeneration()
+    this.mStorage.remove(STORAGE_KEYS.CREDENTIALS)
+    this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+    this.ClearBARSAccountData()
+    this.mCredentials = {login: '', password: ''}
     this.mLastRequested2FAProvider = undefined
     this.m2FACodeRequestPromise = undefined
+    this.SetLoginState('NOT_LOGGED_IN')
+  }
+
+  /** Debug-only full reset retained for the existing Settings action. */
+  public ClearStorage(){
+    this.Logout()
+    for(const key of this.mStorage.getAllKeys()){
+      this.mStorage.remove(key)
+    }
+    this.mStorage.clearAll()
+  }
+
+  public EnterStudentsNotFoundState(): boolean {
+    const attempt = this.mStudentAccountLoginAttempt
+    if (!attempt || this.GetStudentsNotFoundResult(attempt) !== 'STUDENTS_NOT_FOUND') {
+      return false
+    }
+
+    const credentials = {...attempt.credentials}
+    this.BeginSessionGeneration()
+    this.ClearBARSAccountData()
+    this.mCredentials = credentials
+    this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(credentials))
+    this.SetLoginState('STUDENTS_NOT_FOUND')
+    return true
+  }
+
+  public async RetryStudentAccountCheck(): Promise<void> {
+    const credentials = {...this.mCredentials}
+    if (!credentials.login || !credentials.password) {
+      this.Logout()
+      return
+    }
+
+    this.SetLoginState('AUTHENTICATED_LOADING_DATA')
+    const loginPromise = this.Login(credentials, true)
+    const attempt = this.mStudentAccountLoginAttempt
+
+    try {
+      const result = await loginPromise
+      if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt) || result === 'CANCELLED') {
+        return
+      }
+
+      if (result === 'ONLINE') {
+        await this.LoadOnlineData()
+        return
+      }
+
+      if (result === 'NEED_2FA') {
+        this.SetLoginState('NEED_2FA')
+        return
+      }
+
+      if (result === 'STUDENTS_NOT_FOUND') {
+        this.EnterStudentsNotFoundState()
+        return
+      }
+
+      throw CreateBARSError('LOGIN_FAIL', 'Не удалось повторно проверить аккаунт БАРС.')
+    } catch (error) {
+      if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt)) {
+        return
+      }
+      Alert.alert('Ошибка!', isBARSError(error) ? error.message : String(error))
+      this.SetLoginState('NOT_LOGGED_IN')
+    }
   }
 
   private FetchCurrentWeek(){
@@ -409,24 +624,44 @@ export default class BARS{
   }
 
   public LoadOnlineData(): Promise<void>{
-    if(this.mOnlineDataLoadPromise) return this.mOnlineDataLoadPromise
+    const generation = this.mSessionGeneration
+    if(this.mOnlineDataLoadPromise && this.mOnlineDataLoadGeneration === generation) {
+      return this.mOnlineDataLoadPromise
+    }
 
-    this.mOnlineDataLoadPromise = this.LoadOnlineDataInternal().finally(()=>{
-      this.mOnlineDataLoadPromise = undefined
+    const loadPromise = this.LoadOnlineDataInternal(generation).finally(()=>{
+      if (this.mOnlineDataLoadPromise === loadPromise) {
+        this.mOnlineDataLoadPromise = undefined
+        this.mOnlineDataLoadGeneration = undefined
+      }
     })
-    return this.mOnlineDataLoadPromise
+    this.mOnlineDataLoadPromise = loadPromise
+    this.mOnlineDataLoadGeneration = generation
+    return loadPromise
   }
 
-  private async LoadOnlineDataInternal(): Promise<void>{
+  private async LoadOnlineDataInternal(generation: number): Promise<void>{
+    if (!this.IsCurrentGeneration(generation)) {
+      return
+    }
     this.SetLoginState('AUTHENTICATED_LOADING_DATA')
     let firstOnlineDataError: any
 
     const runTask = async (name: string, task: () => Promise<unknown>) => {
+      if (!this.IsCurrentGeneration(generation)) {
+        throw new SessionInvalidatedError()
+      }
       try{
         await task()
       } catch(error){
+        if (error instanceof SessionInvalidatedError || !this.IsCurrentGeneration(generation)) {
+          throw new SessionInvalidatedError()
+        }
         firstOnlineDataError ??= error
         console.warn(`Online data task "${name}" failed`)
+      }
+      if (!this.IsCurrentGeneration(generation)) {
+        throw new SessionInvalidatedError()
       }
     }
 
@@ -482,9 +717,15 @@ export default class BARS{
       await runTask('questionnaires', () => this.FetchQuestionnaires())
       console.log('Online data fetch completed')
     } catch(error){
+      if (error instanceof SessionInvalidatedError || !this.IsCurrentGeneration(generation)) {
+        return
+      }
       firstOnlineDataError ??= error
       console.warn('Online data loading failed before all tasks could start')
     } finally {
+      if (!this.IsCurrentGeneration(generation)) {
+        return
+      }
       if(firstOnlineDataError){
         const currentMonth = parseInt(moment().format("M"))
         if(((currentMonth > 2 && currentMonth < 6) || currentMonth > 8) && !isTimeout(firstOnlineDataError)) {
@@ -495,7 +736,9 @@ export default class BARS{
 
       // Registered VPN revalidation runs here, after every BARS Fetch/parsing task.
       await this.RunPostOnlineDataTasks()
-      this.SetLoginState('LOGGED_IN')
+      if (this.IsCurrentGeneration(generation)) {
+        this.SetLoginState('LOGGED_IN')
+      }
     }
   }
 
@@ -537,7 +780,14 @@ export default class BARS{
   }
   public get TestMode(){return this.mTestMode}
 
-  private HandleLoginResponse(response: string, creds: BARSCredentials): Promise<"ONLINE" | "OFFLINE" | void> {
+  private HandleLoginResponse(
+    response: string,
+    creds: BARSCredentials,
+    attempt: StudentAccountLoginAttempt,
+  ): Promise<LoginResult> {
+    if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+      return Promise.resolve('CANCELLED')
+    }
     this.mCurrentData = {}
     if (response.includes("Студенты") || response.includes('На главную')) { //multi-account or EditUser page
       const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
@@ -587,16 +837,18 @@ export default class BARS{
 
                 if (isBARSError(result)) throw result;
 
-                this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-                this.mCurrentData.student = result as BARSStudentInfo;
-                console.timeEnd('Login&StudentInfoParser')
-                console.log(this.mCurrentData.student);
-                this.mCurrentData.student.headman = isHeadman;
-
-                this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-                this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-
-                return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+                const loginResult = this.SaveStudentAccount(
+                  response,
+                  result as BARSStudentInfo,
+                  creds,
+                  isHeadman,
+                  attempt,
+                )
+                if (loginResult === 'ONLINE') {
+                  console.timeEnd('Login&StudentInfoParser')
+                  console.log(this.mCurrentData.student)
+                }
+                return loginResult
               })
             } catch (e:any) {
               console.warn('ERROR: ' + e.toString())
@@ -609,16 +861,18 @@ export default class BARS{
 
             if (isBARSError(result)) throw result;
 
-            this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-            this.mCurrentData.student = result as BARSStudentInfo;
-            console.timeEnd('Login&StudentInfoParser')
-            console.log(this.mCurrentData.student);
-            this.mCurrentData.student.headman = isHeadman;
-
-            this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-            this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result));
-
-            return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+            const loginResult = this.SaveStudentAccount(
+              response,
+              result as BARSStudentInfo,
+              creds,
+              isHeadman,
+              attempt,
+            )
+            if (loginResult === 'ONLINE') {
+              console.timeEnd('Login&StudentInfoParser')
+              console.log(this.mCurrentData.student)
+            }
+            return loginResult
           }
         })
       })
@@ -642,22 +896,22 @@ export default class BARS{
             throw result;
           }
 
-          this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-          this.mCurrentData.student = result as BARSStudentInfo
-          console.timeEnd('Login&StudentInfoParser')
-          console.log(this.mCurrentData.student);
-          this.mCurrentData.student.headman = false;
-          this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-          this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
-          return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+          const loginResult = this.SaveStudentAccount(
+            response,
+            result as BARSStudentInfo,
+            creds,
+            false,
+            attempt,
+          )
+          if (loginResult === 'ONLINE') {
+            console.timeEnd('Login&StudentInfoParser')
+            console.log(this.mCurrentData.student)
+          }
+          return loginResult
         })
       } catch (e:any) {
         console.warn('ERROR: ' + e.toString())
-        if (e.toString().includes("Cannot read property 'split' of undefined")){
-          throw CreateBARSError("STUDENTS_NOT_FOUND", "")
-        } else {
-          throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
-        }
+        throw CreateBARSError("SERVER_ERROR", "Сервер вернул неожиданный результат! Попробуйте ещё раз. Если снова увидите эту ошибку, пожалуйста, сообщите разработчикам!")
       }
     } else if (response.includes("Рейтинг")) {
       console.log("Successfully logged in")
@@ -667,14 +921,18 @@ export default class BARS{
         throw result;
       }
 
-      this.mCurrentData.availableSemesters = GetAvailableSemesters(response)
-      this.mCurrentData.student = result as BARSStudentInfo
-      console.timeEnd('Login&StudentInfoParser')
-      console.log(this.mCurrentData.student);
-      this.mCurrentData.student.headman = false;
-      this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(creds))
-      this.mStorage.set(STORAGE_KEYS.STUDENT_INFO, JSON.stringify(result))
-      return Promise.resolve<"ONLINE" | "OFFLINE">("ONLINE")
+      const loginResult = this.SaveStudentAccount(
+        response,
+        result as BARSStudentInfo,
+        creds,
+        false,
+        attempt,
+      )
+      if (loginResult === 'ONLINE') {
+        console.timeEnd('Login&StudentInfoParser')
+        console.log(this.mCurrentData.student)
+      }
+      return Promise.resolve(loginResult)
     }
     return Promise.reject(CreateBARSError('LOGIN_FAIL', "Сервер вернул неожиданный результат!"))
   }
@@ -713,8 +971,14 @@ export default class BARS{
     this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
   }
 
-  private async HandleTwoFactorChallenge(): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks> {
-    const savedTemporaryCode = this.GetSavedTemporary2FACode(this.mCredentials.login)
+  private async HandleTwoFactorChallenge(): Promise<LoginResult> {
+    const attempt = this.mStudentAccountLoginAttempt
+    if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt)) {
+      return 'CANCELLED'
+    }
+
+    attempt.authenticationPhase = 'AWAITING_2FA'
+    const savedTemporaryCode = this.GetSavedTemporary2FACode(attempt.credentials.login)
     if (!savedTemporaryCode) {
       void this.Start2FACodeRequest()
       return 'NEED_2FA'
@@ -736,9 +1000,14 @@ export default class BARS{
     }
   }
 
-  public Login2FA(code: string): Promise<"ONLINE" | "OFFLINE" | void | BARSMarks > {
+  public Login2FA(code: string): Promise<LoginResult> {
     console.log('Trying to login with 2FA code');
-    const creds = this.mCredentials;
+    const attempt = this.mStudentAccountLoginAttempt
+    if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt)) {
+      return Promise.resolve('CANCELLED')
+    }
+
+    const creds = attempt.credentials
     return Timeout(15000, fetch(URLS.BARS_LOGIN_CODE, {
       method: 'POST',
       headers: LOGIN_HEADER,
@@ -749,24 +1018,39 @@ export default class BARS{
       })
     }).then(r => r.text())
       .then(response => {
+        if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+          return 'CANCELLED'
+        }
         if (response.includes("запрещён")) {
           return Promise.reject(CreateBARSError('LOGIN_FAIL', "Не удалось войти с использованием двухфакторной аутентификации!"));
         } else if (response.includes("Некорректный код подтверждения")) {
           return Promise.reject(createInvalidTwoFactorCodeError())
         }
-        return this.HandleLoginResponse(response, creds);
+        this.MarkTwoFactorAccepted(attempt)
+        return this.HandleLoginResponse(response, creds, attempt);
       })
     ).then(result => {
+      if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+        return 'CANCELLED'
+      }
       if (this.mLastRequested2FAProvider === 4) {
         this.SaveTemporary2FACode(creds.login, code)
       }
       return result
     }).catch(e => {
+      if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+        return Promise.resolve<LoginResult>('CANCELLED')
+      }
       if (isInvalidTwoFactorCodeError(e)) {
         return Promise.reject(e)
       }
 
-      if (e.error == 'INVALID_CREDS' || e.error == 'LOGIN_FAIL') {
+      const studentsNotFoundResult = this.GetStudentsNotFoundResult(attempt)
+      if (studentsNotFoundResult) {
+        return Promise.resolve(studentsNotFoundResult)
+      }
+
+      if (isBARSError(e) && (e.error == 'INVALID_CREDS' || e.error == 'LOGIN_FAIL')) {
         console.warn('Incorrect 2FA code!', e)
         return Promise.reject(CreateBARSError('LOGIN_FAIL', "Некорректный код подтверждения!"))
       } else {
@@ -785,18 +1069,24 @@ export default class BARS{
    * Telegram остаётся последним, поскольку сейчас доставка кодов из БАРС
    * блокируется в РФ.
    */
-  private async Request2FACode(): Promise<TwoFactorProviderTid | undefined> {
+  private async Request2FACode(generation: number): Promise<TwoFactorProviderTid | undefined> {
     const providerOrder: TwoFactorProviderTid[] = [5, 2, 3, 4, 1]
     this.mLastRequested2FAProvider = undefined
 
     for (const tid of providerOrder) {
       try {
         await new Promise<void>(resolve => setTimeout(resolve, 100));
+        if (!this.IsCurrentGeneration(generation)) {
+          return undefined
+        }
         const response = await fetch(URLS.BARS_REQUEST_CODE + `?tid=${tid}`, {
           method: "GET",
           headers: COMMON_HTTP_HEADER,
         });
         const text = await response.text();
+        if (!this.IsCurrentGeneration(generation)) {
+          return undefined
+        }
         console.log(`2FA code ${tid} requested, res: ${text}`);
 
         if (text.includes("success") && !text.includes("false")) {
@@ -808,6 +1098,9 @@ export default class BARS{
         if (text.toLowerCase().includes("ошибка при отправке")) {
           console.warn(`2FA code ${tid} send error detected, waiting 10 seconds before next attempt`);
           await new Promise<void>(resolve => setTimeout(resolve, 10000));
+          if (!this.IsCurrentGeneration(generation)) {
+            return undefined
+          }
         }
       } catch (e: any) {
         console.warn(`2FA code ${tid} request failed!`, e);
@@ -818,7 +1111,7 @@ export default class BARS{
   }
 
   private Start2FACodeRequest(): Promise<TwoFactorProviderTid | undefined> {
-    this.m2FACodeRequestPromise = this.Request2FACode()
+    this.m2FACodeRequestPromise = this.Request2FACode(this.mSessionGeneration)
     return this.m2FACodeRequestPromise
   }
 
@@ -826,14 +1119,16 @@ export default class BARS{
     return this.m2FACodeRequestPromise ?? Promise.resolve(this.mLastRequested2FAProvider)
   }
 
-  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<"ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks>{
+  public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<LoginResult>{
     let isIncorrectLoginPassword = false
+    const attempt = this.BeginLoginAttempt(creds, firstStart)
     this.mLastRequested2FAProvider = undefined
     this.m2FACodeRequestPromise = undefined
     if(APP_CONFIG.TEST_MODE && Compare(APP_CONFIG.TEST_CREDS, creds)){
       // Alert.alert('Info', 'Entered test mode.')
-      this.mCredentials = creds
       this.mCurrentData = require('../Common/TestData.json')
+      attempt.hasStudentData = true
+      attempt.authenticationPhase = 'STUDENT_DATA_READY'
       this.mTestMode = true
       console.log('Dispatching test data...')
       this.FetchSchedule()
@@ -858,10 +1153,13 @@ export default class BARS{
     }
 
     return CheckInternet().then((response)=> {
+      if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+        return Promise.resolve<LoginResult>('CANCELLED')
+      }
       if (!(response.isConnected) && firstStart)
         return Promise.reject(CreateBARSError('LOGIN_FAIL', 'Нет подключения к интернету!'))
       else if (!(response.isConnected)) {
-        return Promise.resolve<'ONLINE' | 'OFFLINE' | BARSMarks | void>('OFFLINE')
+        return Promise.resolve<LoginResult>('OFFLINE')
       }
       console.time('Login&StudentInfoParser')
       let ms_bars_main = 6500
@@ -897,12 +1195,18 @@ export default class BARS{
       })
         .then(r => r.text())
         .then((response) => {
-          if (response.includes("код подтверждения")) {
-            this.mCredentials = creds;
-            return Promise.resolve("NEED_2FA" as any);
+          if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+            return 'CANCELLED'
           }
-          return this.HandleLoginResponse(response, creds);
+          if (response.includes("код подтверждения")) {
+            attempt.authenticationPhase = 'AWAITING_2FA'
+            return 'NEED_2FA'
+          }
+          return this.HandleLoginResponse(response, creds, attempt);
         }).catch((e: any) => {
+          if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+            return Promise.resolve<LoginResult>('CANCELLED')
+          }
           if (isBARSError(e)) return Promise.reject(e)
           else {
             if (e.toString().includes('querySelector')){
@@ -911,23 +1215,26 @@ export default class BARS{
             return Promise.reject(CreateBARSError('LOGIN_FAIL', e.toString()))
           }
         })).then(result => {
-          const loginResult = result as "ONLINE" | "OFFLINE" | "NEED_2FA" | void | BARSMarks
+          if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+            return 'CANCELLED'
+          }
+          const loginResult = result as LoginResult
           return loginResult === "NEED_2FA" ? this.HandleTwoFactorChallenge() : loginResult
         }).catch(e => {
+          if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+            return Promise.resolve<LoginResult>('CANCELLED')
+          }
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
           } else {
             console.warn("Data download time exceeded!", e)
             if (firstStart) {
               if (isBARSError(e)) {
-                if (e.error == 'STUDENTS_NOT_FOUND') {
-                  return Promise.reject(CreateBARSError('LOGIN_FAIL', "В аккаунте не найдено ни одного Личного Кабинета студента. Если вы поступили/перевелись в МЭИ недавно, то это нормально - вуз заполнит ваш аккаунт в течение пары недель после начала учёбы. Если же это не так или проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
-                }
                 return Promise.reject(e);
               }
               return Promise.reject(CreateBARSError('LOGIN_FAIL', "Превышено время загрузки данных - проблемы с интернетом или на стороне БАРС! Проверьте качество сети и попробуйте снова позже. Если проблема сохраняется - сообщите разработчику(кнопка 'Поддержка')!"))
             }
-            else return Promise.resolve<'ONLINE' | 'OFFLINE'>('OFFLINE')
+            else return Promise.resolve<LoginResult>('OFFLINE')
           }
       })
     })
