@@ -35,6 +35,7 @@ const App: React.FC = () =>{
 
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
+      case "STUDENTS_NOT_FOUND" : return <LoginScreenWrapper/>
       case "NOT_INITIATED": return <LoadingScreen/>
       case "AUTHENTICATED_LOADING_DATA": return <LoadingScreen showStickyAd/>
       case "NEED_2FA": return (

@@ -26,6 +26,7 @@ import * as MtIcon from "react-native-vector-icons/MaterialIcons";
 import SettingsStack from "../Settings/SettingsStack.tsx";
 import AF2Screen from "./AF2Screen";
 import {GuestScheduleStack} from "../Schedule/ScheduleStack";
+import {maskSavedPassword} from "../../Login/StudentAccountState";
 
 const Stack = createBottomTabNavigator()
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
@@ -114,6 +115,56 @@ export const LoginScreenHeader: React.FC = () => {
   )
 }
 
+const StudentsNotFoundPanel: React.FC = () => {
+    const {colors} = useTheme<CustomTheme>()
+    const credentials = BARSAPI.GetCreds()
+    const [isRetrying, setIsRetrying] = useState(false)
+
+    const retry = () => {
+        if (isRetrying) return
+
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+        setIsRetrying(true)
+        void BARSAPI.RetryStudentAccountCheck()
+    }
+
+    return (
+        <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
+            <View
+                accessible
+                accessibilityLabel={`Сохранённые данные аккаунта. Логин: ${credentials.login}. Пароль скрыт.`}
+                style={{backgroundColor: colors.surface, borderRadius: 15, padding: '5%', marginBottom: '6%'}}
+            >
+                <Text style={{fontWeight: 'bold', fontSize: 15, color: withOpacity(colors.text, 65), marginBottom: '2%'}}>Логин</Text>
+                <Text selectable={false} style={{fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: '5%'}}>{credentials.login}</Text>
+                <Text style={{fontWeight: 'bold', fontSize: 15, color: withOpacity(colors.text, 65), marginBottom: '2%'}}>Пароль</Text>
+                <Text
+                    accessible={false}
+                    selectable={false}
+                    style={{fontSize: 18, fontWeight: 'bold', color: colors.text}}
+                >
+                    {maskSavedPassword(credentials.password)}
+                </Text>
+            </View>
+            <Text style={{fontSize: 16, lineHeight: 23, color: withOpacity(colors.text, 90), marginBottom: '8%'}}>
+                Вход в аккаунт БАРС выполнен, но не найдено ни одного Личного Кабинета студента. Если вы недавно поступили в МЭИ, то это нормально — вуз ещё не успел всё подготовить, просто пробуйте снова через несколько дней. Если проблема сохранится дольше пары недель — свяжитесь с разработчиком.
+            </Text>
+            <Button
+                title={'Проверить снова'}
+                disabled={isRetrying}
+                onPress={retry}
+                style={{width: '100%', aspectRatio: 4.8, marginBottom: '4%'}}
+            />
+            <Button
+                title={'Выйти из аккаунта'}
+                disabled={isRetrying}
+                onPress={() => BARSAPI.Logout()}
+                style={{width: '100%', aspectRatio: 4.8}}
+            />
+        </View>
+    )
+}
+
 const LoginScreen: React.FC = () => {
     const {colors} = useTheme<CustomTheme>()
     const [login, setLogin] = useState('')
@@ -144,7 +195,7 @@ const LoginScreen: React.FC = () => {
             alignItems: 'center',
         }}>
           <LoginScreenHeader/>
-              {showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
+              {BARSAPI.LoginState === 'STUDENTS_NOT_FOUND' ? <StudentsNotFoundPanel/> : showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
                 showingAF2 ? <AF2Screen onBack={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                     setShowingAF2(false)
@@ -188,7 +239,14 @@ const LoginScreen: React.FC = () => {
                                         setShowingAF2(true)
                                         return
                                     }
-                                    void BARSAPI.LoadOnlineData()
+                                    if (r === 'STUDENTS_NOT_FOUND') {
+                                        BARSAPI.EnterStudentsNotFoundState()
+                                        return
+                                    }
+                                    if (r === 'CANCELLED') return
+                                    if (r === 'ONLINE') {
+                                        void BARSAPI.LoadOnlineData()
+                                    }
                                 }, (e: any)=>{
                                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                     setShowLoading(false)

@@ -131,7 +131,14 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
         setShowLoading(true)
         setTimeout(() => BARSAPI.Login2FA(code).then((r) => {
-            void BARSAPI.LoadOnlineData()
+            if (r === 'STUDENTS_NOT_FOUND') {
+                BARSAPI.EnterStudentsNotFoundState()
+                return
+            }
+            if (r === 'CANCELLED') return
+            if (r === 'ONLINE') {
+                void BARSAPI.LoadOnlineData()
+            }
         }, (e: any) => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             setShowLoading(false)

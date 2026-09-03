@@ -207,7 +207,7 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
     // const navigation = useNavigation()
     const onPress = () => {
         if(isExit){
-            BARSAPI.ClearStorage()
+            BARSAPI.Logout()
         } else {
             if(isFocused){
                 props.navigation.closeDrawer()
