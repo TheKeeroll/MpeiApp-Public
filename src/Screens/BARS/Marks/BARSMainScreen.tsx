@@ -435,7 +435,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
         }
     }, [])
     switch (marks.status){
-        case "FAILED": return <FetchFailed/>
+        case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('marks') }}/>
         case "OFFLINE":
         case "LOADED":
             let weekDemoModified = false
@@ -504,7 +504,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                     ItemSeparatorComponent={()=><View style={{height: 20}}/> }
                     ListHeaderComponent={()=>
                         <View style={{alignItems: 'center', justifyContent: 'center'}}>
-                            {(marks.status == 'OFFLINE') && <OfflineDataNotification/>}
+                            {(marks.status == 'OFFLINE') && <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('marks') }}/>}
                             <View style={Styles.weekView}>
                                 <Text
                                     numberOfLines={1}
@@ -528,7 +528,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                 />
             </View>
         )
-        case "LOADING": return <LoadingScreen/>
+        case "LOADING": return <LoadingScreen progressKey={'bars-section:marks'} fallbackLabel={'Получение оценок...'}/>
 
     }
 

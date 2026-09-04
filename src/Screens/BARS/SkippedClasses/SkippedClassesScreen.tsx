@@ -19,10 +19,12 @@ import {withOpacity, CustomTheme} from "../../../Themes/Themes";
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import SkippedClassesNotFound from "../../CommonComponents/SkippedClassesNotFound";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
+import FetchFailed from "../../CommonComponents/FetchFailed";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {AD_PLACEMENTS, useAds} from "../../../Ads/AdsProvider";
 import StickyBannerSlot from "../../../Ads/StickyBannerSlot";
+import BARSAPI from "../../../Common/Globals";
 
 const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -185,7 +187,7 @@ const SkippedClassesScreen: React.FC = () => {
                         <Fragment>
                             {offline &&
                                 <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-                                    <OfflineDataNotification/>
+                                    <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('skippedClasses') }}/>
                                 </View>
                             }
                             <Header hours={skippedHours} goodExcuse={goodExcuseCount}/>
@@ -200,8 +202,8 @@ const SkippedClassesScreen: React.FC = () => {
         switch (raw.status) {
             case "OFFLINE":
             case "LOADED": return onLoad(raw.status == 'OFFLINE')
-            case "FAILED": return <SkippedClassesNotFound/>
-            case "LOADING": return <LoadingScreen/>
+            case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('skippedClasses') }}/>
+            case "LOADING": return <LoadingScreen progressKey={'bars-section:skippedClasses'} fallbackLabel={'Загрузка пропусков...'}/>
         }
     }
 

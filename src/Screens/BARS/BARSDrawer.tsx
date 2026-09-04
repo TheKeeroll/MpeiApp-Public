@@ -241,15 +241,17 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     let mail_str = 'загрузка...'
     let mail_color = colors.warning
     let mail_button_flag = false
+    let mail_retry_flag = false
     const mail = useSelector((state: RootState)=>state.Mail)
     if (mail.status != 'LOADING'){
         try {
-            if (mail.data?.unreadCount == '0'){
+            if (mail.status === 'FAILED' || mail.data?.unreadCount == 'не удалось обновить'){
+                mail_str = 'не удалось обновить'
+                mail_color = colors.error
+                mail_retry_flag = true
+            } else if (mail.data?.unreadCount == '0'){
                 mail_str = 'новых писем нет'
                 mail_color = colors.accent
-                mail_button_flag = false
-            } else if (mail.data?.unreadCount == 'не удалось обновить'){
-                mail_str = mail.data.unreadCount
                 mail_button_flag = false
             } else if (mail.data?.unreadCount == '1'){
                 mail_str = '1 новое письмо'
@@ -455,6 +457,15 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                                           style={{fontSize: 14, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
                                             {mail_str}
                                         </Text>
+                                        {mail_retry_flag && (
+                                          <TouchableOpacity
+                                            accessibilityLabel={'Повторить проверку почты'}
+                                            onPress={() => { void BARSAPI.RetryDataSection('mail') }}
+                                            style={{marginLeft: 'auto', marginRight: 8, padding: 7}}
+                                          >
+                                            <IonIcon.default name={'reload-outline'} size={20} color={colors.textUnderline}/>
+                                          </TouchableOpacity>
+                                        )}
                                     </View>
                                     {(mail_button_flag) &&
                                       <TouchableOpacity onPress={()=> Linking.openURL(mail.data?.mode == 'legacy' ? `${URLS.MAIL_LEGACY}/owa/?ae=Folder&t=IPF.Note` : (URLS.MAIL_MODERN + '/owa/'))} style={[{backgroundColor: colors.surface, borderRadius: 15, paddingLeft: '2%', alignItems: 'flex-start', justifyContent: 'space-evenly'}]}>

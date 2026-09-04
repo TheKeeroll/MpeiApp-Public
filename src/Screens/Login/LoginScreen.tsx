@@ -7,6 +7,8 @@ import {
     View, ViewStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {loadingProgressService} from "../../Loading/LoadingProgressService";
+import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 import React, {useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
@@ -271,7 +273,7 @@ const LoginScreen: React.FC = () => {
             alignItems: 'center',
         }}>
           <LoginScreenHeader/>
-              {BARSAPI.LoginState === 'STUDENTS_NOT_FOUND' ? <StudentsNotFoundPanel/> : showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen/> :
+              {BARSAPI.LoginState === 'STUDENTS_NOT_FOUND' ? <StudentsNotFoundPanel/> : showingHelp ? <Help onBack={shHCb}/>: showLoading ? <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.login} fallbackLabel={'Проверка логина и пароля...'}/> :
                 showingAF2 ? <AF2Screen onBack={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                     setShowingAF2(false)
@@ -306,29 +308,43 @@ const LoginScreen: React.FC = () => {
                     <View style={{marginBottom: '4%', flexDirection: 'row', width: '90%', alignSelf: 'center', justifyContent: 'space-between'}}>
                         <View style={{ flexDirection: 'column',  width: '66%', alignSelf: 'flex-start', alignItems: 'flex-start'}}>
                             <Button title={'Войти'} onPress={()=>{
+                                const progress = loadingProgressService.start(
+                                    LOADING_PROGRESS_KEYS.login,
+                                    'Проверка логина и пароля...',
+                                )
                                 LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                 setShowLoading(true)
-                                setTimeout(()=>BARSAPI.Login({login, password}).then((r)=>{
+                                setTimeout(()=>{
+                                    loadingProgressService.advance(progress, 'Запрос к БАРС...')
+                                    BARSAPI.Login({login, password}).then((r)=>{
                                     if (r === "NEED_2FA") {
+                                        loadingProgressService.complete(progress)
                                         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                         setShowLoading(false)
                                         setShowingAF2(true)
                                         return
                                     }
                                     if (r === 'STUDENTS_NOT_FOUND') {
+                                        loadingProgressService.complete(progress)
                                         BARSAPI.EnterStudentsNotFoundState()
                                         return
                                     }
-                                    if (r === 'CANCELLED') return
+                                    if (r === 'CANCELLED') {
+                                        loadingProgressService.fail(progress)
+                                        return
+                                    }
                                     if (r === 'ONLINE') {
+                                        loadingProgressService.complete(progress)
                                         void BARSAPI.LoadOnlineData()
                                     }
                                 }, (e: any)=>{
+                                    loadingProgressService.fail(progress)
                                     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                                     setShowLoading(false)
                                     Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
                                     BARSAPI.SetLoginState('NOT_LOGGED_IN')
-                                }), 250)
+                                })
+                              }, 250)
                             }} style={{ width: '100%', aspectRatio: 4.8, marginVertical: '5%' }}/>
 
                             <View style={{marginBottom: '4%', flexDirection: 'row', width: '100%', alignSelf: 'center', justifyContent: 'space-between'}}>

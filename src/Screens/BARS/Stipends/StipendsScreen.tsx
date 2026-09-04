@@ -14,6 +14,7 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import { convertDate } from "../Marks/BARSMainScreen";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import BARSAPI from "../../../Common/Globals";
 
 const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onSelect:(index: number)=>void}> =
   (props)=>{
@@ -160,7 +161,7 @@ const StipendsScreen: React.FC = () => {
           <Fragment>
             {offline &&
               <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-                <OfflineDataNotification/>
+                <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('stipends') }}/>
               </View>
             }
             <View style={{height: 20}}/>
@@ -180,7 +181,7 @@ const StipendsScreen: React.FC = () => {
             <Fragment>
               {offline &&
                 <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-                  <OfflineDataNotification/>
+                  <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('stipends') }}/>
                 </View>
               }
               <View style={{height: 20}}/>
@@ -194,8 +195,8 @@ const StipendsScreen: React.FC = () => {
 
   const renderSwitch = () => {
     switch (stipends.status){
-      case "LOADING": return <LoadingScreen/>
-      case "FAILED": return <FetchFailed/>
+      case "LOADING": return <LoadingScreen progressKey={'bars-section:stipends'} fallbackLabel={'Загрузка стипендий...'}/>
+      case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('stipends') }}/>
       case "OFFLINE":
       case "LOADED": return onLoad(stipends.status == 'OFFLINE')
     }
