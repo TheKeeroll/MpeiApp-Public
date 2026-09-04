@@ -19,8 +19,11 @@ class MainActivity : ReactActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         supportFragmentManager.fragmentFactory = RNScreensFragmentFactory()
-        super.onCreate(savedInstanceState)
-      }
+
+        // Screen fragments are owned by React Native and cannot be recreated by
+        // Android's FragmentManager from saved state after process restoration.
+        super.onCreate(null)
+    }
 
     /**
      * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
