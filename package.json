@@ -1,6 +1,6 @@
 {
   "name": "MpeiApp",
-  "version": "2.4.2-PREVIEW",
+  "version": "2.4.3-PREVIEW",
   "private": true,
   "packageManager": "yarn@1.22.22",
   "scripts": {

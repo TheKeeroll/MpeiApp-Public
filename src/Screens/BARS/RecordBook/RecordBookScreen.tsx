@@ -18,6 +18,7 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import BARSAPI from "../../../Common/Globals";
 
 const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
     switch (type){
@@ -135,7 +136,7 @@ const RecordBookScreen: React.FC = () => {
                 ListHeaderComponent={
                     <Fragment>
                         {offline ? <View style={{alignItems: 'center', marginBottom: 20, justifyContent: 'center'}}>
-                            <OfflineDataNotification/>
+                            <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('recordBook') }}/>
                         </View>: null}
                     </Fragment>
                 }
@@ -145,8 +146,8 @@ const RecordBookScreen: React.FC = () => {
 
     const renderSwitch = () => {
         switch (recordBook.status){
-            case "LOADING": return <LoadingScreen/>
-            case "FAILED": return <FetchFailed/>
+            case "LOADING": return <LoadingScreen progressKey={'bars-section:recordBook'} fallbackLabel={'Загрузка зачётной книжки...'}/>
+            case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('recordBook') }}/>
             case "OFFLINE":
             case "LOADED": return onLoad(recordBook.status == 'OFFLINE')
         }

@@ -17,6 +17,8 @@ import InlineBannerAd from "../../Ads/InlineBannerAd";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import ScheduleSearchPanel from "./ScheduleSearchPanel";
 import {createScheduleSearchParams, getScheduleSearchQuery} from "./ScheduleNavigation";
+import {loadingProgressService} from "../../Loading/LoadingProgressService";
+import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
@@ -281,7 +283,12 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
         }
 
         let isCancelled = false
+        const progress = loadingProgressService.start(
+            LOADING_PROGRESS_KEYS.scheduleSearch,
+            'Поиск расписания...',
+        )
         const timer = setTimeout(() => {
+            loadingProgressService.advance(progress, 'Загрузка занятий...')
             BARSAPI.FetchRequestedSchedule({name: '', lec_oid: props.searchQuery}).then((result)=>{
                 if(isCancelled){
                     return
@@ -291,6 +298,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                 teacherSchedule.current = result
                 setSelectedDate(Math.max(0, result.todayIndex))
                 recordSuccessfulFeatureUse('scheduleSearch')
+                loadingProgressService.complete(progress)
                 setLoadingState('OK')
             }, (e: any)=>{
                 if(isCancelled){
@@ -302,6 +310,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                 } else {
                     console.error(e)
                 }
+                loadingProgressService.fail(progress)
                 setLoadingState('ERROR')
             })
         }, 200)
@@ -313,7 +322,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
     }, [props.navigation, props.searchQuery, recordSuccessfulFeatureUse])
 
     if(loadingState === 'LOADING'){
-        return <LoadingScreen/>
+        return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.scheduleSearch} fallbackLabel={'Поиск расписания...'}/>
     }
 
     if(loadingState === 'ERROR' || !teacherSchedule.current){
@@ -411,6 +420,14 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
                         </Text>
                     </View>
                 }
+                {(schedule.status === 'FAILED' || schedule.status === 'OFFLINE') && (
+                    <TouchableOpacity
+                        onPress={() => { void BARSAPI.RetryDataSection('schedule') }}
+                        style={{marginBottom: 18, minHeight: 42, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 10, backgroundColor: colors.primary}}
+                    >
+                        <Text style={{fontWeight: '700', color: colors.text}}>Попробовать снова</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         )
     }
@@ -424,7 +441,7 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
     )
 
     switch(schedule.status){
-        case "LOADING": return <LoadingScreen/>
+        case "LOADING": return <LoadingScreen progressKey={'bars-section:schedule'} fallbackLabel={'Загрузка личного расписания...'}/>
         case "OFFLINE":
         case "LOADED":{
             const IsToday = () => {

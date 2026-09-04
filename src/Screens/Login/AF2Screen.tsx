@@ -17,6 +17,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as FaIcon from "react-native-vector-icons/Fontisto";
 import { ListText } from "../Settings/Components.tsx";
 import type { TwoFactorProviderTid } from "../../API/BARS";
+import {loadingProgressService} from "../../Loading/LoadingProgressService";
+import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 
 interface AF2ScreenProps {
     onBack: () => void;
@@ -128,18 +130,30 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
     const handleLogin = () => {
         if (!codeProviderTid || !code.trim()) return
 
+        const progress = loadingProgressService.start(
+            LOADING_PROGRESS_KEYS.twoFactor,
+            'Проверка кода подтверждения...',
+        )
         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
         setShowLoading(true)
-        setTimeout(() => BARSAPI.Login2FA(code).then((r) => {
+        setTimeout(() => {
+            loadingProgressService.advance(progress, 'Получение основных данных студента...')
+            BARSAPI.Login2FA(code).then((r) => {
             if (r === 'STUDENTS_NOT_FOUND') {
+                loadingProgressService.complete(progress)
                 BARSAPI.EnterStudentsNotFoundState()
                 return
             }
-            if (r === 'CANCELLED') return
+            if (r === 'CANCELLED') {
+                loadingProgressService.fail(progress)
+                return
+            }
             if (r === 'ONLINE') {
+                loadingProgressService.complete(progress)
                 void BARSAPI.LoadOnlineData()
             }
         }, (e: any) => {
+            loadingProgressService.fail(progress)
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             setShowLoading(false)
             if (isBARSError(e) && e.message.includes("Не удалось войти с использованием двухфакторной аутентификации")) {
@@ -149,10 +163,11 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                 Alert.alert('Ошибка!', isBARSError(e) ? e.message : e.toString())
                 BARSAPI.SetLoginState('NOT_LOGGED_IN')
             }
-        }), 250)
+        })
+        }, 250)
     }
 
-    if (showLoading) return <LoadingScreen/>
+    if (showLoading) return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.twoFactor} fallbackLabel={'Проверка кода подтверждения...'}/>
     if (showingHelp) return <Help onBack={shHCb}/>
 
     const canSubmit = Boolean(codeProviderTid && code.trim())

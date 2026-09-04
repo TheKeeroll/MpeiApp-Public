@@ -104,7 +104,7 @@ const QuestionnairesScreen: React.FC = () => {
     <Fragment>
       {questionnaires.status === 'OFFLINE' &&
         <View style={Styles.offlineNotification}>
-          <OfflineDataNotification/>
+          <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('questionnaires') }}/>
         </View>
       }
       <View style={Styles.separator}/>
@@ -113,8 +113,8 @@ const QuestionnairesScreen: React.FC = () => {
 
   const renderSwitch = () => {
     switch (questionnaires.status){
-      case "LOADING": return <LoadingScreen/>
-      case "FAILED": return <FetchFailed/>
+      case "LOADING": return <LoadingScreen progressKey={'bars-section:questionnaires'} fallbackLabel={'Загрузка анкет...'}/>
+      case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('questionnaires') }}/>
       case "OFFLINE":
       case "LOADED": return (
         <FlatList

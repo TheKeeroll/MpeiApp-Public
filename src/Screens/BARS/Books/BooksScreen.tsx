@@ -14,6 +14,7 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import { convertDate } from "../Marks/BARSMainScreen";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import BARSAPI from "../../../Common/Globals";
 
 const BookCell = ({item}: {item: BARSBook, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
@@ -82,7 +83,7 @@ const BooksScreen: React.FC = () => {
         <View style={{alignItems: 'center', justifyContent: 'center'}}>
           {offline &&
             <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-              <OfflineDataNotification/>
+              <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('books') }}/>
             </View>
           }
           <View style={Styles.libraryCardView}>
@@ -104,8 +105,8 @@ const BooksScreen: React.FC = () => {
 
   const renderSwitch = () => {
     switch (booksPack.status){
-      case "LOADING": return <LoadingScreen/>
-      case "FAILED": return <FetchFailed/>
+      case "LOADING": return <LoadingScreen progressKey={'bars-section:books'} fallbackLabel={'Загрузка книг...'}/>
+      case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('books') }}/>
       case "OFFLINE":
       case "LOADED": return onLoad(booksPack.status == 'OFFLINE')
     }

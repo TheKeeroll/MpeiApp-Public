@@ -548,7 +548,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         >
             {loading && (
                 <View style={Styles.overlay}>
-                    <LoadingScreen style={{ flex: 1 }} />
+                    <LoadingScreen style={{ flex: 1 }} fallbackLabel={'Загрузка карты...'} />
                 </View>
             )}
             {isPermissionRequested && renderMap && rootViewLayout.width > 0 && rootViewLayout.height > 0 && (<YaMap

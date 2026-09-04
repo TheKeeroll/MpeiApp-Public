@@ -91,7 +91,7 @@ const TasksScreen: React.FC = () => {
         <Fragment>
           {offline &&
             <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-              <OfflineDataNotification/>
+              <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('tasks') }}/>
             </View>
           }
           <View style={{height: 20}}/>
@@ -103,8 +103,8 @@ const TasksScreen: React.FC = () => {
 
   const renderSwitch = () => {
     switch (tasks.status){
-      case "LOADING": return <LoadingScreen/>
-      case "FAILED": return <FetchFailed/>
+      case "LOADING": return <LoadingScreen progressKey={'bars-section:tasks'} fallbackLabel={'Загрузка заданий...'}/>
+      case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('tasks') }}/>
       case "OFFLINE":
       case "LOADED": return onLoad(tasks.status == 'OFFLINE')
     }

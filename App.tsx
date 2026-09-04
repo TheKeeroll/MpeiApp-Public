@@ -18,6 +18,7 @@ import AF2Screen from "./src/Screens/Login/AF2Screen";
 import {AdsProvider} from "./src/Ads/AdsProvider";
 import {LoyaltyProvider} from "./src/Loyalty/LoyaltyProvider";
 import TokenBalanceBadge from "./src/Loyalty/TokenBalanceBadge";
+import {LOADING_PROGRESS_KEYS} from "./src/Loading/LoadingProgressKeys";
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()
@@ -36,8 +37,8 @@ const App: React.FC = () =>{
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
       case "STUDENTS_NOT_FOUND" : return <LoginScreenWrapper/>
-      case "NOT_INITIATED": return <LoadingScreen/>
-      case "AUTHENTICATED_LOADING_DATA": return <LoadingScreen showStickyAd/>
+      case "NOT_INITIATED": return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.appInitialization} fallbackLabel={'Подготовка приложения...'}/>
+      case "AUTHENTICATED_LOADING_DATA": return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.authenticatedData} fallbackLabel={'Получение основных учебных данных...'} showStickyAd/>
       case "NEED_2FA": return (
         <SafeAreaView style={{
           flex: 1,

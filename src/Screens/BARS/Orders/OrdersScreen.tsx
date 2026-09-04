@@ -13,6 +13,7 @@ import FetchFailed from "../../CommonComponents/FetchFailed";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import BARSAPI from "../../../Common/Globals";
 
 const OrderCell = ({item}: {item: BARSOrder, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
@@ -67,7 +68,7 @@ const OrdersScreen: React.FC = () => {
         <Fragment>
           {offline &&
             <View style={{alignItems: 'center', marginTop: 10, justifyContent: 'center'}}>
-              <OfflineDataNotification/>
+              <OfflineDataNotification onRetry={() => { void BARSAPI.RetryDataSection('orders') }}/>
             </View>
           }
           <View style={{height: 20}}/>
@@ -79,8 +80,8 @@ const OrdersScreen: React.FC = () => {
 
   const renderSwitch = () => {
     switch (orders.status){
-      case "LOADING": return <LoadingScreen/>
-      case "FAILED": return <FetchFailed/>
+      case "LOADING": return <LoadingScreen progressKey={'bars-section:orders'} fallbackLabel={'Загрузка приказов...'}/>
+      case "FAILED": return <FetchFailed onRetry={() => { void BARSAPI.RetryDataSection('orders') }}/>
       case "OFFLINE":
       case "LOADED": return onLoad(orders.status == 'OFFLINE')
     }

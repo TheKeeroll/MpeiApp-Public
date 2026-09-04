@@ -202,7 +202,7 @@ const QRCodeScanner: React.FC = () => {
   );
 
   if (!device || !hasPermission) {
-    return <LoadingScreen />;
+    return <LoadingScreen fallbackLabel={'Подготовка камеры...'} />;
   }
 
   return (
@@ -223,7 +223,7 @@ const QRCodeScanner: React.FC = () => {
             }}
         />
         {isLoading ? (
-            <LoadingScreen />
+            <LoadingScreen fallbackLabel={'Подготовка камеры...'} />
         ) : (
             <View style={styles.overlayContainer}>
               <DailyUsageBadge feature="qrRegistration" style={{position: 'absolute', top: insets.top + 8, left: 16}}/>
