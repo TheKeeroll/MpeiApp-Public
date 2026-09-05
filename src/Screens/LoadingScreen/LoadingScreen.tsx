@@ -96,6 +96,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = (props) => {
 
     const currentLabel = progress.current?.label ?? props.fallbackLabel ?? 'Загрузка...';
     const previous = progress.previous;
+    const showStickyAd = props.showStickyAd ?? true;
     return (
         <SafeAreaView
           edges={['left', 'right', 'bottom']}
@@ -183,7 +184,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = (props) => {
                     </Animated.View>
                 </View>
             </View>
-            {props.showStickyAd ? (
+            {showStickyAd ? (
                 <StickyBannerSlot placement={AD_PLACEMENTS.loading}/>
             ) : null}
         </SafeAreaView>

@@ -37,16 +37,16 @@ export const ListSwitch: React.FC<{
             disabled={!disabled || typeof props.onLockedPress === 'undefined'}
             onPress={props.onLockedPress}
             activeOpacity={0.8}
-            style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: disabled ? withOpacity(colors.primary, 30) : colors.primary}}
+            style={{alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, marginTop: 10, paddingVertical: 6, borderRadius: 5, backgroundColor: disabled ? withOpacity(colors.primary, 30) : colors.primary}}
         >
-            <View pointerEvents={disabled ? 'none' : 'auto'} style={{alignItems: 'center', flexDirection: 'row', width: '100%', height: '100%'}}>
+            <View pointerEvents={disabled ? 'none' : 'auto'} style={{alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 36}}>
                 {typeof props.icon != 'undefined' &&
-                <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
+                <View style={{width: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>{props.icon}</View>
                 }
-                <View style={{flex: .7, height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-                    <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+                <View style={{flex: 1, flexShrink: 1, paddingVertical: 2, alignItems: 'flex-start', justifyContent: 'center'}}>
+                    <Text style={{marginLeft: 6, marginRight: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
                 </View>
-                <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+                <View style={{minWidth: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
                     <Switch
                         value={props.value}
                         disabled={disabled}
@@ -65,14 +65,14 @@ export const ListButton: React.FC<{title: string, onPress: ()=>void, disabled?: 
     const {colors} = useTheme<CustomTheme>()
     const disabled = typeof props.disabled != 'undefined' && props.disabled
     return (
-        <TouchableOpacity disabled={disabled} onPress={props.onPress} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, maxHeight: 56, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+        <TouchableOpacity disabled={disabled} onPress={props.onPress} style={{alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, marginTop: 10, paddingVertical: 6, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
             {typeof props.icon != 'undefined' &&
-            <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
+            <View style={{width: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>{props.icon}</View>
             }
-            <View style={{flex: .7 + (typeof props.icon == 'undefined' ? .12 : 0), height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-                <Text adjustsFontSizeToFit={true} style={{marginLeft: 6, padding: 8, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+            <View style={{flex: 1, flexShrink: 1, paddingVertical: 2, alignItems: 'flex-start', justifyContent: 'center'}}>
+                <Text style={{marginLeft: 6, marginRight: 6, paddingVertical: 2, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
-            <View style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+            <View style={{minWidth: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
                 <MtIcons.default size={40} color={disabled ? withOpacity(colors.text, 30) : colors.text} name={props.trailingIcon ?? 'navigate-next'}/>
             </View>
         </TouchableOpacity>
@@ -91,7 +91,7 @@ export const ListText: React.FC<{title: string, onPress?:()=>void, textStyle?: T
 export const ListSeparator: React.FC<{title: string}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
-        <View style={{ alignItems: 'flex-end', flexDirection: 'row', width: '100%', height: 48, maxHeight: 'auto', marginTop: 10, borderRadius: 5}}>
+        <View style={{alignItems: 'flex-start', justifyContent: 'flex-end', width: '100%', minHeight: 48, marginTop: 10, paddingBottom: 6, borderRadius: 5}}>
                 <Text style={{color: withOpacity(colors.text, 30), fontSize: 18}}>{props.title}</Text>
         </View>
     )
@@ -103,14 +103,14 @@ export const ListAvatarItem: React.FC<{title: string, link: string, textStyle?: 
         <TouchableOpacity onPress={()=>{
             return Linking.openURL(props.link)
         }}
-            style={{ alignItems: 'flex-start', flexDirection: 'row', width: '100%', justifyContent: 'center', height: 80, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary}}>
-            <View style={{flex: .25, alignItems: 'center', justifyContent: 'center', height: '100%'}}>
+            style={{alignItems: 'center', flexDirection: 'row', width: '100%', justifyContent: 'center', minHeight: 80, marginTop: 10, paddingVertical: 8, borderRadius: 5, backgroundColor: colors.primary}}>
+            <View style={{width: 76, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>
                 <Avatar.Image size={60} source={props.image}/>
             </View>
-            <View style={{flex: .65, justifyContent: 'center', height: '100%'}}>
+            <View style={{flex: 1, flexShrink: 1, justifyContent: 'center'}}>
                 <Text style={[{color: colors.text, fontSize: 18}, props.textStyle]}>{props.title}</Text>
             </View>
-            <View style={{height: '100%', flex: .2, alignItems: 'center', justifyContent: 'center'}}>
+            <View style={{width: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
                 <EtIcons.default size={40} color={withOpacity(colors.text, 20)} name={'vk-alternitive'}/>
             </View>
         </TouchableOpacity>
@@ -201,14 +201,14 @@ export const IconSelector: React.FC<{
         <TouchableOpacity disabled={disabled} onPress={()=>{
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
             setExpanded(p=>!p)
-        }} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+        }} style={{alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, marginTop: 10, paddingVertical: 6, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
             {typeof props.icon != 'undefined' &&
-            <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.icon}</View>
+            <View style={{width: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>{props.icon}</View>
             }
-            <View style={{flex: .7 + (typeof props.icon == 'undefined' ? .12 : 0), height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-                <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+            <View style={{flex: 1, flexShrink: 1, paddingVertical: 2, alignItems: 'flex-start', justifyContent: 'center'}}>
+                <Text style={{marginLeft: 6, marginRight: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
             </View>
-            <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+            <View pointerEvents={'none'} style={{width: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
                 <Avatar.Image source={icon == 'dragons' ? require(`../../../assets/images/dragons.webp`) : ( icon == 'simple' ? require(`../../../assets/images/simple.webp`) : ( icon == 'matterial' ? require(`../../../assets/images/matterial.webp`) : ( icon == 'gold' ? require(`../../../assets/images/gold.webp`) : ( icon == 'crymat' ? require(`../../../assets/images/crymat.webp`) : ( icon == 'crysign' ? require(`../../../assets/images/crysign.webp`) : require(`../../../assets/images/cool.webp`))))))} style={{borderRadius: 4 }} size={40}/>
             </View>
         </TouchableOpacity>
@@ -323,14 +323,14 @@ export const QRFrameSelector: React.FC<{
     <TouchableOpacity disabled={disabled} onPress={()=>{
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       setExpanded(p=>!p)
-    }} style={{ alignItems: 'center', flexDirection: 'row', width: '100%', height: 48, marginTop: 10, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
+    }} style={{alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 48, marginTop: 10, paddingVertical: 6, borderRadius: 5, backgroundColor: colors.primary, opacity: disabled ? .3 : 1}}>
       {typeof props.frame != 'undefined' &&
-        <View style={{flex: .12, alignItems: 'center', justifyContent: 'center', height: '100%'}}>{props.frame}</View>
+        <View style={{width: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>{props.frame}</View>
       }
-      <View style={{flex: .7 + (typeof props.frame == 'undefined' ? .12 : 0), height: '100%', alignItems: 'flex-start', justifyContent: 'center'}}>
-        <Text style={{marginLeft: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
+      <View style={{flex: 1, flexShrink: 1, paddingVertical: 2, alignItems: 'flex-start', justifyContent: 'center'}}>
+        <Text style={{marginLeft: 6, marginRight: 6, color: disabled ? withOpacity(colors.text, 30) : colors.text, fontSize: 16}}>{props.title}</Text>
       </View>
-      <View pointerEvents={'none'} style={{height: '100%', flex: .18, alignItems: 'center', justifyContent: 'center'}}>
+      <View pointerEvents={'none'} style={{width: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
         <Avatar.Image source={getQRFramePreview(frame)} style={{borderRadius: 4 }} size={40}/>
       </View>
     </TouchableOpacity>
@@ -359,7 +359,7 @@ export const QRFrameSelector: React.FC<{
 export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
-        <View style={{ justifyContent: 'space-evenly', width: '100%', height: 60, marginTop: 10,borderRadius: 5}}>
+        <View style={{justifyContent: 'space-evenly', width: '100%', minHeight: 60, marginTop: 10, paddingVertical: 4, borderRadius: 5}}>
             <Text style={{color: colors.textUnderline, fontSize: 20, fontWeight: 'bold'}}>{props.title}</Text>
             <Text style={{alignSelf: 'flex-end', color: withOpacity(colors.text, 60), fontSize: 14}}>{props.version}</Text>
         </View>
@@ -368,9 +368,9 @@ export const WhatsNewLogo: React.FC<{title: string, version: string}> = (props) 
 export const WhatsNewChange: React.FC<{title: string}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
-        <View style={{ justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', width: '98%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
-            <View style={{height: 6, aspectRatio: 1, borderRadius: 50, backgroundColor: colors.text}}/>
-            <Text numberOfLines={3} style={{color: withOpacity(colors.text, 80),fontSize: 16, marginLeft: 10}}>{props.title}</Text>
+        <View style={{justifyContent: 'flex-start', alignItems: 'flex-start', flexDirection: 'row', width: '98%', minHeight: 30, marginTop: 0, borderRadius: 5}}>
+            <View style={{height: 6, width: 6, marginTop: 8, borderRadius: 50, backgroundColor: colors.text}}/>
+            <Text style={{flex: 1, flexShrink: 1, color: withOpacity(colors.text, 80), fontSize: 16, marginLeft: 10}}>{props.title}</Text>
         </View>
     )
 }

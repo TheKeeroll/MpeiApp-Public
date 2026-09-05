@@ -13,7 +13,7 @@ const StickyBannerAd: React.FC<StickyBannerAdProps> = ({placement}) => {
   const [adSize, setAdSize] = React.useState<BannerAdSize | null>(null);
   const [isLoaded, setLoaded] = React.useState(false);
   const [hasFailed, setFailed] = React.useState(false);
-  const adRequest = React.useMemo(() => createAdRequest('stickyBanner'), [createAdRequest]);
+  const adRequest = React.useMemo(() => createAdRequest(placement), [createAdRequest, placement]);
 
   const handleLayout = React.useCallback((event: LayoutChangeEvent) => {
     const nextWidth = Math.floor(event.nativeEvent.layout.width);

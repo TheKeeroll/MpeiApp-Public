@@ -5,9 +5,12 @@ import {NavigationHeader} from '../CommonComponents/DrawerHeader';
 import {withOpacity, type CustomTheme} from '../../Themes/Themes';
 import ScheduleSearchPanel from './ScheduleSearchPanel';
 import {createScheduleSearchParams} from './ScheduleNavigation';
+import InlineBannerAd from '../../Ads/InlineBannerAd';
+import {YANDEX_INLINE_AD_PLACEMENTS} from '../../Ads/AdPlacements';
 
 const GuestScheduleScreen: React.FC<{navigation: any}> = ({navigation}) => {
   const {colors} = useTheme<CustomTheme>();
+  const [normalizedQuery, setNormalizedQuery] = React.useState('');
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
@@ -22,7 +25,13 @@ const GuestScheduleScreen: React.FC<{navigation: any}> = ({navigation}) => {
       </View>
       <ScheduleSearchPanel
         onSearch={query => navigation.push('scheduleMain', createScheduleSearchParams(query))}
+        onQueryChange={setNormalizedQuery}
       />
+      {!normalizedQuery ? (
+        <View style={{width: '90%', alignSelf: 'center'}}>
+          <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.guestScheduleEmpty}/>
+        </View>
+      ) : null}
     </View>
   );
 };

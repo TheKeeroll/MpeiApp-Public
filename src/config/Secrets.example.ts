@@ -8,13 +8,27 @@ export const YANDEX_MAPS_API_KEY = '';
 
 export const YANDEX_AD_UNIT_IDS = {
   android: {
-    inlineBanner: '',
-    stickyBanner: '',
+    inlineBannerMarks: '',
+    inlineBannerDrawer: '',
+    inlineBannerScheduleToday: '',
+    inlineBannerGuestScheduleEmpty: '',
+    stickyBannerLoading: '',
+    stickyBannerSkippedClasses: '',
+    stickyBannerDetailedMarks: '',
+    stickyBannerRecordBook: '',
+    stickyBannerStipends: '',
     rewarded: '',
   },
   ios: {
-    inlineBanner: '',
-    stickyBanner: '',
+    inlineBannerMarks: '',
+    inlineBannerDrawer: '',
+    inlineBannerScheduleToday: '',
+    inlineBannerGuestScheduleEmpty: '',
+    stickyBannerLoading: '',
+    stickyBannerSkippedClasses: '',
+    stickyBannerDetailedMarks: '',
+    stickyBannerRecordBook: '',
+    stickyBannerStipends: '',
     rewarded: '',
   },
 } as const;
