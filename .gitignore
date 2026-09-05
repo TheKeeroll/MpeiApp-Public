@@ -83,3 +83,5 @@ android/app/noob_dragons_keystore.jks
 android/gradle.properties
 ios/MpeiApp/YandexMapsInitializer.swift
 src/config/Secrets.ts
+/vpn-subscription-proxy/.env
+/vpn-subscription-proxy/dist/
