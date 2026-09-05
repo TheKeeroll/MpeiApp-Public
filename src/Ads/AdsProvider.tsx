@@ -246,7 +246,10 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
 
     return {
       adUnitId,
-      targeting: consent === 'GRANTED' ? createAdsTargeting(sessionLocation) : undefined,
+      targeting: createAdsTargeting(
+        consent === 'GRANTED' ? sessionLocation : undefined,
+        consent === 'GRANTED',
+      ),
     };
   }, [adsEnabled, consent, sessionLocation, targetingRevision]);
 
