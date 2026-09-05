@@ -1,6 +1,7 @@
 import {Gender, Location, type AdTargetingParams} from 'yandex-mobile-ads';
 import BARSAPI from '../Common/Globals';
-import {INITIAL_MAP_REGION, isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
+import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
+import {getAdFallbackLocation} from './AdFallbackLocation';
 
 const DEFAULT_AGE = 19;
 
@@ -49,15 +50,19 @@ export const getTargetedGender = (firstName?: string): Gender => (
  * contextQuery/contextTags intentionally stay empty: MpeiApp has no user-entered
  * ad-search query, and study subjects or BARS data are not ad-context signals.
  */
-export const createAdsTargeting = (sessionLocation?: MapCoordinates | null): AdTargetingParams => {
-  const student = BARSAPI.mCurrentData.student;
-  const location = sessionLocation && isValidMapCoordinates(sessionLocation)
+export const createAdsTargeting = (
+  sessionLocation?: MapCoordinates | null,
+  includePersonalData = true,
+): AdTargetingParams => {
+  const location = includePersonalData && sessionLocation && isValidMapCoordinates(sessionLocation)
     ? sessionLocation
-    : INITIAL_MAP_REGION;
+    : getAdFallbackLocation();
 
   return {
-    age: String(getTargetedAge(student?.group)),
-    gender: getTargetedGender(student?.name),
+    ...(includePersonalData ? {
+      age: String(getTargetedAge(BARSAPI.mCurrentData.student?.group)),
+      gender: getTargetedGender(BARSAPI.mCurrentData.student?.name),
+    } : {}),
     location: new Location(location.lat, location.lon),
   };
 };
