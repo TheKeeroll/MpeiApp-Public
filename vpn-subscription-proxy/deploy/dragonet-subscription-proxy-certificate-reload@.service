@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart DragoNet proxy after Let's Encrypt certificate %i updates
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart dragonet-subscription-proxy@%i.service

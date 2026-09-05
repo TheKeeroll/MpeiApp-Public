@@ -172,6 +172,32 @@ const letsEncryptCandidatePairs = async (): Promise<CertificatePair[]> => {
     }]);
 };
 
+/**
+ * systemd LoadCredential reads the existing Let’s Encrypt files as root at
+ * service start, then exposes a short-lived, read-only copy to the
+ * unprivileged service. This is not a configurable certificate path.
+ */
+const systemdCredentialCandidatePairs = (): CertificatePair[] => {
+  const credentialsDirectory = process.env.CREDENTIALS_DIRECTORY;
+  if (!credentialsDirectory) {
+    return [];
+  }
+  const credentialsRoot = '/run/credentials';
+  const resolvedDirectory = path.resolve(credentialsDirectory);
+  const relativeDirectory = path.relative(credentialsRoot, resolvedDirectory);
+  if (
+    !relativeDirectory
+    || relativeDirectory.startsWith('..')
+    || path.isAbsolute(relativeDirectory)
+  ) {
+    return [];
+  }
+  return [{
+    certificatePath: path.join(resolvedDirectory, 'fullchain.pem'),
+    privateKeyPath: path.join(resolvedDirectory, 'privkey.pem'),
+  }];
+};
+
 const fallbackCandidatePairs = async (): Promise<CertificatePair[]> => {
   const pairs = [
     ...(await oneLevelCandidatePairs('/etc/ssl')),
@@ -288,7 +314,13 @@ export const discoverStartupTls = async (
     resolvedDependencies,
     now,
   );
-  const material = letsEncryptMatch ?? await findMatchingMaterial(
+  const credentialMatch = letsEncryptMatch ? undefined : await findMatchingMaterial(
+    systemdCredentialCandidatePairs(),
+    publicIpv4,
+    resolvedDependencies,
+    now,
+  );
+  const material = letsEncryptMatch ?? credentialMatch ?? await findMatchingMaterial(
     await fallbackCandidatePairs(),
     publicIpv4,
     resolvedDependencies,

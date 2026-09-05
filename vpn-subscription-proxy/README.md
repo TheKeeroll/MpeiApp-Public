@@ -26,10 +26,14 @@
 2. Ищет пары `fullchain.pem` + `privkey.pem` в
    `/etc/letsencrypt/live/*/`, раскрывает symlink и проверяет чтение,
    соответствие сертификата ключу, срок действия и SAN/CN.
-3. При отсутствии подходящей пары ограниченно проверяет `/etc/ssl`,
+3. В systemd-режиме использует `LoadCredential`: PID 1 читает ту же пару из
+   `/etc/letsencrypt/live/` и передаёт сервисному пользователю краткоживущий
+   read-only snapshot. Он проходит те же проверки и не является
+   настраиваемым путём к сертификату.
+4. При отсутствии подходящей пары ограниченно проверяет `/etc/ssl`,
    `/etc/nginx/ssl`, `/opt/*/ssl`, `/root/{fullchain.pem,privkey.pem}`,
    `/root/{cert.pem,key.pem}` и один уровень `/root/.acme.sh`.
-4. Принимает только конкретное DNS-имя из сертификата, чей единственный A
+5. Принимает только конкретное DNS-имя из сертификата, чей единственный A
    record совпадает с IPv4 из голосования. Wildcard сам по себе не подходит.
 
 При любой неудаче listener не открывается. Сервис сам завершает TLS и
@@ -53,64 +57,33 @@ sudo apt install -y ca-certificates curl gnupg build-essential python3
 curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt install -y nodejs
 node --version
+systemctl --version
 sudo useradd --system --home /nonexistent --shell /usr/sbin/nologin dragonet-proxy
 ```
 
 `node --version` должен вывести версию 24.x. `build-essential` нужен на
 случай, если `better-sqlite3` будет собран из исходного кода для архитектуры
-VPS.
+VPS. Нужен systemd 247 или новее для `LoadCredential`; штатные Debian 11 и
+12 этому соответствуют.
 
-### 2. Подготовить сертификат, доступный сервису
+### 2. Использовать существующий сертификат Let’s Encrypt
 
 Нужен действующий сертификат именно для `proxy.example.com`. Если Certbot уже
 выпускает такой сертификат, используйте его. Для нового сертификата выберите
 подходящий для инфраструктуры способ Certbot (HTTP-01 требует доступного
 порта 80, DNS-01 его не требует).
 
-Закрытый ключ Let’s Encrypt обычно читает только root. Сделайте ограниченную
-копию в разрешённом discovery-каталоге `/etc/ssl`; она читается только root и
-группой proxy:
+Не копируйте сертификат и не создавайте Certbot deploy-hook. Закрытый ключ
+обычно доступен только root, поэтому systemd читает исходные файлы в
+`/etc/letsencrypt/live/` как PID 1 через `LoadCredential`, а процесс proxy
+остаётся непривилегированным. При каждом старте он получает новый временный
+read-only snapshot этой же пары; постоянной копии ключа не появляется.
 
-```bash
-export CERTBOT_NAME='proxy.example.com'
-sudo install -d -o root -g dragonet-proxy -m 0750 /etc/ssl/dragonet-subscription-proxy
-sudo install -o root -g dragonet-proxy -m 0640 \
-  "/etc/letsencrypt/live/$CERTBOT_NAME/fullchain.pem" \
-  /etc/ssl/dragonet-subscription-proxy/fullchain.pem
-sudo install -o root -g dragonet-proxy -m 0640 \
-  "/etc/letsencrypt/live/$CERTBOT_NAME/privkey.pem" \
-  /etc/ssl/dragonet-subscription-proxy/privkey.pem
-sudo -u dragonet-proxy test -r /etc/ssl/dragonet-subscription-proxy/fullchain.pem
-sudo -u dragonet-proxy test -r /etc/ssl/dragonet-subscription-proxy/privkey.pem
-```
-
-Создайте deploy-hook Certbot, чтобы при продлении обновлялась копия и сервис
-заново проходил discovery. В скрипте замените `proxy.example.com` на своё
-имя:
-
-```bash
-sudo tee /etc/letsencrypt/renewal-hooks/deploy/dragonet-subscription-proxy.sh >/dev/null <<'EOF'
-#!/bin/sh
-set -eu
-
-case " ${RENEWED_DOMAINS:-} " in
-  *" proxy.example.com "*) ;;
-  *) exit 0 ;;
-esac
-
-install -o root -g dragonet-proxy -m 0640 \
-  "$RENEWED_LINEAGE/fullchain.pem" \
-  /etc/ssl/dragonet-subscription-proxy/fullchain.pem
-install -o root -g dragonet-proxy -m 0640 \
-  "$RENEWED_LINEAGE/privkey.pem" \
-  /etc/ssl/dragonet-subscription-proxy/privkey.pem
-systemctl try-restart dragonet-subscription-proxy.service
-EOF
-sudo chmod 0750 /etc/letsencrypt/renewal-hooks/deploy/dragonet-subscription-proxy.sh
-```
-
-Не добавляйте пути к сертификату в env: startup discovery специально не
-принимает произвольные пути.
+Поставляемый `.path` unit следит за каталогом и symlink `fullchain.pem` /
+`privkey.pem`. После атомарного обновления Certbot он автоматически запускает
+one-shot restart proxy, и startup discovery повторяется уже на новой паре.
+Не добавляйте пути к сертификату в env: arbitrary certificate path по-прежнему
+не поддерживается.
 
 ### 3. Установить код и зависимости
 
@@ -177,11 +150,17 @@ proxy. Это разные порты.
 
 ```bash
 sudo install -o root -g root -m 0644 \
-  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy.service \
-  /etc/systemd/system/dragonet-subscription-proxy.service
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.service \
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.path \
+  /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now dragonet-subscription-proxy.service
-sudo systemctl status dragonet-subscription-proxy.service --no-pager
+export CERTBOT_NAME='proxy.example.com'
+sudo systemctl enable --now \
+  "dragonet-subscription-proxy@$CERTBOT_NAME.service" \
+  "dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path"
+sudo systemctl status "dragonet-subscription-proxy@$CERTBOT_NAME.service" --no-pager
+sudo systemctl status "dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path" --no-pager
 sudo ss -ltnp '( sport = :8443 )'
 sudo ufw allow 8443/tcp
 ```
@@ -190,6 +169,11 @@ sudo ufw allow 8443/tcp
 `PROXY_LISTEN_PORT`, последняя команда и проверка `ss` должны использовать
 его. `CAP_NET_BIND_SERVICE` в unit позволяет при необходимости использовать
 и порт ниже 1024, но не освобождает уже занятый 443.
+
+Шаблон `dragonet-subscription-proxy-certificate-reload@.path` не зависит от
+Certbot deploy-hook. После обычного продления Certbot instance с тем же
+`CERTBOT_NAME` перезапускает proxy и перечитывает исходные файлы Let’s
+Encrypt. Статус watcher проверяется второй командой `systemctl status` выше.
 
 Панель S-UI и `/apiv2/*` не должны быть доступны извне. Открывается только
 выбранный порт proxy.
@@ -202,14 +186,16 @@ sudo ufw allow 8443/tcp
 ```bash
 export PROXY_HOST='proxy.example.com'
 export PROXY_PORT='8443'
+export CERTBOT_NAME='proxy.example.com'
 curl --fail --silent --show-error \
   --resolve "$PROXY_HOST:$PROXY_PORT:127.0.0.1" \
   "https://$PROXY_HOST:$PROXY_PORT/healthz"
-sudo journalctl -u dragonet-subscription-proxy.service -n 50 --no-pager
+sudo journalctl -u "dragonet-subscription-proxy@$CERTBOT_NAME.service" -n 50 --no-pager
 ```
 
 Ожидаемый ответ: `{"status":"ok"}`. При ошибке запуска не ослабляйте
-проверки discovery: проверьте A-запись, сертификат и права на его копию.
+проверки discovery: проверьте A-запись, исходную пару Let’s Encrypt и статус
+instance `dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path`.
 Журнал намеренно содержит только общий текст запуска, без body, Token,
 клиентских имён, IP, device и TLS-путей.
 
@@ -284,7 +270,7 @@ gate можно повторить любой запрос с `Mpei-App-Req-Id =
 повторите установку из шага 3, перезапустите service и выполните loopback,
 `verify` и `demo` проверки выше. Если новый процесс не проходит discovery,
 верните предыдущий каталог, выполните `sudo systemctl restart
-dragonet-subscription-proxy.service` и не меняйте state directory: SQLite
+"dragonet-subscription-proxy@$CERTBOT_NAME.service"` и не меняйте state directory: SQLite
 reservation должна сохраниться.
 
 `PROXY_LISTEN_PORT` нужно будет отдельно перенести в публичную константу
