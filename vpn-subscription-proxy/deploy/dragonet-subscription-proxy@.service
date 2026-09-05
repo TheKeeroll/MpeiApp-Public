@@ -1,5 +1,5 @@
 [Unit]
-Description=DragoNet subscription HTTPS proxy
+Description=DragoNet subscription HTTPS proxy for Let's Encrypt certificate %i
 Wants=network-online.target
 After=network-online.target
 
@@ -9,6 +9,11 @@ User=dragonet-proxy
 Group=dragonet-proxy
 WorkingDirectory=/opt/vpn-subscription-proxy
 EnvironmentFile=/etc/dragonet-subscription-proxy.env
+# PID 1 reads this original pair from /etc/letsencrypt/live at every start.
+# CREDENTIALS_DIRECTORY exposes it only to the unprivileged process, without
+# a persistent copy or a custom Certbot deploy-hook.
+LoadCredential=fullchain.pem:/etc/letsencrypt/live/%i/fullchain.pem
+LoadCredential=privkey.pem:/etc/letsencrypt/live/%i/privkey.pem
 ExecStart=/usr/bin/node /opt/vpn-subscription-proxy/dist/server.js
 Restart=on-failure
 RestartSec=5

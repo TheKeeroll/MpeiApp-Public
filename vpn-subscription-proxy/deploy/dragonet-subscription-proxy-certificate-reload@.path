@@ -1,0 +1,13 @@
+[Unit]
+Description=Watch Let's Encrypt certificate %i for DragoNet proxy
+
+[Path]
+# Certbot atomically swaps live symlinks. Watching the directory and both
+# links triggers the paired one-shot restart without a Certbot deploy-hook.
+PathChanged=/etc/letsencrypt/live/%i
+PathChanged=/etc/letsencrypt/live/%i/fullchain.pem
+PathChanged=/etc/letsencrypt/live/%i/privkey.pem
+Unit=dragonet-subscription-proxy-certificate-reload@%i.service
+
+[Install]
+WantedBy=multi-user.target
