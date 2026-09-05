@@ -6,17 +6,18 @@ import {APP_EVENTS, VpnEntitlementChangedEvent, VpnEntitlementStatus} from '../C
 import {STORAGE_KEYS} from '../Common/Constants';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
 import {createAdsTargeting} from './AdTargeting';
-import {getYandexAdUnitId, type YandexAdFormat} from './AdUnitIds';
+import {getYandexAdUnitId} from './AdUnitIds';
 import {useLoyalty} from '../Loyalty/LoyaltyProvider';
+import {
+  YANDEX_STICKY_AD_PLACEMENTS,
+  type YandexAdUnitPlacement,
+  type YandexStickyAdPlacement,
+} from './AdPlacements';
 
 /** Every enabled sticky location must be declared here before it can render. */
-export const AD_PLACEMENTS = {
-  loading: 'loading',
-  skippedClasses: 'skippedClasses',
-  detailedMarks: 'detailedMarks',
-} as const;
+export const AD_PLACEMENTS = YANDEX_STICKY_AD_PLACEMENTS;
 
-export type StickyAdPlacement = (typeof AD_PLACEMENTS)[keyof typeof AD_PLACEMENTS];
+export type StickyAdPlacement = YandexStickyAdPlacement;
 
 type StickyReservedHeights = Record<StickyAdPlacement, number>;
 type SavedAdConsent = 'GRANTED' | 'DENIED';
@@ -26,7 +27,7 @@ type AdsContextValue = {
   isSdkInitialized: boolean;
   isPersonalizedTargetingEnabled: boolean;
   vpnEntitlementStatus: VpnEntitlementStatus;
-  createAdRequest: (format: YandexAdFormat) => AdRequestParams | undefined;
+  createAdRequest: (placement: YandexAdUnitPlacement) => AdRequestParams | undefined;
   isStickyPlacementEnabled: (placement: StickyAdPlacement) => boolean;
   registerStickyPlacement: (placement: StickyAdPlacement) => () => void;
   getStickyReservedHeight: (placement: StickyAdPlacement) => number;
@@ -38,6 +39,8 @@ const initialStickyReservedHeights: StickyReservedHeights = {
   [AD_PLACEMENTS.loading]: 0,
   [AD_PLACEMENTS.skippedClasses]: 0,
   [AD_PLACEMENTS.detailedMarks]: 0,
+  [AD_PLACEMENTS.recordBook]: 0,
+  [AD_PLACEMENTS.stipends]: 0,
 };
 
 let mobileAdsInitializationPromise: Promise<void> | undefined;
@@ -231,12 +234,12 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     ));
   }, []);
 
-  const createAdRequest = React.useCallback((format: YandexAdFormat): AdRequestParams | undefined => {
+  const createAdRequest = React.useCallback((placement: YandexAdUnitPlacement): AdRequestParams | undefined => {
     if (!adsEnabled) {
       return undefined;
     }
 
-    const adUnitId = getYandexAdUnitId(format);
+    const adUnitId = getYandexAdUnitId(placement);
     if (!adUnitId) {
       return undefined;
     }

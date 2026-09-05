@@ -30,6 +30,7 @@ import { SkippedClass } from "../../API/DataTypes";
 import BooksScreen from "./Books/BooksScreen";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import InlineBannerAd from "../../Ads/InlineBannerAd";
+import {YANDEX_INLINE_AD_PLACEMENTS} from "../../Ads/AdPlacements";
 
 const Drawer = createDrawerNavigator()
 
@@ -220,11 +221,11 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
         }
     }
     return (
-        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, borderRadius: 5, height: 45, backgroundColor: isFocused ? colors.highlight : colors.surface}}>
-            <View style={{width: '12.5%', alignItems: 'center', justifyContent: 'center', borderRadius: 5, height: 35, marginHorizontal: 5, backgroundColor: colors.surface}}>
+        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, minHeight: 45, paddingVertical: 5, borderRadius: 5, backgroundColor: isFocused ? colors.highlight : colors.surface}}>
+            <View style={{width: 46, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', borderRadius: 5, marginHorizontal: 5, backgroundColor: colors.surface}}>
                 {props.iconComponent}
             </View>
-            <Text style={{fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
+            <Text style={{flex: 1, flexShrink: 1, fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
             {props.counter > 0 && (
               <View style={{ marginLeft: 'auto', marginRight: 10, backgroundColor: colors.backdrop, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
                   <Text style={{ color: props.counterColor, fontWeight: 'bold'}}>{props.counter}</Text>
@@ -567,7 +568,7 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       counter={unhandledQuestionnairesCounter}
                       counterColor={colors.warning}
                     />
-                    <InlineBannerAd/>
+                    <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.drawer}/>
 
                 </DrawerContentScrollView>
                 <DrawerButton {...props} presserId={-1} id={-2} onPress={()=>{}} title={'Выйти'} routeName={'exit'} counter={0} counterColor={colors.text} iconComponent={

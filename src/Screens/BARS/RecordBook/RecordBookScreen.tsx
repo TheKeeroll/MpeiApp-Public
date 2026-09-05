@@ -4,9 +4,9 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    useWindowDimensions,
 } from "react-native";
-import {SCREEN_SIZE} from "../../../Common/Constants";
 import {useTheme} from "react-native-paper";
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {BARSRecordBookDiscipline, BARSRecordBookSemester} from "../../../API/DataTypes";
@@ -19,6 +19,8 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import BARSAPI from "../../../Common/Globals";
+import {AD_PLACEMENTS, useAds} from "../../../Ads/AdsProvider";
+import StickyBannerSlot from "../../../Ads/StickyBannerSlot";
 
 const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
     switch (type){
@@ -31,20 +33,31 @@ const DisciplineTypeToText = (type: 'MARK_TEST' | 'NO_MARK_TEST' | 'EXAM') => {
 const SemSelector: React.FC<{sems: BARSRecordBookSemester[], selectedIndex: number, onSelect:(index: number)=>void}> =
     (props)=>{
     const {colors} = useTheme<CustomTheme>()
+    const {width, fontScale} = useWindowDimensions();
+    const selectorHeight = Math.max(48, Math.ceil(40 * Math.min(fontScale, 1.6)));
+    const buttonWidth = Math.max(100, width * .25);
     return (
-        <View style={{marginVertical: 10, height: SCREEN_SIZE.height * .05, width: SCREEN_SIZE.width}}>
+        <View style={{marginVertical: 10, height: selectorHeight, width: '100%'}}>
             <FlatList
                 ItemSeparatorComponent={()=><View style={{width: 10}}/>}
-                contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
+                contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: 10}}
                 horizontal={true} data={props.sems} renderItem={({item,index})=>{
                 const selected = props.selectedIndex == index
                 return(
                     <TouchableOpacity
                         onPress={props.onSelect.bind(this, index)}
-                        style={[Styles.semBtn, {backgroundColor: selected? colors.highlight : colors.primary}]}>
+                        style={[Styles.semBtn, {
+                            width: buttonWidth,
+                            minHeight: selectorHeight,
+                            backgroundColor: selected ? colors.highlight : colors.primary,
+                        }]}>
                         <Text
-                            style={{fontWeight: '600', color: selected ? colors.text
-                                    : withOpacity(colors.text, 60)
+                            numberOfLines={2}
+                            style={{
+                                paddingHorizontal: 8,
+                                textAlign: 'center',
+                                fontWeight: '600',
+                                color: selected ? colors.text : withOpacity(colors.text, 60),
                             }}>
                             {item.name}</Text>
                     </TouchableOpacity>
@@ -68,23 +81,23 @@ const SemCell: React.FC<{item: BARSRecordBookDiscipline, index: number}> =
             <View style={[Styles.infoWrapper, {backgroundColor: colors.primary}]}>
                 <View style={Styles.headView}>
                     <Text
-                        style={{padding: '1%', fontWeight: 'bold', color: withOpacity(typeColor, 80), alignSelf: 'flex-start'}}>
+                        style={[Styles.typeLabel, {color: withOpacity(typeColor, 80)}]}>
                         {_type}
                     </Text>
                     <Text
-                        style={{padding: '1%', color: withOpacity(colors.text, 80), alignSelf: 'flex-start'}}>
+                        style={[Styles.dateLabel, {color: withOpacity(colors.text, 80)}]}>
                         {props.item.date}
                     </Text>
                 </View>
                 <View style={Styles.bottomWrapper}>
                     <View style={[Styles.disciplineView, {backgroundColor: colors.surface}]}>
                         <Text
-                            style={{padding: '1%', width: '100%',  color: colors.text, textAlign: 'center'}}>
+                            style={{padding: 6, width: '100%', color: colors.text, textAlign: 'center'}}>
                             {props.item.name}
                         </Text>
                     </View>
                     <Text
-                        style={{ marginVertical: 5, color: colors.textUnderline, textAlign: 'center'}}>
+                        style={{marginVertical: 5, paddingHorizontal: 4, color: colors.textUnderline, textAlign: 'center'}}>
                         {props.item.teacher.name}
                     </Text>
                 </View>
@@ -92,15 +105,16 @@ const SemCell: React.FC<{item: BARSRecordBookDiscipline, index: number}> =
             <View style={Styles.markWrapper}>
                 <View style={[Styles.markView,{backgroundColor: MarkToColor(props.item.mark.includes('Перезачет') ? 'Перезачёт' : props.item.mark, dark)}]}>
                     <Text
-                        numberOfLines={1}
+                        numberOfLines={2}
                         adjustsFontSizeToFit
-                        style={{ color: colors.text, fontSize: 14, fontWeight: 'bold'}}>
+                        minimumFontScale={0.65}
+                        style={{width: '100%', padding: 4, color: colors.text, fontSize: 14, fontWeight: 'bold', textAlign: 'center'}}>
                         {props.item.mark.includes('Перезачет') ? 'Перезачёт' : props.item.mark}
                     </Text>
                 </View>
                 <Text
                     numberOfLines={1}
-                    style={{color: withOpacity(colors.text, 80), fontSize: 12, fontWeight: '600'}}>
+                    style={{width: '100%', color: withOpacity(colors.text, 80), fontSize: 12, fontWeight: '600', textAlign: 'center'}}>
                     {props.item.weirdValue}
                 </Text>
             </View>
@@ -113,6 +127,9 @@ const RecordBookScreen: React.FC = () => {
     const {colors} = useTheme()
     const recordBook = useSelector((state: RootState)=>state.RecordBook)
     const insets = useSafeAreaInsets();
+    const {getStickyReservedHeight} = useAds();
+    const stickyReservedHeight = getStickyReservedHeight(AD_PLACEMENTS.recordBook);
+    const contentPaddingBottom = 20 + stickyReservedHeight + insets.bottom;
     const [semIndex, setSemIndex] =
         useState(recordBook != null ? recordBook.data == null ? 0
             : recordBook.data.length -1 : 0
@@ -125,8 +142,8 @@ const RecordBookScreen: React.FC = () => {
                 onSelect={setSemIndex}
                 sems={recordBook.data!}/>
             <FlatList
-                style={{width: '100%'}}
-                contentContainerStyle={{alignItems: 'center'}}
+                style={{flex: 1, width: '100%'}}
+                contentContainerStyle={{alignItems: 'center', paddingBottom: contentPaddingBottom}}
                 ItemSeparatorComponent={()=><View style={{height: 10}}/>}
                 data={recordBook.data![semIndex]?.tests??[]}
                 renderItem={
@@ -158,6 +175,9 @@ const RecordBookScreen: React.FC = () => {
             <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Зачётная книжка'}/>
                 {renderSwitch()}
+                {(recordBook.status === 'OFFLINE' || recordBook.status === 'LOADED') ? (
+                    <StickyBannerSlot placement={AD_PLACEMENTS.recordBook}/>
+                ) : null}
             </SafeAreaView>
         </Fragment>
     )
@@ -172,27 +192,41 @@ export default RecordBookScreen
 
 const Styles = StyleSheet.create({
     main:{
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         flex: 1,
         alignItems: 'center'
     },
     semCellView:{
-        width: SCREEN_SIZE.width * .9,
+        width: '90%',
         flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        minHeight: SCREEN_SIZE.height * .05,
+        alignItems: 'stretch',
+        minHeight: 60,
         borderRadius: 5,
     },
     infoWrapper:{
-        flex: .75,
+        flex: 1,
+        minWidth: 0,
         alignItems: 'center',
         marginVertical: 5,
         borderRadius: 5
     },
     headView:{
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'baseline',
         width: '100%',
-        justifyContent: 'space-between'
+        paddingHorizontal: 4,
+    },
+    typeLabel:{
+        flexGrow: 1,
+        flexShrink: 1,
+        paddingVertical: 3,
+        fontWeight: 'bold',
+    },
+    dateLabel:{
+        flexShrink: 0,
+        marginLeft: 'auto',
+        paddingVertical: 3,
     },
     bottomWrapper:{
         width: '100%',
@@ -205,21 +239,23 @@ const Styles = StyleSheet.create({
         justifyContent :'center'
     },
     markWrapper:{
-        flex: .2,
+        width: '24%',
+        minWidth: 72,
         justifyContent: 'space-evenly',
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingVertical: 5,
+        paddingHorizontal: 4,
     },
     markView:{
         width: '100%',
         justifyContent: 'center',
-        minHeight: SCREEN_SIZE.height * .05,
-        alignItems: 'center', borderRadius: 5
+        minHeight: 52,
+        alignItems: 'center',
+        borderRadius: 5,
     },
     semBtn:{
-        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 5,
-        width: SCREEN_SIZE.width * .25
     }
 })

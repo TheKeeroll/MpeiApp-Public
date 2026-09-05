@@ -1,6 +1,6 @@
 /**
- * The source of truth for banner locations. Stage 4 will connect these keys to
- * YANDEX_AD_UNIT_IDS, keeping the same property names on Android and iOS.
+ * The source of truth for ad locations and the matching YANDEX_AD_UNIT_IDS
+ * property names on Android and iOS.
  */
 
 export const YANDEX_INLINE_AD_PLACEMENTS = {
@@ -33,6 +33,7 @@ export type YandexBannerPlacement = YandexInlineAdPlacement | YandexStickyAdPlac
 export type YandexAdUnitPlacement = YandexBannerPlacement | typeof YANDEX_REWARDED_AD_PLACEMENT;
 
 export type YandexBannerFormat = 'inlineBanner' | 'stickyBanner';
+export type YandexAdFormat = YandexBannerFormat | 'rewarded';
 
 const PLACEMENT_FORMATS: Record<YandexBannerPlacement, YandexBannerFormat> = {
   [YANDEX_INLINE_AD_PLACEMENTS.marks]: 'inlineBanner',
@@ -48,4 +49,8 @@ const PLACEMENT_FORMATS: Record<YandexBannerPlacement, YandexBannerFormat> = {
 
 export const getYandexBannerFormat = (placement: YandexBannerPlacement): YandexBannerFormat => (
   PLACEMENT_FORMATS[placement]
+);
+
+export const getYandexAdFormat = (placement: YandexAdUnitPlacement): YandexAdFormat => (
+  placement === YANDEX_REWARDED_AD_PLACEMENT ? 'rewarded' : getYandexBannerFormat(placement)
 );

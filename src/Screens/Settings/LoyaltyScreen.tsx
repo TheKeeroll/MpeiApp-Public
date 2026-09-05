@@ -6,6 +6,7 @@ import * as MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {NavigationHeader} from '../CommonComponents/DrawerHeader';
 import {useAds} from '../../Ads/AdsProvider';
 import {rewardedAdService, type RewardedAdState} from '../../Ads/RewardedAdService';
+import {YANDEX_REWARDED_AD_PLACEMENT} from '../../Ads/AdPlacements';
 import {getLoyaltyCatalogItem, LOYALTY_CATALOG, type LoyaltyCatalogItem} from '../../Loyalty/LoyaltyCatalog';
 import {showInsufficientTokensAlert} from '../../Loyalty/LoyaltyAlerts';
 import {useLoyalty} from '../../Loyalty/LoyaltyProvider';
@@ -58,7 +59,10 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
     state,
   } = useLoyalty();
   const [rewardedAdState, setRewardedAdState] = React.useState<RewardedAdState>(rewardedAdService.state);
-  const rewardedAdRequest = React.useMemo(() => createAdRequest('rewarded'), [createAdRequest]);
+  const rewardedAdRequest = React.useMemo(
+    () => createAdRequest(YANDEX_REWARDED_AD_PLACEMENT),
+    [createAdRequest],
+  );
   const rewardedLeft = Math.max(0, 5 - state.rewardedViewsToday);
   const adsRemovalOwned = isCatalogItemOwned(adsRemovalItem);
   const adsRemovalStatusText = adsRemovalOwned

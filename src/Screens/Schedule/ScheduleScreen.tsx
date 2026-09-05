@@ -1,19 +1,19 @@
 import React, { Fragment, useMemo, useRef, useState } from "react";
 import { useTheme } from "react-native-paper";
-import { Alert, FlatList, LayoutAnimation, Text, TouchableOpacity, View, Dimensions } from "react-native";
+import { Alert, FlatList, LayoutAnimation, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NavigationHeader } from "../CommonComponents/DrawerHeader";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
 import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson } from "../../API/DataTypes";
 import moment from "moment";
 import { withOpacity, CustomTheme } from "../../Themes/Themes";
-import { SCREEN_SIZE } from "../../Common/Constants";
 import LottieView from "lottie-react-native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import BARSAPI from "../../Common/Globals";
 import { isBARSError } from "../../API/Error/Error";
 import Holidays from "../CommonComponents/Holidays";
 import InlineBannerAd from "../../Ads/InlineBannerAd";
+import {YANDEX_INLINE_AD_PLACEMENTS} from "../../Ads/AdPlacements";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import ScheduleSearchPanel from "./ScheduleSearchPanel";
 import {createScheduleSearchParams, getScheduleSearchQuery} from "./ScheduleNavigation";
@@ -28,7 +28,8 @@ const DateCell: React.FC<{
     index: number,
     selectedIndex: number,
     onPress: (index: number) => void,
-    cellWidth: number
+    cellWidth: number,
+    cellHeight: number,
 }> = (props) =>{
     const isSelected = props.index == props.selectedIndex
     // console.log("initialDateString = " + props.item.date)
@@ -74,7 +75,7 @@ const DateCell: React.FC<{
         onPress={() => props.onPress(props.index)}
         style={{
             width: props.cellWidth,
-            height: '100%',
+            height: props.cellHeight,
             opacity: isEmpty ? .3 : 1,
             borderRadius: 8,
             backgroundColor: isSelected ? colors.surface : colors.primary
@@ -106,15 +107,17 @@ const DateSelector: React.FC<{
     onDateSelect: (index: number) => void
 }> = (props) => {
     const dateSelectFlatListRef = useRef<FlatList | null>(null);
+    const {width, fontScale} = useWindowDimensions();
 
     const CELL_WIDTH = useMemo(() => {
-        const screenWidth = Dimensions.get('window').width;
+        const screenWidth = width;
         const cellsPerScreen = 6; // можно настроить
         const separatorWidth = 10;
         return (screenWidth - separatorWidth * (cellsPerScreen - 1)) / cellsPerScreen;
-    }, []);
+    }, [width]);
+    const selectorHeight = Math.max(80, Math.ceil(80 * Math.min(fontScale, 1.6)));
     return (
-      <View style={{ width: '100%', marginTop: 10, height: 80 }}>
+      <View style={{width: '100%', marginTop: 10, height: selectorHeight}}>
           <FlatList
             ref={dateSelectFlatListRef}
             data={props.days}
@@ -125,6 +128,7 @@ const DateSelector: React.FC<{
                 selectedIndex={props.selectedIndex}
                 onPress={props.onDateSelect}
                 cellWidth={CELL_WIDTH}
+                cellHeight={selectorHeight}
               />
             }
             horizontal
@@ -173,9 +177,9 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
 
     if(type == 'DINNER')
         return (
-            <View style={{width: SCREEN_SIZE.width * .9, height: 100, alignItems: 'center', justifyContent: 'space-evenly', flexDirection: 'row', borderRadius: 10, backgroundColor: IsNow() ? colors.surface : colors.primary}}>
-                <View style={{flex: .2, alignItems: 'center', justifyContent: 'center', height: '100%'}}>
-                    <View style={{borderRadius: 5, alignItems: 'center', justifyContent: 'center', width: '80%', height: 60, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
+            <View style={{width: '90%', minHeight: 100, alignItems: 'center', justifyContent: 'space-evenly', flexDirection: 'row', borderRadius: 10, backgroundColor: IsNow() ? colors.surface : colors.primary}}>
+                <View style={{width: '23%', minWidth: 78, maxWidth: 128, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>
+                    <View style={{borderRadius: 5, alignItems: 'center', justifyContent: 'center', width: '90%', minHeight: 60, paddingVertical: 3, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginBottom: -5, color: colors.text}}>12:45</Text>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', color: colors.text}}>-</Text>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginTop: -5, color: colors.text}}>13:45</Text>
@@ -213,10 +217,10 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
         teacher_2_fullName = teacher.fullName.split('|')[1]
     }
     return (
-        <View style={{width: SCREEN_SIZE.width * .9, minHeight: 100, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.primary}}>
-            <View style={{flex: .8, flexDirection: 'row', width: '100%'}}>
-                <View style={{flex: 0, alignItems: 'center', justifyContent: 'center'}}>
-                    <View style={{borderRadius: 5, marginTop: 5, alignItems: 'center', justifyContent: 'center', width: '80%', height: 60, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
+        <View style={{width: '90%', minHeight: 100, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.primary}}>
+            <View style={{flexDirection: 'row', alignItems: 'stretch', width: '100%'}}>
+                <View style={{width: '23%', minWidth: 78, maxWidth: 128, alignItems: 'center', justifyContent: 'center'}}>
+                    <View style={{borderRadius: 5, marginTop: 5, alignItems: 'center', justifyContent: 'center', width: '90%', minHeight: 60, paddingVertical: 3, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginBottom: -5, color: colors.text}}>{lessonIndex.split('-')[0]}</Text>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', color: colors.text}}>-</Text>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginTop: -5, color: colors.text}}>{lessonIndex.split('-')[1]}</Text>
@@ -225,8 +229,8 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                         disabled={(requestMode && typeof group == "undefined") || (!requestMode && (place?.includes('-') || place?.includes('-|-') || _cabinet.includes('Стадион') || typeof place == "undefined"))}
                         // onPress={()=>setShowPlace(p=>!p)}
                         onPress={()=> {requestMode ? setShowPlace(p=>!p) : props.navigation.push('scheduleMain', createScheduleSearchParams(_cabinet))}}
-                        style={{borderRadius: 5, marginVertical: 5, alignItems: 'center', justifyContent: 'center', minWidth: 70, maxWidth: 120, marginHorizontal: 9, minHeight: 30, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
-                        <Text numberOfLines={1} style={{marginHorizontal: 5, textAlign: "center" ,color: IsNow() ? colors.highlight : colors.textUnderline}}>
+                        style={{borderRadius: 5, marginVertical: 5, alignItems: 'center', justifyContent: 'center', width: '90%', minHeight: 30, paddingVertical: 2, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
+                        <Text numberOfLines={2} style={{marginHorizontal: 5, textAlign: "center" ,color: IsNow() ? colors.highlight : colors.textUnderline}}>
                           {showPlace ? (requestMode ? group : place.split('|')[0]) : _cabinet}
                         </Text>
                         { type == 'COMBINED' && cabinet.split('|')[0] != cabinet.split('|')[1] &&
@@ -237,29 +241,29 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                         }
                     </TouchableOpacity>
                 </View>
-                <View style={{flex: .8, flexGrow: 1, marginVertical: 5}}>
-                        <Text style={{paddingTop: 1, paddingLeft: 2, fontWeight: 'bold', color: lessonTypeColor, marginVertical: 2}}>{lessonType}</Text>
+                <View style={{flex: 1, minWidth: 0, marginVertical: 5}}>
+                        <Text style={{paddingTop: 1, paddingLeft: 2, paddingRight: 4, flexShrink: 1, fontWeight: 'bold', color: lessonTypeColor, marginVertical: 2}}>{lessonType}</Text>
 
                     <View style={{width: '96.5%', justifyContent: 'center', alignItems: 'center', flexGrow: 1, minHeight: 20, backgroundColor: colors.surface, borderRadius: 5}}>
-                        <Text numberOfLines={5} style={{fontSize: 16, color: colors.text, textAlign: 'center', marginHorizontal: 5, marginVertical: 2}}>{name}</Text>
+                        <Text style={{fontSize: 16, color: colors.text, textAlign: 'center', marginHorizontal: 5, marginVertical: 2}}>{name}</Text>
                     </View>
                 </View>
             </View>
             {!requestMode && <Fragment>
                 {!NoTeacher(props.item.teacher.name) &&
-                    <View style={{flex: .2, width: '100%', flexDirection : 'row', alignItems :'center', justifyContent: 'space-evenly', minHeight: 50}}>
+                    <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-evenly', minHeight: 50, padding: 4}}>
                     <TouchableOpacity
                     onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_1_fullName ?? teacher.name.split('|')[0]))}
                     disabled={teacher.name.split('|')[0] == '-'}
-                    style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
-                    <Text style={{color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[0]}</Text>
+                    style={{maxWidth: '100%', flexShrink: 1, borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
+                    <Text style={{flexShrink: 1, color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[0]}</Text>
                     </TouchableOpacity>
                 { type == 'COMBINED' &&
                     <TouchableOpacity
                     onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_2_fullName ?? teacher.name.split('|')[1]))}
                     disabled={teacher.name.split('|')[1] == '-'}
-                    style={{borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
-                    <Text style={{color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[1]}</Text>
+                    style={{maxWidth: '100%', flexShrink: 1, borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
+                    <Text style={{flexShrink: 1, color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[1]}</Text>
                     </TouchableOpacity>
                 }
                 </View>
@@ -364,9 +368,6 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                         <LessonCell requestMode {...props} item={item} index={index} isToday={isToday} />
                     }
                     ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-                    getItemLayout={(data, index) => (
-                        { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
-                    )}
                 />
                 : <View style={{flex: 1}}/>
             }
@@ -466,12 +467,11 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
                             }
                             ItemSeparatorComponent={()=><View style={{height: 10}}/>}
                             ListFooterComponent={() => <>
-                                {IsToday() && editableScheduleData.days[selectedDate].lessons.length > 0 && <InlineBannerAd/>}
+                                {IsToday() && editableScheduleData.days[selectedDate].lessons.length > 0 && (
+                                    <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.scheduleToday}/>
+                                )}
                                 <View style={{height: 20}}/>
                             </>}
-                            getItemLayout={(data, index) => (
-                              { length: 100, offset: 100 * ((index - 3) > 0 ? (index - 3) : index), index }
-                            )}
                             onScrollToIndexFailed={(info) => {
                                 // Обработка ошибки прокрутки к индексу
                                 console.warn("Failed to scroll to index!")

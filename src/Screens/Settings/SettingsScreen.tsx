@@ -96,7 +96,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
       <Fragment>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} title={'Прочее'}/>
-                <ScrollView style={{width: '90%'}}>
+                <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: 24}}>
                     <ListSeparator title={'Оформление'}/>
                     <ListSwitch icon={
                         <McIcon.default name={'theme-light-dark'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>

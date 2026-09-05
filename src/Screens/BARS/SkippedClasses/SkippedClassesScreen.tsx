@@ -212,7 +212,9 @@ const SkippedClassesScreen: React.FC = () => {
             <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
                 <DrawerHeader navigation={navigation} title={'Пропуски'}/>
                 {renderSwitch()}
-                <StickyBannerSlot placement={AD_PLACEMENTS.skippedClasses}/>
+                {(raw.status === 'OFFLINE' || raw.status === 'LOADED') ? (
+                    <StickyBannerSlot placement={AD_PLACEMENTS.skippedClasses}/>
+                ) : null}
             </SafeAreaView>
         </Fragment>
     )

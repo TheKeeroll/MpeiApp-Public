@@ -6,9 +6,10 @@ import DailyUsageBadge from '../../Loyalty/DailyUsageBadge';
 
 type ScheduleSearchPanelProps = {
   onSearch: (query: string) => void;
+  onQueryChange?: (normalizedQuery: string) => void;
 };
 
-const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch}) => {
+const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch, onQueryChange}) => {
   const {colors} = useTheme<CustomTheme>();
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState('');
@@ -27,6 +28,11 @@ const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch}) => 
     onSearch(normalizedQuery);
     setQuery('');
     setIsExpanded(false);
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    onQueryChange?.(value.trim());
   };
 
   return (
@@ -54,7 +60,7 @@ const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch}) => 
       {isExpanded && (
         <View style={{padding: 10, paddingTop: 0, flexDirection: 'row', alignItems: 'center'}}>
           <TextInput
-            onChangeText={setQuery}
+            onChangeText={handleQueryChange}
             value={query}
             onSubmitEditing={submit}
             textColor={colors.text}

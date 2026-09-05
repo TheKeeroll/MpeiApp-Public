@@ -1,6 +1,7 @@
 import React, {Fragment} from "react";
 import {useTheme} from "react-native-paper";
 import {ScrollView, View} from "react-native";
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {NavigationHeader} from "../CommonComponents/DrawerHeader";
 import {WhatsNewChange, WhatsNewLogo} from "./Components";
 import {CustomTheme} from "../../Themes/Themes"
@@ -9,12 +10,13 @@ import {CustomTheme} from "../../Themes/Themes"
 
 const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
+    const insets = useSafeAreaInsets();
     return (
       // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
       <Fragment>
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <ScrollView style={{width: '90%'}}>
+                <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: Math.max(24, insets.bottom + 12)}}>
                     <WhatsNewLogo title={'Поддержка продолжается'} version={'2.4.0'}/>
                     <WhatsNewChange title={'Улучшения 2ФА: добавлены поддержка TOTP, оптимальный порядок перебора и сообщение, откуда брать код'}/>
                     <WhatsNewChange title={'Поиск расписаний теперь доступен всегда, в том числе во время каникул и без входа в БАРС'}/>

@@ -29,6 +29,7 @@ import SharedGroupPreferences from "react-native-shared-group-preferences";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_CONFIG } from "../../../Common/Config.ts";
 import InlineBannerAd from "../../../Ads/InlineBannerAd";
+import {YANDEX_INLINE_AD_PLACEMENTS} from "../../../Ads/AdPlacements";
 
 const Stack = createStackNavigator()
 
@@ -521,7 +522,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                     ListFooterComponentStyle={{width: '100%', alignSelf: 'stretch'}}
                     ListFooterComponent={() => (
                         <View collapsable={false} style={{width: '100%', alignSelf: 'stretch'}}>
-                            <InlineBannerAd/>
+                            <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.marks}/>
                             <View style={{height: 20}}/>
                         </View>
                     )}

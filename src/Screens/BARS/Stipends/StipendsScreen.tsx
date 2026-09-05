@@ -1,10 +1,9 @@
 import React, { Fragment, useState } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 import {useTheme} from "react-native-paper";
 import { BARSStipend, BARSStipendPetition } from "../../../API/DataTypes";
-import {SCREEN_SIZE} from "../../../Common/Constants";
 import {useSelector} from "react-redux";
 import {RootState} from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
@@ -15,24 +14,37 @@ import { convertDate } from "../Marks/BARSMainScreen";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import BARSAPI from "../../../Common/Globals";
+import {AD_PLACEMENTS, useAds} from "../../../Ads/AdsProvider";
+import StickyBannerSlot from "../../../Ads/StickyBannerSlot";
 
 const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onSelect:(index: number)=>void}> =
   (props)=>{
     const {colors} = useTheme<CustomTheme>()
+    const {width, fontScale} = useWindowDimensions();
+    const selectorHeight = Math.max(48, Math.ceil(40 * Math.min(fontScale, 1.6)));
+    const buttonWidth = Math.max(144, width * .45);
     return (
-      <View style={{marginVertical: 10, height: SCREEN_SIZE.height * .05, width: SCREEN_SIZE.width}}>
+      <View style={{marginVertical: 10, height: selectorHeight, width: '100%'}}>
         <FlatList
           ItemSeparatorComponent={()=><View style={{width: 10}}/>}
-          contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
+          contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: 10}}
           horizontal={true} data={props.pages} renderItem={({item,index})=>{
           const selected = props.selectedIndex == index
           return(
             <TouchableOpacity
               onPress={props.onSelect.bind(this, index)}
-              style={[Styles.pageBtn, {backgroundColor: selected? colors.highlight : colors.primary}]}>
+              style={[Styles.pageBtn, {
+                width: buttonWidth,
+                minHeight: selectorHeight,
+                backgroundColor: selected ? colors.highlight : colors.primary,
+              }]}>
               <Text
-                style={{fontWeight: '900', color: selected ? colors.text
-                    : withOpacity(colors.text, 60)
+                numberOfLines={2}
+                style={{
+                  paddingHorizontal: 8,
+                  textAlign: 'center',
+                  fontWeight: '900',
+                  color: selected ? colors.text : withOpacity(colors.text, 60),
                 }}>
                 {item}</Text>
             </TouchableOpacity>
@@ -60,14 +72,12 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         <View style={Styles.left}>
           <View style={Styles.semText}>
             <Text
-              numberOfLines={1}
               style={{ textAlign: 'left', padding: '1%', fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
               {item.start_date + ' - ' + item.end_date}
             </Text>
           </View>
           <View style={[Styles.statusText, { backgroundColor: colors.primary }]}>
             <Text
-              numberOfLines={2}
               style={{ padding: '1%', fontWeight: 'bold', color: text_color }}>
               {item.amount}
             </Text>
@@ -75,7 +85,6 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            numberOfLines={3}
             style={{ padding: '1%', color: colors.text }}>
             {item.type}
           </Text>
@@ -92,14 +101,12 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         <View style={Styles.left}>
           <View style={Styles.semText}>
             <Text
-              numberOfLines={1}
               style={{ textAlign: 'left', padding: '1%', fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
               {item.term}
             </Text>
           </View>
           <View style={[Styles.statusText, { backgroundColor: colors.primary }]}>
             <Text
-              numberOfLines={1}
               style={{ padding: '1%', fontWeight: 'bold', color: text_color }}>
               {item.total}
             </Text>
@@ -107,19 +114,16 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            numberOfLines={3}
             style={{ padding: '1%', color: colors.text }}>
             {item.type}
           </Text>
           <View style={Styles.left}>
             <Text
-              numberOfLines={1}
-              style={{ textAlign: 'left', padding: '1%', color: colors.textUnderline }}>
+              style={{flex: 1, textAlign: 'left', padding: '1%', color: colors.textUnderline }}>
               {item.wave + ' Волна '}
             </Text>
             <Text
-              numberOfLines={1}
-              style={{ textAlign: 'right', padding: '1%', color: colors.textUnderline }}>
+              style={{flex: 1, textAlign: 'right', padding: '1%', color: colors.textUnderline }}>
               {'Ср. балл ПА: ' + item.average_grade}
             </Text>
           </View>
@@ -142,6 +146,9 @@ const StipendsScreen: React.FC = () => {
 
   const stipend_pages = ['Назначенные', 'Заявления']
   const insets = useSafeAreaInsets();
+  const {getStickyReservedHeight} = useAds();
+  const stickyReservedHeight = getStickyReservedHeight(AD_PLACEMENTS.stipends);
+  const contentPaddingBottom = 20 + stickyReservedHeight + insets.bottom;
 
   const onLoad = (offline: boolean) => (
 
@@ -152,8 +159,8 @@ const StipendsScreen: React.FC = () => {
         pages={stipend_pages}/>
       {(stipendPageIndex == 0) &&
       <FlatList
-        style={{width: '100%'}}
-        contentContainerStyle={{alignItems: 'center'}}
+        style={{flex: 1, width: '100%'}}
+        contentContainerStyle={{alignItems: 'center', paddingBottom: contentPaddingBottom}}
         data={stipends.data!.stipends}
         renderItem={({item, index}:{item: BARSStipend, index: number})=><StipendCell item={item} index={index}/> }
         ItemSeparatorComponent={()=><View style={{height: 10}}/>}
@@ -172,8 +179,8 @@ const StipendsScreen: React.FC = () => {
       }
       {(stipendPageIndex == 1) &&
         <FlatList
-          style={{width: '100%'}}
-          contentContainerStyle={{alignItems: 'center'}}
+          style={{flex: 1, width: '100%'}}
+          contentContainerStyle={{alignItems: 'center', paddingBottom: contentPaddingBottom}}
           data={stipends.data!.petitions}
           renderItem={({item, index}:{item: BARSStipendPetition, index: number})=><StipendCell item={item} index={index}/> }
           ItemSeparatorComponent={()=><View style={{height: 10}}/>}
@@ -208,6 +215,9 @@ const StipendsScreen: React.FC = () => {
       <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main,{backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Стипендии'}/>
         {renderSwitch()}
+        {(stipends.status === 'OFFLINE' || stipends.status === 'LOADED') ? (
+          <StickyBannerSlot placement={AD_PLACEMENTS.stipends}/>
+        ) : null}
       </SafeAreaView>
     </Fragment>
   )
@@ -220,27 +230,36 @@ const Styles = StyleSheet.create({
     justifyContent: 'flex-start'
   },
   wrapper:{
-    width: SCREEN_SIZE.width * .95,
+    width: '95%',
     minHeight: 40,
-    borderRadius: 5
+    borderRadius: 5,
+    paddingVertical: 2,
   },
   left:{
     flexDirection: 'row',
     width: '100%',
-    justifyContent: 'space-between'
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
   },
   semText:{
     alignItems: 'flex-start',
     margin: '1%',
-    width: '55%',
-    justifyContent: 'center'
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: '55%',
+    minWidth: 140,
+    justifyContent: 'center',
   },
   statusText:{
     borderRadius: 5,
     margin: '1%',
-    width: '33%',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: '33%',
+    minWidth: 100,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   typeText:{
     width: '96%',
@@ -249,11 +268,9 @@ const Styles = StyleSheet.create({
     alignSelf: 'center'
   },
   pageBtn:{
-    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 5,
-    width: SCREEN_SIZE.width * .45
   }
 })
 
