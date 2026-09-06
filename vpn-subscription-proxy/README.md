@@ -7,6 +7,12 @@
 - `demo` создаёт нового S-UI клиента через form-data `POST /apiv2/save` и
   возвращает разовую ссылку подписки.
 
+`GET /healthz` и `GET /stats` существуют только для loopback VPS. `/stats`
+не хранит историю: он показывает с последнего старта успешные `verify`,
+успешные `demo`, ответы `reqStatus: "failed"` и uptime в сутках, часах и
+минутах. Запросы с неверным `Mpei-App-Req-Id`, для которых socket закрывается
+без ответа, в него не входят.
+
 Сервис не является частью React Native-проекта. Панельный Token, TLS-ключи,
 данные клиентов, исходные IP и идентификаторы устройств не входят в Git и не
 передаются в MpeiApp. SQLite содержит только HMAC IP/device, время выдачи,
@@ -178,10 +184,10 @@ Encrypt. Статус watcher проверяется второй командо
 Панель S-UI и `/apiv2/*` не должны быть доступны извне. Открывается только
 выбранный порт proxy.
 
-### 6. Проверить service на VPS
+### 6. Проверить service и статистику на VPS
 
-Проверка health разрешена только с loopback. Она должна использовать домен
-сертификата, чтобы пройти проверку SNI:
+`/healthz` и `/stats` разрешены только с loopback. Проверка должна
+использовать домен сертификата, чтобы пройти проверку SNI:
 
 ```bash
 export PROXY_HOST='proxy.example.com'
@@ -190,12 +196,29 @@ export CERTBOT_NAME='proxy.example.com'
 curl --fail --silent --show-error \
   --resolve "$PROXY_HOST:$PROXY_PORT:127.0.0.1" \
   "https://$PROXY_HOST:$PROXY_PORT/healthz"
+curl --fail --silent --show-error \
+  --resolve "$PROXY_HOST:$PROXY_PORT:127.0.0.1" \
+  "https://$PROXY_HOST:$PROXY_PORT/stats"
 sudo journalctl -u "dragonet-subscription-proxy@$CERTBOT_NAME.service" -n 50 --no-pager
 ```
 
 Ожидаемый ответ: `{"status":"ok"}`. При ошибке запуска не ослабляйте
 проверки discovery: проверьте A-запись, исходную пару Let’s Encrypt и статус
 instance `dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path`.
+Сразу после запуска `/stats` вернёт нулевые счётчики и uptime, например:
+
+```json
+{
+  "successfulVerifyRequests": 0,
+  "successfulDemoRequests": 0,
+  "failedRequests": 0,
+  "uptime": {"days": 0, "hours": 0, "minutes": 0, "formatted": "0 суток 0 часов 0 минут"}
+}
+```
+
+После PowerShell-проверок `verify` и `demo` ниже снова выполните команду
+`curl .../stats` на VPS: успешные terminal-запросы отразятся в двух первых
+счётчиках. Все значения намеренно обнуляются при рестарте service.
 Журнал намеренно содержит только общий текст запуска, без body, Token,
 клиентских имён, IP, device и TLS-путей.
 

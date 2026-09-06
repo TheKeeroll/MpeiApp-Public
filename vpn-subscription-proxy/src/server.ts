@@ -7,10 +7,13 @@ import {loadConfig, type ProxyConfig} from './config.js';
 import {CreateDemoAccessService} from './createDemoAccess.js';
 import {DemoCooldownStore} from './demoCooldownStore.js';
 import {RequestRateLimiter, parseRequestGate, type RequestGateContext} from './requestGate.js';
+import {RuntimeStats} from './runtimeStats.js';
 import {failedResponse, proxyRequestSchema} from './schema.js';
 import {discoverStartupTls, type StartupTlsMaterial} from './startupDiscovery.js';
 import {VerifySubscriptionService} from './verifySubscription.js';
 import {VpnPanelClient} from './vpnPanelClient.js';
+
+const serviceStartedAt = Date.now();
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -58,7 +61,10 @@ const sniMatches = (request: FastifyRequest, expectedHostname: string): boolean 
   return typeof servername === 'string' && servername.toLowerCase() === expectedHostname;
 };
 
-const sendFailed = (reply: FastifyReply) => reply.code(200).send(failedResponse);
+const sendFailed = (reply: FastifyReply, runtimeStats: RuntimeStats) => {
+  runtimeStats.recordFailedRequest();
+  return reply.code(200).send(failedResponse);
+};
 
 export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial): ProxyServer => {
   const secureContext = createSecureContext({
@@ -96,11 +102,12 @@ export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial):
     config.rateLimitMax,
     config.rateLimitWindowMs,
   );
+  const runtimeStats = new RuntimeStats(serviceStartedAt);
 
   app.addHook('onRequest', (request, reply, done) => {
     const requestUrl = request.raw.url ?? '';
     const remoteAddress = request.raw.socket.remoteAddress;
-    if (request.method === 'GET' && requestUrl === '/healthz') {
+    if (request.method === 'GET' && (requestUrl === '/healthz' || requestUrl === '/stats')) {
       if (!isLoopback(remoteAddress)) {
         closeWithoutResponse(request, reply);
       }
@@ -137,17 +144,19 @@ export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial):
   });
 
   app.get('/healthz', async () => ({status: 'ok'}));
+  app.get('/stats', async () => runtimeStats.snapshot());
 
   app.post(config.requestPath, async (request, reply) => {
     const gate = request.dragonetGate;
     const parsed = proxyRequestSchema.safeParse(request.body);
     if (!gate || !parsed.success || !rateLimiter.tryConsume(gate.clientIp)) {
-      return sendFailed(reply);
+      return sendFailed(reply, runtimeStats);
     }
 
     try {
       if (parsed.data.purpose === 'verify') {
         const verification = await verificationService.verify(parsed.data.clientName);
+        runtimeStats.recordSuccessfulVerify();
         return reply.code(200).send({
           reqStatus: 'success',
           isClientFound: verification.isClientFound,
@@ -156,17 +165,23 @@ export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial):
       }
 
       const demo = await demoService.create({clientIp: gate.clientIp, deviceId: gate.deviceId});
-      return demo
-        ? reply.code(200).send({reqStatus: 'success', demoSubURL: demo.demoSubURL})
-        : sendFailed(reply);
+      if (!demo) {
+        return sendFailed(reply, runtimeStats);
+      }
+      runtimeStats.recordSuccessfulDemo();
+      return reply.code(200).send({reqStatus: 'success', demoSubURL: demo.demoSubURL});
     } catch {
-      return sendFailed(reply);
+      return sendFailed(reply, runtimeStats);
     }
   });
 
-  app.setErrorHandler((_error, _request, reply) => {
+  app.setErrorHandler((_error, request, reply) => {
     if (!reply.sent) {
-      sendFailed(reply);
+      if (request.dragonetGate) {
+        sendFailed(reply, runtimeStats);
+        return;
+      }
+      reply.code(200).send(failedResponse);
     }
   });
 
