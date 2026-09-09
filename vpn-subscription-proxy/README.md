@@ -198,6 +198,21 @@ sudo ss -ltnp '( sport = :8443 )'
 sudo ufw allow 8443/tcp
 ```
 
+`RestrictAddressFamilies` в unit намеренно разрешает также `AF_NETLINK`.
+Fastify запрашивает у Node список интерфейсов после привязки `0.0.0.0`; Linux
+использует для этого именно это семейство, без открытия дополнительного сетевого
+listener. Если proxy был установлен до этой правки и журнал содержит
+`uv_interface_addresses ... error 97`, обновите unit и перезапустите service:
+
+```bash
+sudo install -o root -g root -m 0644 \
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
+  /etc/systemd/system/dragonet-subscription-proxy@.service
+sudo systemctl daemon-reload
+sudo systemctl restart "dragonet-subscription-proxy@$CERTBOT_NAME.service"
+sudo systemctl status "dragonet-subscription-proxy@$CERTBOT_NAME.service" --no-pager
+```
+
 Также откройте TCP 8443 в firewall провайдера VPS. Если выбран другой
 `PROXY_LISTEN_PORT`, последняя команда и проверка `ss` должны использовать
 его. `CAP_NET_BIND_SERVICE` в unit позволяет при необходимости использовать
@@ -318,7 +333,7 @@ gate можно повторить любой запрос с `Mpei-App-Req-Id =
 ## Обновление и откат
 
 Перед обновлением сохраните предыдущий каталог или release-архив. Затем
-повторите установку из шага 3, перезапустите service и выполните loopback,
+повторите установку из шагов 3 и 5, перезапустите service и выполните loopback,
 `verify` и `demo` проверки выше. Если новый процесс не проходит discovery,
 верните предыдущий каталог, выполните `sudo systemctl restart
 "dragonet-subscription-proxy@$CERTBOT_NAME.service"` и не меняйте state directory: SQLite
