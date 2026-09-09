@@ -59,7 +59,7 @@ proxy ниже слушает `8443`; DNS от номера порта не за
 
 ```bash
 sudo apt update
-sudo apt install -y ca-certificates curl gnupg build-essential python3
+sudo apt install -y ca-certificates curl gnupg build-essential python3 openssl
 curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt install -y nodejs
 node --version
@@ -90,6 +90,33 @@ read-only snapshot этой же пары; постоянной копии кл�
 one-shot restart proxy, и startup discovery повторяется уже на новой паре.
 Не добавляйте пути к сертификату в env: arbitrary certificate path по-прежнему
 не поддерживается.
+
+До запуска proxy проверьте именно существующую пару и включите штатный таймер
+Certbot. `notAfter` должен быть в будущем, а SAN — содержать имя proxy:
+
+```bash
+export CERTBOT_NAME='proxy.example.com'
+sudo certbot certificates
+sudo openssl x509 -in "/etc/letsencrypt/live/$CERTBOT_NAME/fullchain.pem" \
+  -noout -subject -dates -ext subjectAltName
+sudo systemctl enable --now certbot.timer
+sudo systemctl list-timers certbot.timer --all
+```
+
+Если `notAfter` уже прошёл, proxy намеренно не запустится. Сначала обновите
+существующий сертификат через его обычную Certbot-конфигурацию, затем повторите
+проверку и перезапустите instance:
+
+```bash
+sudo certbot renew
+sudo openssl x509 -in "/etc/letsencrypt/live/$CERTBOT_NAME/fullchain.pem" \
+  -noout -dates -ext subjectAltName
+sudo systemctl restart "dragonet-subscription-proxy@$CERTBOT_NAME.service"
+```
+
+Если `certbot renew` сообщает ошибку validation, исправьте её в настройке
+Certbot для этого уже существующего сертификата. Не обходите проверку срока
+действия и не подменяйте сертификат в proxy.
 
 ### 3. Установить код и зависимости
 
@@ -203,8 +230,9 @@ sudo journalctl -u "dragonet-subscription-proxy@$CERTBOT_NAME.service" -n 50 --n
 ```
 
 Ожидаемый ответ: `{"status":"ok"}`. При ошибке запуска не ослабляйте
-проверки discovery: проверьте A-запись, исходную пару Let’s Encrypt и статус
-instance `dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path`.
+проверки discovery: проверьте A-запись, `notAfter` исходной пары Let’s
+Encrypt, вывод `certbot renew` и статус instance
+`dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path`.
 Сразу после запуска `/stats` вернёт нулевые счётчики и uptime, например:
 
 ```json
