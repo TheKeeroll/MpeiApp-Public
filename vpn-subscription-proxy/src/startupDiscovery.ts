@@ -327,7 +327,7 @@ export const discoverStartupTls = async (
     now,
   );
   if (!material) {
-    throw new Error('No matching TLS certificate was found');
+    throw new Error('No valid matching TLS certificate was found; check certificate expiry, key access, and DNS');
   }
   return {...material, publicIpv4};
 };

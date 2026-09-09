@@ -211,9 +211,11 @@ const launchedFromCommandLine = process.argv[1] !== undefined
   && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (launchedFromCommandLine) {
-  void start().catch(() => {
-    // No path, certificate, panel, request, or environment value is logged.
-    console.error('DragoNet proxy startup failed before opening its public listener.');
+  void start().catch((error: unknown) => {
+    // Startup errors are deliberately limited to controlled configuration,
+    // discovery, and socket messages; no secret values or request data appear.
+    const reason = error instanceof Error ? error.message : 'Unknown startup error';
+    console.error(`DragoNet proxy startup failed before opening its public listener: ${reason}`);
     process.exitCode = 1;
   });
 }
