@@ -29,7 +29,9 @@ ProtectSystem=strict
 ReadWritePaths=/var/lib/dragonet-subscription-proxy
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Fastify asks Node to enumerate interfaces after binding a wildcard IPv4
+# listener. On Linux that uses AF_NETLINK; no network listener is opened by it.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]
 WantedBy=multi-user.target
