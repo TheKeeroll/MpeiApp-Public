@@ -21,6 +21,12 @@ export type VpnVerificationState = {
   lastEffectiveStatus: VpnEntitlementStatus;
 };
 
+export type VpnDemoAccess = {
+  demoSubURL: string;
+  /** ISO time at which the proxy returned the demo subscription URL. */
+  receivedAt: string;
+};
+
 export type VpnProxyVerifyResponse =
   | {
     reqStatus: 'success';

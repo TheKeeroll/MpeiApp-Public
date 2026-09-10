@@ -132,7 +132,11 @@ const isQRFrameName = (value: unknown): value is QRFrameName => (
   typeof value === 'string' && QR_FRAME_NAMES.includes(value as QRFrameName)
 )
 
-type PostOnlineDataTask = () => Promise<void> | void
+type PostOnlineDataTask = (isCurrent: () => boolean) => Promise<void> | void
+
+type RequestInitWithManualRedirect = RequestInit & {
+  redirect?: 'manual'
+}
 
 type DataSectionFetch = {
   generation: number
@@ -335,8 +339,8 @@ export default class BARS{
     return 'ONLINE'
   }
   /**
-   * These tasks run in the bounded background queue after the core BARS data
-   * has unlocked navigation. VPN revalidation is registered here in stage 6.
+   * These tasks start in the background as soon as the core BARS data has
+   * unlocked navigation. DragoNet revalidation is registered at app startup.
    */
   public RegisterPostOnlineDataTask(name: string, task: PostOnlineDataTask){
     this.mPostOnlineDataTasks.set(name, task)
@@ -348,7 +352,7 @@ export default class BARS{
         return
       }
       try{
-        await task()
+        await task(() => this.IsCurrentGeneration(generation))
       } catch {
         console.warn(`Post-online data task "${name}" failed`)
       }
@@ -474,6 +478,9 @@ export default class BARS{
     }
 
     const backgroundPromise = (async () => {
+      // Do not make low-priority post-core tasks wait for every secondary BARS
+      // section. They are intentionally concurrent with this background queue.
+      const postOnlineTasks = this.RunPostOnlineDataTasks(generation)
       const run = async (section: BARSDataSection) => {
         if (this.IsCurrentGeneration(generation)) {
           await this.RunDataSection(section, generation)
@@ -505,9 +512,7 @@ export default class BARS{
         await run(section)
       }
 
-      if (this.IsCurrentGeneration(generation)) {
-        await this.RunPostOnlineDataTasks(generation)
-      }
+      await postOnlineTasks
     })()
 
     this.mBackgroundDataLoadPromise = backgroundPromise
@@ -1937,7 +1942,6 @@ export default class BARS{
       method:   'POST',
       mode:     'same-origin',
       credentials: 'include',
-      // @ts-expect-error
       redirect: 'manual',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -1946,7 +1950,7 @@ export default class BARS{
         'Referer':      `${URLS.MAIL_LEGACY}/CookieAuth.dll?GetLogon?curl=${refererCurl}`
       },
       body: GetForm('Z2FowaZ2FZ3FaeZ3DFolderZ26tZ3DIPF.NoteZ26idZ3DLgAAAAAZ252faJ6Rlp8wQ4mSsQM3EPEvAQA3zcW5sZ252fzhSry5ktzNFKjqAHEtjletAAABZ26slUsngZ3D0').toString()
-    });
+    } as RequestInitWithManualRedirect);
 
     let html = ''
     if (resp1.status == 200) {
@@ -1985,7 +1989,6 @@ export default class BARS{
             method:   'POST',
             mode:     'same-origin',
             credentials: 'include',
-            // @ts-expect-error
             redirect: 'manual',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -1994,7 +1997,7 @@ export default class BARS{
               'Referer':      `${URLS.MAIL_MODERN}/CookieAuth.dll?GetLogon?curl=Z2Fowa&reason=0&formdir=2`
             },
             body: GetForm('Z2Fowa').toString()
-          });
+          } as RequestInitWithManualRedirect);
       html = await resp3.text()
       // console.log('resp3 html received')
       if ((html.includes('ASP.auth_error')) || (resp3.status === 302)) {
