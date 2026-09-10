@@ -1,13 +1,9 @@
 import type {VpnEntitlementStatus} from './types';
 
-/**
- * demoSubURL is intentionally an in-memory React state only. It must never be
- * passed to VpnSubscriptionStorage or MMKV.
- */
 export type DemoAccessUiState =
   | {kind: 'idle'}
   | {kind: 'requesting'}
-  | {kind: 'ready'; demoSubURL: string}
+  | {kind: 'ready'; demoSubURL: string; receivedAt: string}
   | {kind: 'unavailable'};
 
 export type VpnSubscriptionUiState =

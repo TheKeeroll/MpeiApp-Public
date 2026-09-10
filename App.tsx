@@ -19,6 +19,7 @@ import {AdsProvider} from "./src/Ads/AdsProvider";
 import {LoyaltyProvider} from "./src/Loyalty/LoyaltyProvider";
 import TokenBalanceBadge from "./src/Loyalty/TokenBalanceBadge";
 import {LOADING_PROGRESS_KEYS} from "./src/Loading/LoadingProgressKeys";
+import './src/Vpn/VpnSubscriptionRuntime';
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()

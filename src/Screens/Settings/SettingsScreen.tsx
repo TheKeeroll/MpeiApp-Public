@@ -40,6 +40,7 @@ import {
 } from "../../Loyalty/LoyaltyCatalog";
 import {showInsufficientTokensAlert} from "../../Loyalty/LoyaltyAlerts";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
+import DragoNetPromoCard from './DragoNetPromoCard';
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -148,6 +149,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Полностью некоммерческий статус не позволял компенсировать расходы и усилия на поддержку, включая ежегодную оплату Apple Developer, чтобы MpeiApp оставался доступен в App Store. Реклама и будущая интеграция с другими проектами разработчика помогут покрывать эти затраты и сохранять бесплатную доступность приложения в магазинах.</Text>
                         </View>
                     }
+                    <DragoNetPromoCard/>
                     <ListSeparator title={'Поддержка'}/>
                     <ListButton icon={
                         <FaIcon.default name={'vk'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>

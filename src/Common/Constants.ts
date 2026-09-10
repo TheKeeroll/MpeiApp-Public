@@ -118,6 +118,7 @@ export const STORAGE_KEYS = {
   MAIL: 'mail',
   ADDITIONAL_DATA: 'additionalData',
   VPN_VERIFICATION_STATE: 'vpnVerificationState',
+  VPN_DEMO_ACCESS: 'vpnDemoAccess',
   AD_USER_CONSENT: 'adUserConsent'
 }
 
