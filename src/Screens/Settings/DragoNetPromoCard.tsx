@@ -3,6 +3,9 @@ import React from 'react';
 import {useTheme} from 'react-native-paper';
 import {
   Alert,
+  Animated,
+  Easing,
+  Image,
   ImageBackground,
   Linking,
   Modal,
@@ -15,6 +18,8 @@ import {
 } from 'react-native';
 // @ts-expect-error
 import * as MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+// @ts-expect-error
+import * as FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {withOpacity, type CustomTheme} from '../../Themes/Themes';
 import type {VpnDemoAccess, VpnVerificationResult, VpnVerificationState} from '../../Vpn';
 import {dragonetTelegramUrl, vpnSubscriptionService} from '../../Vpn/VpnSubscriptionRuntime';
@@ -25,7 +30,9 @@ const DEMO_CONFIGURATION_NOTE = 'Часть конфигураций у вас �
 
 const openExternalUrl = async (url: string, title: string): Promise<void> => {
   try {
-    if (!await Linking.canOpenURL(url)) {
+    const canOpen = await Linking.canOpenURL(url).catch(() => false);
+    // Android 11+ can hide browser handlers from canOpenURL despite openURL working.
+    if (!canOpen && Platform.OS !== 'android') {
       Alert.alert(title, 'На устройстве не удалось открыть эту ссылку. Попробуйте ещё раз после проверки подключения к интернету.');
       return;
     }
@@ -40,9 +47,11 @@ const ActionButton: React.FC<{
   onPress: () => void;
   disabled?: boolean;
   icon?: string;
+  leadingIcon?: React.ReactNode;
   subtle?: boolean;
-}> = ({title, onPress, disabled = false, icon, subtle = false}) => {
+}> = ({title, onPress, disabled = false, icon, leadingIcon, subtle = false}) => {
   const {colors} = useTheme<CustomTheme>();
+  const hasIcon = !!icon || !!leadingIcon;
   return (
     <TouchableOpacity
       disabled={disabled}
@@ -60,9 +69,58 @@ const ActionButton: React.FC<{
         opacity: disabled ? .45 : 1,
       }}
     >
+      {leadingIcon}
       {icon && <MaterialIcons.default name={icon} size={20} color={subtle ? colors.text : '#FFFFFF'}/>} 
-      <Text style={{marginLeft: icon ? 7 : 0, color: subtle ? colors.text : '#FFFFFF', fontWeight: 'bold', fontSize: 15}}>{title}</Text>
+      <Text style={{marginLeft: hasIcon ? 7 : 0, color: subtle ? colors.text : '#FFFFFF', fontWeight: 'bold', fontSize: 15}}>{title}</Text>
     </TouchableOpacity>
+  );
+};
+
+const PROMO_ICON_SIZE = 32;
+const PROMO_ICON_CELL_WIDTH = 52;
+const PROMO_APP_ICONS = [
+  {name: 'YouTube', source: require('../../../assets/images/DragoNet/AppIconsForPromo/youtube.webp')},
+  {name: 'Instagram', source: require('../../../assets/images/DragoNet/AppIconsForPromo/instagram.webp')},
+  {name: 'TikTok', source: require('../../../assets/images/DragoNet/AppIconsForPromo/tiktok.webp')},
+  {name: 'Telegram', source: require('../../../assets/images/DragoNet/AppIconsForPromo/telegram.webp')},
+  {name: 'Spotify', source: require('../../../assets/images/DragoNet/AppIconsForPromo/spotify.webp')},
+  {name: 'Netflix', source: require('../../../assets/images/DragoNet/AppIconsForPromo/netflix.webp')},
+  {name: 'Discord', source: require('../../../assets/images/DragoNet/AppIconsForPromo/discord.webp')},
+  {name: 'Twitch', source: require('../../../assets/images/DragoNet/AppIconsForPromo/twitch.webp')},
+  {name: 'Microsoft Copilot', source: require('../../../assets/images/DragoNet/AppIconsForPromo/copilot.webp')},
+  {name: 'Google Gemini', source: require('../../../assets/images/DragoNet/AppIconsForPromo/gemini.webp')},
+  {name: 'Xbox', source: require('../../../assets/images/DragoNet/AppIconsForPromo/xbox.webp')},
+  {name: 'Nintendo', source: require('../../../assets/images/DragoNet/AppIconsForPromo/nintendo.webp')},
+  {name: 'NTE', source: require('../../../assets/images/DragoNet/AppIconsForPromo/nte.webp')},
+] as const;
+const PROMO_ICON_LOOP_WIDTH = PROMO_APP_ICONS.length * PROMO_ICON_CELL_WIDTH;
+
+const PromoAppIconsMarquee: React.FC = () => {
+  const translateX = React.useRef(new Animated.Value(0)).current;
+  const icons = [...PROMO_APP_ICONS, ...PROMO_APP_ICONS, ...PROMO_APP_ICONS];
+
+  React.useEffect(() => {
+    translateX.setValue(0);
+    const animation = Animated.loop(Animated.timing(translateX, {
+      toValue: -PROMO_ICON_LOOP_WIDTH,
+      duration: 36000,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }));
+    animation.start();
+    return () => animation.stop();
+  }, [translateX]);
+
+  return (
+    <View accessible={false} style={{height: 48, marginTop: 14, overflow: 'hidden'}}>
+      <Animated.View style={{flexDirection: 'row', width: PROMO_ICON_LOOP_WIDTH * 3, transform: [{translateX}]}}>
+        {icons.map((app, index) => (
+          <View key={`${app.name}-${index}`} style={{width: PROMO_ICON_CELL_WIDTH, height: 48, alignItems: 'center', justifyContent: 'center'}}>
+            <Image source={app.source} accessibilityLabel={app.name} style={{width: PROMO_ICON_SIZE, height: PROMO_ICON_SIZE, resizeMode: 'contain'}}/>
+          </View>
+        ))}
+      </Animated.View>
+    </View>
   );
 };
 
@@ -226,6 +284,10 @@ const VerificationSection: React.FC<{
   const hasLink = !!props.state.clientName;
   return (
     <>
+      <View style={{marginTop: 14, paddingHorizontal: 2}}>
+        <Text style={{color: '#FFFFFF', fontSize: 16, fontWeight: 'bold'}}>Уже пользуетесь DragoNet?</Text>
+        <Text style={{marginTop: 4, color: withOpacity('#FFFFFF', 88), fontSize: 15, lineHeight: 21}}>Проверьте подписку, чтобы отключить рекламу и открыть полный доступ к возможностям MpeiApp.</Text>
+      </View>
       <AccordionHeader title="Проверка активной подписки" icon="verified-user" expanded={props.expanded} onPress={props.onToggle}/>
       {props.expanded && (
         <View style={{marginTop: 8, padding: 13, borderRadius: 7, backgroundColor: withOpacity(colors.background, 48)}}>
@@ -382,11 +444,12 @@ const DragoNetPromoCard: React.FC = () => {
   return (
     <>
       <View style={{width: '100%', marginTop: 14, overflow: 'hidden', borderRadius: 10, backgroundColor: colors.primary}}>
-        <ImageBackground source={require('../../../assets/images/dragons.webp')} imageStyle={{borderRadius: 10}} style={{width: '100%'}}>
+        <ImageBackground source={require('../../../assets/images/DragoNet/DragoNet.webp')} imageStyle={{borderRadius: 10}} style={{width: '100%'}}>
           <View style={{padding: 16, backgroundColor: withOpacity('#09070B', 78)}}>
             <Text style={{color: '#FFFFFF', fontSize: 25, fontWeight: 'bold'}}>DragoNet</Text>
-            <Text style={{marginTop: 6, color: '#FFFFFF', fontSize: 16, lineHeight: 22}}>YouTube, TikTok, Discord, нейросети и игры. От 80 ₽ в месяц, российские приложения без отключения VPN и нестандартные протоколы.</Text>
-            <ActionButton title="Получить DragoNet" icon="send" onPress={() => void openExternalUrl(dragonetTelegramUrl, 'Не удалось открыть Telegram')}/>
+            <PromoAppIconsMarquee/>
+            <Text style={{marginTop: 8, color: '#FFFFFF', fontSize: 16, lineHeight: 22}}>Стабильный доступ к любым приложениям и сайтам, включая российские сервисы без отключения VPN. От 80 ₽ в месяц и нестандартные протоколы.</Text>
+            <ActionButton title="Подключить DragoNet" leadingIcon={<FontAwesome.default name="telegram" size={20} color="#FFFFFF"/>} onPress={() => void openExternalUrl(dragonetTelegramUrl, 'Не удалось открыть Telegram')}/>
             <ActionButton title={isDemoRequesting ? 'Получаем демо-доступ…' : 'Бесплатный демо-доступ'} icon="card-giftcard" disabled={isDemoRequesting} subtle onPress={() => void requestDemo()}/>
             {snapshot.demoAccess && (
               <DemoSubscriptionLink
