@@ -1,7 +1,7 @@
 import {
     Alert,
     Dimensions,
-    LayoutAnimation, Linking, ScrollView,
+    KeyboardAvoidingView, LayoutAnimation, Linking, Platform, ScrollView,
     Text, TouchableOpacity,
     View,
 } from "react-native";
@@ -178,7 +178,14 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
             : 'Запрашиваем код подтверждения…'
 
     return (
-        <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
+        <KeyboardAvoidingView style={{flex: 1, width: '100%'}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            style={{flex: 1, width: '100%'}}
+            contentContainerStyle={{flexGrow: 1, alignItems: 'center', paddingBottom: 24}}
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            keyboardShouldPersistTaps="handled"
+          >
+          <View style={{width: '90%', maxWidth: 400, marginTop: '10%'}}>
             <Text style={{
                 fontWeight: 'bold',
                 fontSize: 20,
@@ -206,6 +213,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                 placeholderTextColor={withOpacity(colors.text, 40)}
                 underlineColor={colors.text}
                 activeUnderlineColor={colors.textUnderline}
+                onSubmitEditing={handleLogin}
                 style={{backgroundColor: colors.background, borderRadius: 0}}
                 theme={{colors}}
             />
@@ -217,7 +225,9 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                 </View>
                 <Button icon={'question'} onPress={shHCb} style={{alignSelf: 'flex-start', width: '20%', aspectRatio: 1, marginVertical: '3%'}}/>
             </View>
-        </View>
+          </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 

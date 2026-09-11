@@ -490,7 +490,7 @@ const DragoNetPromoCard: React.FC = () => {
         <ImageBackground source={require('../../../assets/images/DragoNet/DragoNet.webp')} imageStyle={{borderRadius: 10}} style={{width: '100%'}}>
           <View style={{padding: 16, backgroundColor: withOpacity('#09070B', 78)}}>
             <View style={{minHeight: 31, paddingRight: 194}}>
-              <Text style={{color: colors.accent, fontSize: 25, fontWeight: 'bold'}}>DragoNet</Text>
+              <Text style={{color: colors.accent, fontSize: 25, fontWeight: 'bold'}}>Drago{'\u200B'}Net</Text>
             </View>
             <View pointerEvents="none" style={{position: 'absolute', top: 14, right: 16, maxWidth: 190, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 5, backgroundColor: withOpacity('#120B24', 76)}}>
               <Text style={{color: '#FBE56A', fontSize: 11, fontWeight: '600', lineHeight: 14, textAlign: 'right', textShadowColor: withOpacity('#000000', 72), textShadowOffset: {width: 0, height: 1}, textShadowRadius: 2}}>Чтобы был не "Чебурнет" -{'\n'}подключайте DragoNet!</Text>

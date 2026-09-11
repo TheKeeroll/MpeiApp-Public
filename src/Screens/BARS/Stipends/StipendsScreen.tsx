@@ -55,6 +55,7 @@ const StipendPageSelector: React.FC<{pages: string[], selectedIndex: number, onS
 
 const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
+  const stipendType = item.type.trim() || '\u00A0'
   let todayDate= convertDate(new Date().getDDMMYY())
 
   let stipend_endDate = convertDate(new Date().getDDMMYY())
@@ -72,7 +73,10 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         <View style={Styles.left}>
           <View style={Styles.semText}>
             <Text
-              style={{ textAlign: 'left', padding: '1%', fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={{ textAlign: 'left', padding: '1%', fontSize: 13, lineHeight: 17, fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
               {item.start_date + ' - ' + item.end_date}
             </Text>
           </View>
@@ -85,8 +89,8 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            style={{ padding: '1%', color: colors.text }}>
-            {item.type}
+            style={{width: '100%', minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
+            {stipendType}
           </Text>
         </View>
         <Text
@@ -101,7 +105,10 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         <View style={Styles.left}>
           <View style={Styles.semText}>
             <Text
-              style={{ textAlign: 'left', padding: '1%', fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={{ textAlign: 'left', padding: '1%', fontSize: 13, lineHeight: 17, fontWeight: 'bold', color: withOpacity(text_color, 60) }}>
               {item.term}
             </Text>
           </View>
@@ -114,8 +121,8 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            style={{ padding: '1%', color: colors.text }}>
-            {item.type}
+            style={{width: '100%', minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
+            {stipendType}
           </Text>
           <View style={Styles.left}>
             <Text
@@ -262,10 +269,12 @@ const Styles = StyleSheet.create({
     justifyContent: 'center',
   },
   typeText:{
-    width: '96%',
+    alignSelf: 'stretch',
+    minHeight: 38,
+    marginHorizontal: '2%',
     marginBottom: '1%',
     borderRadius: 5,
-    alignSelf: 'center'
+    justifyContent: 'center',
   },
   pageBtn:{
     alignItems: 'center',

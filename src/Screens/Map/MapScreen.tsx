@@ -301,7 +301,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                 setExpanded(true)
             }}
             style={[Styles.searchCollapsed, { backgroundColor: colors.primary}]}>
-              <Text adjustsFontSizeToFit={true} style={{ padding: 4, textAlign: 'center', fontSize: 18, color: colors.text}}>Что ищем ?</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{alignSelf: 'stretch', paddingHorizontal: 6, textAlign: 'center', fontSize: 18, color: colors.text}}>Что ищем?</Text>
           </TouchableOpacity>
         )
         const Expanded = () => (
@@ -735,7 +735,10 @@ const Styles = StyleSheet.create({
     },
     searchCollapsed:{
         width: '30%',
-        height: 50,
+        minWidth: 140,
+        minHeight: 50,
+        paddingHorizontal: 4,
+        paddingVertical: 6,
         borderRadius: 10,
         alignItems:'center',
         justifyContent: 'center',

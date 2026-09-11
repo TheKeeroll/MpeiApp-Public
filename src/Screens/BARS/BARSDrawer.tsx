@@ -123,8 +123,8 @@ const DrawerHeader: React.FC = () => {
 
     return (
         <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
-            <View style={{width: '100%', padding: 8, flexDirection: 'row'}}>
-                <View style={{flex: 0.99}}>
+            <View style={{width: '100%', padding: 8, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start'}}>
+                <View style={{flex: 0.99, minWidth: 0, flexShrink: 1}}>
                     <View style={{width: '100%', flexDirection: 'row'}}>
                         {(student?.name) &&
                         <Text
@@ -188,7 +188,7 @@ const DrawerHeader: React.FC = () => {
                     <Text style={{fontSize: 14, fontWeight: 'bold', paddingVertical: '1%', paddingLeft: '2%', color: withOpacity(status_color, 90)}}>{CapitalizeFirstChar(student?.status?.includes('не распарсилось') ? '' : student?.status)}</Text>
                     }
                 </View>
-                <View style={{flex: .6, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
+                <View style={{flex: .6, minWidth: 0, flexShrink: 1, alignItems: 'flex-end', justifyContent: 'flex-start'}}>
                     {(student?.group) &&
                     <Text adjustsFontSizeToFit numberOfLines={1} style={{paddingTop: '2%', paddingRight: '4%', color: colors.text, fontWeight: 'bold'}}>{student?.group?.includes('не распарсилось') ? '' : student?.group}</Text>
                     }
@@ -221,14 +221,14 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
         }
     }
     return (
-        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, minHeight: 45, paddingVertical: 5, borderRadius: 5, backgroundColor: isFocused ? colors.highlight : colors.surface}}>
-            <View style={{width: 46, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', borderRadius: 5, marginHorizontal: 5, backgroundColor: colors.surface}}>
+        <TouchableOpacity onPress={onPress.bind(this)} style={{alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', marginVertical: 5, minHeight: 45, paddingHorizontal: 5, paddingVertical: 5, borderRadius: 5, backgroundColor: isFocused ? colors.highlight : colors.surface}}>
+            <View style={{width: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', borderRadius: 5, marginRight: 5, backgroundColor: colors.surface}}>
                 {props.iconComponent}
             </View>
-            <Text style={{flex: 1, flexShrink: 1, fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
+            <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{flex: 1, minWidth: 0, flexShrink: 1, paddingVertical: 3, fontWeight: '700', color: withOpacity(colors.text, 80)}}>{props.title}</Text>
             {props.counter > 0 && (
-              <View style={{ marginLeft: 'auto', marginRight: 10, backgroundColor: colors.backdrop, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
-                  <Text style={{ color: props.counterColor, fontWeight: 'bold'}}>{props.counter}</Text>
+              <View style={{flexShrink: 0, marginLeft: 8, marginRight: 5, backgroundColor: colors.backdrop, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2}}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{color: props.counterColor, fontWeight: 'bold'}}>{props.counter}</Text>
               </View>
             )}
         </TouchableOpacity>
@@ -436,12 +436,12 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
 
     return(
         <Fragment>
-            <SafeAreaView edges={['left', 'bottom']} style={{flex: 1, backgroundColor: colors.background}}>
-                <DrawerContentScrollView>
+            <SafeAreaView edges={['top', 'left', 'bottom']} style={{flex: 1, backgroundColor: colors.background}}>
+                <DrawerContentScrollView contentContainerStyle={{paddingBottom: 12}}>
                     <DrawerHeader/>
                     <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
                         <View style={{width: '100%', flexDirection: 'row'}}>
-                            <View style={{flex: .7}}>
+                            <View style={{flex: 1, minWidth: 0}}>
                                 <View style={{width: '100%', flexDirection: 'column'}}>
                                     <View style={{width: '100%', minHeight: '2%', alignItems: 'center', flexDirection: 'row'}}>
                                         <IonIcon.default name={'mail-open-outline'} size={25} adjustsFontSizeToFit
@@ -450,12 +450,16 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                                         />
                                         <Text
                                           numberOfLines={1}
-                                          style={{fontSize: 14, textAlign: 'center', paddingVertical: 8, fontWeight: 'bold', color: colors.text}}>
+                                          adjustsFontSizeToFit
+                                          minimumFontScale={0.8}
+                                          style={{flexShrink: 0, fontSize: 14, textAlign: 'center', paddingVertical: 8, fontWeight: 'bold', color: colors.text}}>
                                             {'Почта:'}
                                         </Text>
                                         <Text
-                                          numberOfLines={1}
-                                          style={{fontSize: 14, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
+                                          numberOfLines={2}
+                                          adjustsFontSizeToFit
+                                          minimumFontScale={0.75}
+                                          style={{flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, marginLeft: 4, paddingVertical: 8, fontWeight: 'bold', color: withOpacity(mail_color, 90)}}>
                                             {mail_str}
                                         </Text>
                                         {mail_retry_flag && (
