@@ -30,12 +30,12 @@ const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     return (
         <Fragment>
-            <View style={{ justifyContent: 'space-evenly', alignItems: 'center', flexDirection: 'row', marginTop: '5%', minWidth: '70%', height: 40, borderRadius: 10, backgroundColor: props.hours >= 40 ? colors.notification : colors.primary}}>
-                <Text adjustsFontSizeToFit numberOfLines={1} style={{fontSize: 14, paddingHorizontal: 2, fontWeight: '700', color: props.hours == 0 ? colors.accent : colors.text}}>{`Всего пропущено часов: ${props.hours} (Пар: ${props.hours / 2})`}</Text>
+            <View style={{alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: '5%', minHeight: 40, width: '90%', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: props.hours >= 40 ? colors.notification : colors.primary}}>
+                <Text style={{width: '100%', textAlign: 'center', fontSize: 14, fontWeight: '700', color: props.hours == 0 ? colors.accent : colors.text}}>{`Всего пропущено часов: ${props.hours} (Пар: ${props.hours / 2})`}</Text>
             </View>
             {props.goodExcuse > 0 &&
-            <View style={{ justifyContent: 'space-evenly', alignItems: 'center', flexDirection: 'row', marginTop: '2%', minWidth: '70%', height: 40, borderRadius: 10, backgroundColor: colors.marks["5"]}}>
-                <Text adjustsFontSizeToFit numberOfLines={1} style={{fontSize: 14, paddingHorizontal: 2, fontWeight: '700', color: colors.text}}>{`По уважительной причине: ${props.goodExcuse} (Пар: ${props.goodExcuse / 2})`}</Text>
+            <View style={{alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: '2%', minHeight: 40, width: '90%', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.marks["5"]}}>
+                <Text style={{width: '100%', textAlign: 'center', fontSize: 14, fontWeight: '700', color: colors.text}}>{`По уважительной причине: ${props.goodExcuse} (Пар: ${props.goodExcuse / 2})`}</Text>
             </View>
             }
         </Fragment>
@@ -86,39 +86,32 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
 
 const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void, item: SkippedClass[], index: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
-    const Collapsed = () => (
-        <View style={{width: SCREEN_SIZE.width * .9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', borderRadius: 5, alignSelf: 'center', height: 50, backgroundColor: colors.surface}}>
-            <View style={{height: '80%', flex: .75, marginVertical: 20, justifyContent: 'center', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
-                <Text numberOfLines={1} style={{textAlign: 'center', width: '80%', color: colors.text}}>{props.item[0].lesson}</Text>
+    const HoursToggle = () => (
+        <TouchableOpacity
+            style={{width: 76, flexShrink: 0, alignSelf: 'stretch', minHeight: 48, marginLeft: 8, alignItems: 'center', justifyContent: 'center'}}
+            onPress={props.onExpand.bind(this, props.index)}
+        >
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{width: '100%', paddingHorizontal: 2, textAlign: 'center', color: withOpacity(colors.textUnderline, 60), fontWeight: '700'}}>Часов</Text>
+            <View style={{width: '100%', minHeight: 28, marginTop: 2, paddingHorizontal: 4, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{width: '100%', textAlign: 'center', color: withOpacity(colors.text, 60), fontSize: 18, fontWeight: '700'}}>{props.item.length * 2}</Text>
             </View>
-            <TouchableOpacity
-                style={{height: '90%', alignItems: 'center', justifyContent: 'space-between', flex: .2}}
-                onPress={props.onExpand.bind(this, props.index)}
-            >
-                <Text style={{color: withOpacity(colors.textUnderline, 60), fontWeight: '700'}}>Часов</Text>
-                <View style={{flex: .9, width: '100%', borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
-                    <Text style={{ color: withOpacity(colors.text, 60), fontSize: 18, fontWeight: '700'}}>{props.item.length * 2}</Text>
-                </View>
-            </TouchableOpacity>
+        </TouchableOpacity>
+    )
+    const Collapsed = () => (
+        <View style={{width: '90%', flexDirection: 'row', alignItems: 'center', minHeight: 54, padding: 4, borderRadius: 5, alignSelf: 'center', backgroundColor: colors.surface}}>
+            <View style={{flex: 1, minWidth: 0, minHeight: 42, justifyContent: 'center', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{textAlign: 'center', width: '100%', paddingHorizontal: 8, color: colors.text}}>{props.item[0].lesson}</Text>
+            </View>
+            <HoursToggle/>
         </View>
     )
     const Expanded = () => (
-        <View style={{width: SCREEN_SIZE.width * .9, alignItems: 'flex-start', flexDirection: 'column', borderRadius: 5, alignSelf: 'center', minHeight: 90, backgroundColor: colors.surface}}>
-            <View style={{flexDirection: 'row', width: '100%', marginTop: '1%', justifyContent: 'space-evenly'}}>
-                <View style={{flex: .8, height: 45, alignItems: 'center', justifyContent: 'center'}}>
-                    <View style={{width: '95%', height: '85%', alignItems: 'center', justifyContent: 'center', borderRadius: 5, backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
-                        <Text numberOfLines={1} style={{color: colors.text, padding: '2%'}}>{props.item[0].lesson}</Text>
-                    </View>
+        <View style={{width: '90%', alignItems: 'flex-start', flexDirection: 'column', borderRadius: 5, alignSelf: 'center', minHeight: 90, backgroundColor: colors.surface}}>
+            <View style={{flexDirection: 'row', width: '100%', minHeight: 54, padding: 4, alignItems: 'center'}}>
+                <View style={{flex: 1, minWidth: 0, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 5, backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{width: '100%', paddingHorizontal: 8, textAlign: 'center', color: colors.text}}>{props.item[0].lesson}</Text>
                 </View>
-                <TouchableOpacity
-                    style={{flex: .2, height: 45, alignItems: 'center', justifyContent: 'center'}}
-                    onPress={props.onExpand.bind(this, props.index)}
-                >
-                    <Text style={{color: withOpacity(colors.textUnderline, 60), fontWeight: '600'}}>Часов</Text>
-                    <View style={{width: '80%', alignItems: 'center', justifyContent: 'center', borderRadius: 5, backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
-                        <Text style={{ color: withOpacity(colors.text, 60), fontSize: 18, fontWeight: '700'}}>{props.item.length * 2}</Text>
-                    </View>
-                </TouchableOpacity>
+                <HoursToggle/>
             </View>
             <View style={{width: '100%'}}>
                 <FlatList
