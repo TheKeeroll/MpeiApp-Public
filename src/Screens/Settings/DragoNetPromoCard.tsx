@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Linking,
   Modal,
+  NativeModules,
   Platform,
   ScrollView,
   Text,
@@ -25,8 +26,41 @@ import type {VpnDemoAccess, VpnVerificationResult, VpnVerificationState} from '.
 import {dragonetTelegramUrl, vpnSubscriptionService} from '../../Vpn/VpnSubscriptionRuntime';
 
 const INCY_APP_STORE_URL = 'https://apps.apple.com/ru/app/incy/id6756943388';
-const OWENCLAVE_APK_URL = 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-arm64-v8a.apk';
+const OWENCLAVE_APK_URLS = {
+  'arm64-v8a': 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-arm64-v8a.apk',
+  'armeabi-v7a': 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-armeabi-v7a.apk',
+  x86: 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-x86.apk',
+  x86_64: 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-x86_64.apk',
+} as const;
 const DEMO_CONFIGURATION_NOTE = 'Часть конфигураций у вас может не работать - это нормально: они рассчитаны на другие приложения/платформы';
+
+type OwenclaveArchitecture = keyof typeof OWENCLAVE_APK_URLS;
+
+const isOwenclaveArchitecture = (value: string): value is OwenclaveArchitecture => (
+  Object.prototype.hasOwnProperty.call(OWENCLAVE_APK_URLS, value)
+);
+
+const getOwenclaveApkUrl = async (): Promise<string> => {
+  if (Platform.OS !== 'android') {
+    return OWENCLAVE_APK_URLS['arm64-v8a'];
+  }
+
+  const deviceArchitecture = NativeModules.DeviceArchitecture as {
+    getSupportedAbis?: () => Promise<unknown>;
+  } | undefined;
+  try {
+    const nativeAbis = await deviceArchitecture?.getSupportedAbis?.();
+    if (!Array.isArray(nativeAbis)) {
+      return OWENCLAVE_APK_URLS['arm64-v8a'];
+    }
+    const abi = nativeAbis
+      .filter((value): value is string => typeof value === 'string')
+      .find(isOwenclaveArchitecture);
+    return abi ? OWENCLAVE_APK_URLS[abi] : OWENCLAVE_APK_URLS['arm64-v8a'];
+  } catch {
+    return OWENCLAVE_APK_URLS['arm64-v8a'];
+  }
+};
 
 const openExternalUrl = async (url: string, title: string): Promise<void> => {
   try {
@@ -40,6 +74,10 @@ const openExternalUrl = async (url: string, title: string): Promise<void> => {
   } catch {
     Alert.alert(title, 'Не удалось открыть ссылку. Проверьте подключение к интернету и попробуйте ещё раз.');
   }
+};
+
+const openOwenclaveApk = async (): Promise<void> => {
+  await openExternalUrl(await getOwenclaveApkUrl(), 'Не удалось открыть страницу загрузки');
 };
 
 const ActionButton: React.FC<{
@@ -189,9 +227,8 @@ const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () => void}
               <ActionButton
                 title="Загрузить APK"
                 icon="download"
-                onPress={() => void openExternalUrl(OWENCLAVE_APK_URL, 'Не удалось открыть страницу загрузки')}
+                onPress={() => void openOwenclaveApk()}
               />
-              <Text style={{marginTop: 8, color: withOpacity(colors.text, 72), fontSize: 13, lineHeight: 18}}>Этот APK рассчитан на устройства arm64-v8a.</Text>
               <InstructionStep number={2}>Установите приложение, при необходимости разрешив установку из этого источника, и запустите его.</InstructionStep>
               <InstructionStep number={3}>Откройте раздел Groups в нижней панели: он находится справа от исходного раздела.</InstructionStep>
               <InstructionStep number={4}>Находясь именно в Groups, нажмите плюс в правом верхнем углу.</InstructionStep>
