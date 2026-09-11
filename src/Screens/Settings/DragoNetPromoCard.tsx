@@ -65,13 +65,13 @@ const ActionButton: React.FC<{
         marginTop: 9,
         paddingHorizontal: 12,
         borderRadius: 7,
-        backgroundColor: subtle ? withOpacity(colors.background, 68) : colors.textUnderline,
+        backgroundColor: subtle ? withOpacity(colors.background, 68) : colors.highlight,
         opacity: disabled ? .45 : 1,
       }}
     >
       {leadingIcon}
-      {icon && <MaterialIcons.default name={icon} size={20} color={subtle ? colors.text : '#FFFFFF'}/>} 
-      <Text style={{marginLeft: hasIcon ? 7 : 0, color: subtle ? colors.text : '#FFFFFF', fontWeight: 'bold', fontSize: 15}}>{title}</Text>
+      {icon && <MaterialIcons.default name={icon} size={20} color={subtle ? colors.text : colors.accent}/>}
+      <Text style={{marginLeft: hasIcon ? 7 : 0, color: subtle ? colors.text : colors.accent, fontWeight: 'bold', fontSize: 15}}>{title}</Text>
     </TouchableOpacity>
   );
 };
@@ -446,10 +446,22 @@ const DragoNetPromoCard: React.FC = () => {
       <View style={{width: '100%', marginTop: 14, overflow: 'hidden', borderRadius: 10, backgroundColor: colors.primary}}>
         <ImageBackground source={require('../../../assets/images/DragoNet/DragoNet.webp')} imageStyle={{borderRadius: 10}} style={{width: '100%'}}>
           <View style={{padding: 16, backgroundColor: withOpacity('#09070B', 78)}}>
-            <Text style={{color: '#FFFFFF', fontSize: 25, fontWeight: 'bold'}}>DragoNet</Text>
+            <Text style={{color: colors.accent, fontSize: 25, fontWeight: 'bold'}}>DragoNet</Text>
             <PromoAppIconsMarquee/>
-            <Text style={{marginTop: 8, color: '#FFFFFF', fontSize: 16, lineHeight: 22}}>Стабильный доступ к любым приложениям и сайтам, включая российские сервисы без отключения VPN. От 80 ₽ в месяц и нестандартные протоколы.</Text>
-            <ActionButton title="Подключить DragoNet" leadingIcon={<FontAwesome.default name="telegram" size={20} color="#FFFFFF"/>} onPress={() => void openExternalUrl(dragonetTelegramUrl, 'Не удалось открыть Telegram')}/>
+            <Text style={{marginTop: 8, color: '#FFFFFF', fontSize: 16, lineHeight: 22}}>
+              - Стабильный доступ к любым приложениям и сайтам
+              {'\n'}
+              - Сервисы РФ доступны без отключения VPN
+              {'\n'}
+              - Нестандартные протоколы(ниже риски блокировок в будущем)
+              {'\n'}
+              - Без подписок на каналы
+              {'\n'}
+              - Без лимитов на устройства
+              {'\n'}
+              - От 80 ₽ в месяц
+            </Text>
+            <ActionButton title="Подключить DragoNet" leadingIcon={<FontAwesome.default name="telegram" size={20} color={colors.accent}/>} onPress={() => void openExternalUrl(dragonetTelegramUrl, 'Не удалось открыть Telegram')}/>
             <ActionButton title={isDemoRequesting ? 'Получаем демо-доступ…' : 'Бесплатный демо-доступ'} icon="card-giftcard" disabled={isDemoRequesting} subtle onPress={() => void requestDemo()}/>
             {snapshot.demoAccess && (
               <DemoSubscriptionLink
