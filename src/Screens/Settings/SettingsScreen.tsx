@@ -143,10 +143,10 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>MpeiApp — неофициальное приложение. Переговоры с представителями МЭИ неоднократно начинались, но не привели к совместной работе: университет никогда не оказывал проекту финансовой или иной поддержки.</Text>
 
                             <Text style={{color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 14}}>Поддерживать стало сложнее</Text>
-                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Разработчик уже давно не является студентом МЭИ. Личный аккаунт БАРС больше недоступен, поэтому об изменениях БАРС и других связанных систем иногда удаётся узнать не сразу — даже если их нужно отразить в приложении.</Text>
+                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Разработчик уже давно не является студентом МЭИ, а личный аккаунт БАРС больше недоступен. Поэтому об изменениях в системах вуза иногда удаётся узнать не сразу — даже если их нужно отразить в приложении.</Text>
 
                             <Text style={{color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 14}}>Как это поможет приложению</Text>
-                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Полностью некоммерческий статус не позволял компенсировать расходы и усилия на поддержку, включая ежегодную оплату Apple Developer, чтобы MpeiApp оставался доступен в App Store. Реклама и будущая интеграция с другими проектами разработчика помогут покрывать эти затраты и сохранять бесплатную доступность приложения в магазинах.</Text>
+                            <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Полностью некоммерческий статус не позволял компенсировать расходы и усилия на поддержку, включая ежегодную оплату Apple Developer, чтобы MpeiApp оставался доступен в App Store. Реклама и интеграция с DragoNet помогут покрывать эти затраты и сохранять доступность приложения в магазинах на бесплатной основе.</Text>
                         </View>
                     }
                     <DragoNetPromoCard/>
