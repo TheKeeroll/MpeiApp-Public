@@ -7,7 +7,8 @@ import {
     View,
     Platform,
     TouchableOpacity,
-    LayoutAnimation
+    LayoutAnimation,
+    useWindowDimensions,
 } from "react-native";
 import {useTheme} from "react-native-paper";
 import {SCREEN_SIZE} from "../../../Common/Constants";
@@ -42,7 +43,7 @@ const Header: React.FC<{hours: number, goodExcuse: number}> = (props) => {
     )
 }
 
-const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = (props) => {
+const SkipCard: React.FC<{length: number, item: SkippedClass, index: number, cellWidth: number, cellMargin: number}> = (props) => {
     const [showLessonType, setShowLessonType] = useState(false)
     const [showCreatorTime, setShowCreatorTime] = useState(false)
     const [showEditorTime, setShowEditorTime] = useState(false)
@@ -55,7 +56,7 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
         lessonTypeColor = colors.accent
     }
     return (
-        <View style={{alignItems: 'center', justifyContent: 'space-evenly', minHeight: SCREEN_SIZE.height * .225, marginVertical: SCREEN_SIZE.width * .015, marginLeft: props.index % 3 == 0 ? SCREEN_SIZE.width * .015 : 0, marginRight: SCREEN_SIZE.width * .015, borderRadius: 8,  width: '31.125%', backgroundColor: colors.background}}>
+        <View style={{alignItems: 'center', justifyContent: 'space-evenly', minHeight: SCREEN_SIZE.height * .225, marginVertical: props.cellMargin, marginLeft: props.index % 3 == 0 ? props.cellMargin : 0, marginRight: props.cellMargin, borderRadius: 8, width: props.cellWidth, backgroundColor: colors.background}}>
             <Text style={{paddingTop: 2, color: withOpacity(colors.text, 60)}}>{props.item.lessonIndex}</Text>
             <TouchableOpacity onPress={()=>{
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -86,6 +87,10 @@ const SkipCard: React.FC<{length: number, item: SkippedClass, index: number}> = 
 
 const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void, item: SkippedClass[], index: number}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
+    const {width} = useWindowDimensions()
+    const cardWidth = width * .9
+    const skipCardMargin = width * .015
+    const skipCardWidth = (cardWidth - skipCardMargin * 4) / 3
     const HoursToggle = () => (
         <TouchableOpacity
             style={{width: 76, flexShrink: 0, alignSelf: 'stretch', minHeight: 48, marginLeft: 8, alignItems: 'center', justifyContent: 'center'}}
@@ -98,7 +103,7 @@ const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void,
         </TouchableOpacity>
     )
     const Collapsed = () => (
-        <View style={{width: '90%', flexDirection: 'row', alignItems: 'center', minHeight: 54, padding: 4, borderRadius: 5, alignSelf: 'center', backgroundColor: colors.surface}}>
+        <View style={{width: cardWidth, flexDirection: 'row', alignItems: 'center', minHeight: 54, padding: 4, borderRadius: 5, alignSelf: 'center', backgroundColor: colors.surface}}>
             <View style={{flex: 1, minWidth: 0, minHeight: 42, justifyContent: 'center', alignItems: 'center', borderRadius: 5, backgroundColor: colors.primary}}>
                 <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{textAlign: 'center', width: '100%', paddingHorizontal: 8, color: colors.text}}>{props.item[0].lesson}</Text>
             </View>
@@ -106,7 +111,7 @@ const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void,
         </View>
     )
     const Expanded = () => (
-        <View style={{width: '90%', alignItems: 'flex-start', flexDirection: 'column', borderRadius: 5, alignSelf: 'center', minHeight: 90, backgroundColor: colors.surface}}>
+        <View style={{width: cardWidth, alignItems: 'flex-start', flexDirection: 'column', borderRadius: 5, alignSelf: 'center', minHeight: 90, backgroundColor: colors.surface}}>
             <View style={{flexDirection: 'row', width: '100%', minHeight: 54, padding: 4, alignItems: 'center'}}>
                 <View style={{flex: 1, minWidth: 0, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 5, backgroundColor: props.item.length >= 40 ? withOpacity(colors.notification, 80) : colors.primary}}>
                     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{width: '100%', paddingHorizontal: 8, textAlign: 'center', color: colors.text}}>{props.item[0].lesson}</Text>
@@ -117,10 +122,10 @@ const Card: React.FC<{expandedCardIndex: number, onExpand:(index: number)=>void,
                 <FlatList
                     scrollEnabled={false}
                     style={{width: '100%'}}
-                    contentContainerStyle={{alignItems: 'center'}}
+                    contentContainerStyle={{alignItems: 'center', width: '100%'}}
                     numColumns={3}
                     data={props.item}
-                    renderItem={({item, index}:{item: SkippedClass, index: number})=><SkipCard length={props.item.length} item={item} index={index}/>}
+                    renderItem={({item, index}:{item: SkippedClass, index: number})=><SkipCard length={props.item.length} item={item} index={index} cellWidth={skipCardWidth} cellMargin={skipCardMargin}/>}
                 />
             </View>
         </View>

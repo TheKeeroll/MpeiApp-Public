@@ -89,7 +89,8 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            style={{width: '100%', minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
+            numberOfLines={3}
+            style={{width: '100%', maxWidth: '100%', flexShrink: 1, minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
             {stipendType}
           </Text>
         </View>
@@ -121,7 +122,8 @@ const StipendCell = ({item}: {item: BARSStipend | BARSStipendPetition, index: nu
         </View>
         <View style={[Styles.typeText, { backgroundColor: colors.primary }]}>
           <Text
-            style={{width: '100%', minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
+            numberOfLines={3}
+            style={{width: '100%', maxWidth: '100%', flexShrink: 1, minHeight: 36, paddingHorizontal: 10, paddingVertical: 6, color: colors.text }}>
             {stipendType}
           </Text>
           <View style={Styles.left}>
@@ -269,12 +271,14 @@ const Styles = StyleSheet.create({
     justifyContent: 'center',
   },
   typeText:{
-    alignSelf: 'stretch',
+    width: '96%',
+    maxWidth: '96%',
     minHeight: 38,
-    marginHorizontal: '2%',
     marginBottom: '1%',
     borderRadius: 5,
+    alignSelf: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   pageBtn:{
     alignItems: 'center',
