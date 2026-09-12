@@ -177,7 +177,7 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
 
     if(type == 'DINNER')
         return (
-            <View style={{width: '90%', minHeight: 100, alignItems: 'center', justifyContent: 'space-evenly', flexDirection: 'row', borderRadius: 10, backgroundColor: IsNow() ? colors.surface : colors.primary}}>
+            <View style={{width: '90%', height: 100, alignItems: 'center', justifyContent: 'space-evenly', flexDirection: 'row', borderRadius: 10, backgroundColor: IsNow() ? colors.surface : colors.primary}}>
                 <View style={{width: '23%', minWidth: 78, maxWidth: 128, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>
                     <View style={{borderRadius: 5, alignItems: 'center', justifyContent: 'center', width: '90%', minHeight: 60, paddingVertical: 3, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginBottom: -5, color: colors.text}}>12:45</Text>
@@ -185,11 +185,11 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                         <Text adjustsFontSizeToFit style={{fontWeight: 'bold', marginTop: -5, color: colors.text}}>13:45</Text>
                     </View>
                 </View>
-                <View style={{flex: .4, alignItems: 'center', justifyContent: 'center', height: '100%'}}>
+                <View style={{flex: .4, alignItems: 'center', justifyContent: 'center'}}>
                     <Text style={{fontWeight: 'bold', fontSize: 25, color: colors.text}}>Обед</Text>
                 </View>
                 <View style={{flex: .4, alignItems: 'center', justifyContent: 'center'}}>
-                    <LottieView autoPlay={true} loop={true} speed={0.3} source={require('../../../assets/animations/food.json')} style={{width: '80%', aspectRatio: 1}}/>
+                    <LottieView autoPlay={true} loop={true} speed={0.3} source={require('../../../assets/animations/food.json')} style={{width: 80, height: 80}}/>
                 </View>
             </View>
         )
