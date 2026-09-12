@@ -33,6 +33,7 @@ jest.mock('../src/Themes/Themes', () => ({THEME_DARK: {}, THEME_LIGHT: {}}));
 jest.mock('fast-html-parser', () => ({}));
 
 const BARS = require('../src/API/BARS').default;
+const {BARS_BROWSER_PROFILES, STORAGE_KEYS} = require('../src/Common/Constants');
 const {changeIcon} = require('react-native-change-icon');
 
 const createState = (status: 'LOADING' | 'LOADED' | 'OFFLINE' | 'FAILED' = 'LOADED') => ({
@@ -168,6 +169,35 @@ describe('BARS core and background loading', () => {
     expect(bars.LoginState).toBe('NOT_LOGGED_IN');
   });
 
+  it('uses one selected desktop browser profile in every BARS header', () => {
+    const random = jest.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const bars = new BARS() as any;
+      const headers = [
+        bars.GetBARSCommonHeaders(),
+        bars.GetBARSLoginHeaders(),
+        bars.GetBARSHeadersWithUserId('student-id'),
+        bars.GetBARSQRPresenceHeaders('https://bars.mpei.ru/bars_web/'),
+      ];
+
+      expect(BARS_BROWSER_PROFILES).toHaveLength(10);
+      expect(BARS_BROWSER_PROFILES).toContainEqual({
+        'sec-ch-ua': `"Not;A=Brand";v="8", "Chromium";v="150", "YaBrowser";v="26.8", "Yowser";v="2.5"`,
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 YaBrowser/26.8.0.0 Safari/537.36',
+      });
+      expect(BARS_BROWSER_PROFILES).toContainEqual({
+        'sec-ch-ua': `"Chromium";v="152", "Not?A_Brand";v="24", "Microsoft Edge";v="152"`,
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0',
+      });
+
+      for (const header of headers) {
+        expect(header).toMatchObject(BARS_BROWSER_PROFILES[0]);
+      }
+    } finally {
+      random.mockRestore();
+    }
+  });
+
   it('retains credentials when an accepted 2FA login enters STUDENTS_NOT_FOUND', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-09-12T12:00:00.000Z'));
@@ -241,6 +271,14 @@ describe('BARS core and background loading', () => {
         StopOpenDefault: false,
         __RequestVerificationToken: 'verification-token',
       });
+
+      const initialHeaders = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+      for (const [, currentRequest] of fetchMock.mock.calls.slice(1)) {
+        expect((currentRequest as RequestInit).headers).toMatchObject({
+          'sec-ch-ua': initialHeaders['sec-ch-ua'],
+          'user-agent': initialHeaders['user-agent'],
+        });
+      }
     } finally {
       globalThis.fetch = previousFetch;
     }
@@ -303,6 +341,21 @@ describe('BARS core and background loading', () => {
           StopOpenDefault: false,
         });
       }
+
+      const successfulHeaders = bars.GetBARSCommonHeaders();
+      expect(JSON.parse(bars.mStorage.getString(STORAGE_KEYS.BARS_BROWSER_PROFILE))).toMatchObject({
+        'sec-ch-ua': successfulHeaders['sec-ch-ua'],
+        'user-agent': successfulHeaders['user-agent'],
+      });
+
+      bars.Logout();
+      const logoutHeaders = bars.GetBARSCommonHeaders();
+      expect(logoutHeaders['sec-ch-ua']).not.toBe(successfulHeaders['sec-ch-ua']);
+      expect(logoutHeaders['user-agent']).not.toBe(successfulHeaders['user-agent']);
+      expect(JSON.parse(bars.mStorage.getString(STORAGE_KEYS.BARS_BROWSER_PROFILE))).toMatchObject({
+        'sec-ch-ua': logoutHeaders['sec-ch-ua'],
+        'user-agent': logoutHeaders['user-agent'],
+      });
     } finally {
       globalThis.fetch = previousFetch;
     }
@@ -333,6 +386,67 @@ describe('BARS core and background loading', () => {
       }
     } finally {
       globalThis.fetch = previousFetch;
+    }
+  });
+
+  it('rotates the browser profile after a failed login', async () => {
+    const previousFetch = globalThis.fetch;
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({text: async () => '<form><input name="Password" type="password"></form>'})
+      .mockResolvedValueOnce({text: async () => '<html>password accepted</html>'})
+      .mockResolvedValueOnce({text: async () => '<html>unexpected response</html>'});
+    const random = jest.spyOn(Math, 'random')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0);
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const bars = new BARS() as any;
+      const beforeFailure = bars.GetBARSCommonHeaders();
+
+      await expect(bars.Login({login: 'student', password: 'password'})).rejects.toBeDefined();
+
+      const afterFailure = bars.GetBARSCommonHeaders();
+      expect(afterFailure['sec-ch-ua']).not.toBe(beforeFailure['sec-ch-ua']);
+      expect(afterFailure['user-agent']).not.toBe(beforeFailure['user-agent']);
+      expect(JSON.parse(bars.mStorage.getString(STORAGE_KEYS.BARS_BROWSER_PROFILE))).toMatchObject({
+        'sec-ch-ua': afterFailure['sec-ch-ua'],
+        'user-agent': afterFailure['user-agent'],
+      });
+    } finally {
+      globalThis.fetch = previousFetch;
+      random.mockRestore();
+    }
+  });
+
+  it('rotates the browser profile after a failed 2FA confirmation', async () => {
+    const previousFetch = globalThis.fetch;
+    const fetchMock = jest.fn().mockRejectedValue(new Error('network failure'));
+    const random = jest.spyOn(Math, 'random')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0);
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const bars = new BARS() as any;
+      bars.mSessionGeneration = 1;
+      bars.mStudentAccountLoginAttempt = {
+        generation: 1,
+        credentials: {login: 'student', password: 'password'},
+        isPrimaryOnlineAttempt: false,
+        authenticationPhase: 'AWAITING_2FA',
+        hasStudentData: false,
+      };
+      const beforeFailure = bars.GetBARSLoginHeaders();
+
+      await expect(bars.Login2FA('1234')).rejects.toBeDefined();
+
+      const afterFailure = bars.GetBARSLoginHeaders();
+      expect(afterFailure['sec-ch-ua']).not.toBe(beforeFailure['sec-ch-ua']);
+      expect(afterFailure['user-agent']).not.toBe(beforeFailure['user-agent']);
+    } finally {
+      globalThis.fetch = previousFetch;
+      random.mockRestore();
     }
   });
 });

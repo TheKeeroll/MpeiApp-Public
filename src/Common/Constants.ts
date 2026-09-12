@@ -27,7 +27,68 @@ export const URLS = {
   MAIL_MODERN: 'https://mail.mpei.ru'
 }
 
-export const COMMON_HTTP_HEADER = {
+export type BARSBrowserProfile = Readonly<{
+  'sec-ch-ua': string
+  'user-agent': string
+}>
+
+/** Desktop browser identities used consistently throughout one BARS session. */
+export const BARS_BROWSER_PROFILES: readonly BARSBrowserProfile[] = [
+  {
+    'sec-ch-ua': `"Chromium";v="112", "YaBrowser";v="23", "Not:A-Brand";v="99"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 YaBrowser/23.5.4.674 Yowser/2.5 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Chromium";v="130", "YaBrowser";v="24.12", "Not(A:Brand";v="99", "Yowser";v="2.5"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 YaBrowser/24.12.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Not)A;Brand";v="8", "Chromium";v="138", "YaBrowser";v="25.8", "Yowser";v="2.5"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Not;A=Brand";v="8", "Chromium";v="150", "YaBrowser";v="26.8", "Yowser";v="2.5"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 YaBrowser/26.8.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Chromium";v="152", "Not?A_Brand";v="24", "Microsoft Edge";v="152"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0',
+  },
+  {
+    'sec-ch-ua': `"Google Chrome";v="146", "Chromium";v="146", "Not-A.Brand";v="24"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Google Chrome";v="149", "Chromium";v="149", "Not_A Brand";v="8"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+  },
+  {
+    'sec-ch-ua': `"Microsoft Edge";v="150", "Chromium";v="150", "Not;A=Brand";v="8"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0',
+  },
+  {
+    'sec-ch-ua': `"Opera";v="121", "Chromium";v="136", "Not.A/Brand";v="8"`,
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 OPR/121.0.0.0',
+  },
+]
+
+const DEFAULT_BARS_BROWSER_PROFILE = BARS_BROWSER_PROFILES[0]!
+
+const CreateBARSBrowserSpecificHeaders = (
+  profile: BARSBrowserProfile,
+): Record<string, string> => {
+  if (profile['user-agent'].includes('YaBrowser/')) {
+    return {'y-browser-experiments': 'NjczMTM3LDAsNTA='}
+  }
+
+  return {}
+}
+
+export const CreateBARSCommonHttpHeader = (profile: BARSBrowserProfile) => ({
   'accept': '*/*',
   'accept-encoding': 'gzip, deflate, br',
   'accept-language': 'ru,en;q=0.9',
@@ -35,17 +96,17 @@ export const COMMON_HTTP_HEADER = {
   'dnt': '1',
   'origin': 'https://bars.mpei.ru',
   'referer': 'https://bars.mpei.ru/',
-  'sec-ch-ua': `"Chromium";v="112", "YaBrowser";v="23", "Not:A-Brand";v="99"`,
+  ...profile,
   'sec-ch-ua-mobile': '?0',
   'sec-ch-ua-platform': `"Windows"`,
   'sec-fetch-dest': 'empty',
   'sec-fetch-mode': 'no-cors',
   'sec-fetch-site': 'cross-site',
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 YaBrowser/23.5.4.674 Yowser/2.5 Safari/537.36',
-  'y-browser-experiments': 'NjczMTM3LDAsNTA=',
-  'credentials': 'include'
-}
-export const LOGIN_HEADER = {
+  ...CreateBARSBrowserSpecificHeaders(profile),
+  'credentials': 'include',
+})
+
+export const CreateBARSLoginHeader = (profile: BARSBrowserProfile) => ({
   'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
   'accept-encoding': 'gzip, deflate, br',
   'accept-language': 'ru,en;q=0.9',
@@ -53,54 +114,54 @@ export const LOGIN_HEADER = {
   'dnt': '1',
   'origin': 'https://bars.mpei.ru',
   'referer': URLS.BARS_MAIN,
-  'sec-ch-ua': `"Chromium";v="122", "Not(A:Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"`,
+  ...profile,
   'sec-ch-ua-mobile': '?0',
   'sec-ch-ua-platform': `"Windows"`,
   'sec-fetch-user': '?1',
   'sec-gpc': '1',
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36'
-}
+})
 
-export const HEADER_WITH_USER_ID = (user_id: string)  => {
-  return {
-    'accept': `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
-    'accept-Encoding': 'gzip, deflate, br, zstd',
-    'accept-Language': 'ru,en;q=0.9',
-    'cache-Control': 'max-age=0',
-    'connection': 'keep-alive',
-    'dnt': '1',
-    'host': 'bars.mpei.ru',
-    'referer': URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + user_id,
-    'sec-ch-ua': `"Not)A;Brand";v="8", "Chromium";v="138", "YaBrowser";v="25.8", "Yowser";v="2.5"`,
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': `"Windows"`,
-    'sec-fetch-dest': 'document',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-site': 'same-origin',
-    'sec-fetch-user': '?1',
-    'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36'
-  }
-}
+export const CreateBARSHeaderWithUserId = (user_id: string, profile: BARSBrowserProfile) => ({
+  'accept': `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
+  'accept-Encoding': 'gzip, deflate, br, zstd',
+  'accept-Language': 'ru,en;q=0.9',
+  'cache-Control': 'max-age=0',
+  'connection': 'keep-alive',
+  'dnt': '1',
+  'host': 'bars.mpei.ru',
+  'referer': URLS.BARS_MAIN + 'ST_Study/Main/Main?studentID=' + user_id,
+  ...profile,
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': `"Windows"`,
+  'sec-fetch-dest': 'document',
+  'sec-fetch-mode': 'navigate',
+  'sec-fetch-site': 'same-origin',
+  'sec-fetch-user': '?1',
+  'upgrade-insecure-requests': '1',
+})
 
-export const QR_PRESENCE_HEADER = (qr_combined_url: string)  => {
-  return {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'accept-encoding': 'gzip, deflate, br, zstd',
-    'accept-language': 'ru,en;q=0.9',
-    'content-type': 'application/json',
-    'dnt': '1',
-    'origin': 'https://bars.mpei.ru',
-    'referer': qr_combined_url,
-    'sec-ch-ua': `"Chromium";v="130", "YaBrowser";v="24.12", "Not(A:Brand";v="99", "Yowser";v="2.5"`,
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': `"Windows"`,
-    'sec-fetch-user': '?1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 YaBrowser/24.12.0.0 Safari/537.36'
-  }
-}
+export const CreateBARSQRPresenceHeader = (qr_combined_url: string, profile: BARSBrowserProfile) => ({
+  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'accept-encoding': 'gzip, deflate, br, zstd',
+  'accept-language': 'ru,en;q=0.9',
+  'content-type': 'application/json',
+  'dnt': '1',
+  'origin': 'https://bars.mpei.ru',
+  'referer': qr_combined_url,
+  ...profile,
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': `"Windows"`,
+  'sec-fetch-user': '?1',
+})
+
+// Retained for non-BARS requests that still use the generic legacy headers.
+export const COMMON_HTTP_HEADER = CreateBARSCommonHttpHeader(DEFAULT_BARS_BROWSER_PROFILE)
+export const LOGIN_HEADER = CreateBARSLoginHeader(DEFAULT_BARS_BROWSER_PROFILE)
+export const HEADER_WITH_USER_ID = (user_id: string) => CreateBARSHeaderWithUserId(user_id, DEFAULT_BARS_BROWSER_PROFILE)
+export const QR_PRESENCE_HEADER = (qr_combined_url: string) => CreateBARSQRPresenceHeader(qr_combined_url, DEFAULT_BARS_BROWSER_PROFILE)
 export const STORAGE_KEYS = {
   CREDENTIALS: 'credentials',
+  BARS_BROWSER_PROFILE: 'barsBrowserProfile',
   TEMPORARY_2FA_CODE: 'temporary2FACode',
   THEME: 'theme',
   FRAME: 'frame',

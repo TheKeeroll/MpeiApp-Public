@@ -12,8 +12,13 @@ import {
   Teacher,
 } from "./DataTypes";
 import {
-  COMMON_HTTP_HEADER, HEADER_WITH_USER_ID,
-  LOGIN_HEADER,
+  BARS_BROWSER_PROFILES,
+  type BARSBrowserProfile,
+  COMMON_HTTP_HEADER,
+  CreateBARSCommonHttpHeader,
+  CreateBARSHeaderWithUserId,
+  CreateBARSLoginHeader,
+  CreateBARSQRPresenceHeader,
   STORAGE_KEYS,
   URLS,
 } from "../Common/Constants";
@@ -251,6 +256,7 @@ export default class BARS{
   private mPostOnlineDataTasks = new Map<string, PostOnlineDataTask>()
   private mLastRequested2FAProvider?: TwoFactorProviderTid
   private m2FACodeRequestPromise?: Promise<TwoFactorProviderTid | undefined>
+  private mBARSBrowserProfile?: BARSBrowserProfile
   private mSessionGeneration = 0
   private mStudentAccountLoginAttempt?: StudentAccountLoginAttempt
 
@@ -260,6 +266,7 @@ export default class BARS{
   constructor() {
     //this.mStorage.clearAll()
     this.mCurrentData = {}
+    this.mBARSBrowserProfile = this.ReadSavedBARSBrowserProfile()
     getIcon().then((r: string = 'cool')=>{
       this.mCurrentIcon=r
     })
@@ -269,6 +276,82 @@ export default class BARS{
     if(this.mLoginState === state) return
     this.mLoginState = state
     DeviceEventEmitter.emit('LoginState', state)
+  }
+
+  private ReadSavedBARSBrowserProfile(): BARSBrowserProfile | undefined {
+    const rawProfile = this.mStorage.getString(STORAGE_KEYS.BARS_BROWSER_PROFILE)
+    if (!rawProfile) {
+      return undefined
+    }
+
+    try {
+      const savedProfile = JSON.parse(rawProfile) as Partial<BARSBrowserProfile>
+      const profile = BARS_BROWSER_PROFILES.find(candidate => (
+        candidate['user-agent'] === savedProfile['user-agent']
+        && candidate['sec-ch-ua'] === savedProfile['sec-ch-ua']
+      ))
+      if (profile) {
+        return profile
+      }
+    } catch {
+      // An obsolete or malformed value is safely replaced on the next login.
+    }
+
+    this.mStorage.remove(STORAGE_KEYS.BARS_BROWSER_PROFILE)
+    return undefined
+  }
+
+  private SelectBARSBrowserProfile(excluding?: BARSBrowserProfile): BARSBrowserProfile {
+    const candidates = BARS_BROWSER_PROFILES.filter(profile => profile !== excluding)
+    const pool = candidates.length ? candidates : BARS_BROWSER_PROFILES
+    const index = Math.min(pool.length - 1, Math.floor(Math.random() * pool.length))
+    return pool[index] ?? BARS_BROWSER_PROFILES[0]!
+  }
+
+  private EnsureBARSBrowserProfile(): BARSBrowserProfile {
+    if (!this.mBARSBrowserProfile) {
+      this.mBARSBrowserProfile = this.SelectBARSBrowserProfile()
+    }
+    return this.mBARSBrowserProfile
+  }
+
+  private SaveBARSBrowserProfile() {
+    this.mStorage.set(
+      STORAGE_KEYS.BARS_BROWSER_PROFILE,
+      JSON.stringify(this.EnsureBARSBrowserProfile()),
+    )
+  }
+
+  private RotateBARSBrowserProfile() {
+    const previousProfile = this.mBARSBrowserProfile
+    this.mBARSBrowserProfile = this.SelectBARSBrowserProfile(previousProfile)
+    // Keep the replacement through an app restart instead of returning to a failed profile.
+    this.SaveBARSBrowserProfile()
+  }
+
+  private FinalizeBARSLoginResult(result: LoginResult): LoginResult {
+    if (result === 'ONLINE' || result === 'STUDENTS_NOT_FOUND') {
+      this.SaveBARSBrowserProfile()
+    } else if (result === 'OFFLINE') {
+      this.RotateBARSBrowserProfile()
+    }
+    return result
+  }
+
+  public GetBARSCommonHeaders() {
+    return CreateBARSCommonHttpHeader(this.EnsureBARSBrowserProfile())
+  }
+
+  public GetBARSLoginHeaders() {
+    return CreateBARSLoginHeader(this.EnsureBARSBrowserProfile())
+  }
+
+  public GetBARSHeadersWithUserId(userId: string) {
+    return CreateBARSHeaderWithUserId(userId, this.EnsureBARSBrowserProfile())
+  }
+
+  public GetBARSQRPresenceHeaders(qrCombinedUrl: string) {
+    return CreateBARSQRPresenceHeader(qrCombinedUrl, this.EnsureBARSBrowserProfile())
   }
 
   private BeginSessionGeneration(): number {
@@ -663,7 +746,7 @@ export default class BARS{
           const link = 'https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID
           return fetch(link, {
             method: 'GET',
-            headers: COMMON_HTTP_HEADER,
+            headers: this.GetBARSCommonHeaders(),
             mode: 'same-origin',
             credentials: 'include'
           }).then(r=>r.text()).then((response)=>{
@@ -773,6 +856,7 @@ export default class BARS{
     this.BeginSessionGeneration()
     this.mStorage.remove(STORAGE_KEYS.CREDENTIALS)
     this.mStorage.remove(STORAGE_KEYS.TEMPORARY_2FA_CODE)
+    this.RotateBARSBrowserProfile()
     this.ClearBARSAccountData()
     this.mCredentials = {login: '', password: ''}
     this.mLastRequested2FAProvider = undefined
@@ -996,7 +1080,7 @@ export default class BARS{
       link = encodeURI(link)
       return fetch(link, {
         method: 'GET',
-        headers: COMMON_HTTP_HEADER,
+        headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
         credentials: 'include'
       }).then((r=>r.text())).then((response)=>{
@@ -1037,7 +1121,7 @@ export default class BARS{
       const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
       return fetch(URLS.BARS_MULTI_ACCOUNT, {
         method: "GET",
-        headers: COMMON_HTTP_HEADER,
+        headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
         credentials: 'include'
       }).then(r => r.text()).then((response) => {
@@ -1061,7 +1145,7 @@ export default class BARS{
 
         return fetch(link, {
           method: "GET",
-          headers: COMMON_HTTP_HEADER,
+          headers: this.GetBARSCommonHeaders(),
           mode: 'same-origin',
           credentials: 'include'
         }).then(r => r.text()).then((response) => {
@@ -1072,7 +1156,7 @@ export default class BARS{
               console.warn('studentID= ' + studentID)
               return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
                 method: "GET",
-                headers: COMMON_HTTP_HEADER,
+                headers: this.GetBARSCommonHeaders(),
                 mode: 'same-origin',
                 credentials: 'include'
               }).then(r => r.text()).then((response) => {
@@ -1129,7 +1213,7 @@ export default class BARS{
         console.warn('studentID= ' + studentID)
         return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
           method: "GET",
-          headers: COMMON_HTTP_HEADER,
+          headers: this.GetBARSCommonHeaders(),
           mode: 'same-origin',
           credentials: 'include'
         }).then(r => r.text()).then((response) => {
@@ -1231,13 +1315,14 @@ export default class BARS{
     console.log('Trying saved temporary 2FA code')
     this.mLastRequested2FAProvider = 4
     try {
-      return await this.Login2FA(savedTemporaryCode)
+      return await this.Submit2FACode(savedTemporaryCode, false)
     } catch (error) {
       if (!isInvalidTwoFactorCodeError(error)) {
         throw error
       }
 
       console.warn('Saved temporary 2FA code was rejected; falling back to configured providers')
+      this.RotateBARSBrowserProfile()
       this.ClearSavedTemporary2FACode()
       void this.Start2FACodeRequest()
       return 'NEED_2FA'
@@ -1255,7 +1340,7 @@ export default class BARS{
     try {
       const response = await fetch(URLS.BARS_MAIN, {
         method: 'GET',
-        headers: COMMON_HTTP_HEADER,
+        headers: this.GetBARSCommonHeaders(),
         credentials: 'include',
       })
       const page = await response.text()
@@ -1273,7 +1358,10 @@ export default class BARS{
     }
   }
 
-  public Login2FA(code: string): Promise<LoginResult> {
+  private Submit2FACode(
+    code: string,
+    rotateBrowserProfileOnFailure: boolean,
+  ): Promise<LoginResult> {
     console.log('Trying to login with 2FA code');
     const attempt = this.mStudentAccountLoginAttempt
     if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt)) {
@@ -1292,7 +1380,7 @@ export default class BARS{
     }
     return Timeout(15000, fetch(URLS.BARS_LOGIN_CODE, {
       method: 'POST',
-      headers: LOGIN_HEADER,
+      headers: this.GetBARSLoginHeaders(),
       body: JSON.stringify(body),
       credentials: 'include',
     }).then(r => r.text())
@@ -1312,21 +1400,30 @@ export default class BARS{
       if (!this.IsCurrentStudentAccountAttempt(attempt)) {
         return 'CANCELLED'
       }
-      if (this.mLastRequested2FAProvider === 4) {
+      const loginResult = this.FinalizeBARSLoginResult(result as LoginResult)
+      if (
+        (loginResult === 'ONLINE' || loginResult === 'STUDENTS_NOT_FOUND')
+        && this.mLastRequested2FAProvider === 4
+      ) {
         this.SaveTemporary2FACode(creds.login, code)
       }
-      return result
+      return loginResult
     }).catch(e => {
       if (!this.IsCurrentStudentAccountAttempt(attempt)) {
         return Promise.resolve<LoginResult>('CANCELLED')
       }
-      if (isInvalidTwoFactorCodeError(e)) {
-        return Promise.reject(e)
-      }
 
       const studentsNotFoundResult = this.GetStudentsNotFoundResult(attempt)
       if (studentsNotFoundResult) {
-        return Promise.resolve(studentsNotFoundResult)
+        return Promise.resolve(this.FinalizeBARSLoginResult(studentsNotFoundResult))
+      }
+
+      if (rotateBrowserProfileOnFailure) {
+        this.RotateBARSBrowserProfile()
+      }
+
+      if (isInvalidTwoFactorCodeError(e)) {
+        return Promise.reject(e)
       }
 
       if (isBARSError(e) && (e.error == 'INVALID_CREDS' || e.error == 'LOGIN_FAIL')) {
@@ -1338,6 +1435,10 @@ export default class BARS{
       }
 
     });
+  }
+
+  public Login2FA(code: string): Promise<LoginResult> {
+    return this.Submit2FACode(code, true)
   }
 
   /**
@@ -1360,7 +1461,7 @@ export default class BARS{
         }
         const response = await fetch(URLS.BARS_REQUEST_CODE + `?tid=${tid}`, {
           method: "GET",
-          headers: COMMON_HTTP_HEADER,
+          headers: this.GetBARSCommonHeaders(),
           credentials: 'include',
         });
         const text = await response.text();
@@ -1437,9 +1538,11 @@ export default class BARS{
       if (!this.IsCurrentStudentAccountAttempt(attempt)) {
         return Promise.resolve<LoginResult>('CANCELLED')
       }
-      if (!(response.isConnected) && firstStart)
+      if (!(response.isConnected) && firstStart) {
+        this.RotateBARSBrowserProfile()
         return Promise.reject(CreateBARSError('LOGIN_FAIL', 'Нет подключения к интернету!'))
-      else if (!(response.isConnected)) {
+      } else if (!(response.isConnected)) {
+        this.RotateBARSBrowserProfile()
         return Promise.resolve<LoginResult>('OFFLINE')
       }
       console.time('Login&StudentInfoParser')
@@ -1447,7 +1550,7 @@ export default class BARS{
       if (firstStart) ms_bars_main = 30000
       const submitLogin = (requestVerificationToken?: string) => fetch(URLS.BARS_MAIN, {
           method: 'POST',
-          headers: LOGIN_HEADER,
+          headers: this.GetBARSLoginHeaders(),
           body: JSON.stringify({
             Account: creds.login,
             Password: creds.password,
@@ -1474,7 +1577,7 @@ export default class BARS{
             console.warn("User + sod=1 variant login!")
             return fetch('https://bars.mpei.ru/bars_web/?sod=1', {
               method: "GET",
-              headers: COMMON_HTTP_HEADER,
+              headers: this.GetBARSCommonHeaders(),
               credentials: 'include'
             })
           }
@@ -1509,11 +1612,14 @@ export default class BARS{
             return 'CANCELLED'
           }
           const loginResult = result as LoginResult
-          return loginResult === "NEED_2FA" ? this.HandleTwoFactorChallenge() : loginResult
+          return loginResult === "NEED_2FA"
+            ? this.HandleTwoFactorChallenge()
+            : this.FinalizeBARSLoginResult(loginResult)
         }).catch(e => {
           if (!this.IsCurrentStudentAccountAttempt(attempt)) {
             return Promise.resolve<LoginResult>('CANCELLED')
           }
+          this.RotateBARSBrowserProfile()
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
           } else {
@@ -1818,7 +1924,7 @@ export default class BARS{
     try {
       const response = await Timeout(5500, fetch(URLS.BARS_RECORD_BOOK + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(result => result.text()))
@@ -1838,7 +1944,7 @@ export default class BARS{
           const semesterLink = `https://bars.mpei.ru/bars_web/ST_LK/RecordBook/ListStudent__RecordBook?studentID=${student.id}&query=%7B%22ID%22%3A%22${student.id}%22%2C%22SortOrder%22%3Anull%2C%22Page%22%3Anull%2C%22DisplayMode%22%3A%22%22%2C%22FilterRecordBookPage%22%3A%7B%22Code%22%3A%22sem%3A${semesterIndex}%22%7D%7D`
           return [fetch(semesterLink, {
             method: 'GET',
-            headers: HEADER_WITH_USER_ID(student.id),
+            headers: this.GetBARSHeadersWithUserId(student.id),
             mode: 'same-origin',
             credentials: 'include',
           }).then(result => result.text())]
@@ -1894,7 +2000,7 @@ export default class BARS{
       timeoutMs: 4000,
       request: () => fetch(link, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -1916,7 +2022,7 @@ export default class BARS{
       timeoutMs: 1750,
       request: () => fetch(URLS.BARS_REPORTS + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -1938,7 +2044,7 @@ export default class BARS{
       timeoutMs: 2000,
       request: () => fetch(URLS.BARS_TASKS + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -1960,7 +2066,7 @@ export default class BARS{
       timeoutMs: 2000,
       request: () => fetch(URLS.BARS_BOOKS + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -2137,7 +2243,7 @@ export default class BARS{
       timeoutMs: 3000,
       request: () => fetch(link, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -2159,7 +2265,7 @@ export default class BARS{
       timeoutMs: 3000,
       request: () => fetch(URLS.BARS_STIPENDS + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -2181,7 +2287,7 @@ export default class BARS{
       timeoutMs: 2250,
       request: () => fetch(URLS.BARS_ORDERS + student.id, {
         method: 'GET',
-        headers: HEADER_WITH_USER_ID(student.id),
+        headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
         credentials: 'include',
       }).then(response => response.text()),
@@ -2212,7 +2318,7 @@ export default class BARS{
     try {
       const response = await Timeout(15000, fetch(encodeURI(link), {
         method: 'GET',
-        headers: COMMON_HTTP_HEADER,
+        headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
         credentials: 'include',
       }).then(result => result.text()))
