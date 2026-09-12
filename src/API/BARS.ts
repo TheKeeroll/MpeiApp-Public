@@ -57,7 +57,7 @@ import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
-import { ParseTwoFactorRequestVerificationToken } from "./Parsers/TwoFactorParser";
+import { ParseBARSRequestVerificationToken } from "./Parsers/AuthFormParser";
 import {
   shouldEnterStudentsNotFoundState,
   type StudentAccountAuthenticationPhase,
@@ -1244,6 +1244,35 @@ export default class BARS{
     }
   }
 
+  private HasSavedCredentials(): boolean {
+    const savedCredentials = this.mStorage.getString(STORAGE_KEYS.CREDENTIALS)
+    return typeof savedCredentials === 'string' && savedCredentials.trim().length > 0
+  }
+
+  private async FetchLoginRequestVerificationToken(
+    attempt: StudentAccountLoginAttempt,
+  ): Promise<string | undefined> {
+    try {
+      const response = await fetch(URLS.BARS_MAIN, {
+        method: 'GET',
+        headers: COMMON_HTTP_HEADER,
+        credentials: 'include',
+      })
+      const page = await response.text()
+
+      if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+        return undefined
+      }
+
+      return ParseBARSRequestVerificationToken(page, 'login')
+    } catch (error) {
+      if (this.IsCurrentStudentAccountAttempt(attempt)) {
+        console.warn('Unable to prepare the BARS login form; continuing without its verification token', error)
+      }
+      return undefined
+    }
+  }
+
   public Login2FA(code: string): Promise<LoginResult> {
     console.log('Trying to login with 2FA code');
     const attempt = this.mStudentAccountLoginAttempt
@@ -1264,7 +1293,8 @@ export default class BARS{
     return Timeout(15000, fetch(URLS.BARS_LOGIN_CODE, {
       method: 'POST',
       headers: LOGIN_HEADER,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      credentials: 'include',
     }).then(r => r.text())
       .then(response => {
         if (!this.IsCurrentStudentAccountAttempt(attempt)) {
@@ -1331,6 +1361,7 @@ export default class BARS{
         const response = await fetch(URLS.BARS_REQUEST_CODE + `?tid=${tid}`, {
           method: "GET",
           headers: COMMON_HTTP_HEADER,
+          credentials: 'include',
         });
         const text = await response.text();
         if (!this.IsCurrentGeneration(generation)) {
@@ -1370,6 +1401,7 @@ export default class BARS{
 
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<LoginResult>{
     let isIncorrectLoginPassword = false
+    const shouldPrepareLoginForm = !this.HasSavedCredentials()
     const attempt = this.BeginLoginAttempt(creds, firstStart)
     this.mLastRequested2FAProvider = undefined
     this.m2FACodeRequestPromise = undefined
@@ -1413,33 +1445,41 @@ export default class BARS{
       console.time('Login&StudentInfoParser')
       let ms_bars_main = 6500
       if (firstStart) ms_bars_main = 30000
-      return Timeout(ms_bars_main, fetch(URLS.BARS_MAIN, {
-        method: 'POST',
-        headers: LOGIN_HEADER,
-        body: JSON.stringify({
-          Account: creds.login,
-          Password: creds.password,
-          RememberMe: true
-        }),
-        credentials: 'include'
-      }).then(async (response) => {
-        let str = await response.text()
-        if (str.includes("sod=1")) {
-          console.warn("User + sod=1 variant login!")
-          return fetch('https://bars.mpei.ru/bars_web/?sod=1', {
-            method: "GET",
-            headers: COMMON_HTTP_HEADER,
-            credentials: 'include'
-          })
-        } else return fetch(URLS.BARS_MAIN, {
+      const submitLogin = (requestVerificationToken?: string) => fetch(URLS.BARS_MAIN, {
           method: 'POST',
           headers: LOGIN_HEADER,
           body: JSON.stringify({
             Account: creds.login,
             Password: creds.password,
-            RememberMe: true
+            RememberMe: true,
+            StopOpenDefault: false,
+            ...(requestVerificationToken
+              ? {__RequestVerificationToken: requestVerificationToken}
+              : {}),
           }),
           credentials: 'include'
+        })
+      const loginFormToken = shouldPrepareLoginForm
+        ? this.FetchLoginRequestVerificationToken(attempt)
+        : Promise.resolve(undefined)
+
+      return Timeout(ms_bars_main, loginFormToken.then(requestVerificationToken => {
+        if (!this.IsCurrentStudentAccountAttempt(attempt)) {
+          throw new SessionInvalidatedError()
+        }
+
+        return submitLogin(requestVerificationToken).then(async response => {
+          const text = await response.text()
+          if (text.includes("sod=1")) {
+            console.warn("User + sod=1 variant login!")
+            return fetch('https://bars.mpei.ru/bars_web/?sod=1', {
+              method: "GET",
+              headers: COMMON_HTTP_HEADER,
+              credentials: 'include'
+            })
+          }
+
+          return submitLogin(requestVerificationToken)
         })
       })
         .then(r => r.text())
@@ -1449,7 +1489,7 @@ export default class BARS{
           }
           if (response.includes("код подтверждения")) {
             attempt.authenticationPhase = 'AWAITING_2FA'
-            attempt.twoFactorRequestVerificationToken = ParseTwoFactorRequestVerificationToken(response)
+            attempt.twoFactorRequestVerificationToken = ParseBARSRequestVerificationToken(response, '2FA')
             return 'NEED_2FA'
           }
           return this.HandleLoginResponse(response, creds, attempt);
