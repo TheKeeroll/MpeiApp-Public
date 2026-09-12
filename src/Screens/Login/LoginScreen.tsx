@@ -1,7 +1,7 @@
 import {
     Alert,
     Dimensions,
-    LayoutAnimation, Linking, ScrollView,
+    LayoutAnimation, ScrollView,
     Text,
     TouchableOpacity,
     View, ViewStyle,
@@ -29,9 +29,9 @@ import SettingsStack from "../Settings/SettingsStack.tsx";
 import AF2Screen from "./AF2Screen";
 import {GuestScheduleStack} from "../Schedule/ScheduleStack";
 import {maskSavedPassword} from "../../Login/StudentAccountState";
+import {HelpAccordion, openBarsRegistration} from '../../Login/LoginHelp';
 
 const Stack = createBottomTabNavigator()
-const BARS_REGISTRATION_URL = 'https://mpei.ru/Pages/registration.aspx'
 
 export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -47,31 +47,6 @@ export const Button: React.FC<{title?: string, icon?: string, iconSize?: number,
 
 type HelpSection = 'credentials' | 'twoFactor' | 'guestAccess' | 'privacy' | 'support'
 
-const HelpAccordion: React.FC<{
-    title: string
-    expanded: boolean
-    onPress: () => void
-    children: React.ReactNode
-}> = ({title, expanded, onPress, children}) => {
-    const {colors} = useTheme<CustomTheme>()
-    return (
-        <View style={{backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, overflow: 'hidden'}}>
-            <TouchableOpacity
-                accessible
-                accessibilityRole={'button'}
-                accessibilityLabel={`${title}. ${expanded ? 'Развёрнутый раздел' : 'Свёрнутый раздел'}`}
-                accessibilityState={{expanded}}
-                onPress={onPress}
-                style={{minHeight: 52, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center'}}
-            >
-                <Text style={{flex: 1, fontSize: 16, fontWeight: 'bold', color: colors.text}}>{title}</Text>
-                <Text accessible={false} style={{fontSize: 24, color: colors.textUnderline, marginLeft: 12}}>{expanded ? '−' : '+'}</Text>
-            </TouchableOpacity>
-            {expanded && <View style={{paddingHorizontal: 16, paddingBottom: 16}}>{children}</View>}
-        </View>
-    )
-}
-
 const Help: React.FC<{onBack: ()=>void}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets();
@@ -80,18 +55,6 @@ const Help: React.FC<{onBack: ()=>void}> = (props) => {
     const toggleSection = (section: HelpSection) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
         setExpandedSection(current => current === section ? undefined : section)
-    }
-
-    const openBarsRegistration = async () => {
-        try {
-            const canOpen = await Linking.canOpenURL(BARS_REGISTRATION_URL)
-            if (!canOpen) {
-                throw new Error('Registration URL cannot be opened')
-            }
-            await Linking.openURL(BARS_REGISTRATION_URL)
-        } catch {
-            Alert.alert('Не удалось открыть страницу', 'Попробуйте открыть её позже через браузер.')
-        }
     }
 
     const paragraphStyle = {fontSize: 15, lineHeight: 22, color: withOpacity(colors.text, 85), marginBottom: 12}

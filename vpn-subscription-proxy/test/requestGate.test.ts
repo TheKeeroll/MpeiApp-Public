@@ -44,6 +44,26 @@ test('request gate rejects stale dates, controls, and untrusted X-Forwarded-For'
     trustedReverseProxyIps: [],
     now,
   }), undefined);
+  assert.equal(parseRequestGate({
+    requestId: [requestId],
+    remoteAddress: '198.51.100.15',
+    forwardedFor: undefined,
+    trustedReverseProxyIps: [],
+    now,
+  }), undefined);
+});
+
+test('request gate reads X-Forwarded-For only from an explicitly trusted reverse proxy', () => {
+  assert.deepEqual(parseRequestGate({
+    requestId,
+    remoteAddress: '198.51.100.1',
+    forwardedFor: '198.51.100.15, 198.51.100.1',
+    trustedReverseProxyIps: ['198.51.100.1'],
+    now,
+  }), {
+    clientIp: '198.51.100.15',
+    deviceId: 'pixel_9-android_16',
+  });
 });
 
 test('rate limiter stores a keyed identity and starts a new fixed window', () => {

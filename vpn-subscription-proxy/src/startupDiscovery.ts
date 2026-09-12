@@ -1,4 +1,4 @@
-import {createPrivateKey, createPublicKey, X509Certificate} from 'node:crypto';
+import {createPrivateKey, createPublicKey, type KeyObject, X509Certificate} from 'node:crypto';
 import {constants} from 'node:fs';
 import {access, readdir, readFile, realpath} from 'node:fs/promises';
 import {resolve4 as resolveIpv4} from 'node:dns/promises';
@@ -21,6 +21,8 @@ export type StartupTlsMaterial = Readonly<{
   hostname: string;
   publicIpv4: string;
 }>;
+
+export type StartupTlsIdentity = Omit<StartupTlsMaterial, 'publicIpv4'>;
 
 type CertificatePair = Readonly<{
   certificatePath: string;
@@ -215,15 +217,19 @@ const fallbackCandidatePairs = async (): Promise<CertificatePair[]> => {
   return pairs;
 };
 
-const keysMatch = (certificate: X509Certificate, privateKeyPem: string): boolean => {
+export const publicKeyMatchesPrivateKey = (certificatePublicKey: KeyObject, privateKeyPem: string): boolean => {
   try {
-    const certificatePublicKey = certificate.publicKey.export({type: 'spki', format: 'der'});
+    const certificatePublicKeyDer = certificatePublicKey.export({type: 'spki', format: 'der'});
     const privatePublicKey = createPublicKey(createPrivateKey(privateKeyPem)).export({type: 'spki', format: 'der'});
-    return Buffer.from(certificatePublicKey).equals(Buffer.from(privatePublicKey));
+    return Buffer.from(certificatePublicKeyDer).equals(Buffer.from(privatePublicKey));
   } catch {
     return false;
   }
 };
+
+const keysMatch = (certificate: X509Certificate, privateKeyPem: string): boolean => (
+  publicKeyMatchesPrivateKey(certificate.publicKey, privateKeyPem)
+);
 
 const loadCertificate = async (pair: CertificatePair, now: Date): Promise<LoadedCertificate | undefined> => {
   try {
@@ -260,7 +266,7 @@ const findMatchingMaterial = async (
   publicIpv4: string,
   dependencies: DiscoveryDependencies,
   now: Date,
-): Promise<Omit<StartupTlsMaterial, 'publicIpv4'> | undefined> => {
+): Promise<StartupTlsIdentity | undefined> => {
   const tried = new Set<string>();
   for (const pair of pairs) {
     const pairKey = `${pair.certificatePath}\u0000${pair.privateKeyPath}`;
@@ -273,19 +279,49 @@ const findMatchingMaterial = async (
     if (!certificate) {
       continue;
     }
-    for (const hostname of certificate.dnsNames) {
-      try {
-        const addresses = [...new Set(await dependencies.resolve4(hostname))];
-        if (addresses.length === 1 && addresses[0] === publicIpv4) {
-          return {
-            certificatePem: certificate.certificatePem,
-            privateKeyPem: certificate.privateKeyPem,
-            hostname,
-          };
-        }
-      } catch {
-        // A DNS failure is not diagnostic enough to expose outside the VPS.
+    const hostname = await findDnsNameForPublicIpv4(
+      certificate.dnsNames,
+      publicIpv4,
+      dependencies.resolve4,
+    );
+    if (hostname) {
+      return {
+        certificatePem: certificate.certificatePem,
+        privateKeyPem: certificate.privateKeyPem,
+        hostname,
+      };
+    }
+  }
+  return undefined;
+};
+
+/** A certificate hostname must resolve to precisely the discovered public IP. */
+export const findDnsNameForPublicIpv4 = async (
+  dnsNames: readonly string[],
+  publicIpv4: string,
+  resolve4: (hostname: string) => Promise<readonly string[]>,
+): Promise<string | undefined> => {
+  for (const hostname of dnsNames) {
+    try {
+      const addresses = [...new Set(await resolve4(hostname))];
+      if (addresses.length === 1 && addresses[0] === publicIpv4) {
+        return hostname;
       }
+    } catch {
+      // A DNS failure is not diagnostic enough to expose outside the VPS.
+    }
+  }
+  return undefined;
+};
+
+/** Runs discovery sources in their security order and stops at the first match. */
+export const selectFirstStartupTlsMaterial = async (
+  finders: readonly (() => Promise<StartupTlsIdentity | undefined>)[],
+): Promise<StartupTlsIdentity | undefined> => {
+  for (const findMaterial of finders) {
+    const material = await findMaterial();
+    if (material) {
+      return material;
     }
   }
   return undefined;
@@ -308,24 +344,26 @@ export const discoverStartupTls = async (
     throw new Error('Public IPv4 quorum was not reached');
   }
 
-  const letsEncryptMatch = await findMatchingMaterial(
-    await letsEncryptCandidatePairs(),
-    publicIpv4,
-    resolvedDependencies,
-    now,
-  );
-  const credentialMatch = letsEncryptMatch ? undefined : await findMatchingMaterial(
-    systemdCredentialCandidatePairs(),
-    publicIpv4,
-    resolvedDependencies,
-    now,
-  );
-  const material = letsEncryptMatch ?? credentialMatch ?? await findMatchingMaterial(
-    await fallbackCandidatePairs(),
-    publicIpv4,
-    resolvedDependencies,
-    now,
-  );
+  const material = await selectFirstStartupTlsMaterial([
+    async () => findMatchingMaterial(
+      await letsEncryptCandidatePairs(),
+      publicIpv4,
+      resolvedDependencies,
+      now,
+    ),
+    async () => findMatchingMaterial(
+      systemdCredentialCandidatePairs(),
+      publicIpv4,
+      resolvedDependencies,
+      now,
+    ),
+    async () => findMatchingMaterial(
+      await fallbackCandidatePairs(),
+      publicIpv4,
+      resolvedDependencies,
+      now,
+    ),
+  ]);
   if (!material) {
     throw new Error('No valid matching TLS certificate was found; check certificate expiry, key access, and DNS');
   }

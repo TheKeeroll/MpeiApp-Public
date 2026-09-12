@@ -45,18 +45,36 @@ const normaliseDevicePart = (value: unknown): string | undefined => {
  * platform has exposed it, otherwise the OS/version/model fallback is stable
  * enough for the proxy's device cooldown gate.
  */
-export const getVpnRequestDeviceId = (): string => {
-  const constants = Platform.constants as unknown as Record<string, unknown>;
+export type VpnRequestDeviceDetails = Readonly<{
+  os: unknown;
+  version: unknown;
+  constants: unknown;
+}>;
+
+export const getVpnRequestDeviceIdFromDetails = ({
+  os: rawOs,
+  version: rawVersion,
+  constants: rawConstants,
+}: VpnRequestDeviceDetails): string => {
+  const constants = rawConstants && typeof rawConstants === 'object'
+    ? rawConstants as Record<string, unknown>
+    : {};
   const serial = normaliseDevicePart(constants.Serial ?? constants.serial);
   if (serial && !/^unknown$/i.test(serial)) {
     return `serial-${serial}`;
   }
 
-  const os = normaliseDevicePart(Platform.OS) ?? 'unknown-os';
-  const version = normaliseDevicePart(Platform.Version) ?? 'unknown-version';
+  const os = normaliseDevicePart(rawOs) ?? 'unknown-os';
+  const version = normaliseDevicePart(rawVersion) ?? 'unknown-version';
   const model = normaliseDevicePart(constants.Model ?? constants.model ?? constants.systemName) ?? 'unknown-model';
   return `${os}-${version}-${model}`.slice(0, 160);
 };
+
+export const getVpnRequestDeviceId = (): string => getVpnRequestDeviceIdFromDetails({
+  os: Platform.OS,
+  version: Platform.Version,
+  constants: Platform.constants,
+});
 
 export const createVpnRequestId = (now = new Date(), deviceId = getVpnRequestDeviceId()): string => (
   `DragoNet-${getMoscowRequestDate(now)}-${deviceId}`

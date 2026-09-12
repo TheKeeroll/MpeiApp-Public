@@ -8,6 +8,7 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
+    "test:ci": "jest --ci --runInBand",
     "typecheck": "tsc --noEmit",
     "postinstall": "patch-package"
   },

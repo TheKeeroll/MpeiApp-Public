@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, v2]
+  pull_request:
+    branches: [dev, v2]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-quality:
+    name: Mobile quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn Classic
+        run: npm install --global yarn@1.22.22
+      - name: Resolve Yarn cache directory
+        id: yarn-cache
+        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: yarn-v1-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-v1-${{ runner.os }}-
+      - name: Install mobile dependencies
+        run: yarn install --frozen-lockfile
+      - name: Materialize public configuration defaults
+        run: cp src/config/Secrets.example.ts src/config/Secrets.ts
+      - run: yarn typecheck
+      - run: yarn test:ci
+      # ESLint is deliberately omitted until it is a direct dependency with a
+      # verified non-watch command compatible with this React Native toolchain.
+
+  metro-smoke:
+    name: Metro smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn Classic
+        run: npm install --global yarn@1.22.22
+      - name: Resolve Yarn cache directory
+        id: yarn-cache
+        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: yarn-v1-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-v1-${{ runner.os }}-
+      - name: Install mobile dependencies
+        run: yarn install --frozen-lockfile
+      - name: Materialize public configuration defaults
+        run: cp src/config/Secrets.example.ts src/config/Secrets.ts
+      - name: Start Metro and check its health endpoint
+        shell: bash
+        run: |
+          CI=true yarn start --reset-cache > metro.log 2>&1 &
+          metro_pid=$!
+          cleanup() {
+            result=$?
+            trap - EXIT
+            if [ "$result" -ne 0 ]; then
+              cat metro.log || true
+            fi
+            kill "$metro_pid" 2>/dev/null || true
+            wait "$metro_pid" 2>/dev/null || true
+            exit "$result"
+          }
+          trap cleanup EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'Metro did not report a healthy status within 60 seconds.' >&2
+          exit 1
+
+  android-debug-apk:
+    name: Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Install Yarn Classic
+        run: npm install --global yarn@1.22.22
+      - name: Resolve Yarn cache directory
+        id: yarn-cache
+        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: yarn-v1-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-v1-${{ runner.os }}-
+      - name: Install mobile dependencies
+        run: yarn install --frozen-lockfile
+      - name: Materialize public configuration defaults
+        run: cp src/config/Secrets.example.ts src/config/Secrets.ts
+      - name: Materialize Gradle defaults
+        run: cp android/gradle.properties.example android/gradle.properties
+      - name: Materialize optional Google services config
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          if [ -n "${GOOGLE_SERVICES_JSON}" ]; then
+            printf '%s' "${GOOGLE_SERVICES_JSON}" > android/app/google-services.json
+          fi
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew :app:assembleDebug --no-daemon
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove temporary Google services config
+        if: always()
+        run: rm -f android/app/google-services.json
+
+  vpn-proxy-quality:
+    name: DragoNet proxy quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: vpn-subscription-proxy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: vpn-subscription-proxy/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

@@ -2,7 +2,7 @@ plugins{
 
     id('com.android.application')
     id('com.android.library') apply(false)
-    id('com.google.gms.google-services')
+    id('com.google.gms.google-services') apply false
     id('com.facebook.react')
     id 'org.jetbrains.kotlin.android'
     // id('com.google.firebase.crashlytics')
@@ -201,6 +201,13 @@ dependencies {
         } else {
             implementation jscFlavor
         }
+}
+
+// Firebase is optional for debug builds. Apply its plugin when a local or CI
+// google-services.json is intentionally supplied, without requiring a secret
+// for the ordinary mobile quality workflow.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
 }
 
 /* configurations.all {
