@@ -189,4 +189,74 @@ describe('BARS core and background loading', () => {
       jest.useRealTimers();
     }
   });
+
+  it('carries the two-factor page token into the confirmation request', async () => {
+    const previousFetch = globalThis.fetch;
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({text: async () => '<html>password accepted</html>'})
+      .mockResolvedValueOnce({text: async () => `
+        <form action="/bars_web/Auth/LoginCode" method="post">
+          <input name="__RequestVerificationToken" type="hidden" value="verification-token">
+          <input id="AF2_Code" name="AF2_Code" type="text">
+          Введите код подтверждения
+        </form>
+      `})
+      .mockResolvedValueOnce({text: async () => '<html>accepted</html>'});
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const bars = new BARS() as any;
+      bars.HandleTwoFactorChallenge = jest.fn(async () => 'NEED_2FA');
+
+      await expect(bars.Login({login: 'student', password: 'password'})).resolves.toBe('NEED_2FA');
+      expect(bars.mStudentAccountLoginAttempt.twoFactorRequestVerificationToken).toBe('verification-token');
+
+      bars.mLastRequested2FAProvider = 2;
+      bars.HandleLoginResponse = jest.fn(async () => 'ONLINE');
+      await expect(bars.Login2FA('1234')).resolves.toBe('ONLINE');
+
+      const request = fetchMock.mock.calls[2][1] as RequestInit;
+      expect(JSON.parse(request.body as string)).toEqual({
+        Account: 'student',
+        AF2_Code: '1234',
+        RememberMe: true,
+        StopOpenDefault: false,
+        __RequestVerificationToken: 'verification-token',
+      });
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+
+  it('submits the two-factor form without a token when the page did not provide one', async () => {
+    const previousFetch = globalThis.fetch;
+    const fetchMock = jest.fn().mockResolvedValue({text: async () => '<html>accepted</html>'});
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const bars = new BARS() as any;
+      bars.mSessionGeneration = 1;
+      bars.mStudentAccountLoginAttempt = {
+        generation: 1,
+        credentials: {login: 'student', password: 'password'},
+        isPrimaryOnlineAttempt: true,
+        authenticationPhase: 'AWAITING_2FA',
+        hasStudentData: false,
+      };
+      bars.mLastRequested2FAProvider = 2;
+      bars.HandleLoginResponse = jest.fn(async () => 'ONLINE');
+
+      await expect(bars.Login2FA('1234')).resolves.toBe('ONLINE');
+
+      const request = fetchMock.mock.calls[0][1] as RequestInit;
+      expect(JSON.parse(request.body as string)).toEqual({
+        Account: 'student',
+        AF2_Code: '1234',
+        RememberMe: true,
+        StopOpenDefault: false,
+      });
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
 });
