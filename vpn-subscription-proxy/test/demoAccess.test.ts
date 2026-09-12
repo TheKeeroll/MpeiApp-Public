@@ -53,6 +53,8 @@ test('demo uses the S-UI form payload, 2 GiB, three days, and cooldown', async (
   try {
     const result = await service.create({clientIp: '198.51.100.15', deviceId: 'Pixel-9'}, now);
     assert.match(result?.demoSubURL ?? '', /^https:\/\/proxy\.example\.com:2087\/sub\/MpeiApp-demo-/u);
+    assert.deepEqual(Object.keys(result ?? {}), ['demoSubURL']);
+    assert.doesNotMatch(JSON.stringify(result), /password|uuid/iu);
     assert.equal(sentData?.volume, demoConstants.volumeBytes);
     assert.equal(sentData?.expiry, Math.floor((now.getTime() + demoConstants.durationMs) / 1000));
     assert.equal(sentData?.group, "Dragon's clients");

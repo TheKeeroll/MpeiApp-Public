@@ -11,6 +11,7 @@ import {
     loadingProgressService,
     type LoadingProgressSnapshot,
 } from "../../Loading/LoadingProgressService";
+import {getLoadingProgressLabel} from '../../Loading/LoadingProgressLabel';
 
 import LoadingAnimation from '../../../assets/animations/loading.json';
 
@@ -94,7 +95,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = (props) => {
         progress.previous?.status,
     ]);
 
-    const currentLabel = progress.current?.label ?? props.fallbackLabel ?? 'Загрузка...';
+    const currentLabel = getLoadingProgressLabel(progress, props.fallbackLabel);
     const previous = progress.previous;
     const showStickyAd = props.showStickyAd ?? true;
     return (

@@ -7,6 +7,11 @@ import {STORAGE_KEYS} from '../Common/Constants';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
 import {createAdsTargeting} from './AdTargeting';
 import {getYandexAdUnitId} from './AdUnitIds';
+import {
+  getActiveStickyPlacement,
+  isAdEntitlementEligible,
+  normalizeStickyReservedHeight,
+} from './AdVisibilityPolicy';
 import {useLoyalty} from '../Loyalty/LoyaltyProvider';
 import {
   YANDEX_STICKY_AD_PLACEMENTS,
@@ -167,11 +172,7 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     };
   }, []);
 
-  const entitlementAllowsAds = (
-    vpnEntitlementStatus !== 'ACTIVE'
-    && vpnEntitlementStatus !== 'GRACE'
-    && !adsRemovalUnlocked
-  );
+  const entitlementAllowsAds = isAdEntitlementEligible(vpnEntitlementStatus, adsRemovalUnlocked);
 
   React.useEffect(() => {
     if (!entitlementAllowsAds) {
@@ -209,7 +210,7 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
   const adsEnabled = entitlementAllowsAds && isSdkInitialized;
 
   const setStickyReservedHeight = React.useCallback((placement: StickyAdPlacement, height: number) => {
-    const normalizedHeight = Math.max(0, height);
+    const normalizedHeight = normalizeStickyReservedHeight(height);
     setStickyReservedHeights(previous => (
       previous[placement] === normalizedHeight
         ? previous
@@ -253,7 +254,7 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     };
   }, [adsEnabled, consent, sessionLocation, targetingRevision]);
 
-  const activeStickyPlacement = stickyClaims[0];
+  const activeStickyPlacement = getActiveStickyPlacement(stickyClaims);
   const contextValue = React.useMemo<AdsContextValue>(() => ({
     adsEnabled,
     isSdkInitialized,

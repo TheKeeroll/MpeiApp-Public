@@ -40,23 +40,25 @@ const isOwenclaveArchitecture = (value: string): value is OwenclaveArchitecture 
   Object.prototype.hasOwnProperty.call(OWENCLAVE_APK_URLS, value)
 );
 
-const getOwenclaveApkUrl = async (): Promise<string> => {
+export const getOwenclaveApkUrlForAbis = (platform: string, nativeAbis: unknown): string => {
+  if (platform !== 'android' || !Array.isArray(nativeAbis)) {
+    return OWENCLAVE_APK_URLS['arm64-v8a'];
+  }
+  const abi = nativeAbis
+    .filter((value): value is string => typeof value === 'string')
+    .find(isOwenclaveArchitecture);
+  return abi ? OWENCLAVE_APK_URLS[abi] : OWENCLAVE_APK_URLS['arm64-v8a'];
+};
+
+export const getOwenclaveApkUrl = async (): Promise<string> => {
   if (Platform.OS !== 'android') {
     return OWENCLAVE_APK_URLS['arm64-v8a'];
   }
-
   const deviceArchitecture = NativeModules.DeviceArchitecture as {
     getSupportedAbis?: () => Promise<unknown>;
   } | undefined;
   try {
-    const nativeAbis = await deviceArchitecture?.getSupportedAbis?.();
-    if (!Array.isArray(nativeAbis)) {
-      return OWENCLAVE_APK_URLS['arm64-v8a'];
-    }
-    const abi = nativeAbis
-      .filter((value): value is string => typeof value === 'string')
-      .find(isOwenclaveArchitecture);
-    return abi ? OWENCLAVE_APK_URLS[abi] : OWENCLAVE_APK_URLS['arm64-v8a'];
+    return getOwenclaveApkUrlForAbis('android', await deviceArchitecture?.getSupportedAbis?.());
   } catch {
     return OWENCLAVE_APK_URLS['arm64-v8a'];
   }
@@ -202,7 +204,7 @@ const InstructionStep: React.FC<{number: number; children: React.ReactNode}> = (
   );
 };
 
-const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () => void}> = ({expanded, onToggle}) => {
+export const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () => void}> = ({expanded, onToggle}) => {
   const {colors} = useTheme<CustomTheme>();
   const isIos = Platform.OS === 'ios';
   return (
@@ -248,7 +250,7 @@ const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () => void}
   );
 };
 
-const DemoSubscriptionLink: React.FC<{
+export const DemoSubscriptionLink: React.FC<{
   access: VpnDemoAccess;
   copied: boolean;
   onCopy: () => void;
@@ -358,7 +360,7 @@ const VerificationSection: React.FC<{
   );
 };
 
-const DemoResultSheet: React.FC<{
+export const DemoResultSheet: React.FC<{
   visible: boolean;
   access: VpnDemoAccess | undefined;
   copied: boolean;

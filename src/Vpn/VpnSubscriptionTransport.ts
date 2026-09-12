@@ -45,7 +45,8 @@ export const isValidVpnProxyConfiguration = (configuration: VpnProxyConfiguratio
   try {
     const url = new URL(`https://${domain}`);
     return url.protocol === 'https:'
-      && url.hostname.length > 0
+      && url.hostname === domain
+      && url.host === domain
       && !url.port
       && url.pathname === '/'
       && !url.username

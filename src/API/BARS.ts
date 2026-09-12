@@ -201,10 +201,19 @@ const isIconAlreadyUsedError = (error: unknown) => {
 
 function Timeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   return new Promise<T>(function(resolve, reject) {
-    setTimeout(function() {
+    const timeout = setTimeout(function() {
       reject(new Error("timeout"))
     }, ms);
-    promise.then(resolve, reject)
+    promise.then(
+      value => {
+        clearTimeout(timeout)
+        resolve(value)
+      },
+      error => {
+        clearTimeout(timeout)
+        reject(error)
+      },
+    )
   })
 }
 
