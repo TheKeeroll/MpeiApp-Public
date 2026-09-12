@@ -57,6 +57,7 @@ import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
+import { ParseTwoFactorRequestVerificationToken } from "./Parsers/TwoFactorParser";
 import {
   shouldEnterStudentsNotFoundState,
   type StudentAccountAuthenticationPhase,
@@ -163,6 +164,7 @@ type StudentAccountLoginAttempt = {
   isPrimaryOnlineAttempt: boolean
   authenticationPhase: StudentAccountAuthenticationPhase
   hasStudentData: boolean
+  twoFactorRequestVerificationToken?: string
 }
 
 class SessionInvalidatedError extends Error {}
@@ -1250,14 +1252,19 @@ export default class BARS{
     }
 
     const creds = attempt.credentials
+    const body = {
+      Account: creds.login,
+      AF2_Code: code,
+      RememberMe: true,
+      StopOpenDefault: false,
+      ...(attempt.twoFactorRequestVerificationToken
+        ? {__RequestVerificationToken: attempt.twoFactorRequestVerificationToken}
+        : {}),
+    }
     return Timeout(15000, fetch(URLS.BARS_LOGIN_CODE, {
       method: 'POST',
       headers: LOGIN_HEADER,
-      body: JSON.stringify({
-        Account: creds.login,
-        AF2_Code: code,
-        RememberMe: true
-      })
+      body: JSON.stringify(body)
     }).then(r => r.text())
       .then(response => {
         if (!this.IsCurrentStudentAccountAttempt(attempt)) {
@@ -1442,6 +1449,7 @@ export default class BARS{
           }
           if (response.includes("код подтверждения")) {
             attempt.authenticationPhase = 'AWAITING_2FA'
+            attempt.twoFactorRequestVerificationToken = ParseTwoFactorRequestVerificationToken(response)
             return 'NEED_2FA'
           }
           return this.HandleLoginResponse(response, creds, attempt);
