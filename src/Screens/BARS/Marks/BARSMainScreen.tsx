@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { COMMON_HTTP_HEADER, SCREEN_SIZE, URLS } from "../../../Common/Constants";
+import { SCREEN_SIZE, URLS } from "../../../Common/Constants";
 import { AdditionalData, BARSDiscipline, BARSScheduleCell, Mark, ScheduleForWidget } from "../../../API/DataTypes";
 import { AverageScoreToColor, MarkToColor, withOpacity, CustomTheme } from "../../../Themes/Themes";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -132,7 +132,8 @@ const CheckFinalMarkAvailability = async (id: string | undefined): Promise<strin
     try {
         const response = await fetch(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
             method: 'GET',
-            headers: COMMON_HTTP_HEADER,
+            headers: BARSAPI.GetBARSCommonHeaders(),
+            credentials: 'include',
         })
         const text = await response.text()
         const examAutoPageStrongElements = parse(text).querySelectorAll('strong')

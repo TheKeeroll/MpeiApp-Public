@@ -12,7 +12,7 @@ import {
 // import { useFrameProcessor } from "react-native-vision-camera";
 import {useFocusEffect} from "@react-navigation/native";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import {QR_PRESENCE_HEADER, URLS} from "../../Common/Constants";
+import {URLS} from "../../Common/Constants";
 import BARSAPI from "../../Common/Globals";
 // @ts-expect-error
 import {ImageSource} from "react-native-vector-icons/Icon";
@@ -111,7 +111,7 @@ const QRCodeScanner: React.FC = () => {
     console.log('qr_combined_url = ' + qr_combined_url);
     const response = await fetch(qr_link, {
       method: 'GET',
-      headers: QR_PRESENCE_HEADER(qr_combined_url),
+      headers: BARSAPI.GetBARSQRPresenceHeaders(qr_combined_url),
       credentials: 'include'
     }).then(async (res) => {
       const res_text = await res.text();
