@@ -33,7 +33,6 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListSeparator title={'Помощь с актуализацией поведения для входа в аккаунт'}/>
                     <ListAvatarItem title={'Макс Горячев'} link={'https://vk.ru/kreozi'} image={require('../../../assets/images/Gratitudies/MaxHot.webp')}/>
 
-
                     <ListSeparator title={'Предоставили доступ к аккаунту БАРС'}/>
                     <ListAvatarItem title={'Злата Винарская'} link={'https://vk.ru/zlatavina'} image={require('../../../assets/images/Gratitudies/ZlataV.webp')}/>
                     <ListAvatarItem title={'Соня Головина'} link={'https://vk.ru/soflairy'} image={require('../../../assets/images/Gratitudies/SonyaGo.webp')}/>
