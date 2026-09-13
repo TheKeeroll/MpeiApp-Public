@@ -30,7 +30,16 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListSeparator title={'Помощь с реализацией поддержки временных кодов 2ФА'}/>
                     <ListAvatarItem title={'Максим Агафошин'} link={'https://vk.com/inclydeahaha'} image={require('../../../assets/images/Gratitudies/MaxAgafoshin.webp')}/>
 
-                    <ListSeparator title={'Предоставили аккаунт БАРС'}/>
+                    <ListSeparator title={'Помощь с актуализацией поведения для входа в аккаунт'}/>
+                    <ListAvatarItem title={'Макс Горячев'} link={'https://vk.ru/kreozi'} image={require('../../../assets/images/Gratitudies/MaxHot.webp')}/>
+
+
+                    <ListSeparator title={'Предоставили доступ к аккаунту БАРС'}/>
+                    <ListAvatarItem title={'Злата Винарская'} link={'https://vk.ru/zlatavina'} image={require('../../../assets/images/Gratitudies/ZlataV.webp')}/>
+                    <ListAvatarItem title={'Соня Головина'} link={'https://vk.ru/soflairy'} image={require('../../../assets/images/Gratitudies/SonyaGo.webp')}/>
+                    <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
+
+                    <ListSeparator title={'Предоставили аккаунт БАРС (до введения 2ФА)'}/>
                     <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
                     <ListAvatarItem title={'Иван'} link={'https://vk.com/iva_derevo'} image={require('../../../assets/images/Gratitudies/Ivan.webp')}/>
                     <ListAvatarItem title={'Алиса'} link={'https://vk.com/space_cat_1'} image={require('../../../assets/images/Gratitudies/Alisa.webp')}/>
@@ -56,7 +65,6 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
                     <ListAvatarItem title={'Никита Тимофеев'} link={'https://vk.com/no_mercy_or_forgiveness'} image={require('../../../assets/images/Gratitudies/NickTimofeev.webp')}/>
                     <ListAvatarItem title={'Яша Рубинова'} link={'https://vk.com/trancqiue'} image={require('../../../assets/images/Gratitudies/YashaRuby.webp')}/>
                     <ListAvatarItem title={'Кирилл Дедов'} link={'https://vk.com/dedov_k'} image={require('../../../assets/images/Gratitudies/KirillDed.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
 
                     <ListSeparator title={'Наполнение/уточнение карты'}/>
                     <ListAvatarItem title={'Денис'} link={'https://vk.com/aokich0'} image={require('../../../assets/images/Gratitudies/Den.webp')}/>
@@ -67,6 +75,9 @@ const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
 
                     <ListSeparator title={'Дизайн'}/>
                     <ListAvatarItem title={'Максим Крайнов'} link={'https://vk.com/id240979343'} image={require('../../../assets/images/Gratitudies/MaxKryanov.webp')}/>
+
+                    <ListSeparator title={'Выявление проблем с адаптивностью UI'}/>
+                    <ListAvatarItem title={'Чокопай'} link={'https://vk.ru/kamila137'} image={require('../../../assets/images/Gratitudies/ChocoKamila.webp')}/>
 
                     <ListSeparator title={'Альтернативные иконки'}/>
                     <ListAvatarItem title={"Алиса 'Alnijen' Балашова"} link={'https://vk.com/alnijen'} image={require('../../../assets/images/Gratitudies/alnijen.webp')}/>
