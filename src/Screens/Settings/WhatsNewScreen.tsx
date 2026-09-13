@@ -17,6 +17,16 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: Math.max(24, insets.bottom + 12)}}>
+                    <WhatsNewLogo title={'Сентябрь горит (не опять, а снова)'} version={'2.5.0'}/>
+                    <WhatsNewChange title={'Актуализация и адаптация поведения для различных сценариев входа и состояний аккаунта'}/>
+                    <WhatsNewChange title={'Оптимизированы загрузки - главная страница и разделы доступны быстрее!'}/>
+                    <WhatsNewChange title={'Добавлены пояснения, что именно загружается'}/>
+                    <WhatsNewChange title={'Добавлены кнопки для ручного повтора неуспешных загрузок'}/>
+                    <WhatsNewChange title={'Интегрирован DragoNet - дешёвый сервис для доступа к любым приложениям и сайтам!'}/>
+                    <WhatsNewChange title={'Благодаря обратной связи улучшена адаптивность UI для узких экранов и крупного шрифта'}/>
+                    <WhatsNewChange title={'Структурирована справка на экране входа'}/>
+                    <WhatsNewChange title={'Исправлен ряд ошибок, включая редкий сбой после сворачивания на Android'}/>
+
                     <WhatsNewLogo title={'Поддержка продолжается'} version={'2.4.0'}/>
                     <WhatsNewChange title={'Улучшения 2ФА: добавлены поддержка TOTP, оптимальный порядок перебора и сообщение, откуда брать код'}/>
                     <WhatsNewChange title={'Поиск расписаний теперь доступен всегда, в том числе во время каникул и без входа в БАРС'}/>
