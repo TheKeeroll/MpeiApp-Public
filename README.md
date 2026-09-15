@@ -1,47 +1,65 @@
-# MpeiApp - кросплатформенное бесплатное приложение для студентов МЭИ
-Иконка | Иконка
---- | ---
-<img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/dragons/playstore.png width=200/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/blob/main/assets/icons/cool/playstore.png width=200/>
+# MpeiApp — самое функциональное и часто обновляемое бесплатное приложение для студентов МЭИ
 
-## Ключевые оссобенности
-- Доступно как для [Android](https://play.google.com/store/apps/details?id=com.mpeiapp), так и для [iOS](https://apps.apple.com/ru/app/mpeiapp/id1618910681)
-- В наличии все значимые разделы БАРС МЭИ
-- QR-Сканер, быстро регистрирующий присутствие на паре
-- Интерактивная 3D-карта с важными местами вуза и окрестностей, фильтрами по их категориям и построением маршрутов как к ним, так и к пользовательским точкам - [интеграция сервиса Яндекс.Карты](https://github.com/volga-volga/react-native-yamap)
-- Автоматический подсчёт и систематизация пропусков
-- Счётчики важных вещей: активных стипендий, дисциплин с долгами после закрытия БАРС и др.
-- Просмотр расписания как собственного, так и любой другой группы/преподавателя/аудитории
-- Интерактивный виджет, позволяющий быстро просмотреть расписание, не заходя в приложение 
-- Анализ дисциплин после закрытия БАРС - "Все КМ сданы", "Долг!", "ДИСЦИПЛИНА СДАНА", "Доступно согласие на оценку ПА!" и др.
-- Оффлайн-режим
-- Возможности кастомизации
+<p align="center">
+  <img src="./assets/icons/dragons/playstore.png" alt="Иконка с драконом" width="72" />
+  <img src="./assets/icons/cool/playstore.png" alt="Холодная иконка" width="72" />
+  <img src="./assets/icons/gold/playstore.png" alt="Золотая иконка" width="72" />
+  <img src="./assets/icons/matterial/playstore.png" alt="Материальная иконка" width="72" />
+  <img src="./assets/icons/simple/playstore.png" alt="Минималистичная иконка" width="72" />
+  <img src="./assets/images/crymat.webp" alt="Иконка корпуса МЭИ" width="72" />
+  <img src="./assets/images/crysign.webp" alt="Иконка с логотипом МЭИ" width="72" />
+</p>
+
+## Ключевые особенности
+
+- Доступно для [Android](https://play.google.com/store/apps/details?id=com.mpeiapp) и [iOS](https://apps.apple.com/ru/app/mpeiapp/id1618910681).
+- Значимые разделы БАРС МЭИ: оценки, пропуски, зачётная книжка, стипендии, задания, анкеты и другое.
+- QR-сканер с авторегистрацией присутствия на занятиях и любых мероприятиях МЭИ — везде, где вуз использует свои QR-коды регистрации.
+- Интерактивная 3D-карта с важными местами МЭИ и окрестностей, фильтрами по категориям и маршрутами к ним или к пользовательским точкам. Используется [интеграция Яндекс Карт](https://github.com/volga-volga/react-native-yamap).
+- Автоматический подсчёт и систематизация пропусков.
+- Счётчики важных вещей, включая непрочитанные письма в ОСЭП и активные стипендии.
+- Расписание своей и любой другой группы, преподавателя или аудитории.
+- Интерактивный виджет для быстрого просмотра расписания без запуска приложения.
+- Анализ дисциплин после закрытия БАРС.
+- Офлайн-режим и настройки внешнего вида приложения.
 
 ## Скриншоты
-Страница первичного входа | Страница оценок | Выбор раздела БАРС | Пропуски занятий
---- | --- | --- | ---
-<img src=https://github.com/user-attachments/assets/63598426-775a-405c-9d9f-1774b6be5d71 width=220/> | <img src=https://github.com/user-attachments/assets/b48d38f7-8298-42af-9d1a-50f8dcb5c523 width=220/> | <img src=https://github.com/user-attachments/assets/99b09ab6-8eb9-49b4-936a-5723de31e0df width=220/> | <img src=https://github.com/TheKeeroll/MpeiApp-Public/assets/77333497/fa5192d3-fa9d-48a4-9711-1f2d1cd69722 width=220/> 
 
-Карта-общий вид | Выбор маршрута | Карта(светлая тема) | Категории(светлая тема)
+Экран второго фактора | Страница оценок | Выбор раздела БАРС | Пропуски занятий
 --- | --- | --- | ---
-<img src=https://github.com/user-attachments/assets/05c17ecd-b50a-44f9-aedb-2dca88bafa26 width=220/> | <img src=https://github.com/user-attachments/assets/1714152b-7d22-4d3b-961a-728dfd8d95cd width=220/> | <img src=https://github.com/user-attachments/assets/06cfbcf6-cb3e-47b7-8d1a-e8ecb53d04e8 width=220/> | <img src=https://github.com/user-attachments/assets/a9f78b51-0378-48cb-aa56-f16f28255841 width=220/>
+<img src="./assets/images/README/second-factor.png" alt="Экран второго фактора" width="220" /> | <img src="./assets/images/README/marks.png" alt="Страница оценок" width="220" /> | <img src="./assets/images/README/bars-sections.png" alt="Выбор раздела БАРС" width="220" /> | <img src="./assets/images/README/absences.png" alt="Пропуски занятий" width="220" />
 
-Зачётная Книжка | Книги | Расписание | Расписание преподавателя
+Карта — общий вид | Выбор маршрута | Категории на карте | Зачётная книжка
 --- | --- | --- | ---
-<img src=https://github.com/user-attachments/assets/3fa39d53-ed4e-4bd8-aae1-625d4676edd1 width=220/> | <img src=https://github.com/user-attachments/assets/29726a99-5525-4f48-be3e-63babc7343e0 width=220/> | <img src=https://github.com/user-attachments/assets/68cbf76e-a524-4781-aedb-5fe99460c866 width=220/> | <img src=https://github.com/user-attachments/assets/0374b9d0-4e8c-47a9-91bc-afcb535366e3 width=220/>
+<img src="./assets/images/README/map-overview.png" alt="Карта — общий вид" width="220" /> | <img src="./assets/images/README/route-selection.png" alt="Выбор маршрута" width="220" /> | <img src="./assets/images/README/map-categories.png" alt="Категории на карте" width="220" /> | <img src="./assets/images/README/record-book.png" alt="Зачётная книжка" width="220" />
 
-QR-Сканер: авторегистрация | Задания | Анкеты | Стипендии(светлая тема)
+Расписание | Расписание аудитории | QR-сканер: авторегистрация | Стипендии
 --- | --- | --- | ---
-<img src=https://github.com/user-attachments/assets/2202e1a7-face-48ed-b8ed-714bb7253f1c width=220/> | <img src=https://github.com/user-attachments/assets/58ecf852-e43b-4e98-b278-fe788e1a451b width=220/> | <img src=https://github.com/user-attachments/assets/9c82f210-2b77-48ea-88f4-510b6e7d898e width=220/> | <img src=https://github.com/user-attachments/assets/0068f236-9215-4e19-990b-66e3b8080fa1 width=220/>
+<img src="./assets/images/README/schedule.png" alt="Расписание" width="220" /> | <img src="./assets/images/README/schedule-auditorium.png" alt="Расписание аудитории" width="220" /> | <img src="./assets/images/README/qr-autoregistration.png" alt="QR-сканер: авторегистрация" width="220" /> | <img src="./assets/images/README/stipends.png" alt="Стипендии" width="220" />
+
+## Реклама и DragoNet
+
+MpeiApp остаётся бесплатным. Реклама и интеграция с DragoNet помогают покрывать расходы на разработку и инфраструктуру, чтобы приложение можно было и дальше поддерживать, выпуская обновления и сохраняя доступным в магазинах. Активная подписка DragoNet отключает рекламу в приложении и открывает связанные с ней преимущества.
+
+## Стек и архитектура
+
+Клиент написан на TypeScript с React Native для Android и iOS. Навигация построена на React Navigation, состояние экранов и данных БАРС хранится в Redux Toolkit, а локальные данные и настройки — в MMKV. Нативные возможности включают Яндекс Карты, камеру и QR-сканер, геолокацию и виджет расписания.
+
+Слой API разбирает ответы БАРС отдельными парсерами и поддерживает авторизацию, включая второй фактор. Для DragoNet приложение обращается к выделенному `vpn-subscription-proxy`: мобильный клиент получает только публичную конфигурацию и результат проверки или демо-доступа, а proxy изолирует учётные данные панели подписок и выполняет ограниченные запросы к ней.
+
+В репозитории есть Jest-тесты для интерфейса, парсеров, авторизации, рекламы и DragoNet. GitHub Actions запускает проверку качества мобильного кода, Metro smoke, сборку debug APK и отдельную проверку качества proxy.
 
 ## Disclaimer
-**MpeiApp - неофициальное приложение.**
 
-Мы не можем гарантировать его бесперебойную работу или абсолютную безопасность, как и нести какую-либо ответственность за проблемы, связанные с его использованием!
+**MpeiApp — неофициальное приложение; официальных приложений МЭИ не существует.**
 
-Приложение предоставляется **as it is**.
+Разработчик ранее обучался в МЭИ, но сейчас никак с вузом не связан. Поэтому он может, но не обязан отвечать на вопросы о МЭИ, которые не относятся к приложению.
+
+Мы не можем гарантировать бесперебойную работу или абсолютную безопасность приложения и не несём ответственности за проблемы, связанные с его использованием. Приложение предоставляется **as is**.
 
 ## Обратная связь
-Если вы столкнулись с проблемой при использовании MpeiApp, у вас есть вопросы/предложения/пожелания или вы хотите как-то помочь:
-- [Сообщество ВК](https://vk.com/mpeiapp)
-- [Личный Telegram разработчика(DragonSavA)](https://t.me/DragonSavA)
-- [Личный ВК разработчика(DragonSavA)](https://vk.com/dragonsava)
+
+Если вы столкнулись с проблемой при использовании MpeiApp, хотите предложить улучшение или помочь проекту:
+
+- [Сообщество ВКонтакте](https://vk.com/mpeiapp)
+- [Личный Telegram разработчика (DragonSavA)](https://t.me/DragonSavA)
