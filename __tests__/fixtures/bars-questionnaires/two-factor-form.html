@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>БАРС МЭИ — тестовая страница</title></head>
+<body>
+<nav><a href="/bars_web/">На главную</a> <a href="/bars_web/US_Q/QuestionnaireAnswer/ListQuestionnaireAnswer?ac=public%5CTestStudent">Анкеты</a></nav>
+<main>
+<div class="form-signin"><form action="/bars_web/Auth/LoginCode" method="post">
+  <input type="hidden" name="__RequestVerificationToken" value="fixture-2fa-verification-token">
+  <input type="hidden" id="StopOpenDefault" name="StopOpenDefault" value="False">
+  <input type="hidden" id="Account" name="Account" value="TestStudent">
+  <input type="hidden" id="RememberMe" name="RememberMe" value="true">
+  <b>Введите код подтверждения</b><input id="AF2_Code" type="text" name="AF2_Code" maxlength="4" placeholder="Код подтверждения">
+  <button id="btnLogin" type="button">Войти</button>
+  <a id="btnSend" href="#" onclick="af2_code_send('btnSend', '/bars_web/Auth/JSON_SendAF2_Code', '2', '4');" data-text="Отправить повторно через ВКонтакте">Отправить повторно через ВКонтакте</a>
+</form></div>
+</main>
+</body>
+</html>
