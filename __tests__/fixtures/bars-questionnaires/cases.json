@@ -1,0 +1,99 @@
+[
+  {
+    "file": "blocked-page-1.html",
+    "origin": "anonymized-source",
+    "classification": "required",
+    "rows": 10,
+    "requiredAnswerIds": [
+      "10000000-0000-4000-8000-000000000008"
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 18,
+      "hasNext": true
+    }
+  },
+  {
+    "file": "blocked-page-2.html",
+    "origin": "synthetic-variant",
+    "classification": "required",
+    "rows": 8,
+    "requiredAnswerIds": [
+      "10000000-0000-4000-8000-000000000011",
+      "10000000-0000-4000-8000-000000000012"
+    ],
+    "pagination": {
+      "page": 2,
+      "pageSize": 10,
+      "total": 18,
+      "hasNext": false
+    }
+  },
+  {
+    "file": "banner-only.html",
+    "origin": "synthetic-variant",
+    "classification": "required",
+    "rows": 0,
+    "requiredAnswerIds": [],
+    "pagination": null
+  },
+  {
+    "file": "required-without-banner.html",
+    "origin": "synthetic-variant",
+    "classification": "required",
+    "rows": 2,
+    "requiredAnswerIds": [
+      "10000000-0000-4000-8000-000000000008",
+      "10000000-0000-4000-8000-000000000019"
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 2,
+      "hasNext": false
+    }
+  },
+  {
+    "file": "nonblocking.html",
+    "origin": "anonymized-source-with-synthetic-context",
+    "classification": "available",
+    "rows": 3,
+    "requiredAnswerIds": [],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 3,
+      "hasNext": false
+    }
+  },
+  {
+    "file": "completed-and-expired-with-stale-icons.html",
+    "origin": "synthetic-variant",
+    "classification": "available",
+    "rows": 2,
+    "requiredAnswerIds": [],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "total": 2,
+      "hasNext": false
+    }
+  },
+  {
+    "file": "login-form.html",
+    "origin": "synthetic-control",
+    "classification": "login",
+    "rows": 0,
+    "requiredAnswerIds": [],
+    "pagination": null
+  },
+  {
+    "file": "two-factor-form.html",
+    "origin": "synthetic-control",
+    "classification": "2FA",
+    "rows": 0,
+    "requiredAnswerIds": [],
+    "pagination": null
+  }
+]
