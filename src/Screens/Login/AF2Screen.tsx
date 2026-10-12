@@ -11,7 +11,7 @@ import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
-import {Button} from "./LoginScreen";
+import Button from '../../Login/AuthButton';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 // @ts-expect-error
 import * as FaIcon from "react-native-vector-icons/Fontisto";

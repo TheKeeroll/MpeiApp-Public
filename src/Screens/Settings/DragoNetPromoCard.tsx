@@ -3,13 +3,13 @@ import React from 'react';
 import {useTheme} from 'react-native-paper';
 import {
   Alert,
+  ActivityIndicator,
   Animated,
   Easing,
   Image,
   ImageBackground,
   Linking,
   Modal,
-  NativeModules,
   Platform,
   ScrollView,
   Text,
@@ -24,45 +24,10 @@ import * as FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {withOpacity, type CustomTheme} from '../../Themes/Themes';
 import type {VpnDemoAccess, VpnVerificationResult, VpnVerificationState} from '../../Vpn';
 import {dragonetTelegramUrl, vpnSubscriptionService} from '../../Vpn/VpnSubscriptionRuntime';
+import {getAndroidVpnClient, type AndroidVpnClient} from '../../Vpn/AndroidVpnClients';
 
 const INCY_APP_STORE_URL = 'https://apps.apple.com/ru/app/incy/id6756943388';
-const OWENCLAVE_APK_URLS = {
-  'arm64-v8a': 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-arm64-v8a.apk',
-  'armeabi-v7a': 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-armeabi-v7a.apk',
-  x86: 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-x86.apk',
-  x86_64: 'https://github.com/owenewans/owenclave/releases/download/v0.17.58/Owenclave-0.17.58-x86_64.apk',
-} as const;
 const DEMO_CONFIGURATION_NOTE = 'Часть конфигураций у вас может не работать - это нормально: они рассчитаны на другие приложения/платформы';
-
-type OwenclaveArchitecture = keyof typeof OWENCLAVE_APK_URLS;
-
-const isOwenclaveArchitecture = (value: string): value is OwenclaveArchitecture => (
-  Object.prototype.hasOwnProperty.call(OWENCLAVE_APK_URLS, value)
-);
-
-export const getOwenclaveApkUrlForAbis = (platform: string, nativeAbis: unknown): string => {
-  if (platform !== 'android' || !Array.isArray(nativeAbis)) {
-    return OWENCLAVE_APK_URLS['arm64-v8a'];
-  }
-  const abi = nativeAbis
-    .filter((value): value is string => typeof value === 'string')
-    .find(isOwenclaveArchitecture);
-  return abi ? OWENCLAVE_APK_URLS[abi] : OWENCLAVE_APK_URLS['arm64-v8a'];
-};
-
-export const getOwenclaveApkUrl = async (): Promise<string> => {
-  if (Platform.OS !== 'android') {
-    return OWENCLAVE_APK_URLS['arm64-v8a'];
-  }
-  const deviceArchitecture = NativeModules.DeviceArchitecture as {
-    getSupportedAbis?: () => Promise<unknown>;
-  } | undefined;
-  try {
-    return getOwenclaveApkUrlForAbis('android', await deviceArchitecture?.getSupportedAbis?.());
-  } catch {
-    return OWENCLAVE_APK_URLS['arm64-v8a'];
-  }
-};
 
 const openExternalUrl = async (url: string, title: string): Promise<void> => {
   try {
@@ -76,10 +41,6 @@ const openExternalUrl = async (url: string, title: string): Promise<void> => {
   } catch {
     Alert.alert(title, 'Не удалось открыть ссылку. Проверьте подключение к интернету и попробуйте ещё раз.');
   }
-};
-
-const openOwenclaveApk = async (): Promise<void> => {
-  await openExternalUrl(await getOwenclaveApkUrl(), 'Не удалось открыть страницу загрузки');
 };
 
 const ActionButton: React.FC<{
@@ -97,6 +58,7 @@ const ActionButton: React.FC<{
       disabled={disabled}
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{disabled}}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -207,6 +169,13 @@ const InstructionStep: React.FC<{number: number; children: React.ReactNode}> = (
 export const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () => void}> = ({expanded, onToggle}) => {
   const {colors} = useTheme<CustomTheme>();
   const isIos = Platform.OS === 'ios';
+  const [androidClient, setAndroidClient] = React.useState<AndroidVpnClient>();
+  React.useEffect(() => {
+    if (isIos) return;
+    let active = true;
+    void getAndroidVpnClient().then(client => { if (active) setAndroidClient(client); });
+    return () => { active = false; };
+  }, [isIos]);
   return (
     <>
       <AccordionHeader title="Инструкция по подключению" icon="menu-book" expanded={expanded} onPress={onToggle}/>
@@ -226,20 +195,41 @@ export const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () =
             </>
           ) : (
             <>
+              {androidClient ? (
+                <Text style={{color: colors.text, fontSize: 16, fontWeight: 'bold'}}>{androidClient.client} {androidClient.version}</Text>
+              ) : (
+                <View accessibilityLiveRegion="polite" style={{gap: 8}}>
+                  <ActivityIndicator color={colors.textUnderline}/>
+                  <Text style={{color: colors.text, fontSize: 15}}>Определяем приложение для вашего устройства…</Text>
+                </View>
+              )}
               <ActionButton
                 title="Загрузить APK"
                 icon="download"
-                onPress={() => void openOwenclaveApk()}
+                disabled={!androidClient}
+                onPress={() => { if (androidClient) void openExternalUrl(androidClient.apkUrl, 'Не удалось открыть страницу загрузки'); }}
               />
-              <InstructionStep number={2}>Установите приложение, при необходимости разрешив установку из этого источника, и запустите его.</InstructionStep>
-              <InstructionStep number={3}>Откройте раздел Groups в нижней панели: он находится справа от исходного раздела.</InstructionStep>
-              <InstructionStep number={4}>Находясь именно в Groups, нажмите плюс в правом верхнем углу.</InstructionStep>
-              <InstructionStep number={5}>Предварительно скопируйте ссылку подписки DragoNet. В меню выберите Add subscription from URL — ссылка вставится автоматически; нажмите Add & Download. После закрытия окна выберите появившуюся группу, если она не выбралась автоматически.</InstructionStep>
-              <InstructionStep number={6}>Вернитесь в Configuration — самый левый пункт нижней панели.</InstructionStep>
-              <InstructionStep number={7}>Нажмите кнопку со спидометром сверху и дождитесь результатов тестирования.</InstructionStep>
-              <InstructionStep number={8}>Выберите одну из рабочих конфигураций.</InstructionStep>
-              <InstructionStep number={9}>Нажмите кнопку включения в крайнем правом пункте нижней панели, чтобы подключиться — готово!</InstructionStep>
-              <InstructionStep number={10}>Если вам привычнее другое приложение, попробуйте настроить его аналогично, но совместимость не гарантирована.</InstructionStep>
+              {androidClient?.instructionKind === 'owenclave' && <>
+                <InstructionStep number={2}>Установите приложение, при необходимости разрешив установку из этого источника, и запустите его.</InstructionStep>
+                <InstructionStep number={3}>Откройте раздел Groups в нижней панели: он находится справа от исходного раздела.</InstructionStep>
+                <InstructionStep number={4}>Находясь именно в Groups, нажмите плюс в правом верхнем углу.</InstructionStep>
+                <InstructionStep number={5}>Предварительно скопируйте ссылку подписки DragoNet. В меню выберите Add subscription from URL — ссылка вставится автоматически; нажмите Add & Download. После закрытия окна выберите появившуюся группу, если она не выбралась автоматически.</InstructionStep>
+                <InstructionStep number={6}>Вернитесь в Configuration — самый левый пункт нижней панели.</InstructionStep>
+                <InstructionStep number={7}>Нажмите кнопку со спидометром сверху и дождитесь результатов тестирования.</InstructionStep>
+                <InstructionStep number={8}>Выберите одну из рабочих конфигураций.</InstructionStep>
+                <InstructionStep number={9}>Нажмите кнопку включения в крайнем правом пункте нижней панели, чтобы подключиться — готово!</InstructionStep>
+                <InstructionStep number={10}>Если вам привычнее другое приложение, попробуйте настроить его аналогично, но совместимость не гарантирована.</InstructionStep>
+              </>}
+              {androidClient?.instructionKind === 'nekobox' && <>
+                <InstructionStep number={1}>Установите приложение, при необходимости разрешив установку из этого источника, и запустите его.</InstructionStep>
+                <InstructionStep number={2}>Откройте боковое меню, перейдите в раздел <Text style={{fontWeight: 'bold'}}>Конфигурации</Text>.</InstructionStep>
+                <InstructionStep number={3}>Нажмите на кнопку в виде файла с плюсом сверху.</InstructionStep>
+                <InstructionStep number={4}>Предварительно скопируйте ссылку подписки DragoNet. Выберите <Text style={{fontWeight: 'bold'}}>Импорт из буфера обмена</Text> → ссылка вставится.</InstructionStep>
+                <InstructionStep number={5}>Подтвердите импорт, вернитесь в раздел <Text style={{fontWeight: 'bold'}}>Конфигурации</Text>.</InstructionStep>
+                <InstructionStep number={6}>В меню вверху справа выберите <Text style={{fontWeight: 'bold'}}>URL Тест</Text> и дождитесь результатов.</InstructionStep>
+                <InstructionStep number={7}>Выберите одну из рабочих конфигураций.</InstructionStep>
+                <InstructionStep number={8}>Нажмите на кнопку с самолётиком внизу, чтобы подключиться — готово!</InstructionStep>
+              </>}
             </>
           )}
           <Text style={{marginTop: 14, color: colors.text, fontSize: 15, lineHeight: 21}}>{DEMO_CONFIGURATION_NOTE}</Text>

@@ -35,6 +35,7 @@ jest.mock('../src/Screens/Login/LoginScreen', () => ({
   LoginScreenHeader: () => <></>,
 }));
 jest.mock('../src/Screens/Login/AF2Screen', () => () => <></>);
+jest.mock('../src/Screens/Login/MandatoryQuestionnairesScreen', () => () => <></>);
 jest.mock('../src/Ads/AdsProvider', () => ({AdsProvider: passThrough}));
 jest.mock('../src/Loyalty/LoyaltyProvider', () => ({LoyaltyProvider: passThrough}));
 jest.mock('../src/Loyalty/TokenBalanceBadge', () => () => <></>);

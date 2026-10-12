@@ -4,7 +4,7 @@ import {
     LayoutAnimation, ScrollView,
     Text,
     TouchableOpacity,
-    View, ViewStyle,
+    View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {loadingProgressService} from "../../Loading/LoadingProgressService";
@@ -12,9 +12,6 @@ import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 import React, {useEffect, useState} from "react";
 import BARSAPI from "../../Common/Globals";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-// @ts-expect-error
-import * as Icon from 'react-native-vector-icons/Fontisto'
-// import * as ADIcon from 'react-native-vector-icons/AntDesign'
 import {TextInput, useTheme} from "react-native-paper";
 import {withOpacity, CustomTheme} from "../../Themes/Themes";
 import {isBARSError} from "../../API/Error/Error";
@@ -30,20 +27,11 @@ import AF2Screen from "./AF2Screen";
 import {GuestScheduleStack} from "../Schedule/ScheduleStack";
 import {maskSavedPassword} from "../../Login/StudentAccountState";
 import {HelpAccordion, openBarsRegistration} from '../../Login/LoginHelp';
+import Button from '../../Login/AuthButton';
+
+export {default as Button} from '../../Login/AuthButton';
 
 const Stack = createBottomTabNavigator()
-
-export const Button: React.FC<{title?: string, icon?: string, iconSize?: number, onPress: ()=>void, style: ViewStyle, disabled?: boolean}> = (props) => {
-    const {colors} = useTheme<CustomTheme>()
-    return (
-        <TouchableOpacity disabled={props.disabled} onPress={props.onPress} style={[{backgroundColor: colors.surface, borderRadius: 15, alignItems: 'center', justifyContent: 'center', opacity: props.disabled ? 0.45 : 1}, props.style]}>
-            {typeof props.icon != 'undefined' ?
-                <Icon.default name={props.icon} adjustsFontSizeToFit size={props.iconSize} color={colors.textUnderline}/> :
-                <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.textUnderline}}>{props.title}</Text>
-            }
-        </TouchableOpacity>
-    )
-}
 
 type HelpSection = 'credentials' | 'twoFactor' | 'guestAccess' | 'privacy' | 'support'
 

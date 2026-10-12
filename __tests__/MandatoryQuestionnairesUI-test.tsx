@@ -18,7 +18,8 @@ const mockAPI = {
   Logout: jest.fn(),
 };
 jest.mock('../src/Common/Globals', () => ({__esModule: true, default: mockAPI}));
-jest.mock('react-native-paper', () => ({useTheme: () => ({colors: {background: '#111111', primary: '#222222', text: '#ffffff', textUnderline: '#00ffff', warning: '#ffcc00'}})}));
+jest.mock('react-native-paper', () => ({useTheme: () => ({colors: {background: '#111111', primary: '#222222', surface: '#333333', text: '#ffffff', textUnderline: '#00ffff', warning: '#ffcc00'}})}));
+jest.mock('react-native-vector-icons/Fontisto', () => ({__esModule: true, default: () => null}));
 jest.mock('react-native-safe-area-context', () => ({SafeAreaView: ({children}: {children: React.ReactNode}) => <>{children}</>}));
 const AutomaticQuestionnairesSwitch = require('../src/Questionnaires/AutomaticQuestionnairesSwitch').default;
 const MandatoryQuestionnairesScreen = require('../src/Screens/Login/MandatoryQuestionnairesScreen').default;
@@ -72,5 +73,26 @@ describe('mandatory questionnaire controls', () => {
     await ReactTestRenderer.act(() => actionButton('Остановить заполнение').props.onPress());
     expect(mockAPI.CancelQuestionnaireFilling).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(tree.toJSON())).toContain('Экспериментально');
+  });
+
+  it('expands each description separately and collapses it when the account changes', async () => {
+    const row = {name: 'Анкета', description: 'Описание первой анкеты', status: 'Не заполнена', fillUntil: '', completed: '', mandatory: true};
+    mockSnapshot = {...mockSnapshot, questionnaires: [row, {...row, name: 'Без описания', description: ''}]};
+    await ReactTestRenderer.act(() => { tree = ReactTestRenderer.create(<MandatoryQuestionnairesScreen/>); });
+    const descriptionToggle = () => tree.root.findByProps({accessibilityLabel: 'Описание анкеты «Анкета»'});
+    expect(descriptionToggle().props.accessibilityState).toEqual({expanded: false});
+    expect(JSON.stringify(tree.toJSON())).not.toContain('Описание первой анкеты');
+    expect(JSON.stringify(tree.toJSON())).toContain('Без описания');
+    await ReactTestRenderer.act(() => descriptionToggle().props.onPress());
+    expect(descriptionToggle().props.accessibilityState).toEqual({expanded: true});
+    expect(JSON.stringify(tree.toJSON())).toContain('Описание первой анкеты');
+    await ReactTestRenderer.act(() => descriptionToggle().props.onPress());
+    expect(JSON.stringify(tree.toJSON())).not.toContain('Описание первой анкеты');
+    await ReactTestRenderer.act(() => descriptionToggle().props.onPress());
+    await ReactTestRenderer.act(() => {
+      mockSnapshot = {...mockSnapshot, generation: 2};
+      DeviceEventEmitter.emit(MANDATORY_QUESTIONNAIRES_EVENT);
+    });
+    expect(descriptionToggle().props.accessibilityState).toEqual({expanded: false});
   });
 });
