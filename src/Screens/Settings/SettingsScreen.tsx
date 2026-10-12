@@ -42,6 +42,7 @@ import {showInsufficientTokensAlert} from "../../Loyalty/LoyaltyAlerts";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import DragoNetPromoCard from './DragoNetPromoCard';
 import AutomaticQuestionnairesSwitch from '../../Questionnaires/AutomaticQuestionnairesSwitch';
+import {useDragoNetCardScroll} from '../../Vpn/useDragoNetCardScroll';
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -53,6 +54,8 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const allQRFrames: QRFrameName[] = ['qr-frame', 'empty', 'qr-frame-black', 'qr-frame-green', 'qr-frame-red']
     const availableIcons = allIcons.filter(canUseIcon)
     const availableQRFrames = allQRFrames.filter(canUseQRFrame)
+    const setPromoParams = React.useCallback((params: {dragoNetScrollRequest: undefined}) => props.navigation.setParams(params), [props.navigation])
+    const dragoNetScroll = useDragoNetCardScroll(props.route?.params, setPromoParams)
 
     React.useEffect(() => {
         setDark(dark)
@@ -98,7 +101,8 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
       <Fragment>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} title={'Прочее'}/>
-                <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: 24}}>
+                <ScrollView ref={dragoNetScroll.scrollRef} onLayout={dragoNetScroll.onViewportLayout} onContentSizeChange={dragoNetScroll.onContentSizeChange}
+                            style={{width: '90%'}} contentContainerStyle={{paddingBottom: 24}}>
                     <ListSeparator title={'Настройки'}/>
                     <AutomaticQuestionnairesSwitch/>
                     <ListSeparator title={'Оформление'}/>
@@ -152,7 +156,9 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             <Text style={{color: withOpacity(colors.text, 85), fontSize: 15, lineHeight: 21, marginTop: 6}}>Полностью некоммерческий статус не позволял компенсировать расходы и усилия на поддержку, включая ежегодную оплату Apple Developer, чтобы MpeiApp оставался доступен в App Store. Реклама и интеграция с DragoNet помогут покрывать эти затраты и сохранять доступность приложения в магазинах на бесплатной основе.</Text>
                         </View>
                     }
-                    <DragoNetPromoCard/>
+                    <View collapsable={false} onLayout={dragoNetScroll.onCardLayout} style={{width: '100%'}}>
+                        <DragoNetPromoCard/>
+                    </View>
                     <ListSeparator title={'Поддержка'}/>
                     <ListButton icon={
                         <FaIcon.default name={'vk'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center',color: withOpacity(colors.text, 80)}}/>

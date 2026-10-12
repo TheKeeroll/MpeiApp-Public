@@ -15,6 +15,7 @@ import { convertDate } from "../Marks/BARSMainScreen";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import BARSAPI from "../../../Common/Globals";
+import {useDragoNetPromo} from '../../../Vpn/useDragoNetPromo';
 
 const BookCell = ({item}: {item: BARSBook, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
@@ -71,11 +72,15 @@ const BooksScreen: React.FC = () => {
   const {colors} = useTheme<CustomTheme>()
   const booksPack = useSelector((state: RootState)=>state.Books)
   const insets = useSafeAreaInsets();
+  const promo = useDragoNetPromo('books', booksPack.status === 'LOADED' || booksPack.status === 'OFFLINE');
 
   const onLoad = (offline: boolean) => (
     <FlatList
       style={{width: '100%'}}
       contentContainerStyle={{alignItems: 'center'}}
+      onScroll={promo.refreshVisibility}
+      scrollEventThrottle={16}
+      onContentSizeChange={promo.refreshVisibility}
       data={booksPack.data!.books}
       renderItem={({item, index}:{item: BARSBook, index: number})=><BookCell item={item} index={index}/> }
       ItemSeparatorComponent={()=><View style={{height: 20}}/>}
@@ -99,7 +104,8 @@ const BooksScreen: React.FC = () => {
           </View>
         </View>
       }
-      ListFooterComponent={()=><View style={{height: 20}}/>}
+      ListFooterComponentStyle={{width: '100%'}}
+      ListFooterComponent={<>{promo.banner}<View style={{height: 20}}/></>}
     />
   )
 
@@ -117,7 +123,9 @@ const BooksScreen: React.FC = () => {
     <Fragment>
       <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main, {backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Книги'}/>
-        {renderSwitch()}
+        <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%'}}>
+          {renderSwitch()}
+        </View>
       </SafeAreaView>
     </Fragment>
   )
