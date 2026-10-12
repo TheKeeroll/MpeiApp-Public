@@ -5,8 +5,7 @@ import {useTheme} from 'react-native-paper';
 import * as MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {NavigationHeader} from '../CommonComponents/DrawerHeader';
 import {useAds} from '../../Ads/AdsProvider';
-import {rewardedAdService, type RewardedAdState} from '../../Ads/RewardedAdService';
-import {YANDEX_REWARDED_AD_PLACEMENT} from '../../Ads/AdPlacements';
+import {useRewardedAd} from '../../Ads/useRewardedAd';
 import {getLoyaltyCatalogItem, LOYALTY_CATALOG, type LoyaltyCatalogItem} from '../../Loyalty/LoyaltyCatalog';
 import {showInsufficientTokensAlert} from '../../Loyalty/LoyaltyAlerts';
 import {useLoyalty} from '../../Loyalty/LoyaltyProvider';
@@ -48,7 +47,7 @@ const adsRemovalItem = getLoyaltyCatalogItem('ads-removal');
 
 const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
   const {colors} = useTheme<CustomTheme>();
-  const {adsEnabled, createAdRequest} = useAds();
+  const {adsEnabled} = useAds();
   const {
     adsRemovalUnlocked,
     displayedBalance,
@@ -58,12 +57,8 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
     purchase,
     state,
   } = useLoyalty();
-  const [rewardedAdState, setRewardedAdState] = React.useState<RewardedAdState>(rewardedAdService.state);
-  const rewardedAdRequest = React.useMemo(
-    () => createAdRequest(YANDEX_REWARDED_AD_PLACEMENT),
-    [createAdRequest],
-  );
   const rewardedLeft = Math.max(0, 5 - state.rewardedViewsToday);
+  const rewarded = useRewardedAd(rewardedLeft, grantRewardedReward);
   const adsRemovalOwned = isCatalogItemOwned(adsRemovalItem);
   const adsRemovalStatusText = adsRemovalOwned
     ? effectiveContentAccess ? 'Временно отключено с DragoNet' : 'Отключено навсегда'
@@ -75,31 +70,6 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
       : state.rewardedViewsToday < 5
         ? '2–5 токенов'
         : undefined;
-
-  React.useEffect(() => rewardedAdService.subscribe(setRewardedAdState), []);
-
-  React.useEffect(() => {
-    if (!adsEnabled || !rewardedAdRequest || rewardedLeft === 0) {
-      return;
-    }
-
-    void rewardedAdService.preload(rewardedAdRequest);
-  }, [adsEnabled, rewardedAdRequest, rewardedAdState, rewardedLeft]);
-
-  const showRewardedAd = async () => {
-    if (!rewardedAdRequest || rewardedLeft === 0 || !adsEnabled) {
-      return;
-    }
-
-    if (rewardedAdState !== 'LOADED') {
-      await rewardedAdService.preload(rewardedAdRequest);
-      return;
-    }
-
-    await rewardedAdService.show(() => {
-      grantRewardedReward();
-    });
-  };
 
   const purchaseItem = (item: LoyaltyCatalogItem) => {
     if (isCatalogItemOwned(item)) {
@@ -136,14 +106,19 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
     ? 'Реклама недоступна'
     : rewardedLeft === 0
       ? 'Лимит рекламы на сегодня исчерпан'
-      : rewardedAdState === 'LOADED'
-        ? 'Посмотреть рекламу'
-        : 'Загружаем рекламу…';
+      : rewarded.state === 'LOADING'
+        ? 'Загружаем рекламу…'
+        : rewarded.state === 'SHOWING' || rewarded.state === 'REWARDED'
+          ? 'Просмотр рекламы…'
+          : rewarded.state === 'FAILED'
+            ? 'Попробовать снова'
+            : 'Посмотреть рекламу';
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
       <NavigationHeader backable {...props} title="Лояльность"/>
-      <ScrollView contentContainerStyle={{width: '90%', alignSelf: 'center', paddingBottom: 28}}>
+      <View ref={rewarded.viewportRef} collapsable={false} onLayout={rewarded.refresh} style={{flex: 1}}>
+      <ScrollView {...rewarded.scrollProps} contentContainerStyle={{width: '90%', alignSelf: 'center', paddingBottom: 28}}>
         <View style={{marginTop: 18, padding: 16, borderRadius: 12, backgroundColor: colors.primary}}>
           <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
             <MaterialIcons.default name="loyalty" size={28} color={colors.textUnderline}/>
@@ -156,25 +131,29 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
         </View>
 
         {adsEnabled ? (
-          <View style={{marginTop: 16, padding: 14, borderRadius: 12, backgroundColor: colors.surface}}>
-            <Text style={{fontSize: 18, fontWeight: 'bold', color: colors.text}}>Награда за рекламу</Text>
-            <Text style={{marginTop: 4, color: withOpacity(colors.text, 80)}}>
-              Просмотров сегодня: {state.rewardedViewsToday}/5 · осталось {rewardedLeft}{nextRewardText ? ` · следующая награда ${nextRewardText}` : ''}
-            </Text>
-            <TouchableOpacity
-              disabled={rewardedLeft === 0 || rewardedAdState !== 'LOADED'}
-              onPress={() => void showRewardedAd()}
-              style={{
-                marginTop: 12,
-                minHeight: 48,
-                borderRadius: 10,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: colors.primary,
-                opacity: rewardedLeft === 0 || rewardedAdState !== 'LOADED' ? 0.5 : 1,
-              }}
-            >
-              <Text style={{fontWeight: 'bold', color: colors.textUnderline}}>{rewardedButtonTitle}</Text>
+          <View ref={rewarded.slotRef} collapsable={false} onLayout={rewarded.refresh}
+            style={{marginTop: 16, borderRadius: 12, backgroundColor: colors.surface}}>
+            <TouchableOpacity disabled={rewarded.disabled} onPress={() => void rewarded.show()} activeOpacity={.85}
+              accessibilityRole="button" accessibilityLabel="Посмотреть рекламу за токены" style={{padding: 14}}>
+              <Text style={{fontSize: 18, fontWeight: 'bold', color: colors.text}}>Награда за рекламу</Text>
+              <Text style={{marginTop: 4, color: withOpacity(colors.text, 80)}}>
+                Просмотров сегодня: {state.rewardedViewsToday}/5 · осталось {rewardedLeft}{nextRewardText ? ` · следующая награда ${nextRewardText}` : ''}
+              </Text>
+              <TouchableOpacity
+                disabled={rewarded.disabled}
+                onPress={() => void rewarded.show()}
+                style={{
+                  marginTop: 12,
+                  minHeight: 48,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.primary,
+                  opacity: rewarded.disabled ? 0.5 : 1,
+                }}
+              >
+                <Text style={{fontWeight: 'bold', color: colors.textUnderline}}>{rewardedButtonTitle}</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
         ) : (
@@ -250,6 +229,7 @@ const LoyaltyScreen: React.FC<{navigation: any, route: any}> = props => {
           );
         })}
       </ScrollView>
+      </View>
     </View>
   );
 };

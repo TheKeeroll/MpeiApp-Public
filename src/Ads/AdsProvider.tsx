@@ -7,6 +7,7 @@ import {STORAGE_KEYS} from '../Common/Constants';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
 import {createAdsTargeting} from './AdTargeting';
 import {getYandexAdUnitId} from './AdUnitIds';
+import {rewardedAdService} from './RewardedAdService';
 import {
   getActiveStickyPlacement,
   isAdEntitlementEligible,
@@ -208,6 +209,9 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
   }, [entitlementAllowsAds]);
 
   const adsEnabled = entitlementAllowsAds && isSdkInitialized;
+  React.useEffect(() => {
+    if (!adsEnabled) rewardedAdService.reset();
+  }, [adsEnabled]);
 
   const setStickyReservedHeight = React.useCallback((placement: StickyAdPlacement, height: number) => {
     const normalizedHeight = normalizeStickyReservedHeight(height);

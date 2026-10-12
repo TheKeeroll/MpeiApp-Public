@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
+import {FlatList} from 'react-native';
 import type {BARSSchedule} from '../src/API/DataTypes';
 
 let mockStatus = 'LOADED';
@@ -29,7 +30,7 @@ jest.mock('../src/Screens/CommonComponents/Holidays', () => () => null);
 jest.mock('../src/Screens/Schedule/ScheduleSearchPanel', () => () => null);
 jest.mock('../src/Loyalty/LoyaltyProvider', () => ({useLoyalty: () => ({recordSuccessfulFeatureUse: mockRecordUse})}));
 jest.mock('../src/Loading/LoadingProgressService', () => ({loadingProgressService: {start: () => ({}), advance: jest.fn(), complete: jest.fn(), fail: jest.fn()}}));
-jest.mock('../src/Ads/InlineBannerAd', () => () => null);
+jest.mock('../src/Ads/InlineBannerAd', () => (props: Record<string, unknown>) => require('react').createElement('InlineBannerAdMock', props));
 jest.mock('lottie-react-native', () => () => null);
 
 const Tasks = require('../src/Screens/BARS/Tasks/TasksScreen').default;
@@ -85,6 +86,24 @@ describe('DragoNet banner placements', () => {
     mockStatus = 'OFFLINE';
     await ReactTestRenderer.act(() => tree.update(<Schedule navigation={navigation} route={{}}/>));
     expect(lastOpportunity()).toEqual(['personal:13.10.2026', true]);
+  });
+
+  it('keeps the today Yandex footer full-width and removes it for another day or an empty today', async () => {
+    mockSchedule.days[0].lessons = [{name: 'Test lesson', lessonIndex: '1-2', lessonType: 'Lecture',
+      place: 'A', cabinet: '101', group: 'A-01', type: 'COMMON', teacher: {name: '-', fullName: '-', lec_oid: ''}}];
+    await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(1);
+    expect(tree.root.findByType('InlineBannerAdMock' as React.ElementType).props.placement).toBe('inlineBannerScheduleToday');
+    const list = tree.root.findAllByType(FlatList).find(node => node.props.ListFooterComponentStyle?.width === '100%');
+    expect(list).toBeDefined();
+    const selector = tree.root.find(node => typeof node.props.onDateSelect === 'function');
+    await ReactTestRenderer.act(() => selector.props.onDateSelect(1));
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+    await ReactTestRenderer.act(() => selector.props.onDateSelect(0));
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(1);
+    mockSchedule = {...mockSchedule, days: mockSchedule.days.map(day => ({...day, lessons: []}))};
+    await ReactTestRenderer.act(() => tree.update(<Schedule navigation={navigation} route={{}}/>));
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
   });
 
   it.each(['group', 'teacher', 'auditorium'])('applies the same rule to a requested %s schedule, including guest navigation', async query => {
