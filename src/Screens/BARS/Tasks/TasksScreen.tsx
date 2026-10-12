@@ -14,6 +14,7 @@ import OfflineDataNotification from "../../CommonComponents/OfflineDataNotificat
 import BARSAPI from "../../../Common/Globals";
 import {useNavigation} from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {useDragoNetPromo} from '../../../Vpn/useDragoNetPromo';
 
 const TaskCell = ({item}: {item: BARSTask, index: number}) => {
   const {colors} = useTheme<CustomTheme>()
@@ -79,11 +80,15 @@ const TasksScreen: React.FC = () => {
   const {colors} = useTheme()
   const tasks = useSelector((state: RootState)=>state.Tasks)
   const insets = useSafeAreaInsets();
+  const promo = useDragoNetPromo('tasks', tasks.status === 'LOADED' || tasks.status === 'OFFLINE');
 
   const onLoad = (offline: boolean) => (
     <FlatList
       style={{width: '100%'}}
       contentContainerStyle={{alignItems: 'center'}}
+      onScroll={promo.refreshVisibility}
+      scrollEventThrottle={16}
+      onContentSizeChange={promo.refreshVisibility}
       data={tasks.data!}
       renderItem={({item, index}:{item: BARSTask, index: number})=><TaskCell item={item} index={index}/> }
       ItemSeparatorComponent={()=><View style={{height: 20}}/>}
@@ -97,7 +102,8 @@ const TasksScreen: React.FC = () => {
           <View style={{height: 20}}/>
         </Fragment>
       }
-      ListFooterComponent={()=><View style={{height: 20}}/>}
+      ListFooterComponentStyle={{width: '100%'}}
+      ListFooterComponent={<>{promo.banner}<View style={{height: 20}}/></>}
     />
   )
 
@@ -115,7 +121,9 @@ const TasksScreen: React.FC = () => {
     <Fragment>
       <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.main,{flex: 1, backgroundColor: colors.background}]}>
         <DrawerHeader navigation={navigation} title={'Задания'}/>
-        {renderSwitch()}
+        <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%'}}>
+          {renderSwitch()}
+        </View>
       </SafeAreaView>
     </Fragment>
   )

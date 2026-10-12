@@ -4,14 +4,12 @@ import {useTheme} from 'react-native-paper';
 import {
   Alert,
   ActivityIndicator,
-  Animated,
-  Easing,
   Image,
-  ImageBackground,
   Linking,
   Modal,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,6 +23,7 @@ import {withOpacity, type CustomTheme} from '../../Themes/Themes';
 import type {VpnDemoAccess, VpnVerificationResult, VpnVerificationState} from '../../Vpn';
 import {dragonetTelegramUrl, vpnSubscriptionService} from '../../Vpn/VpnSubscriptionRuntime';
 import {getAndroidVpnClient, type AndroidVpnClient} from '../../Vpn/AndroidVpnClients';
+import {DRAGONET_PROMO_ART, DragoNetSlogan, PromoAppIconsMarquee} from '../../Vpn/DragoNetPromoVisuals';
 
 const INCY_APP_STORE_URL = 'https://apps.apple.com/ru/app/incy/id6756943388';
 const DEMO_CONFIGURATION_NOTE = 'Часть конфигураций у вас может не работать - это нормально: они рассчитаны на другие приложения/платформы';
@@ -75,55 +74,6 @@ const ActionButton: React.FC<{
       {icon && <MaterialIcons.default name={icon} size={20} color={subtle ? colors.text : colors.accent}/>}
       <Text style={{marginLeft: hasIcon ? 7 : 0, color: subtle ? colors.text : colors.accent, fontWeight: 'bold', fontSize: 15}}>{title}</Text>
     </TouchableOpacity>
-  );
-};
-
-const PROMO_ICON_ROW_HEIGHT = 66;
-const PROMO_ICON_CELL_WIDTH = 66;
-const PROMO_APP_ICONS = [
-  {name: 'YouTube', source: require('../../../assets/images/DragoNet/AppIconsForPromo/youtube.webp'), size: 66},
-  {name: 'Instagram', source: require('../../../assets/images/DragoNet/AppIconsForPromo/instagram.webp'), size: 66},
-  {name: 'TikTok', source: require('../../../assets/images/DragoNet/AppIconsForPromo/tiktok.webp'), size: 60},
-  {name: 'Telegram', source: require('../../../assets/images/DragoNet/AppIconsForPromo/telegram.webp'), size: 40},
-  {name: 'Spotify', source: require('../../../assets/images/DragoNet/AppIconsForPromo/spotify.webp'), size: 53},
-  {name: 'Netflix', source: require('../../../assets/images/DragoNet/AppIconsForPromo/netflix.webp'), size: 46},
-  {name: 'Discord', source: require('../../../assets/images/DragoNet/AppIconsForPromo/discord.webp'), size: 53},
-  {name: 'Twitch', source: require('../../../assets/images/DragoNet/AppIconsForPromo/twitch.webp'), size: 40},
-  {name: 'Microsoft Copilot', source: require('../../../assets/images/DragoNet/AppIconsForPromo/copilot.webp'), size: 42},
-  {name: 'Google Gemini', source: require('../../../assets/images/DragoNet/AppIconsForPromo/gemini.webp'), size: 40},
-  {name: 'Xbox', source: require('../../../assets/images/DragoNet/AppIconsForPromo/xbox.webp'), size: 40},
-  {name: 'Nintendo', source: require('../../../assets/images/DragoNet/AppIconsForPromo/nintendo.webp'), size: 46},
-  {name: 'NTE', source: require('../../../assets/images/DragoNet/AppIconsForPromo/nte.webp'), size: 66},
-  {name: 'AniTokyoTV', source: require('../../../assets/images/DragoNet/AppIconsForPromo/anitokyotv.webp'), size: 62},
-] as const;
-const PROMO_ICON_LOOP_WIDTH = PROMO_APP_ICONS.length * PROMO_ICON_CELL_WIDTH;
-
-const PromoAppIconsMarquee: React.FC = () => {
-  const translateX = React.useRef(new Animated.Value(0)).current;
-  const icons = [...PROMO_APP_ICONS, ...PROMO_APP_ICONS, ...PROMO_APP_ICONS];
-
-  React.useEffect(() => {
-    translateX.setValue(0);
-    const animation = Animated.loop(Animated.timing(translateX, {
-      toValue: -PROMO_ICON_LOOP_WIDTH,
-      duration: 48000,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }));
-    animation.start();
-    return () => animation.stop();
-  }, [translateX]);
-
-  return (
-    <View accessible={false} style={{height: PROMO_ICON_ROW_HEIGHT, marginTop: 8, overflow: 'hidden'}}>
-      <Animated.View style={{flexDirection: 'row', width: PROMO_ICON_LOOP_WIDTH * 3, transform: [{translateX}]}}>
-        {icons.map((app, index) => (
-          <View key={`${app.name}-${index}`} style={{width: PROMO_ICON_CELL_WIDTH, height: PROMO_ICON_ROW_HEIGHT, alignItems: 'center', justifyContent: 'center'}}>
-            <Image source={app.source} accessibilityLabel={app.name} style={{width: app.size, height: app.size, resizeMode: 'contain'}}/>
-          </View>
-        ))}
-      </Animated.View>
-    </View>
   );
 };
 
@@ -479,13 +429,14 @@ const DragoNetPromoCard: React.FC = () => {
   return (
     <>
       <View style={{width: '100%', marginTop: 14, overflow: 'hidden', borderRadius: 10, backgroundColor: colors.primary}}>
-        <ImageBackground source={require('../../../assets/images/DragoNet/DragoNet.webp')} imageStyle={{borderRadius: 10}} style={{width: '100%'}}>
+        <View style={{width: '100%'}}>
+          <Image source={DRAGONET_PROMO_ART} accessible={false} style={[StyleSheet.absoluteFill, {width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 10}]}/>
           <View style={{padding: 16, backgroundColor: withOpacity('#09070B', 78)}}>
             <View style={{minHeight: 31, paddingRight: 194}}>
               <Text style={{color: colors.accent, fontSize: 25, fontWeight: 'bold'}}>Drago{'\u200B'}Net</Text>
             </View>
             <View pointerEvents="none" style={{position: 'absolute', top: 14, right: 16, maxWidth: 190, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 5, backgroundColor: withOpacity('#120B24', 76)}}>
-              <Text style={{color: colors.accent, fontSize: 11, fontWeight: '600', lineHeight: 14, textAlign: 'right', textShadowColor: withOpacity('#000000', 72), textShadowOffset: {width: 0, height: 1}, textShadowRadius: 2}}>Чтобы был не "Чебурнет" -{'\n'}подключайте DragoNet!</Text>
+              <DragoNetSlogan/>
             </View>
             <PromoAppIconsMarquee/>
             {hasConfirmedActiveSubscription ? (
@@ -532,7 +483,7 @@ const DragoNetPromoCard: React.FC = () => {
               onDisconnect={disconnect}
             />
           </View>
-        </ImageBackground>
+        </View>
       </View>
       <DemoResultSheet
         visible={isDemoSheetVisible}

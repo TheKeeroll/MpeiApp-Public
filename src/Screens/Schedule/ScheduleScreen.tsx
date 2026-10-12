@@ -19,6 +19,8 @@ import ScheduleSearchPanel from "./ScheduleSearchPanel";
 import {createScheduleSearchParams, getScheduleSearchQuery} from "./ScheduleNavigation";
 import {loadingProgressService} from "../../Loading/LoadingProgressService";
 import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
+import {getMoscowDate, isNonTodayScheduleDate, useMoscowDate} from '../../Common/MoscowDate';
+import {useDragoNetPromo} from '../../Vpn/useDragoNetPromo';
 
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
@@ -278,8 +280,15 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
     const teacherSchedule = useRef<BARSSchedule | null>(null)
     const [loadingState, setLoadingState] = useState<'LOADING' | 'OK' | 'ERROR'>('LOADING')
     const [selectedDate, setSelectedDate] = useState(0)
+    const moscowToday = useMoscowDate()
+    const loadedQuery = useRef<string | undefined>(undefined)
+    const [resultRevision, setResultRevision] = useState(0)
+    const promoDay = teacherSchedule.current?.days[selectedDate]
+    const promo = useDragoNetPromo(`requested:${props.searchQuery}:${resultRevision}:${promoDay?.date ?? ''}`,
+        loadingState === 'OK' && loadedQuery.current === props.searchQuery && isNonTodayScheduleDate(promoDay?.date, moscowToday))
 
     React.useEffect(() => {
+        setLoadingState('LOADING')
         if(BARSAPI.TestMode){
             setLoadingState('ERROR')
             Alert.alert('Ошибка', 'Поиск расписания недоступен в тестовом режиме.', [{text: 'Ок', onPress: ()=> props.navigation.goBack()}])
@@ -300,7 +309,10 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
 
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                 teacherSchedule.current = result
-                setSelectedDate(Math.max(0, result.todayIndex))
+                loadedQuery.current = props.searchQuery
+                setResultRevision(previous => previous + 1)
+                const todayIndex = result.days.findIndex(day => day.date === getMoscowDate())
+                setSelectedDate(Math.max(0, todayIndex >= 0 ? todayIndex : result.todayIndex))
                 recordSuccessfulFeatureUse('scheduleSearch')
                 loadingProgressService.complete(progress)
                 setLoadingState('OK')
@@ -348,7 +360,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
     }
 
     const selectedDay = requestedSchedule.days[selectedDate]
-    const isToday = selectedDay?.date === new Date().getDDMMYY()
+    const isToday = selectedDay?.date === moscowToday
 
     return (
         <View style={{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}}>
@@ -359,18 +371,25 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                 onDateSelect={setSelectedDate}
                 initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate}
             />
+            <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%', marginTop: 10}}>
             {selectedDay ?
                 <FlatList
-                    style={{ width: '100%', marginTop: 10 }}
+                    style={{ width: '100%' }}
                     contentContainerStyle={{ alignItems: 'center', paddingBottom: 20 }}
+                    onScroll={promo.refreshVisibility}
+                    scrollEventThrottle={16}
+                    onContentSizeChange={promo.refreshVisibility}
                     data={selectedDay.lessons}
                     renderItem={({ item, index }: { item: BARSScheduleLesson, index: number }) =>
                         <LessonCell requestMode {...props} item={item} index={index} isToday={isToday} />
                     }
                     ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                    ListFooterComponentStyle={{width: '100%'}}
+                    ListFooterComponent={promo.banner ?? undefined}
                 />
                 : <View style={{flex: 1}}/>
             }
+            </View>
         </View>
     )
 }
@@ -381,6 +400,10 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
     const current_month = parseInt(moment().format("M"))
     const [isFirstTime, setisFirstTime] = useState(true)
     const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
+    const moscowToday = useMoscowDate()
+    const promoDay = schedule.data?.days[selectedDate]
+    const promo = useDragoNetPromo(`personal:${promoDay?.date ?? ''}`,
+        !isFirstTime && (schedule.status === 'LOADED' || schedule.status === 'OFFLINE') && isNonTodayScheduleDate(promoDay?.date, moscowToday))
     const lastFlatListRef = useRef<FlatList | null>(null)
     const openRequestedSchedule = (query: string) => {
         props.navigation.push('scheduleMain', createScheduleSearchParams(query))
@@ -395,14 +418,14 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
             return
         }
 
-        const today = new Date().getDDMMYY()
+        const today = moscowToday
         const todayIndex = schedule.data.days.findIndex(day => day.date === today)
         setisFirstTime(false)
         if (todayIndex >= 0) {
             setSelectedDate(previous => previous === todayIndex ? previous : todayIndex)
             console.log('Today: ' + schedule.data.days[todayIndex]!.date)
         }
-    }, [isFirstTime, schedule.data, schedule.status])
+    }, [isFirstTime, schedule.data, schedule.status, moscowToday])
 
     const isVacationPeriod = current_month === 1 || current_month === 2 || (current_month > 5 && current_month < 9)
     const hasNoPersonalSchedule = schedule.status === 'FAILED'
@@ -446,7 +469,7 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
         case "OFFLINE":
         case "LOADED":{
             const IsToday = () => {
-                const today = new Date().getDDMMYY()
+                const today = moscowToday
                 return today == schedule.data!.days[selectedDate].date
             }
             return (
@@ -456,20 +479,26 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
                     <ScheduleSearchPanel onSearch={openRequestedSchedule}/>
 
                     <DateSelector days={editableScheduleData?.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
+                    <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%', marginTop: 10}}>
                     {typeof schedule.data!.days[selectedDate] != 'undefined' ?
                         <FlatList
                             ref={lastFlatListRef}
-                            style={{width: '100%', marginTop: 10}}
+                            style={{width: '100%'}}
                             contentContainerStyle={{alignItems: 'center'}}
+                            onScroll={promo.refreshVisibility}
+                            scrollEventThrottle={16}
+                            onContentSizeChange={promo.refreshVisibility}
                             data={editableScheduleData.days[selectedDate].lessons}
                             renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
                                 <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
                             }
                             ItemSeparatorComponent={()=><View style={{height: 10}}/>}
-                            ListFooterComponent={() => <>
+                            ListFooterComponentStyle={{width: '100%'}}
+                            ListFooterComponent={<>
                                 {IsToday() && editableScheduleData.days[selectedDate].lessons.length > 0 && (
                                     <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.scheduleToday}/>
                                 )}
+                                {promo.banner}
                                 <View style={{height: 20}}/>
                             </>}
                             onScrollToIndexFailed={(info) => {
@@ -481,6 +510,7 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
                             }}
                         />
                         : <EmptyDay/>}
+                    </View>
                 </View>
             )
         }
