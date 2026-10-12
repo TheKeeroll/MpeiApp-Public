@@ -1,6 +1,7 @@
 import React from "react";
 import moment from "moment";
 import {BARSSchedule, BARSScheduleCell} from "../../API/DataTypes";
+import BARSAPI from '../../Common/Globals';
 
 const GetDateRange = (from: Date, to: Date) => {
     const result: string[] = [];
@@ -17,7 +18,7 @@ const TestScreen: React.FC = () => {
     const group = 'А-01-21'
     const linkSearch = 'http://ts.mpei.ru/api/search?term=' + encodeURI(group) +
         `&type=group`
-    fetch(linkSearch,{
+    BARSAPI.FetchUniversity(linkSearch,{
         method: 'GET',
         headers: {},
         credentials: 'include'
@@ -25,7 +26,7 @@ const TestScreen: React.FC = () => {
         const dateStart = moment('01.09.2022', 'DD.MM.YYYY');
         const dateEnd = moment('01.10.2022', 'DD.MM.YYYY');
         const linkSchedule = `http://ts.mpei.ru/api/schedule/group/${r[0].id}?start=${dateStart.format('YYYY.MM.DD')}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-        return fetch(linkSchedule, {
+        return BARSAPI.FetchUniversity(linkSchedule, {
             method: 'GET',
             headers: {},
             credentials: 'include'

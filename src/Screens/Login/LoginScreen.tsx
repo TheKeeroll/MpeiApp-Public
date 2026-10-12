@@ -280,6 +280,10 @@ const LoginScreen: React.FC = () => {
                                 setTimeout(()=>{
                                     loadingProgressService.advance(progress, 'Запрос к БАРС...')
                                     BARSAPI.Login({login, password}).then((r)=>{
+                                    if (r === 'QUESTIONNAIRES_REQUIRED') {
+                                        loadingProgressService.complete(progress)
+                                        return
+                                    }
                                     if (r === "NEED_2FA") {
                                         loadingProgressService.complete(progress)
                                         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)

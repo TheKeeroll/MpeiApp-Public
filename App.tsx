@@ -15,6 +15,7 @@ import {Store} from "./src/API/Redux/Store";
 import {} from './src/Extentions/date_e';
 import LoginScreenWrapper, { LoginScreenHeader } from "./src/Screens/Login/LoginScreen";
 import AF2Screen from "./src/Screens/Login/AF2Screen";
+import MandatoryQuestionnairesScreen from './src/Screens/Login/MandatoryQuestionnairesScreen';
 import {AdsProvider} from "./src/Ads/AdsProvider";
 import {LoyaltyProvider} from "./src/Loyalty/LoyaltyProvider";
 import TokenBalanceBadge from "./src/Loyalty/TokenBalanceBadge";
@@ -38,6 +39,7 @@ const App: React.FC = () =>{
   switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
       case "STUDENTS_NOT_FOUND" : return <LoginScreenWrapper/>
+      case "QUESTIONNAIRES_REQUIRED": return <MandatoryQuestionnairesScreen/>
       case "NOT_INITIATED": return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.appInitialization} fallbackLabel={'Подготовка приложения...'}/>
       case "AUTHENTICATED_LOADING_DATA": return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.authenticatedData} fallbackLabel={'Получение основных учебных данных...'} showStickyAd/>
       case "NEED_2FA": return (

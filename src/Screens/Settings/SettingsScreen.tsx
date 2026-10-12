@@ -41,6 +41,7 @@ import {
 import {showInsufficientTokensAlert} from "../../Loyalty/LoyaltyAlerts";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import DragoNetPromoCard from './DragoNetPromoCard';
+import AutomaticQuestionnairesSwitch from '../../Questionnaires/AutomaticQuestionnairesSwitch';
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -98,6 +99,8 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <NavigationHeader {...props} title={'Прочее'}/>
                 <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: 24}}>
+                    <ListSeparator title={'Настройки'}/>
+                    <AutomaticQuestionnairesSwitch/>
                     <ListSeparator title={'Оформление'}/>
                     <ListSwitch icon={
                         <McIcon.default name={'theme-light-dark'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>

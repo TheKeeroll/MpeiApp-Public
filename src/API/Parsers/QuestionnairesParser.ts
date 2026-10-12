@@ -1,20 +1,19 @@
 import { BARSQuestionnaire } from "../DataTypes";
-import {parse} from 'node-html-parser'
+import {ParseMandatoryQuestionnaires} from './MandatoryQuestionnairesParser'
 import {CreateBARSError, BARSError} from "../Error/Error";
 
 export default function(raw: string): BARSQuestionnaire[] | BARSError {
   console.time('QuestionnairesParser')
   try{
     const result: BARSQuestionnaire[] = []
-    // const $ = parse(raw).querySelectorAll('#tbl__PartialListStudent__QuestionnaireAnswer > tbody > tr')
-    const $ = parse(raw).querySelectorAll('#tbl__PartialListQuestionnaireAnswer > tbody > tr')
-    for(let i of $){
+    for (const row of ParseMandatoryQuestionnaires(raw).rows) {
       const questionnaire: BARSQuestionnaire = {
-        name: i.querySelector(`td:nth-child(1) > a`)!.text.trim(),
-        description: i.querySelector(`td:nth-child(3)`)!.text.trim(),
-        status: i.querySelector(`td:nth-child(4)`)!.text.trim(),
-        fill_until: i.querySelector(`td:nth-child(5)`)!.text.trim(),
-        completed: i.querySelector(`td:nth-child(6)`)!.text.trim()
+        name: row.name,
+        description: row.description,
+        status: row.status,
+        fill_until: row.fillUntil,
+        completed: row.completed,
+        mandatory: row.mandatory,
       }
       result.push(questionnaire)
     }

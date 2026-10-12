@@ -139,6 +139,10 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
         setTimeout(() => {
             loadingProgressService.advance(progress, 'Получение основных данных студента...')
             BARSAPI.Login2FA(code).then((r) => {
+            if (r === 'QUESTIONNAIRES_REQUIRED') {
+                loadingProgressService.complete(progress)
+                return
+            }
             if (r === 'STUDENTS_NOT_FOUND') {
                 loadingProgressService.complete(progress)
                 BARSAPI.EnterStudentsNotFoundState()
