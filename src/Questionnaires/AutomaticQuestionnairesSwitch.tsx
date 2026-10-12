@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Switch, Text, View} from 'react-native';
+import {Alert, Image, Switch, Text, View} from 'react-native';
 import {useTheme} from 'react-native-paper';
 import BARSAPI from '../Common/Globals';
 import type {CustomTheme} from '../Themes/Themes';
@@ -10,8 +10,11 @@ export const QUESTIONNAIRE_FILL_WARNING = 'Приложение отправит
 
 export const ExperimentalBadge: React.FC = () => {
   const {colors} = useTheme<CustomTheme>();
-  return <View style={{alignSelf: 'flex-start', maxWidth: '100%', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: colors.warning}}>
-    <Text numberOfLines={1} adjustsFontSizeToFit style={{color: colors.warning, fontSize: 12}}>Экспериментально</Text>
+  return <View style={{alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: colors.warning}}>
+    {/* Official AntDesign experiment icon; absent from the bundled legacy icon font. */}
+    <Image source={require('../../assets/images/Questionnaires/experiment.png')} accessible={false}
+      style={{width: 16, height: 16, tintColor: colors.warning, resizeMode: 'contain'}}/>
+    <Text numberOfLines={1} adjustsFontSizeToFit style={{flexShrink: 1, color: colors.warning, fontSize: 12}}>Экспериментально</Text>
   </View>;
 };
 
