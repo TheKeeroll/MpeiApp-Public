@@ -29,7 +29,7 @@ import { RootState } from "../../API/Redux/Store";
 import { SkippedClass } from "../../API/DataTypes";
 import BooksScreen from "./Books/BooksScreen";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import InlineBannerAd from "../../Ads/InlineBannerAd";
+import {useDeferredInlineAd} from "../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../Ads/AdPlacements";
 
 const Drawer = createDrawerNavigator()
@@ -236,6 +236,7 @@ const DrawerButton: React.FC<{ navigation: any, presserId: number, id: number, o
 }
 
 const DrawerContent: React.FC<{navigation: any}> = (props)=>{
+    const inlineAd = useDeferredInlineAd(YANDEX_INLINE_AD_PLACEMENTS.drawer, 'drawer')
     const [pressedId, setPressedId] = useState(0)
     const {colors} = useTheme<CustomTheme>()
     const insets = useSafeAreaInsets();
@@ -437,7 +438,8 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
     return(
         <Fragment>
             <SafeAreaView edges={['top', 'left', 'bottom']} style={{flex: 1, backgroundColor: colors.background}}>
-                <DrawerContentScrollView contentContainerStyle={{paddingBottom: 12}}>
+                <View ref={inlineAd.viewportRef} collapsable={false} onLayout={inlineAd.onViewportLayout} style={{flex: 1}}>
+                <DrawerContentScrollView {...inlineAd.scrollProps} contentContainerStyle={{paddingBottom: 12}}>
                     <DrawerHeader/>
                     <View style={{width: '90%', alignSelf: 'center', borderRadius: 5, marginTop: 10, minHeight: SCREEN_SIZE.height * .005, backgroundColor: colors.surface}}>
                         <View style={{width: '100%', flexDirection: 'row'}}>
@@ -572,9 +574,10 @@ const DrawerContent: React.FC<{navigation: any}> = (props)=>{
                       counter={unhandledQuestionnairesCounter}
                       counterColor={colors.warning}
                     />
-                    <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.drawer}/>
+                    {inlineAd.banner}
 
                 </DrawerContentScrollView>
+                </View>
                 <DrawerButton {...props} presserId={-1} id={-2} onPress={()=>{}} title={'Выйти'} routeName={'exit'} counter={0} counterColor={colors.text} iconComponent={
                     <EIcon.default name={'log-out'} color={colors.notification} adjustsFontSizeToFit size={20}/>
                 }/>

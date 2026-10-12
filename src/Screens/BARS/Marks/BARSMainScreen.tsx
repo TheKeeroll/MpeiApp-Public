@@ -29,7 +29,7 @@ import { updateAdditionalData } from "../../../API/Redux/Slices";
 import SharedGroupPreferences from "react-native-shared-group-preferences";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_CONFIG } from "../../../Common/Config.ts";
-import InlineBannerAd from "../../../Ads/InlineBannerAd";
+import {useDeferredInlineAd} from "../../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../../Ads/AdPlacements";
 
 const Stack = createStackNavigator()
@@ -433,6 +433,7 @@ const Body: React.FC<{navigation: any}> = (props)=>{
     const marks = useSelector((state: RootState)=>state.MarkTable)
     const {colors} = useTheme<CustomTheme>()
     const [refreshing, setRefreshing] = useState(false)
+    const inlineAd = useDeferredInlineAd(YANDEX_INLINE_AD_PLACEMENTS.marks)
     if (!sessionStarted){
         weekDColor = colors.text
     }
@@ -494,8 +495,9 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                 console.warn("close bars Date failed: " + e);
             }
             return (
-            <View style={Styles.listWrapper}>
+            <View ref={inlineAd.viewportRef} collapsable={false} onLayout={inlineAd.onViewportLayout} style={Styles.listWrapper}>
                 <FlatList
+                    {...inlineAd.scrollProps}
                     refreshing={refreshing}
                     onRefresh={()=>{
                         if(marks.status == 'OFFLINE' || BARSAPI.TestMode) return
@@ -530,12 +532,12 @@ const Body: React.FC<{navigation: any}> = (props)=>{
                         </View>
                     }
                     ListFooterComponentStyle={{width: '100%', alignSelf: 'stretch'}}
-                    ListFooterComponent={() => (
+                    ListFooterComponent={
                         <View collapsable={false} style={{width: '100%', alignSelf: 'stretch'}}>
-                            <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.marks}/>
+                            {inlineAd.banner}
                             <View style={{height: 20}}/>
                         </View>
-                    )}
+                    }
                 />
             </View>
         )
