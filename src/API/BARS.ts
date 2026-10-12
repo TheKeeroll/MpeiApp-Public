@@ -64,6 +64,15 @@ import MailParser from "./Parsers/MailParser";
 import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
 import { ParseBARSRequestVerificationToken } from "./Parsers/AuthFormParser";
 import {
+  ParseMandatoryQuestionnaires, isBlockingQuestionnaire, isQuestionnaireCompleted,
+  type MandatoryQuestionnairesPage, type MandatoryQuestionnaire,
+} from './Parsers/MandatoryQuestionnairesParser';
+import {fillMandatoryQuestionnaires, type QuestionnaireAutoFillTransport} from '../Questionnaires/QuestionnaireAutoFill';
+import {BARS_ORIGIN, getQuestionnairesUrl, isUniversityUrl, SUBMIT_QUESTIONNAIRE_URL} from '../Questionnaires/QuestionnaireUrls';
+import {QuestionnairesRequiredError, UniversityAuthenticationRequiredError, QuestionnaireOperationCancelledError} from '../Questionnaires/QuestionnaireErrors';
+import {emptyMandatoryQuestionnairesSnapshot, MANDATORY_QUESTIONNAIRES_EVENT, type MandatoryQuestionnairesSnapshot} from '../Questionnaires/MandatoryQuestionnairesState';
+import {URL, URLSearchParams} from 'react-native-url-polyfill';
+import {
   shouldEnterStudentsNotFoundState,
   type StudentAccountAuthenticationPhase,
 } from "../Login/StudentAccountState";
@@ -84,12 +93,14 @@ export type LoginState =
   | 'NOT_INITIATED'
   | 'AUTHENTICATED_LOADING_DATA'
   | 'STUDENTS_NOT_FOUND'
+  | 'QUESTIONNAIRES_REQUIRED'
 
 export type LoginResult =
   | 'ONLINE'
   | 'OFFLINE'
   | 'NEED_2FA'
   | 'STUDENTS_NOT_FOUND'
+  | 'QUESTIONNAIRES_REQUIRED'
   | 'CANCELLED'
   | void
   | BARSMarks
@@ -173,6 +184,12 @@ type StudentAccountLoginAttempt = {
 }
 
 class SessionInvalidatedError extends Error {}
+
+type UniversityRequestOptions = {
+  purpose?: 'data' | 'auth' | '2FA' | 'qr';
+  allowRestricted?: boolean;
+};
+type UniversityResponse = Pick<Response, 'status' | 'ok' | 'url' | 'headers' | 'text' | 'json'>;
 
 export type TwoFactorProviderTid = 1 | 2 | 3 | 4 | 5
 
@@ -259,6 +276,16 @@ export default class BARS{
   private mBARSBrowserProfile?: BARSBrowserProfile
   private mSessionGeneration = 0
   private mStudentAccountLoginAttempt?: StudentAccountLoginAttempt
+  private mAuthenticationPromise?: Promise<LoginResult>
+  private mRequiredQuestionnairesGeneration?: number
+  private mMandatorySnapshot = emptyMandatoryQuestionnairesSnapshot(false)
+  private mMandatoryOperation = 0
+  private mMandatoryActionPromise?: Promise<void>
+  private mMandatoryAbortController?: AbortController
+  private mMandatoryActionAutomatic = false
+  private mPreparedQuestionnairesGeneration?: number
+  private mAutoFillAttemptedGeneration?: number
+  private mResumingAfterQuestionnaireFill = false
 
   public get Debts() { return this.mDebts }
   public get LoginState() { return this.mLoginState }
@@ -267,12 +294,14 @@ export default class BARS{
     //this.mStorage.clearAll()
     this.mCurrentData = {}
     this.mBARSBrowserProfile = this.ReadSavedBARSBrowserProfile()
+    this.mMandatorySnapshot = emptyMandatoryQuestionnairesSnapshot(this.AutomaticQuestionnaireFilling)
     getIcon().then((r: string = 'cool')=>{
       this.mCurrentIcon=r
     })
   }
   public get Week(){return this.mCurrentWeek}
   public SetLoginState(state: LoginState){
+    if (this.HasMandatoryQuestionnaireRestriction() && state !== 'QUESTIONNAIRES_REQUIRED') return
     if(this.mLoginState === state) return
     this.mLoginState = state
     DeviceEventEmitter.emit('LoginState', state)
@@ -330,7 +359,7 @@ export default class BARS{
   }
 
   private FinalizeBARSLoginResult(result: LoginResult): LoginResult {
-    if (result === 'ONLINE' || result === 'STUDENTS_NOT_FOUND') {
+    if (result === 'ONLINE' || result === 'STUDENTS_NOT_FOUND' || result === 'QUESTIONNAIRES_REQUIRED') {
       this.SaveBARSBrowserProfile()
     } else if (result === 'OFFLINE') {
       this.RotateBARSBrowserProfile()
@@ -355,6 +384,16 @@ export default class BARS{
   }
 
   private BeginSessionGeneration(): number {
+    this.mMandatoryAbortController?.abort()
+    this.mMandatoryOperation += 1
+    this.mMandatoryActionPromise = undefined
+    this.mMandatoryAbortController = undefined
+    this.mRequiredQuestionnairesGeneration = undefined
+    this.mPreparedQuestionnairesGeneration = undefined
+    this.mAutoFillAttemptedGeneration = undefined
+    this.mAuthenticationPromise = undefined
+    this.mResumingAfterQuestionnaireFill = false
+    this.UpdateMandatorySnapshot(emptyMandatoryQuestionnairesSnapshot(this.AutomaticQuestionnaireFilling))
     this.mSessionGeneration += 1
     this.mStudentAccountLoginAttempt = undefined
     this.mBackgroundDataLoadPromise = undefined
@@ -383,6 +422,297 @@ export default class BARS{
     return generation === this.mSessionGeneration
   }
 
+  private IsCurrentDataGeneration(generation: number): boolean {
+    return this.IsCurrentGeneration(generation) && !this.HasMandatoryQuestionnaireRestriction()
+  }
+
+  private HasMandatoryQuestionnaireRestriction(): boolean {
+    return this.mRequiredQuestionnairesGeneration === this.mSessionGeneration
+  }
+
+  public get MandatoryQuestionnairesSnapshot(): MandatoryQuestionnairesSnapshot { return this.mMandatorySnapshot }
+
+  public get AutomaticQuestionnaireFilling(): boolean {
+    try { return this.mStorage.getString(STORAGE_KEYS.AUTO_FILL_MANDATORY_QUESTIONNAIRES) === 'true' }
+    catch { return false }
+  }
+
+  private UpdateMandatorySnapshot(update: Partial<MandatoryQuestionnairesSnapshot>) {
+    this.mMandatorySnapshot = {...this.mMandatorySnapshot, ...update, enabled: this.AutomaticQuestionnaireFilling}
+    DeviceEventEmitter.emit(MANDATORY_QUESTIONNAIRES_EVENT, this.mMandatorySnapshot)
+  }
+
+  public SetAutomaticQuestionnaireFilling(enabled: boolean) {
+    this.mStorage.set(STORAGE_KEYS.AUTO_FILL_MANDATORY_QUESTIONNAIRES, String(enabled))
+    this.UpdateMandatorySnapshot({})
+    if (!enabled && this.mMandatoryActionAutomatic) this.CancelQuestionnaireFilling()
+    if (enabled && this.HasMandatoryQuestionnaireRestriction()) {
+      this.mAutoFillAttemptedGeneration = undefined
+      void this.PrepareMandatoryQuestionnaires().then(() => this.MaybeAutoFillQuestionnaires())
+    }
+  }
+
+  private RecordMandatoryQuestionnaires(page: MandatoryQuestionnairesPage) {
+    if (!this.mCredentials.login) return
+    const fresh = !this.HasMandatoryQuestionnaireRestriction()
+    if (fresh && this.mResumingAfterQuestionnaireFill) this.mAutoFillAttemptedGeneration = this.mSessionGeneration
+    this.mRequiredQuestionnairesGeneration = this.mSessionGeneration
+    const found = new Map<string, MandatoryQuestionnaire>()
+    for (const row of [...this.mMandatorySnapshot.questionnaires, ...page.questionnaires]) {
+      found.set(row.id || `${row.name}\n${row.description}`, row)
+    }
+    this.UpdateMandatorySnapshot({
+      generation: this.mSessionGeneration, questionnaires: [...found.values()],
+      reason: page.reason || this.mMandatorySnapshot.reason || 'Для продолжения работы заполните обязательные анкеты.',
+      listComplete: fresh ? page.listComplete : this.mMandatorySnapshot.listComplete,
+    })
+    this.mStorage.set(STORAGE_KEYS.CREDENTIALS, JSON.stringify(this.mCredentials))
+    this.SaveBARSBrowserProfile()
+    this.SetLoginState('QUESTIONNAIRES_REQUIRED')
+    if (fresh) void this.PrepareMandatoryQuestionnaires()
+  }
+
+  /** All university data, including unexpected HTML from a JSON API, passes here. */
+  public async FetchUniversity(url: string, init: RequestInit = {}, options: UniversityRequestOptions = {}): Promise<UniversityResponse> {
+    const generation = this.mSessionGeneration
+    const purpose = options.purpose || 'data'
+    const parsedUrl = new URL(url)
+    const directAuthOrQR = /\/bars_web\/(?:Auth|QR)\//i.test(parsedUrl.pathname)
+      || /CookieAuth\.dll/i.test(parsedUrl.pathname)
+      || /\/QR\//i.test(parsedUrl.searchParams.get('ReturnUrl') || '')
+    const guarded = purpose === 'data' && isUniversityUrl(url) && !directAuthOrQR
+    if (guarded && this.HasMandatoryQuestionnaireRestriction() && !options.allowRestricted) throw new QuestionnairesRequiredError()
+    const response = await fetch(url, init)
+    if (!guarded) return response
+    const raw = await response.text()
+    if (!this.IsCurrentGeneration(generation)) throw new SessionInvalidatedError()
+    if (init.signal?.aborted) throw new QuestionnaireOperationCancelledError()
+    const page = ParseMandatoryQuestionnaires(raw)
+    if (page.authMode) {
+      if (this.mLoginState === 'LOGGED_IN' || this.HasMandatoryQuestionnaireRestriction()) {
+        this.BeginSessionGeneration()
+        this.SetLoginState('NOT_LOGGED_IN')
+      }
+      throw new UniversityAuthenticationRequiredError(page.authMode)
+    }
+    if (page.requiresCompletion && !options.allowRestricted) {
+      if (!this.mCredentials.login) throw new UniversityAuthenticationRequiredError('login')
+      this.RecordMandatoryQuestionnaires(page)
+      throw new QuestionnairesRequiredError()
+    }
+    if (this.HasMandatoryQuestionnaireRestriction() && !options.allowRestricted) throw new QuestionnairesRequiredError()
+    return {
+      status: response.status, ok: response.ok, url: response.url, headers: response.headers,
+      text: async () => raw, json: async () => JSON.parse(raw),
+    }
+  }
+
+  private QuestionnaireHeaders(url: string, ajax = false): Record<string, string> {
+    const headers: Record<string, string> = {...this.GetBARSCommonHeaders()}
+    delete headers['content-length']
+    delete headers['content-type']
+    return {...headers, referer: url, 'sec-fetch-site': 'same-origin',
+      'sec-fetch-mode': ajax ? 'cors' : 'navigate', 'sec-fetch-dest': ajax ? 'empty' : 'document',
+      ...(ajax ? {'X-Requested-With': 'XMLHttpRequest'} : {}),
+    }
+  }
+
+  private async CollectQuestionnaires(signal: AbortSignal): Promise<{rows: MandatoryQuestionnaire[]; complete: boolean; blocked: boolean}> {
+    const url = new URL(getQuestionnairesUrl(this.mCredentials.login))
+    url.searchParams.set('query', JSON.stringify({ID: null, State: null, SortOrder: 'QuestionnaireAnswerStatu.SortOrder,EditEndDate desc,Questionnaire.Name', Page: '1', PageSize: '500', SearchText: ''}))
+    let next = url.toString()
+    let blocked = false
+    const found = new Map<string, MandatoryQuestionnaire>()
+    const visited = new Set<string>()
+    for (let step = 0; step < 20; step++) {
+      if (visited.has(next)) throw new Error('БАРС повторил страницу списка анкет. Список удалось получить не полностью.')
+      visited.add(next)
+      const response = await Timeout(15000, this.FetchUniversity(next, {method: 'GET', headers: this.QuestionnaireHeaders(next), credentials: 'include', signal}, {allowRestricted: true}))
+      if (signal.aborted) throw new QuestionnaireOperationCancelledError()
+      if (response.ok === false) throw new Error('БАРС не смог загрузить список анкет. Повторите проверку позже.')
+      const page = ParseMandatoryQuestionnaires(await response.text())
+      if (!page.hasTable) throw new Error('Не удалось получить полный список обязательных анкет. Заполните их на сайте или повторите проверку.')
+      blocked ||= page.requiresCompletion
+      for (const row of page.rows) found.set(row.id || `${row.name}\n${row.description}`, row)
+      this.UpdateMandatorySnapshot({questionnaires: [...found.values()].filter(isBlockingQuestionnaire), listComplete: false})
+      if (found.size > 2000) throw new Error('Список анкет слишком велик для автоматической обработки. Заполните обязательные анкеты на сайте.')
+      const pagination = page.pagination
+      if (!pagination?.nextPage) {
+        const complete = pagination?.total === undefined || found.size >= pagination.total
+        this.UpdateMandatorySnapshot({listComplete: complete})
+        return {rows: [...found.values()], complete, blocked}
+      }
+      if (!pagination.partialUrl || pagination.nextPage <= pagination.page) throw new Error('БАРС не сообщил адрес следующей страницы. Список анкет неполный.')
+      const partial = new URL(pagination.partialUrl)
+      partial.searchParams.set('query', JSON.stringify({ID: pagination.id, State: pagination.state, SortOrder: pagination.sortOrder, Page: String(pagination.nextPage), PageSize: String(pagination.pageSize), SearchText: ''}))
+      next = partial.toString()
+    }
+    throw new Error('Достигнут предел страниц списка анкет. Продолжите заполнение на сайте.')
+  }
+
+  private RunMandatoryAction(status: 'loading' | 'checking' | 'filling', automatic: boolean, action: (signal: AbortSignal, isCurrent: () => boolean) => Promise<void>): Promise<void> {
+    if (this.mMandatoryActionPromise) return this.mMandatoryActionPromise
+    if (!this.HasMandatoryQuestionnaireRestriction()) return Promise.resolve()
+    const generation = this.mSessionGeneration
+    const operation = ++this.mMandatoryOperation
+    const controller = new AbortController()
+    this.mMandatoryAbortController = controller
+    this.mMandatoryActionAutomatic = automatic
+    const isCurrent = () => this.IsCurrentGeneration(generation) && operation === this.mMandatoryOperation && !controller.signal.aborted
+    this.UpdateMandatorySnapshot({status, error: undefined, progress: undefined})
+    const promise = (async () => {
+      await this.mAuthenticationPromise?.catch(() => undefined)
+      if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+      await action(controller.signal, isCurrent)
+    })().catch(error => {
+      if (!isCurrent() || error instanceof SessionInvalidatedError || error instanceof QuestionnaireOperationCancelledError) return
+      if (error instanceof UniversityAuthenticationRequiredError) {
+        this.mRequiredQuestionnairesGeneration = undefined
+        this.SetLoginState('NOT_LOGGED_IN')
+        return
+      }
+      this.UpdateMandatorySnapshot({error: error instanceof Error ? error.message : 'Не удалось обработать анкеты. Повторите проверку или заполните их на сайте.'})
+    }).finally(() => {
+      controller.abort()
+      if (this.IsCurrentGeneration(generation) && operation === this.mMandatoryOperation) {
+        this.mMandatoryActionPromise = undefined
+        this.mMandatoryAbortController = undefined
+        this.mMandatoryActionAutomatic = false
+        this.UpdateMandatorySnapshot({status: 'idle'})
+      }
+    })
+    this.mMandatoryActionPromise = promise
+    return promise
+  }
+
+  public PrepareMandatoryQuestionnaires(): Promise<void> {
+    if (this.mMandatoryActionPromise) return this.mMandatoryActionPromise
+    if (!this.HasMandatoryQuestionnaireRestriction() || this.mPreparedQuestionnairesGeneration === this.mSessionGeneration) return Promise.resolve()
+    this.mPreparedQuestionnairesGeneration = this.mSessionGeneration
+    return this.RunMandatoryAction('loading', false, async (signal, isCurrent) => {
+      await this.CollectQuestionnaires(signal)
+      if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+    }).then(() => this.MaybeAutoFillQuestionnaires())
+  }
+
+  private MaybeAutoFillQuestionnaires(): Promise<void> {
+    if (!this.AutomaticQuestionnaireFilling || !this.HasMandatoryQuestionnaireRestriction() || this.mMandatorySnapshot.error
+      || this.mAutoFillAttemptedGeneration === this.mSessionGeneration) return Promise.resolve()
+    return this.AutoFillMandatoryQuestionnaires(true)
+  }
+
+  public CancelQuestionnaireFilling() {
+    this.UpdateMandatorySnapshot({error: 'Заполнение остановлено. Уже отправленные ответы сохранены в БАРС.'})
+    this.mMandatoryAbortController?.abort()
+  }
+
+  public AutoFillMandatoryQuestionnaires(automatic = false): Promise<void> {
+    if (automatic) this.mAutoFillAttemptedGeneration = this.mSessionGeneration
+    return this.RunMandatoryAction('filling', automatic, async (signal, isCurrent) => {
+      const transport: QuestionnaireAutoFillTransport = {
+        get: async url => {
+          const response = await Timeout(15000, this.FetchUniversity(url, {method: 'GET', headers: this.QuestionnaireHeaders(url), credentials: 'include', signal}, {allowRestricted: true}))
+          if (response.ok === false) throw new Error('БАРС не смог загрузить вопрос. Продолжите заполнение на сайте.')
+          return response.text()
+        },
+        answer: async (url, value, token) => {
+          const data = new FormData()
+          data.append('mode', '1')
+          data.append('answer', value)
+          if (token) data.append('__RequestVerificationToken', token)
+          const response = await Timeout(15000, this.FetchUniversity(url, {method: 'POST', headers: this.QuestionnaireHeaders(url, true), credentials: 'include', signal, body: data}, {allowRestricted: true}))
+          if (response.ok === false) throw new Error('БАРС не принял ответ. Повторите попытку позже или заполните анкету на сайте.')
+          return response.json()
+        },
+        submit: async (identity, token) => {
+          const data = new URLSearchParams({uslkID: identity.userId, qqaID: identity.answerId})
+          const referer = `${BARS_ORIGIN}/bars_web/US_Q/QuestionnaireAnswer/EditQuestionnaireAnswer?${data.toString()}`
+          if (token) data.set('__RequestVerificationToken', token)
+          const response = await Timeout(15000, this.FetchUniversity(SUBMIT_QUESTIONNAIRE_URL, {
+            method: 'POST', headers: {...this.QuestionnaireHeaders(referer, true), 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            credentials: 'include', signal, body: data.toString(),
+          }, {allowRestricted: true}))
+          const raw = await response.text()
+          if (response.ok === false) throw new Error('БАРС не подтвердил завершение анкеты. Попробуйте заполнить её на сайте.')
+          try { return JSON.parse(raw) } catch { return undefined }
+        },
+        verifyCompleted: async identity => {
+          const list = await this.CollectQuestionnaires(signal)
+          const row = list.rows.find(candidate => candidate.id === identity.answerId && candidate.userId === identity.userId)
+          return row ? isQuestionnaireCompleted(row.status) : list.complete && !list.rows.some(candidate => candidate.id === identity.answerId)
+        },
+        lookupEmployee: async (identity, qiId) => {
+          const url = `${BARS_ORIGIN}/bars_web/US_Q/JSON/JSON_EmployeeBySemesterSheet?${new URLSearchParams({searchText: '', qqaID: identity.answerId, qiID: qiId}).toString()}`
+          const result: unknown = await (await Timeout(15000, this.FetchUniversity(url, {method: 'GET', headers: this.QuestionnaireHeaders(url, true), credentials: 'include', signal}, {allowRestricted: true}))).json()
+          if (!Array.isArray(result)) throw new Error('Не удалось получить варианты ответа. Заполните анкету на сайте.')
+          return result.filter(item => item && typeof item.id === 'string' && typeof item.text === 'string').map(item => ({value: item.id, label: item.text}))
+        },
+      }
+      for (let round = 0; round < 3; round++) {
+        if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+        const list = await this.CollectQuestionnaires(signal)
+        if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+        if (!list.complete) throw new Error('Список обязательных анкет удалось получить не полностью. Повторите проверку или заполните их на сайте.')
+        const required = list.rows.filter(isBlockingQuestionnaire)
+        if (!required.length) break
+        await fillMandatoryQuestionnaires(required, transport, isCurrent, progress => this.UpdateMandatorySnapshot({progress}))
+      }
+      if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+      await this.CheckMandatoryAccess(signal, isCurrent)
+      if (this.HasMandatoryQuestionnaireRestriction()) throw new Error('БАРС всё ещё требует заполнить анкеты. Проверьте список и повторите попытку либо заполните их на сайте.')
+    })
+  }
+
+  private async CheckMandatoryAccess(signal: AbortSignal, isCurrent: () => boolean): Promise<void> {
+    const response = await Timeout(15000, this.FetchUniversity(URLS.BARS_MAIN, {method: 'GET', headers: this.GetBARSCommonHeaders(), credentials: 'include', signal}, {allowRestricted: true}))
+    const raw = await response.text()
+    if (!isCurrent()) throw new QuestionnaireOperationCancelledError()
+    const page = ParseMandatoryQuestionnaires(raw)
+    if (page.requiresCompletion) {
+      this.RecordMandatoryQuestionnaires(page)
+      await this.CollectQuestionnaires(signal)
+      return
+    }
+    const credentials = {...this.mCredentials}
+    const wasFilling = this.mMandatorySnapshot.status === 'filling'
+    const generation = this.BeginSessionGeneration()
+    this.mResumingAfterQuestionnaireFill = wasFilling
+    const attempt: StudentAccountLoginAttempt = {generation, credentials, isPrimaryOnlineAttempt: false, authenticationPhase: 'PASSWORD_SUBMITTED', hasStudentData: false}
+    this.mStudentAccountLoginAttempt = attempt
+    this.SetLoginState('AUTHENTICATED_LOADING_DATA')
+    try {
+      const result = await this.HandleLoginResponse(raw, credentials, attempt)
+      if (result === 'ONLINE' && this.IsCurrentGeneration(generation)) await this.LoadOnlineData()
+    } catch (error) {
+      if (error instanceof QuestionnairesRequiredError || !this.IsCurrentGeneration(generation)) return
+      if (error instanceof UniversityAuthenticationRequiredError) {
+        this.mRequiredQuestionnairesGeneration = undefined
+        this.SetLoginState('NOT_LOGGED_IN')
+        return
+      }
+      // Successful cookies remain available for the next check; do not rotate the profile.
+      this.mRequiredQuestionnairesGeneration = generation
+      this.UpdateMandatorySnapshot({generation, error: 'Не удалось загрузить кабинет после проверки. Попробуйте ещё раз.', status: 'idle'})
+      this.SetLoginState('QUESTIONNAIRES_REQUIRED')
+    } finally {
+      if (this.IsCurrentGeneration(generation)) this.mResumingAfterQuestionnaireFill = false
+    }
+  }
+
+  public RetryMandatoryQuestionnaires(): Promise<void> {
+    this.mAutoFillAttemptedGeneration = undefined
+    return this.RunMandatoryAction('checking', false, async (signal, isCurrent) => {
+      await this.CheckMandatoryAccess(signal, isCurrent)
+    }).then(() => this.MaybeAutoFillQuestionnaires())
+  }
+
+  private TrackAuthentication(promise: Promise<LoginResult>): Promise<LoginResult> {
+    this.mAuthenticationPromise = promise
+    const settled = () => { if (this.mAuthenticationPromise === promise) this.mAuthenticationPromise = undefined }
+    void promise.then(settled, settled)
+    return promise
+  }
+
   private IsCurrentStudentAccountAttempt(attempt: StudentAccountLoginAttempt): boolean {
     return this.IsCurrentGeneration(attempt.generation)
       && this.mStudentAccountLoginAttempt === attempt
@@ -398,6 +728,7 @@ export default class BARS{
     if (!this.IsCurrentStudentAccountAttempt(attempt)) {
       return 'CANCELLED'
     }
+    if (this.HasMandatoryQuestionnaireRestriction()) return 'QUESTIONNAIRES_REQUIRED'
 
     if (shouldEnterStudentsNotFoundState({
       isPrimaryOnlineAttempt: attempt.isPrimaryOnlineAttempt,
@@ -417,10 +748,11 @@ export default class BARS{
     credentials: BARSCredentials,
     isHeadman: boolean,
     attempt: StudentAccountLoginAttempt,
-  ): Extract<LoginResult, 'ONLINE' | 'CANCELLED'> {
+  ): Extract<LoginResult, 'ONLINE' | 'CANCELLED' | 'QUESTIONNAIRES_REQUIRED'> {
     if (!this.IsCurrentStudentAccountAttempt(attempt)) {
       return 'CANCELLED'
     }
+    if (this.HasMandatoryQuestionnaireRestriction()) return 'QUESTIONNAIRES_REQUIRED'
 
     const availableSemesters = GetAvailableSemesters(response)
     const student = {...parsedStudent, headman: isHeadman}
@@ -530,7 +862,8 @@ export default class BARS{
     const promise = (async () => {
       try {
         await this.FetchDataSection(section)
-        if (!this.IsCurrentGeneration(generation)) {
+        if (!this.IsCurrentDataGeneration(generation)) {
+          if (this.IsCurrentGeneration(generation)) loadingProgressService.complete(progress, 'failed')
           return
         }
         loadingProgressService.complete(
@@ -538,7 +871,8 @@ export default class BARS{
           this.GetDataSectionStatus(section) === 'LOADED' ? 'success' : 'failed',
         )
       } catch (error) {
-        if (!this.IsCurrentGeneration(generation)) {
+        if (!this.IsCurrentDataGeneration(generation)) {
+          if (this.IsCurrentGeneration(generation)) loadingProgressService.complete(progress, 'failed')
           return
         }
         loadingProgressService.fail(progress)
@@ -576,7 +910,7 @@ export default class BARS{
       // section. They are intentionally concurrent with this background queue.
       const postOnlineTasks = this.RunPostOnlineDataTasks(generation)
       const run = async (section: BARSDataSection) => {
-        if (this.IsCurrentGeneration(generation)) {
+        if (this.IsCurrentDataGeneration(generation)) {
           await this.RunDataSection(section, generation)
         }
       }
@@ -584,7 +918,7 @@ export default class BARS{
       // Personal schedule is intentionally first, but it no longer delays entry.
       await run('schedule')
 
-      if (this.IsCurrentGeneration(generation) && this.mCurrentData.availableSemesters?.length) {
+      if (this.IsCurrentDataGeneration(generation) && this.mCurrentData.availableSemesters?.length) {
         try {
           await this.FilterAvailableSemesters(this.mCurrentData.availableSemesters)
         } catch (error) {
@@ -623,17 +957,19 @@ export default class BARS{
     const generation = this.mSessionGeneration
     try {
       const response = await Timeout(options.timeoutMs, options.request())
+      if (!this.IsCurrentDataGeneration(generation)) return
       const data = options.parse(response)
       if (isBARSError(data)) {
         throw data
       }
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       this.mStorage.set(options.storageKey, JSON.stringify(data))
       options.update({status: 'LOADED', data})
     } catch (error) {
-      if (!this.IsCurrentGeneration(generation)) {
+      if (error instanceof QuestionnairesRequiredError || error instanceof UniversityAuthenticationRequiredError) throw error
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       console.warn(`Failed to fetch ${options.section}; trying offline data`, error)
@@ -722,6 +1058,8 @@ export default class BARS{
             }, 100)
           } else if (mode == 'CANCELLED') {
             return
+          } else if (mode == 'QUESTIONNAIRES_REQUIRED') {
+            return
           } else {
             console.warn('VOID MODE !')
             throw 'VOID MODE'
@@ -744,13 +1082,13 @@ export default class BARS{
         if(typeof student != 'undefined' && student != ''){
           const studentID = JSON.parse(student).id
           const link = 'https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID
-          return fetch(link, {
+          return this.FetchUniversity(link, {
             method: 'GET',
             headers: this.GetBARSCommonHeaders(),
             mode: 'same-origin',
             credentials: 'include'
           }).then(r=>r.text()).then((response)=>{
-            if (!this.IsCurrentGeneration(restoreGeneration)) {
+            if (!this.IsCurrentDataGeneration(restoreGeneration)) {
               return
             }
             const result = ParseStudentInfo(response)
@@ -758,7 +1096,7 @@ export default class BARS{
               throw result
             }
             const availableSemesters = GetAvailableSemesters(response)
-            if (!this.IsCurrentGeneration(restoreGeneration)) {
+            if (!this.IsCurrentDataGeneration(restoreGeneration)) {
               return
             }
             this.mCurrentData.availableSemesters = availableSemesters
@@ -768,10 +1106,11 @@ export default class BARS{
             return this.LoadOnlineData().finally(()=>{
               LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             })
-          }).catch(()=>{
+          }).catch((error)=>{
             if (!this.IsCurrentGeneration(restoreGeneration)) {
               return
             }
+            if (error instanceof QuestionnairesRequiredError || this.HasMandatoryQuestionnaireRestriction()) return
             console.warn('Failed to restore session(request failed/bad response)! Trying to login again...');
             return loginFlow()
           })
@@ -919,6 +1258,7 @@ export default class BARS{
         this.EnterStudentsNotFoundState()
         return
       }
+      if (result === 'QUESTIONNAIRES_REQUIRED') return
 
       throw CreateBARSError('LOGIN_FAIL', 'Не удалось повторно проверить аккаунт БАРС.')
     } catch (error) {
@@ -933,21 +1273,21 @@ export default class BARS{
   private FetchCurrentWeek(){
     const generation = this.mSessionGeneration
     console.time('CurrentWeek ' + Platform.OS)
-    return Timeout(15000, fetch('https://mpei.ru/Education/timetable/Pages/default.aspx',{
+    return Timeout(15000, this.FetchUniversity('https://mpei.ru/Education/timetable/Pages/default.aspx',{
       method: 'GET',
       headers: COMMON_HTTP_HEADER,
       credentials: 'include'
     }).then(r=>r.text()).then((r)=>{
       try{
         const doc = parse(r)
-        if (this.IsCurrentGeneration(generation)) {
+        if (this.IsCurrentDataGeneration(generation)) {
           this.mCurrentWeek = doc.querySelector('.nb-week')?.textContent?.trim() ??
             doc.querySelector('.current-study-week')?.textContent?.match(/\d+/)?.[0] ??
             '?';
         }
         console.timeEnd('CurrentWeek ' + Platform.OS)
       } catch (e: any){
-        if (this.IsCurrentGeneration(generation)) {
+        if (this.IsCurrentDataGeneration(generation)) {
           this.mCurrentWeek = '?'
         }
         console.warn("Failed to get current week")
@@ -956,7 +1296,7 @@ export default class BARS{
         return Promise.resolve();
       }
     })).catch(e => {
-      if (this.IsCurrentGeneration(generation)) {
+      if (this.IsCurrentDataGeneration(generation)) {
         this.mCurrentWeek = '?'
       }
       console.warn("Data download time exceeded on current week!", e)
@@ -981,7 +1321,7 @@ export default class BARS{
   }
 
   private async LoadOnlineDataInternal(generation: number): Promise<void>{
-    if (!this.IsCurrentGeneration(generation)) {
+    if (!this.IsCurrentDataGeneration(generation)) {
       return
     }
     this.SetLoginState('AUTHENTICATED_LOADING_DATA')
@@ -1013,7 +1353,7 @@ export default class BARS{
 
         const result = await this.FetchMarkTable(availableSemesters[1].id, true)
         const marks = result as BARSMarks | void
-        if (!marks?.disciplines || !this.IsCurrentGeneration(generation)) {
+        if (!marks?.disciplines || !this.IsCurrentDataGeneration(generation)) {
           return
         }
 
@@ -1034,7 +1374,7 @@ export default class BARS{
         this.FetchMarkTable(),
         fetchDebts(),
       ])
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
 
@@ -1047,7 +1387,7 @@ export default class BARS{
       )
       console.log('Core online data fetch completed')
     } catch(error){
-      if (error instanceof SessionInvalidatedError || !this.IsCurrentGeneration(generation)) {
+      if (error instanceof SessionInvalidatedError || !this.IsCurrentDataGeneration(generation)) {
         return
       }
       coreFailed = true
@@ -1056,8 +1396,8 @@ export default class BARS{
       if (!this.IsCurrentGeneration(generation)) {
         return
       }
-      loadingProgressService.complete(progress, coreFailed ? 'failed' : 'success')
-      if (this.IsCurrentGeneration(generation)) {
+      loadingProgressService.complete(progress, coreFailed || this.HasMandatoryQuestionnaireRestriction() ? 'failed' : 'success')
+      if (this.IsCurrentDataGeneration(generation)) {
         this.SetLoginState('LOGGED_IN')
         if (shouldStartBackgroundLoad) {
           this.StartBackgroundDataLoad(generation)
@@ -1078,7 +1418,7 @@ export default class BARS{
             })
       }
       link = encodeURI(link)
-      return fetch(link, {
+      return this.FetchUniversity(link, {
         method: 'GET',
         headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
@@ -1094,7 +1434,7 @@ export default class BARS{
       })
     }
     const results = await Promise.all(sems.map(check))
-    if (!this.IsCurrentGeneration(generation)) {
+    if (!this.IsCurrentDataGeneration(generation)) {
       return
     }
     const available: Semester[] = []
@@ -1116,10 +1456,17 @@ export default class BARS{
     if (!this.IsCurrentStudentAccountAttempt(attempt)) {
       return Promise.resolve('CANCELLED')
     }
+    // Auth requests retain their own validation; this is their successful cabinet HTML.
+    const questionnairePage = ParseMandatoryQuestionnaires(response)
+    if (questionnairePage.requiresCompletion) {
+      if (!creds.login) return Promise.reject(CreateBARSError('INVALID_CREDS', 'Введите логин и пароль для входа в БАРС.'))
+      this.RecordMandatoryQuestionnaires(questionnairePage)
+      return Promise.resolve('QUESTIONNAIRES_REQUIRED')
+    }
     this.mCurrentData = {}
     if (response.includes("Студенты") || response.includes('На главную')) { //multi-account or EditUser page
       const isHeadman = response.includes("Студенты") && response.includes("Отчёты")
-      return fetch(URLS.BARS_MULTI_ACCOUNT, {
+      return this.FetchUniversity(URLS.BARS_MULTI_ACCOUNT, {
         method: "GET",
         headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
@@ -1143,7 +1490,7 @@ export default class BARS{
         const id = $(`#tbl__PartialListStudent > tbody > tr:nth-child(${target_acc}) > td:nth-child(1) > a`).attr("href").trim()
         const link = URLS.BARS_MAIN + id.replace("/bars_web/", "")
 
-        return fetch(link, {
+        return this.FetchUniversity(link, {
           method: "GET",
           headers: this.GetBARSCommonHeaders(),
           mode: 'same-origin',
@@ -1154,7 +1501,7 @@ export default class BARS{
             try {
               let studentID = response.split('studentID=')[1].split('"')[0]
               console.warn('studentID= ' + studentID)
-              return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+              return this.FetchUniversity('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
                 method: "GET",
                 headers: this.GetBARSCommonHeaders(),
                 mode: 'same-origin',
@@ -1211,7 +1558,7 @@ export default class BARS{
       try {
         let studentID = response.split('studentID=')[1].split('"')[0]
         console.warn('studentID= ' + studentID)
-        return fetch('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
+        return this.FetchUniversity('https://bars.mpei.ru/bars_web/ST_Study/Main/Main?studentID=' + studentID, {
           method: "GET",
           headers: this.GetBARSCommonHeaders(),
           mode: 'same-origin',
@@ -1362,6 +1709,7 @@ export default class BARS{
     code: string,
     rotateBrowserProfileOnFailure: boolean,
   ): Promise<LoginResult> {
+    if (this.HasMandatoryQuestionnaireRestriction()) return Promise.resolve(this.FinalizeBARSLoginResult('QUESTIONNAIRES_REQUIRED'))
     console.log('Trying to login with 2FA code');
     const attempt = this.mStudentAccountLoginAttempt
     if (!attempt || !this.IsCurrentStudentAccountAttempt(attempt)) {
@@ -1402,7 +1750,7 @@ export default class BARS{
       }
       const loginResult = this.FinalizeBARSLoginResult(result as LoginResult)
       if (
-        (loginResult === 'ONLINE' || loginResult === 'STUDENTS_NOT_FOUND')
+        (loginResult === 'ONLINE' || loginResult === 'STUDENTS_NOT_FOUND' || loginResult === 'QUESTIONNAIRES_REQUIRED')
         && this.mLastRequested2FAProvider === 4
       ) {
         this.SaveTemporary2FACode(creds.login, code)
@@ -1413,6 +1761,10 @@ export default class BARS{
         return Promise.resolve<LoginResult>('CANCELLED')
       }
 
+      if (e instanceof QuestionnairesRequiredError || this.HasMandatoryQuestionnaireRestriction()) {
+        if (this.mLastRequested2FAProvider === 4) this.SaveTemporary2FACode(creds.login, code)
+        return this.FinalizeBARSLoginResult('QUESTIONNAIRES_REQUIRED')
+      }
       const studentsNotFoundResult = this.GetStudentsNotFoundResult(attempt)
       if (studentsNotFoundResult) {
         return Promise.resolve(this.FinalizeBARSLoginResult(studentsNotFoundResult))
@@ -1438,7 +1790,7 @@ export default class BARS{
   }
 
   public Login2FA(code: string): Promise<LoginResult> {
-    return this.Submit2FACode(code, true)
+    return this.TrackAuthentication(this.Submit2FACode(code, true))
   }
 
   /**
@@ -1501,6 +1853,11 @@ export default class BARS{
   }
 
   public Login(creds: BARSCredentials, firstStart: boolean = true): Promise<LoginResult>{
+    if (this.HasMandatoryQuestionnaireRestriction() && Compare(creds, this.mCredentials)) return Promise.resolve(this.FinalizeBARSLoginResult('QUESTIONNAIRES_REQUIRED'))
+    return this.TrackAuthentication(this.PerformLogin(creds, firstStart))
+  }
+
+  private PerformLogin(creds: BARSCredentials, firstStart: boolean): Promise<LoginResult>{
     let isIncorrectLoginPassword = false
     const shouldPrepareLoginForm = !this.HasSavedCredentials()
     const attempt = this.BeginLoginAttempt(creds, firstStart)
@@ -1600,6 +1957,7 @@ export default class BARS{
           if (!this.IsCurrentStudentAccountAttempt(attempt)) {
             return Promise.resolve<LoginResult>('CANCELLED')
           }
+          if (e instanceof QuestionnairesRequiredError) return 'QUESTIONNAIRES_REQUIRED'
           if (isBARSError(e)) return Promise.reject(e)
           else {
             if (e.toString().includes('querySelector')){
@@ -1619,6 +1977,7 @@ export default class BARS{
           if (!this.IsCurrentStudentAccountAttempt(attempt)) {
             return Promise.resolve<LoginResult>('CANCELLED')
           }
+          if (e instanceof QuestionnairesRequiredError || this.HasMandatoryQuestionnaireRestriction()) return this.FinalizeBARSLoginResult('QUESTIONNAIRES_REQUIRED')
           this.RotateBARSBrowserProfile()
           if (isIncorrectLoginPassword){
             return Promise.reject(CreateBARSError('INVALID_CREDS', 'Неверный логин/пароль!'))
@@ -1637,6 +1996,7 @@ export default class BARS{
   }
 
   public LoadOfflineData(){
+    if (this.HasMandatoryQuestionnaireRestriction()) return
     console.log('Loading offline data...')
     const schedule = this.mStorage.getString(STORAGE_KEYS.SCHEDULE)
     const mail = this.mStorage.getString(STORAGE_KEYS.MAIL)
@@ -1716,7 +2076,7 @@ export default class BARS{
         else {
           try {
             let ts_mpei_link = 'http://ts.mpei.ru/api/search?term=' + encodeURI(target.lec_oid)  + '&type=' + request_type
-            return fetch(ts_mpei_link, {
+            return this.FetchUniversity(ts_mpei_link, {
               method: 'GET',
               headers: {
                 'accept': 'application/json, text/plain, */*',
@@ -1732,7 +2092,7 @@ export default class BARS{
                 const dateStart = moment(new Date()).format('YYYY.MM.DD')
                 const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
                 const linkTargetSchedule = `http://ts.mpei.ru/api/schedule/${request_type}/${r[0]?.id || ''}?start=${dateStart}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-                return fetch(linkTargetSchedule, {
+                return this.FetchUniversity(linkTargetSchedule, {
                   method: 'GET',
                   headers: {},
                   credentials: 'include'
@@ -1865,7 +2225,7 @@ export default class BARS{
     const linkSearch = `http://ts.mpei.ru/api/search?term=${encodeURI(group)}&type=group`
 
     try {
-      const schedule = await Timeout(15000, fetch(linkSearch, {
+      const schedule = await Timeout(15000, this.FetchUniversity(linkSearch, {
         method: 'GET',
         headers: {},
         credentials: 'include',
@@ -1874,13 +2234,13 @@ export default class BARS{
           throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Группа не найдена на сервере расписания!')
         }
         const link = `http://ts.mpei.ru/api/schedule/group/${result[0]?.id || ''}?start=${dateStart.format('YYYY.MM.DD')}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-        return fetch(link, {
+        return this.FetchUniversity(link, {
           method: 'GET',
           headers: {},
           credentials: 'include',
         }).then(response => response.json()).then(data => DealWithMeal(ParseTsMPEISchedule(data)))
       }))
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
 
@@ -1893,7 +2253,7 @@ export default class BARS{
       this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(schedule))
       Store.dispatch(updateSchedule({status: 'LOADED', data: schedule}))
     } catch (error) {
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       console.warn('Failed to fetch schedule; trying offline data', error)
@@ -1922,7 +2282,7 @@ export default class BARS{
     }
 
     try {
-      const response = await Timeout(5500, fetch(URLS.BARS_RECORD_BOOK + student.id, {
+      const response = await Timeout(5500, this.FetchUniversity(URLS.BARS_RECORD_BOOK + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -1942,7 +2302,7 @@ export default class BARS{
           }
           semesterIndex += 1
           const semesterLink = `https://bars.mpei.ru/bars_web/ST_LK/RecordBook/ListStudent__RecordBook?studentID=${student.id}&query=%7B%22ID%22%3A%22${student.id}%22%2C%22SortOrder%22%3Anull%2C%22Page%22%3Anull%2C%22DisplayMode%22%3A%22%22%2C%22FilterRecordBookPage%22%3A%7B%22Code%22%3A%22sem%3A${semesterIndex}%22%7D%7D`
-          return [fetch(semesterLink, {
+          return [this.FetchUniversity(semesterLink, {
             method: 'GET',
             headers: this.GetBARSHeadersWithUserId(student.id),
             mode: 'same-origin',
@@ -1954,13 +2314,13 @@ export default class BARS{
       if (isBARSError(recordBook)) {
         throw recordBook
       }
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       this.mStorage.set(STORAGE_KEYS.RECORD_BOOK, JSON.stringify(recordBook))
       Store.dispatch(updateRecordBook({status: 'LOADED', data: recordBook}))
     } catch (error) {
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       console.warn('Failed to fetch record book; trying offline data', error)
@@ -1998,7 +2358,7 @@ export default class BARS{
       section: 'skippedClasses',
       storageKey: STORAGE_KEYS.SKIPPED_CLASSES,
       timeoutMs: 4000,
-      request: () => fetch(link, {
+      request: () => this.FetchUniversity(link, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2020,7 +2380,7 @@ export default class BARS{
       section: 'reports',
       storageKey: STORAGE_KEYS.REPORTS,
       timeoutMs: 1750,
-      request: () => fetch(URLS.BARS_REPORTS + student.id, {
+      request: () => this.FetchUniversity(URLS.BARS_REPORTS + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2042,7 +2402,7 @@ export default class BARS{
       section: 'tasks',
       storageKey: STORAGE_KEYS.TASKS,
       timeoutMs: 2000,
-      request: () => fetch(URLS.BARS_TASKS + student.id, {
+      request: () => this.FetchUniversity(URLS.BARS_TASKS + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2064,7 +2424,7 @@ export default class BARS{
       section: 'books',
       storageKey: STORAGE_KEYS.BOOKS,
       timeoutMs: 2000,
-      request: () => fetch(URLS.BARS_BOOKS + student.id, {
+      request: () => this.FetchUniversity(URLS.BARS_BOOKS + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2134,7 +2494,7 @@ export default class BARS{
       }
       console.log('Redirecting to ', redirectUrl)
       // Второй fetch по полученному URL: браузер автоматически приклеит HTTP-Only cookie
-      const resp2 = await fetch(redirectUrl, {
+      const resp2 = await this.FetchUniversity(redirectUrl, {
         method: 'GET',
         mode: 'same-origin',
         credentials: 'include'
@@ -2167,7 +2527,7 @@ export default class BARS{
         try {
           redirectUrl = resp3.headers.get('Location') + ''
           console.log('Redirecting to ' + redirectUrl)
-          const resp4 = await fetch(redirectUrl, {
+          const resp4 = await this.FetchUniversity(redirectUrl, {
             method:      'GET',
             mode:        'same-origin',
             credentials: 'include'
@@ -2182,7 +2542,7 @@ export default class BARS{
             }
             const final_url = URLS.MAIL_MODERN + '/owa/'
             console.log('Fetching '+ final_url)
-            const resp5 = await fetch(final_url, {
+            const resp5 = await this.FetchUniversity(final_url, {
               method:      'GET',
               mode:        'same-origin',
               credentials: 'include'
@@ -2206,7 +2566,7 @@ export default class BARS{
       console.warn('Failed to parse mail!', mail);
       throw mail
     }
-    if (!this.IsCurrentGeneration(generation)) {
+    if (!this.IsCurrentDataGeneration(generation)) {
       return
     }
     Store.dispatch(updateMail({ status: 'LOADED', data: mail }));
@@ -2214,7 +2574,7 @@ export default class BARS{
     this.mCurrentData.mail = mail
     console.log('Unread e-mails: ' + mail.unreadCount);
     } catch (error) {
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       console.warn('Failed to check mail', error)
@@ -2235,13 +2595,14 @@ export default class BARS{
       Store.dispatch(updateQuestionnaires({status: 'FAILED', data: null}))
       return Promise.reject(CreateBARSError('QUESTIONNAIRES_PARSER_FAIL', 'Не найдены данные студента для загрузки анкет.'))
     }
-    const link = URLS.BARS_QUESTIONNAIRES + this.mCredentials.login
-      + '&query=%7B"ID"%3Anull%2C"State"%3Anull%2C"SortOrder"%3A"EditEndDate%20desc%2CQuestionnaire.Name"%2C"Page"%3A"1"%2C"PageSize"%3A"500"%7D'
+    const questionnairesUrl = new URL(getQuestionnairesUrl(this.mCredentials.login))
+    questionnairesUrl.searchParams.set('query', JSON.stringify({ID: null, State: null, SortOrder: 'EditEndDate desc,Questionnaire.Name', Page: '1', PageSize: '500'}))
+    const link = questionnairesUrl.toString()
     return this.FetchCachedDataSection({
       section: 'questionnaires',
       storageKey: STORAGE_KEYS.QUESTIONNAIRES,
       timeoutMs: 3000,
-      request: () => fetch(link, {
+      request: () => this.FetchUniversity(link, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2263,7 +2624,7 @@ export default class BARS{
       section: 'stipends',
       storageKey: STORAGE_KEYS.STIPENDS,
       timeoutMs: 3000,
-      request: () => fetch(URLS.BARS_STIPENDS + student.id, {
+      request: () => this.FetchUniversity(URLS.BARS_STIPENDS + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2285,7 +2646,7 @@ export default class BARS{
       section: 'orders',
       storageKey: STORAGE_KEYS.ORDERS,
       timeoutMs: 2250,
-      request: () => fetch(URLS.BARS_ORDERS + student.id, {
+      request: () => this.FetchUniversity(URLS.BARS_ORDERS + student.id, {
         method: 'GET',
         headers: this.GetBARSHeadersWithUserId(student.id),
         mode: 'same-origin',
@@ -2316,7 +2677,7 @@ export default class BARS{
     }
 
     try {
-      const response = await Timeout(15000, fetch(encodeURI(link), {
+      const response = await Timeout(15000, this.FetchUniversity(encodeURI(link), {
         method: 'GET',
         headers: this.GetBARSCommonHeaders(),
         mode: 'same-origin',
@@ -2326,7 +2687,7 @@ export default class BARS{
       if (isBARSError(marks)) {
         throw marks
       }
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       if (forPast) {
@@ -2340,7 +2701,7 @@ export default class BARS{
       }
       console.log('Fetched mark table', forPast)
     } catch (error) {
-      if (!this.IsCurrentGeneration(generation)) {
+      if (!this.IsCurrentDataGeneration(generation)) {
         return
       }
       if (forPast) {

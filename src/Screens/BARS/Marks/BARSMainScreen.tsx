@@ -14,6 +14,7 @@ import { AverageScoreToColor, MarkToColor, withOpacity, CustomTheme } from "../.
 import { createStackNavigator } from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
 import BARSAPI from "../../../Common/Globals";
+import {QuestionnairesRequiredError, UniversityAuthenticationRequiredError} from '../../../Questionnaires/QuestionnaireErrors';
 import { useSelector } from "react-redux";
 import { RootState, Store } from "../../../API/Redux/Store";
 import DrawerHeader from "../../CommonComponents/DrawerHeader";
@@ -130,7 +131,7 @@ let finalMarkAvailabilityCounter = 0
 
 const CheckFinalMarkAvailability = async (id: string | undefined): Promise<string> => {
     try {
-        const response = await fetch(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
+        const response = await BARSAPI.FetchUniversity(`https://bars.mpei.ru/bars_web/ST_Study/Student_SemesterSheet/ModalEditSemesterExamAuto?uip=27&ssID=${id}`, {
             method: 'GET',
             headers: BARSAPI.GetBARSCommonHeaders(),
             credentials: 'include',
@@ -156,6 +157,7 @@ const CheckFinalMarkAvailability = async (id: string | undefined): Promise<strin
         }
         return finalDate
     } catch (e:any) {
+        if (e instanceof QuestionnairesRequiredError || e instanceof UniversityAuthenticationRequiredError) throw e
         console.warn('CheckFinalMarkAvailability : ' + e.toString())
         return 'NO CONDITIONS - CHECKING FAILED!'
     }
@@ -258,9 +260,11 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
     }
 
     useEffect(() => {
+        let cancelled = false
         const checkAvailability = async () => {
             if (marks.status !== "OFFLINE" && !BARSAPI.TestMode && props.discipline.examAutoId && props.discipline.examAutoId !== '0') {
                 const finalMarkCheckRes = await CheckFinalMarkAvailability(props.discipline.examAutoId)
+                if (cancelled || BARSAPI.LoginState !== 'LOGGED_IN') return
                 if (!finalMarkCheckRes.includes('NO CONDITIONS')) {
                     setDiscipleTextColor('#33FFFF')
                     if (!finalMarkCheckRes.includes('NO')){
@@ -278,7 +282,12 @@ const Discipline: React.FC<{navigation: any, discipline: BARSDiscipline, index: 
                 }
             }
         }
-        checkAvailability()
+        void checkAvailability().catch(error => {
+            if (!(error instanceof QuestionnairesRequiredError) && !(error instanceof UniversityAuthenticationRequiredError)) {
+                console.warn('Не удалось проверить доступность согласия на оценку', error)
+            }
+        })
+        return () => { cancelled = true }
     }, [])
         return (
             <View style={[Styles.disciplineView, {backgroundColor: colors.surface}]}>

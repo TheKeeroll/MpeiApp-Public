@@ -48,6 +48,7 @@
     "react-native-safe-area-context": "5.9.1",
     "react-native-screens": "4.27.0",
     "react-native-shared-group-preferences": "^1.1.24",
+    "react-native-url-polyfill": "4.0.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-vision-camera": "^4.7.3",
     "react-native-webview": "^13.16.0",

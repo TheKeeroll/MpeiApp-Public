@@ -172,6 +172,7 @@ export const STORAGE_KEYS = {
   REPORTS: 'reports',
   BOOKS: 'books',
   QUESTIONNAIRES: 'questionnaires',
+  AUTO_FILL_MANDATORY_QUESTIONNAIRES: 'autoFillMandatoryQuestionnaires',
   STIPENDS: 'stipends',
   ORDERS: 'orders',
   SKIPPED_CLASSES: 'skippedClasses',

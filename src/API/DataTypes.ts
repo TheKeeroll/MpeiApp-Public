@@ -111,6 +111,7 @@ export interface BARSQuestionnaire {
   status: string
   fill_until: string
   completed: string
+  mandatory?: boolean
 }
 
 export interface BARSBook {
