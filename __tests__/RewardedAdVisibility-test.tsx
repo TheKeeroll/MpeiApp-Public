@@ -64,13 +64,15 @@ describe('rewarded visibility and explicit intent', () => {
     jest.useRealTimers();
   });
 
-  it('does not preload an offscreen card and waits 1500 ms of visibility without showing it', async () => {
+  it('does not preload an offscreen card and waits 1800 ms of visibility without showing it', async () => {
     await mount();
     await advance(5000);
     expect(mockLoader.loadAd).not.toHaveBeenCalled();
     slotY = 250;
     await ReactTestRenderer.act(() => handle.refresh());
-    await advance(1499);
+    await advance(1500);
+    expect(mockLoader.loadAd).not.toHaveBeenCalled();
+    await advance(299);
     expect(mockLoader.loadAd).not.toHaveBeenCalled();
     await advance(1);
     expect(mockLoader.loadAd).toHaveBeenCalledTimes(1);
@@ -89,7 +91,7 @@ describe('rewarded visibility and explicit intent', () => {
     expect(mockLoader.loadAd).not.toHaveBeenCalled();
     slotY = 250;
     await ReactTestRenderer.act(() => handle.refresh());
-    await advance(1499);
+    await advance(1799);
     expect(mockLoader.loadAd).not.toHaveBeenCalled();
     await advance(1);
     expect(mockLoader.loadAd).toHaveBeenCalledTimes(1);
@@ -111,7 +113,7 @@ describe('rewarded visibility and explicit intent', () => {
   it('re-measures visibility at the deadline rather than using the old visible rectangle', async () => {
     slotY = 250;
     await mount();
-    await advance(1499);
+    await advance(1799);
     slotY = 900;
     await advance(1);
     expect(mockLoader.loadAd).not.toHaveBeenCalled();
@@ -134,7 +136,7 @@ describe('rewarded visibility and explicit intent', () => {
     mockLoader.loadAd.mockRejectedValueOnce(new Error('no fill'));
     slotY = 250;
     await mount();
-    await advance(1500);
+    await advance(1800);
     expect(handle.state).toBe('FAILED');
     await ReactTestRenderer.act(() => {tree.update(<Harness/>); handle.refresh();});
     await advance(10000);
@@ -160,7 +162,7 @@ describe('rewarded visibility and explicit intent', () => {
   it('uses a preloaded ad on a click without requesting another and ignores a reward after ads are disabled', async () => {
     slotY = 250;
     await mount();
-    await advance(1500);
+    await advance(1800);
     await ReactTestRenderer.act(() => handle.show());
     expect(mockLoader.loadAd).toHaveBeenCalledTimes(1);
     mockAdsEnabled = false;

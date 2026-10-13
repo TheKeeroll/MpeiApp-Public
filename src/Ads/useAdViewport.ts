@@ -6,7 +6,7 @@ type Options = {
   active: boolean;
   visitActive: boolean;
   isActiveNow: () => boolean;
-  onGeometry: (geometry: AdSlotGeometry | null, hasUserScrolled: boolean) => void;
+  onGeometry: (geometry: AdSlotGeometry | null, hasUserScrolled: boolean, scrollOffsetY: number) => void;
 };
 
 /** Measures a real viewport and a virtualized footer/card in the same window coordinates. */
@@ -23,7 +23,7 @@ export const useAdViewport = (options: Options) => {
     const revision = ++sequence.current;
     if (!mounted.current || !latest.current.active || !latest.current.isActiveNow()
       || !viewportRef.current || !slotRef.current) {
-      latest.current.onGeometry(null, gesture.current.hasUserScrolled);
+      latest.current.onGeometry(null, gesture.current.hasUserScrolled, gesture.current.offset);
       return;
     }
     let slot: AdViewportRect | undefined;
@@ -32,7 +32,7 @@ export const useAdViewport = (options: Options) => {
       if (!slot || !viewport || revision !== sequence.current || !mounted.current) return;
       const current = latest.current;
       current.onGeometry(current.active && current.isActiveNow() ? getAdSlotGeometry(slot, viewport) : null,
-        gesture.current.hasUserScrolled);
+        gesture.current.hasUserScrolled, gesture.current.offset);
     };
     viewportRef.current.measureInWindow((x, y, width, height) => {
       viewport = {x, y, width, height};
@@ -49,7 +49,11 @@ export const useAdViewport = (options: Options) => {
     return () => { mounted.current = false; ++sequence.current; };
   }, []);
   React.useEffect(() => {
-    if (!options.visitActive) gesture.current = {dragging: false, offset: 0, hasUserScrolled: false};
+    if (!options.visitActive) {
+      // The native list can keep its offset across blur/focus; do not mistake
+      // a retained/programmatic scroll position for an initially visible footer.
+      gesture.current = {...gesture.current, dragging: false, hasUserScrolled: false};
+    }
     if (!options.active) gesture.current.dragging = false;
     refresh();
   }, [options.active, options.visitActive, refresh]);
