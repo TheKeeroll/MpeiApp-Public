@@ -2,14 +2,14 @@ import {getAdSlotGeometry} from '../src/Ads/AdViewportGeometry';
 
 describe('ad viewport geometry', () => {
   const viewport = {x: 20, y: 100, width: 320, height: 600};
-  it('prefetches within half the viewport, using the same window coordinates', () => {
-    expect(getAdSlotGeometry({x: 20, y: 1000, width: 320, height: 0}, viewport)).toMatchObject({
-      distanceToSlot: 300, prefetchDistance: 300, nearViewport: true, visible: false,
+  it('prefetches within three quarters of the viewport, using the same window coordinates', () => {
+    expect(getAdSlotGeometry({x: 20, y: 1150, width: 320, height: 0}, viewport)).toMatchObject({
+      distanceToSlot: 450, prefetchDistance: 450, nearViewport: true, visible: false,
     });
-    expect(getAdSlotGeometry({x: 20, y: 1001, width: 320, height: 0}, viewport)?.nearViewport).toBe(false);
+    expect(getAdSlotGeometry({x: 20, y: 1151, width: 320, height: 0}, viewport)?.nearViewport).toBe(false);
     expect(getAdSlotGeometry({x: 20, y: 550, width: 320, height: 100}, viewport)?.visible).toBe(true);
   });
-  it.each([[300, 200], [1000, 400]])('bounds the threshold for a %i dp viewport', (height, threshold) => {
+  it.each([[300, 300], [1000, 600]])('bounds the threshold for a %i dp viewport', (height, threshold) => {
     expect(getAdSlotGeometry({x: 20, y: 100, width: 320, height: 0}, {...viewport, height})?.prefetchDistance).toBe(threshold);
   });
   it('excludes an offscreen Drawer, a slot already above the viewport, and invalid measurements', () => {

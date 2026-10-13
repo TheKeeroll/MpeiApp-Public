@@ -1,7 +1,7 @@
 import React from 'react';
 import {View} from 'react-native';
 import {useAds} from './AdsProvider';
-import type {YandexInlineAdPlacement} from './AdPlacements';
+import {YANDEX_INLINE_AD_PLACEMENTS, type YandexInlineAdPlacement} from './AdPlacements';
 import InlineBannerAd, {type InlineBannerAttempt} from './InlineBannerAd';
 import {useAdScreenActivity} from './useAdScreenActivity';
 import {useAdViewport} from './useAdViewport';
@@ -20,9 +20,13 @@ export const useDeferredInlineAd = (placement: YandexInlineAdPlacement, surface:
     active: activity.isActive && adsEnabled && !allowed,
     visitActive: activity.isVisible,
     isActiveNow: () => latest.current.adsEnabled && latest.current.activity.isActiveNow(),
-    onGeometry: (geometry, hasUserScrolled) => {
+    onGeometry: (geometry, hasUserScrolled, scrollOffsetY) => {
       const current = latest.current;
-      if (!granted.current && hasUserScrolled && geometry?.nearViewport
+      // Empty/short marks lists may expose the footer without any scrollable
+      // content. An offscreen slot still requires a real user gesture.
+      const initiallyVisibleMarks = placement === YANDEX_INLINE_AD_PLACEMENTS.marks
+        && scrollOffsetY <= 1 && geometry?.nearViewport && geometry.distanceToSlot < 0;
+      if (!granted.current && (hasUserScrolled || initiallyVisibleMarks) && geometry?.nearViewport
         && current.adsEnabled && current.activity.isActiveNow()) {
         granted.current = true;
         setAllowed(true);

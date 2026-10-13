@@ -83,7 +83,8 @@ describe('deferred inline native requests', () => {
       scroll().onScrollEndDrag(event(10));
     });
     expect(mockCreateRequest).not.toHaveBeenCalled();
-    slotY = 849;
+    // 374 dp ahead: outside the old 250 dp threshold, inside the new 375 dp one.
+    slotY = 974;
     await ReactTestRenderer.act(() => scroll().onScroll(event(500)));
     await layoutNative();
     expect(mockInlineSize).toHaveBeenCalledWith(320, 250);
@@ -97,6 +98,38 @@ describe('deferred inline native requests', () => {
       tree.update(<Harness/>);
     });
     expect(mockBannerMount).toHaveBeenCalledTimes(1);
+  });
+  it.each([150, 450])('loads an initially visible marks footer at y=%i without a gesture for an empty/short list', async y => {
+    slotY = y;
+    await mount();
+    await layoutNative();
+    expect(mockBannerMount).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(() => {mockHandle.onViewportLayout(); tree.update(<Harness/>);});
+    expect(mockBannerMount).toHaveBeenCalledTimes(1);
+  });
+  it('does not apply the visible-without-scroll exception to Drawer', async () => {
+    slotY = 450;
+    await mount({surface: 'drawer', drawer: 'open'});
+    expect(mockCreateRequest).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(() => {scroll().onScrollBeginDrag(event(0)); scroll().onScroll(event(10));});
+    await layoutNative();
+    expect(mockBannerMount).toHaveBeenCalledTimes(1);
+  });
+  it('does not load an offscreen marks footer merely because it is inside the prefetch distance', async () => {
+    slotY = 800;
+    await mount();
+    expect(mockCreateRequest).not.toHaveBeenCalled();
+  });
+  it('does not treat a visible footer reached by programmatic scrolling as an initially visible short list', async () => {
+    await mount();
+    slotY = 450;
+    await ReactTestRenderer.act(() => scroll().onScroll(event(850)));
+    expect(mockCreateRequest).not.toHaveBeenCalled();
+    mockFocused = false;
+    await ReactTestRenderer.act(() => tree.update(<Harness/>));
+    mockFocused = true;
+    await ReactTestRenderer.act(() => tree.update(<Harness/>));
+    expect(mockCreateRequest).not.toHaveBeenCalled();
   });
   it('requires an open Drawer and starts a fresh visit only after reopening and another user scroll', async () => {
     slotY = 700;

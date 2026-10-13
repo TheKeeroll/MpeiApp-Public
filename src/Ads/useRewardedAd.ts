@@ -5,7 +5,7 @@ import {rewardedAdService, type RewardedAdState} from './RewardedAdService';
 import {useAdScreenActivity} from './useAdScreenActivity';
 import {useAdViewport} from './useAdViewport';
 
-export const REWARDED_VISIBILITY_DELAY_MS = 1500;
+export const REWARDED_VISIBILITY_DELAY_MS = 1800;
 
 export const useRewardedAd = (rewardedLeft: number, grantReward: () => unknown) => {
   const activity = useAdScreenActivity();
