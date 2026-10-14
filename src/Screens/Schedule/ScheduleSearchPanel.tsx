@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {LayoutAnimation, Text, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Animated, Text, TouchableOpacity, View} from 'react-native';
 import {TextInput, useTheme} from 'react-native-paper';
 import {withOpacity, type CustomTheme} from '../../Themes/Themes';
 import DailyUsageBadge from '../../Loyalty/DailyUsageBadge';
@@ -13,10 +13,18 @@ const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch, onQu
   const {colors} = useTheme<CustomTheme>();
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState('');
+  const formOpacity = useRef(new Animated.Value(0)).current;
   const normalizedQuery = query.trim();
 
+  useEffect(() => {
+    formOpacity.setValue(0);
+    if (!isExpanded) return;
+    const animation = Animated.timing(formOpacity, {toValue: 1, duration: 180, useNativeDriver: true});
+    animation.start();
+    return () => animation.stop();
+  }, [formOpacity, isExpanded]);
+
   const toggleExpanded = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded(previous => !previous);
   };
 
@@ -58,7 +66,7 @@ const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch, onQu
       </TouchableOpacity>
 
       {isExpanded && (
-        <View style={{padding: 10, paddingTop: 0, flexDirection: 'row', alignItems: 'center'}}>
+        <Animated.View style={{padding: 10, paddingTop: 0, flexDirection: 'row', alignItems: 'center', opacity: formOpacity}}>
           <TextInput
             onChangeText={handleQueryChange}
             value={query}
@@ -98,7 +106,7 @@ const ScheduleSearchPanel: React.FC<ScheduleSearchPanelProps> = ({onSearch, onQu
             </TouchableOpacity>
             <DailyUsageBadge feature="scheduleSearch" style={{marginTop: 5}}/>
           </View>
-        </View>
+        </Animated.View>
       )}
     </View>
   );

@@ -70,3 +70,202 @@ diff --git a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.sw
 +        return nil
 +    }
 +}
+diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt b/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
+--- a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
++++ b/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
+@@ -1,11 +1,13 @@
+ package com.yandexmobileads.banner
+
+ import android.annotation.SuppressLint
++import android.view.View
+ import android.widget.FrameLayout
+ import androidx.annotation.VisibleForTesting
+ import com.facebook.react.bridge.LifecycleEventListener
+ import com.facebook.react.bridge.ReactContext
+ import com.facebook.react.uimanager.ThemedReactContext
++import com.facebook.react.uimanager.UIManagerHelper
+ import com.yandex.mobile.ads.banner.BannerAdSize
+ import com.yandex.mobile.ads.banner.BannerAdView
+ import com.yandex.mobile.ads.banner.BannerAdEventListener
+@@ -35,14 +37,32 @@
+     private var adUnitId: String? = null
+     private var adRequest: AdRequest? = null
+     private var bannerAdSize: BannerAdSize? = null
++    private var isDestroyed = false
++    private var hasRequestedAd = false
++    private var adLoaded = false
++    private val pendingEvents = linkedMapOf<String, Map<String, Any>?>()
++    private val nativeWork = Runnable {
++        if (isReactViewReady()) {
++            createAdViewIfCan()
++            if (adLoaded) attachLoadedAd()
++            val events = pendingEvents.toList()
++            pendingEvents.clear()
++            for ((event, payload) in events) {
++                if (!isReactViewReady()) break
++                eventEmitter.receiveEvent(id, event, payload)
++            }
++        }
++    }
+
+     init {
+         context.addLifecycleEventListener(reactLifecycleEventListener)
+     }
+
+     override fun requestLayout() {
++        if (isDestroyed) return
+         super.requestLayout()
+         post {
++            if (!isReactViewReady()) return@post
+             measure(
+                 MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                 MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+@@ -51,25 +71,76 @@
+         }
+     }
+
++    override fun onAttachedToWindow() {
++        super.onAttachedToWindow()
++        scheduleNativeWork()
++    }
++
++    override fun onDetachedFromWindow() {
++        removeCallbacks(nativeWork)
++        super.onDetachedFromWindow()
++    }
++
++    private fun isReactViewReady(): Boolean {
++        if (isDestroyed || !isAttachedToWindow || id == View.NO_ID
++            || !reactContext.hasActiveReactInstance()) return false
++        return runCatching {
++            UIManagerHelper.getUIManagerForReactTag(reactContext, id)?.resolveView(id) === this
++        }.getOrDefault(false)
++    }
++
++    private fun scheduleNativeWork() {
++        if (isDestroyed || !isAttachedToWindow) return
++        // Property setters run during Fabric mount, before the event target is
++        // necessarily ready. Defer loading/events until that transaction ends.
++        removeCallbacks(nativeWork)
++        post(nativeWork)
++    }
++
++    private fun enqueueEvent(event: String, payload: Map<String, Any>? = null) {
++        if (isDestroyed) return
++        pendingEvents[event] = payload
++        scheduleNativeWork()
++    }
++
++    private fun attachLoadedAd() {
++        val size = bannerAdSize ?: return
++        val view = adView ?: return
++        if (view.parent === this) return
++        removeAllViews()
++        view.measure(
++            MeasureSpec.makeMeasureSpec(size.getWidthInPixels(context), MeasureSpec.AT_MOST),
++            MeasureSpec.makeMeasureSpec(size.getHeightInPixels(context), MeasureSpec.AT_MOST)
++        )
++        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
++        addView(view)
++        runCatching { viewTreeObserver.dispatchOnGlobalLayout() }
++    }
++
+     fun setAdUnitIdAndAdRequest(adUnitId: String, adRequest: AdRequest?) {
+         this.adUnitId = adUnitId
+         this.adRequest = adRequest
+-        createAdViewIfCan()
++        scheduleNativeWork()
+     }
+
+     fun destroy() {
++        if (isDestroyed) return
++        isDestroyed = true
++        removeCallbacks(nativeWork)
++        pendingEvents.clear()
+         reactContext.removeLifecycleEventListener(reactLifecycleEventListener)
++        adView?.setBannerAdEventListener(null)
+         adView?.destroy()
+         adView = null
+     }
+
+     fun setSize(bannerSize: BannerAdSize) {
+         bannerAdSize = bannerSize
+-        createAdViewIfCan()
++        scheduleNativeWork()
+     }
+
+     private fun createAdViewIfCan() {
+-        if (adView != null) {
++        if (hasRequestedAd || isDestroyed) {
+             return
+         }
+         val adUnitId = adUnitId ?: return
+@@ -79,6 +150,7 @@
+             setAdSize(bannerAdSize)
+             setBannerAdEventListener(bannerEventListener)
+         }
++        hasRequestedAd = true
+         adView = bannerAdView
+         loadBannerAd(adRequest)
+     }
+@@ -93,48 +165,38 @@
+         private val adInfoMapper: AdInfoMapper = AdInfoMapper(),
+     ) : BannerAdEventListener {
+         override fun onImpression(impressionData: ImpressionData?) {
++            if (isDestroyed) return
+             val payload = if (impressionData != null) {
+                 val mappedImpression = impressionDataMapper.map(impressionData)
+                 mapOf(Constants.Key.IMPRESSION_DATA to mappedImpression)
+             } else {
+                 null
+             }
+-            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_IMPRESSION, payload)
++            enqueueEvent(Constants.EventName.ON_AD_IMPRESSION, payload)
+         }
+
+         override fun onAdClicked() {
+-            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_CLICKED)
++            enqueueEvent(Constants.EventName.ON_AD_CLICKED)
+         }
+
+         override fun onAdLoaded() {
+-            removeAllViews()
+-            val size = bannerAdSize ?: return
++            if (isDestroyed) return
+             val view = adView ?: return
+-            val widthMeasureSpec = MeasureSpec.makeMeasureSpec(
+-                size.getWidthInPixels(context),
+-                MeasureSpec.AT_MOST
+-            )
+-            val heightMeasureSpec = MeasureSpec.makeMeasureSpec(
+-                size.getHeightInPixels(context),
+-                MeasureSpec.AT_MOST
+-            )
+-            view.measure(widthMeasureSpec, heightMeasureSpec)
+-            view.layout(left, top, left + width, top + height)
+-            addView(view)
+-            runCatching {
+-                viewTreeObserver.dispatchOnGlobalLayout()
+-            }
+-            val adInfo = adView?.adInfo
++            adLoaded = true
++            val adInfo = view.adInfo
+             val payload = adInfo?.let { mapOf(Constants.Key.AD_INFO to adInfoMapper.map(it)) }
+-            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_LOADED, payload)
++            enqueueEvent(Constants.EventName.ON_AD_LOADED, payload)
+         }
+
+         override fun onAdFailedToLoad(error: AdRequestError) {
+-            eventEmitter.receiveEvent(
+-                id,
++            if (isDestroyed) return
++            adLoaded = false
++            enqueueEvent(
+                 Constants.EventName.ON_AD_FAILED_TO_LOAD,
+                 mapOf(Constants.Key.ERROR to adRequestErrorMapper.map(error))
+             )
++            adView?.setBannerAdEventListener(null)
++            adView?.destroy()
+             adView = null
+         }
+     }
