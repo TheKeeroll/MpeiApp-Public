@@ -1,6 +1,6 @@
 import React, { Fragment, useMemo, useRef, useState } from "react";
 import { useTheme } from "react-native-paper";
-import { Alert, FlatList, LayoutAnimation, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Alert, FlatList, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NavigationHeader } from "../CommonComponents/DrawerHeader";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
@@ -21,6 +21,7 @@ import {loadingProgressService} from "../../Loading/LoadingProgressService";
 import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 import {getMoscowDate, isNonTodayScheduleDate, useMoscowDate} from '../../Common/MoscowDate';
 import {useDragoNetPromo} from '../../Vpn/useDragoNetPromo';
+import {clampScheduleIndex, getInitialScheduleIndex} from './ScheduleSelection';
 
 let currentYear = String(new Date().getFullYear())
 let YearForFix = currentYear
@@ -108,8 +109,11 @@ const DateSelector: React.FC<{
     initScrollIndex: number,
     onDateSelect: (index: number) => void
 }> = (props) => {
-    const dateSelectFlatListRef = useRef<FlatList | null>(null);
     const {width, fontScale} = useWindowDimensions();
+    const initialIndex = useRef(props.initScrollIndex);
+    const initialScrollIndex = props.days.length > 0
+        ? clampScheduleIndex(initialIndex.current, props.days.length)
+        : undefined;
 
     const CELL_WIDTH = useMemo(() => {
         const screenWidth = width;
@@ -119,10 +123,10 @@ const DateSelector: React.FC<{
     }, [width]);
     const selectorHeight = Math.max(80, Math.ceil(80 * Math.min(fontScale, 1.6)));
     return (
-      <View style={{width: '100%', marginTop: 10, height: selectorHeight}}>
+      <View collapsable={false} style={{width: '100%', marginTop: 10, height: selectorHeight}}>
           <FlatList
-            ref={dateSelectFlatListRef}
             data={props.days}
+            keyExtractor={item => item.date}
             renderItem={({ item, index }) =>
               <DateCell
                 item={item}
@@ -136,21 +140,12 @@ const DateSelector: React.FC<{
             horizontal
             showsHorizontalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
-            initialScrollIndex={props.initScrollIndex}
+            initialScrollIndex={initialScrollIndex}
             getItemLayout={(_, index) => ({
-                length: CELL_WIDTH + 10,
+                length: CELL_WIDTH,
                 offset: (CELL_WIDTH + 10) * index,
                 index
             })}
-            onScrollToIndexFailed={(info) => {
-                console.warn("Failed to scroll to index!");
-                setTimeout(() => {
-                    dateSelectFlatListRef.current?.scrollToIndex({
-                        index: info.index,
-                        animated: true
-                    });
-                }, 500);
-            }}
           />
       </View>
     );
@@ -307,12 +302,10 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                     return
                 }
 
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                 teacherSchedule.current = result
                 loadedQuery.current = props.searchQuery
                 setResultRevision(previous => previous + 1)
-                const todayIndex = result.days.findIndex(day => day.date === getMoscowDate())
-                setSelectedDate(Math.max(0, todayIndex >= 0 ? todayIndex : result.todayIndex))
+                setSelectedDate(getInitialScheduleIndex(result, getMoscowDate()))
                 recordSuccessfulFeatureUse('scheduleSearch')
                 loadingProgressService.complete(progress)
                 setLoadingState('OK')
@@ -359,17 +352,18 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
         )
     }
 
-    const selectedDay = requestedSchedule.days[selectedDate]
+    const safeSelectedDate = clampScheduleIndex(selectedDate, requestedSchedule.days.length)
+    const selectedDay = requestedSchedule.days[safeSelectedDate]
     const isToday = selectedDay?.date === moscowToday
 
     return (
-        <View style={{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}}>
+        <View collapsable={false} style={{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}}>
             <NavigationHeader backable {...props} title={requestedSchedule.fullTeacherName || props.searchQuery}/>
             <DateSelector
                 days={requestedSchedule.days}
-                selectedIndex={selectedDate}
+                selectedIndex={safeSelectedDate}
                 onDateSelect={setSelectedDate}
-                initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate}
+                initScrollIndex={Math.max(0, safeSelectedDate - 2)}
             />
             <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%', marginTop: 10}}>
             {selectedDay ?
@@ -399,12 +393,16 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
     const schedule = useSelector((state: RootState)=>state.Schedule)
     const current_month = parseInt(moment().format("M"))
     const [isFirstTime, setisFirstTime] = useState(true)
-    const [selectedDate, setSelectedDate] = useState(schedule.data ? schedule.data!.todayIndex : 0)
+    const [selectedDate, setSelectedDate] = useState(() => getInitialScheduleIndex(schedule.data, getMoscowDate()))
     const moscowToday = useMoscowDate()
-    const promoDay = schedule.data?.days[selectedDate]
+    // Resolve the initial date in render, before FlatList's first native mount.
+    // Data may only become available after the loading screen has rendered.
+    const safeSelectedDate = isFirstTime
+        ? getInitialScheduleIndex(schedule.data, moscowToday)
+        : clampScheduleIndex(selectedDate, schedule.data?.days.length ?? 0)
+    const promoDay = schedule.data?.days[safeSelectedDate]
     const promo = useDragoNetPromo(`personal:${promoDay?.date ?? ''}`,
         !isFirstTime && (schedule.status === 'LOADED' || schedule.status === 'OFFLINE') && isNonTodayScheduleDate(promoDay?.date, moscowToday))
-    const lastFlatListRef = useRef<FlatList | null>(null)
     const openRequestedSchedule = (query: string) => {
         props.navigation.push('scheduleMain', createScheduleSearchParams(query))
     }
@@ -418,13 +416,9 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
             return
         }
 
-        const today = moscowToday
-        const todayIndex = schedule.data.days.findIndex(day => day.date === today)
+        const initialIndex = getInitialScheduleIndex(schedule.data, moscowToday)
+        setSelectedDate(initialIndex)
         setisFirstTime(false)
-        if (todayIndex >= 0) {
-            setSelectedDate(previous => previous === todayIndex ? previous : todayIndex)
-            console.log('Today: ' + schedule.data.days[todayIndex]!.date)
-        }
     }, [isFirstTime, schedule.data, schedule.status, moscowToday])
 
     const isVacationPeriod = current_month === 1 || current_month === 2 || (current_month > 5 && current_month < 9)
@@ -470,44 +464,37 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
         case "LOADED":{
             const IsToday = () => {
                 const today = moscowToday
-                return today == schedule.data!.days[selectedDate].date
+                return today == schedule.data!.days[safeSelectedDate]?.date
             }
             return (
-                <View style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
+                <View collapsable={false} style={[{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                     <NavigationHeader {...props} title={'Расписание'}/>
 
                     <ScheduleSearchPanel onSearch={openRequestedSchedule}/>
 
-                    <DateSelector days={editableScheduleData?.days} selectedIndex={selectedDate} onDateSelect={setSelectedDate.bind(this)} initScrollIndex={(selectedDate - 2) >= 0 ? (selectedDate - 2) : selectedDate }/>
+                    <DateSelector days={editableScheduleData.days} selectedIndex={safeSelectedDate} onDateSelect={setSelectedDate}
+                        initScrollIndex={Math.max(0, safeSelectedDate - 2)}/>
                     <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%', marginTop: 10}}>
-                    {typeof schedule.data!.days[selectedDate] != 'undefined' ?
+                    {typeof schedule.data!.days[safeSelectedDate] != 'undefined' ?
                         <FlatList
-                            ref={lastFlatListRef}
                             style={{width: '100%'}}
                             contentContainerStyle={{alignItems: 'center'}}
                             onScroll={promo.refreshVisibility}
                             scrollEventThrottle={16}
                             onContentSizeChange={promo.refreshVisibility}
-                            data={editableScheduleData.days[selectedDate].lessons}
+                            data={editableScheduleData.days[safeSelectedDate].lessons}
                             renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
                                 <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
                             }
                             ItemSeparatorComponent={()=><View style={{height: 10}}/>}
                             ListFooterComponentStyle={{width: '100%'}}
                             ListFooterComponent={<>
-                                {IsToday() && editableScheduleData.days[selectedDate].lessons.length > 0 && (
+                                {IsToday() && editableScheduleData.days[safeSelectedDate].lessons.length > 0 && (
                                     <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.scheduleToday}/>
                                 )}
                                 {promo.banner}
                                 <View style={{height: 20}}/>
                             </>}
-                            onScrollToIndexFailed={(info) => {
-                                // Обработка ошибки прокрутки к индексу
-                                console.warn("Failed to scroll to index!")
-                                const wait = new Promise<void>(resolve => setTimeout(resolve, 500))
-                                wait.then(() => {
-                                    lastFlatListRef.current?.scrollToIndex({ index: info.index, animated: true })})
-                            }}
                         />
                         : <EmptyDay/>}
                     </View>

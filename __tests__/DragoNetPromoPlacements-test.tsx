@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {FlatList} from 'react-native';
+import {FlatList, LayoutAnimation} from 'react-native';
 import type {BARSSchedule} from '../src/API/DataTypes';
 
 let mockStatus = 'LOADED';
@@ -88,6 +88,49 @@ describe('DragoNet banner placements', () => {
     expect(lastOpportunity()).toEqual(['personal:13.10.2026', true]);
   });
 
+  it('resolves a cached -1 index before mounting a 113-date personal selector', async () => {
+    mockSchedule = {todayIndex: -1, days: Array.from({length: 113}, (_, index) => {
+      const date = new Date(Date.UTC(2026, 8, 2 + index));
+      return {date: `${String(date.getUTCDate()).padStart(2, '0')}.${String(date.getUTCMonth() + 1).padStart(2, '0')}.${date.getUTCFullYear()}`,
+        lessons: [], isEmpty: false, isToday: false};
+    })};
+    const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+      const selector = tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!;
+      expect(selector.props.initialScrollIndex).toBe(38);
+      expect(warning.mock.calls.some(args => String(args[0]).includes('initialScrollIndex'))).toBe(false);
+      expect(lastOpportunity()).toEqual(['personal:12.10.2026', false]);
+      const dateSelector = tree.root.find(node => typeof node.props.onDateSelect === 'function');
+      await ReactTestRenderer.act(() => dateSelector.props.onDateSelect(0));
+      expect(tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!.props.initialScrollIndex).toBe(38);
+      mockSchedule = {...mockSchedule, days: mockSchedule.days.slice(0, 2)};
+      await ReactTestRenderer.act(() => tree.update(<Schedule navigation={navigation} route={{}}/>));
+      expect(tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!.props.initialScrollIndex).toBeLessThan(2);
+    } finally {warning.mockRestore();}
+  });
+  it('uses a valid first date when today is absent and no valid cached index exists', async () => {
+    mockSchedule = {...mockSchedule, todayIndex: -1, days: mockSchedule.days.map(day => ({...day, date: day.date.replace('10.', '11.')}))};
+    await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+    const selector = tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!;
+    expect(selector.props.initialScrollIndex).toBe(0);
+    expect(selector.props.onScrollToIndexFailed).toBeUndefined();
+    expect(selector.props.getItemLayout(null, 1).offset - selector.props.getItemLayout(null, 1).length).toBe(10);
+  });
+  it('selects today safely when data arrives after the personal loading screen', async () => {
+    mockStatus = 'LOADING';
+    mockSchedule = undefined as unknown as BARSSchedule;
+    await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+    mockStatus = 'LOADED';
+    mockSchedule = {todayIndex: -1, days: [
+      {date: '11.10.2026', lessons: [], isEmpty: false, isToday: false},
+      {date: '12.10.2026', lessons: [], isEmpty: false, isToday: false},
+    ]};
+    await ReactTestRenderer.act(() => tree.update(<Schedule navigation={navigation} route={{}}/>));
+    expect(lastOpportunity()).toEqual(['personal:12.10.2026', false]);
+    expect(tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!.props.initialScrollIndex).toBe(0);
+  });
+
   it('keeps the today Yandex footer full-width and removes it for another day or an empty today', async () => {
     mockSchedule.days[0].lessons = [{name: 'Test lesson', lessonIndex: '1-2', lessonType: 'Lecture',
       place: 'A', cabinet: '101', group: 'A-01', type: 'COMMON', teacher: {name: '-', fullName: '-', lec_oid: ''}}];
@@ -129,5 +172,16 @@ describe('DragoNet banner placements', () => {
     await ReactTestRenderer.act(() => { tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{params: {searchQuery: 'empty'}}}/>); });
     await ReactTestRenderer.act(async () => { await jest.advanceTimersByTimeAsync(200); });
     expect(lastOpportunity()[1]).toBe(false);
+  });
+  it('does not animate replacement of the loading view with native requested-schedule lists', async () => {
+    const animate = jest.spyOn(LayoutAnimation, 'configureNext');
+    try {
+      mockFetchRequestedSchedule.mockResolvedValue({...mockSchedule, todayIndex: -1});
+      await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{params: {searchQuery: 'group'}}}/>);});
+      await ReactTestRenderer.act(async () => {await jest.advanceTimersByTimeAsync(200);});
+      expect(animate).not.toHaveBeenCalled();
+      const selector = tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!;
+      expect(selector.props.initialScrollIndex).toBe(0);
+    } finally {animate.mockRestore();}
   });
 });
