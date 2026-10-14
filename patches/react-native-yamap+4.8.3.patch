@@ -56,42 +56,41 @@ index d9de295..b016f76 100644
 +    implementation 'androidx.core:core-ktx:1.17.0'
  }
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt
-index 54d8a0f..a2c6355 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt
 +++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/ClusteredYamapViewManager.kt
-@@ -84,7 +84,7 @@ class ClusteredYamapViewManager internal constructor() : ViewGroupManager<Cluste
+@@ -84,7 +84,7 @@
                      MapBuilder.of("bubbled", "onWorldToScreenPointsReceived")
                  )
              )
 -            .build()
 +            .build() as MutableMap<String, Any>?
      }
- 
+
      override fun getCommandsMap(): Map<String, Int>? {
-@@ -128,7 +128,7 @@ class ClusteredYamapViewManager internal constructor() : ViewGroupManager<Cluste
+@@ -128,7 +128,7 @@
              }
- 
+
              "findRoutes" -> if (args != null) {
 -                findRoutes(view, args.getArray(0), args.getArray(1), args.getString(2))
 +                args.getString(2)?.let { findRoutes(view, args.getArray(0), args.getArray(1), it) }
              }
- 
+
              "setZoom" -> if (args != null) {
-@@ -152,11 +152,11 @@ class ClusteredYamapViewManager internal constructor() : ViewGroupManager<Cluste
+@@ -152,11 +152,11 @@
              }
- 
+
              "getScreenPoints" -> if (args != null) {
 -                view.emitWorldToScreenPoints(args.getArray(0), args.getString(1))
 +                args.getArray(0)?.let { view.emitWorldToScreenPoints(it, args.getString(1)) }
              }
- 
+
              "getWorldPoints" -> if (args != null) {
 -                view.emitScreenToWorldPoints(args.getArray(0), args.getString(1))
 +                args.getArray(0)?.let { view.emitScreenToWorldPoints(it, args.getString(1)) }
              }
- 
+
              else -> throw IllegalArgumentException(
-@@ -243,7 +243,7 @@ class ClusteredYamapViewManager internal constructor() : ViewGroupManager<Cluste
+@@ -243,7 +243,7 @@
              val vehicles = ArrayList<String>()
              if (jsVehicles != null) {
                  for (i in 0 until jsVehicles.size()) {
@@ -100,6 +99,27 @@ index 54d8a0f..a2c6355 100644
                  }
              }
              castToYaMapView(view).findRoutes(points, vehicles, id)
+@@ -364,13 +364,15 @@
+     }
+
+     override fun addView(parent: ClusteredYamapView, child: View, index: Int) {
+-        parent.addFeature(child, index)
+-        super.addView(parent, child, index)
+-    }
++        parent.addReactChild(child, index)
++    }
++
++    override fun getChildCount(parent: ClusteredYamapView): Int = parent.getReactChildCount()
++
++    override fun getChildAt(parent: ClusteredYamapView, index: Int): View? = parent.getReactChildAt(index)
+
+     override fun removeViewAt(parent: ClusteredYamapView, index: Int) {
+-        parent.removeChild(index)
+-        super.removeViewAt(parent, index)
++        parent.removeReactChildAt(index)
+     }
+
+     companion object {
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.kt
 index 85be269..4d31d4b 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapCircleManager.kt
@@ -170,68 +190,115 @@ index 8be99c8..2fbf9a1 100644
  
      private fun castToPolylineView(view: View): YamapPolyline {
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.kt
-index 8b05905..522dde5 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.kt
 +++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/YamapViewManager.kt
-@@ -84,7 +84,7 @@ class YamapViewManager internal constructor() : ViewGroupManager<YamapView>() {
+@@ -84,7 +84,7 @@
                      MapBuilder.of("bubbled", "onWorldToScreenPointsReceived")
                  )
              )
 -            .build()
 +            .build() as MutableMap<String, Any>?
      }
- 
+
      override fun getCommandsMap(): Map<String, Int>? {
-@@ -128,7 +128,7 @@ class YamapViewManager internal constructor() : ViewGroupManager<YamapView>() {
+@@ -128,7 +128,7 @@
              }
- 
+
              "findRoutes" -> if (args != null) {
 -                findRoutes(view, args.getArray(0), args.getArray(1), args.getString(2))
 +                args.getString(2)?.let { findRoutes(view, args.getArray(0), args.getArray(1), it) }
              }
- 
+
              "setZoom" -> if (args != null) {
-@@ -152,11 +152,11 @@ class YamapViewManager internal constructor() : ViewGroupManager<YamapView>() {
+@@ -152,11 +152,11 @@
              }
- 
+
              "getScreenPoints" -> if (args != null) {
 -                view.emitWorldToScreenPoints(args.getArray(0), args.getString(1))
 +                args.getArray(0)?.let { view.emitWorldToScreenPoints(it, args.getString(1)) }
              }
- 
+
              "getWorldPoints" -> if (args != null) {
 -                view.emitScreenToWorldPoints(args.getArray(0), args.getString(1))
 +                args.getArray(0)?.let { view.emitScreenToWorldPoints(it, args.getString(1)) }
              }
- 
+
              else -> throw IllegalArgumentException(
-@@ -237,7 +237,7 @@ class YamapViewManager internal constructor() : ViewGroupManager<YamapView>() {
- 
+@@ -237,7 +237,7 @@
+
              if (jsVehicles != null) {
                  for (i in 0 until jsVehicles.size()) {
 -                    vehicles.add(jsVehicles.getString(i))
 +                    jsVehicles.getString(i)?.let { vehicles.add(it) }
                  }
              }
- 
+
+@@ -354,13 +354,15 @@
+     }
+
+     override fun addView(parent: YamapView, child: View, index: Int) {
+-        parent.addFeature(child, index)
+-        super.addView(parent, child, index)
+-    }
++        parent.addReactChild(child, index)
++    }
++
++    override fun getChildCount(parent: YamapView): Int = parent.getReactChildCount()
++
++    override fun getChildAt(parent: YamapView, index: Int): View? = parent.getReactChildAt(index)
+
+     override fun removeViewAt(parent: YamapView, index: Int) {
+-        parent.removeChild(index)
+-        super.removeViewAt(parent, index)
++        parent.removeReactChildAt(index)
+     }
+
+     companion object {
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/ClusteredYamapView.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/ClusteredYamapView.kt
-index c01f591..c492365 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/ClusteredYamapView.kt
 +++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/ClusteredYamapView.kt
-@@ -23,7 +23,7 @@ class ClusteredYamapView(context: Context?) : YamapView(context), ClusterListene
+@@ -23,7 +23,7 @@
      private val placemarksMap: HashMap<String?, PlacemarkMapObject?> = HashMap<String?, PlacemarkMapObject?>()
      private var pointsList = ArrayList<Point>()
- 
+
 -    fun setClusteredMarkers(points: ArrayList<Any>) {
 +    fun setClusteredMarkers(points: java.util.ArrayList<Any?>) {
          clusterCollection.clear()
          placemarksMap.clear()
          val pt = ArrayList<Point>()
+@@ -37,7 +37,7 @@
+             val placemark = placemarks[i]
+             placemarksMap["" + placemark.geometry.latitude + placemark.geometry.longitude] =
+                 placemark
+-            val child: Any? = getChildAt(i)
++            val child: Any? = getReactChildAt(i)
+             if (child != null && child is YamapMarker) {
+                 child.setMarkerMapObject(placemark)
+             }
+@@ -61,7 +61,7 @@
+             val placemark = placemarks[i]
+             placemarksMap["" + placemark.geometry.latitude + placemark.geometry.longitude] =
+                 placemark
+-            val child: Any? = getChildAt(i)
++            val child: Any? = getReactChildAt(i)
+             if (child != null && child is YamapMarker) {
+                 child.setMarkerMapObject(placemark)
+             }
+@@ -78,8 +78,8 @@
+     }
+
+     override fun removeChild(index: Int) {
+-        if (getChildAt(index) is YamapMarker) {
+-            val child = getChildAt(index) as YamapMarker ?: return
++        if (getReactChildAt(index) is YamapMarker) {
++            val child = getReactChildAt(index) as YamapMarker
+             val mapObject = child.rnMapObject
+             if (mapObject == null || !mapObject.isValid) return
+             clusterCollection.remove(mapObject)
 diff --git a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
-index 48c1cdf..a917265 100644
 --- a/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
 +++ b/node_modules/react-native-yamap/android/src/main/java/ru/vvdev/yamap/view/YamapView.kt
-@@ -84,7 +84,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+@@ -84,7 +84,7 @@
      private var userLocationIconScale = 1f
      private var userLocationBitmap: Bitmap? = null
      private val routeMng = RouteManager()
@@ -240,8 +307,18 @@ index 48c1cdf..a917265 100644
      private val masstransitRouter = TransportFactory.getInstance().createMasstransitRouter()
      private val drivingRouter: DrivingRouter
      private val pedestrianRouter = TransportFactory.getInstance().createPedestrianRouter()
-@@ -226,8 +226,8 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
- 
+@@ -95,6 +95,9 @@
+     private var trafficLayer: TrafficLayer? = null
+     private var maxFps = 60f
+     private var initializedRegion = false;
++    // React owns map features, while MapKit owns the actual MapView children.
++    // Never use the SDK's child indices for Fabric mutations.
++    private val reactChildren = ArrayList<View>()
+
+     private var userLocationView: UserLocationView? = null
+
+@@ -226,8 +229,8 @@
+
          for (i in 0 until worldPoints.size()) {
              val p = worldPoints.getMap(i)
 -            val worldPoint = Point(p.getDouble("lat"), p.getDouble("lon"))
@@ -250,9 +327,9 @@ index 48c1cdf..a917265 100644
 +            val screenPoint = worldPoint?.let { mapWindow.worldToScreen(it) }
              screenPoints.pushMap(screenPointToJSON(screenPoint))
          }
- 
-@@ -245,8 +245,9 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
- 
+
+@@ -245,8 +248,9 @@
+
          for (i in 0 until screenPoints.size()) {
              val p = screenPoints.getMap(i)
 -            val screenPoint = ScreenPoint(p.getDouble("x").toFloat(), p.getDouble("y").toFloat())
@@ -262,8 +339,8 @@ index 48c1cdf..a917265 100644
 +            val worldPoint = screenPoint?.let { mapWindow.screenToWorld(it) }
              worldPoints.pushMap(worldPointToJSON(worldPoint))
          }
- 
-@@ -295,7 +296,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+
+@@ -295,7 +299,7 @@
              val _points = ArrayList<RequestPoint>()
              for (i in points.indices) {
                  val point = points[i]
@@ -271,8 +348,8 @@ index 48c1cdf..a917265 100644
 +                val _p = RequestPoint(point!!, RequestPointType.WAYPOINT, null, null, null)
                  _points.add(_p)
              }
- 
-@@ -310,7 +311,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+
+@@ -310,7 +314,7 @@
          val _points = ArrayList<RequestPoint>()
          for (i in points.indices) {
              val point = points[i]
@@ -281,7 +358,17 @@ index 48c1cdf..a917265 100644
          }
          val listener: Session.RouteListener = object : Session.RouteListener {
              override fun onMasstransitRoutes(routes: List<Route>) {
-@@ -590,10 +591,12 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+@@ -351,8 +355,7 @@
+
+     fun fitAllMarkers() {
+         val points = ArrayList<Point?>()
+-        for (i in 0 until childCount) {
+-            val obj: Any = getChildAt(i)
++        for (obj in reactChildren) {
+             if (obj is YamapMarker) {
+                 points.add(obj.point)
+             }
+@@ -590,10 +593,12 @@
          if (show) {
              userLocationLayer!!.setObjectListener(this)
              userLocationLayer!!.isVisible = true
@@ -296,15 +383,52 @@ index 48c1cdf..a917265 100644
              userLocationLayer!!.setObjectListener(null)
          }
      }
-@@ -685,7 +688,7 @@ open class YamapView(context: Context?) : MapView(context), UserLocationObjectLi
+@@ -685,7 +690,7 @@
          val wTransports = Arguments.createMap()
- 
+
          for ((key, value) in transports) {
 -            wTransports.putArray(key, Arguments.fromList(value))
 +            wTransports.putArray(key, value?.let { Arguments.fromList(it) })
          }
- 
+
          routeMetadata.putMap("transports", wTransports)
+@@ -769,6 +774,25 @@
+     }
+
+     // CHILDREN
++    fun getReactChildCount(): Int = reactChildren.size
++
++    fun getReactChildAt(index: Int): View? = reactChildren.getOrNull(index)
++
++    fun addReactChild(child: View, index: Int) {
++        reactChildren.add(index, child)
++        try {
++            addFeature(child, index)
++        } catch (error: Exception) {
++            reactChildren.removeAt(index)
++            throw error
++        }
++    }
++
++    fun removeReactChildAt(index: Int) {
++        removeChild(index)
++        reactChildren.removeAt(index)
++    }
++
+     open fun addFeature(child: View?, index: Int) {
+         if (child is YamapPolygon) {
+             val _child = child
+@@ -790,8 +814,8 @@
+     }
+
+     open fun removeChild(index: Int) {
+-        if (getChildAt(index) is ReactMapObject) {
+-            val child = getChildAt(index) as ReactMapObject ?: return
++        if (getReactChildAt(index) is ReactMapObject) {
++            val child = getReactChildAt(index) as ReactMapObject
+             val mapObject = child.rnMapObject
+             if (mapObject == null || !mapObject.isValid) return
+
 diff --git a/node_modules/react-native-yamap/ios/ClusteredYamapView.m b/node_modules/react-native-yamap/ios/ClusteredYamapView.m
 index ce9fd1e..c3ccb15 100644
 --- a/node_modules/react-native-yamap/ios/ClusteredYamapView.m

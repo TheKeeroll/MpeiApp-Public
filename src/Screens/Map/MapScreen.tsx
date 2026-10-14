@@ -2,7 +2,7 @@ import React, {Fragment, useEffect, useRef, useState} from "react";
 import YaMap, {Marker, MasstransitInfo, Polyline, RouteInfo} from 'react-native-yamap';
 import {
     FlatList,
-    LayoutAnimation, Platform,
+    Animated, AppState, Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -56,6 +56,116 @@ interface Place {
 
 const SPECIAL_CATEGORIES: PlaceCategory[]  = ['Кафедры']
 
+// Keep overlay animations local so they do not animate map hierarchy changes.
+const FadeInView: React.FC<React.ComponentProps<typeof View>> = (props) => {
+    const opacity = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+        const animation = Animated.timing(opacity, {toValue: 1, duration: 300, useNativeDriver: true});
+        animation.start();
+        return () => animation.stop();
+    }, [opacity]);
+    return <Animated.View {...props} collapsable={false} style={[props.style, {opacity}]}/>;
+};
+
+const GetUniqueFoodIcon: ImageSource = (place: Place) => {
+    if(place.category != 'Еда') throw new Error('GetUniqueFoodIcon: passed non food')
+
+    const ICONS = {
+        "bubbletea": require('../../../assets/images/MapMarkers/Bubble_Tea.webp'),
+        "rostics": require('../../../assets/images/MapMarkers/Rostics.webp'),
+        "harvard": require('../../../assets/images/MapMarkers/Harvard.webp'),
+        "subway": require('../../../assets/images/MapMarkers/Subway.webp'),
+        "bk": require('../../../assets/images/MapMarkers/Burger_King.webp'),
+        "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.webp'),
+        "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.webp'),
+        "trlefortovo": require('../../../assets/images/MapMarkers/TraktirLefortovo.webp'),
+        "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.webp'),
+        "olen": require('../../../assets/images/MapMarkers/Tayojny.webp'),
+        "terem": require('../../../assets/images/MapMarkers/teremok.webp')
+    }
+    return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.webp')
+}
+
+const GetUniqueInterestsIcon: ImageSource = (place: Place) => {
+    if(place.category != 'Точки интереса') throw new Error('GetUniqueInterestsIcon: passed non interests')
+
+    const ICONS = {
+        "megaphone": require('../../../assets/images/MapMarkers/megafon.webp'),
+        "mts": require('../../../assets/images/MapMarkers/mts.webp'),
+        "beeline": require('../../../assets/images/MapMarkers/beeline.webp'),
+        "sber": require('../../../assets/images/MapMarkers/sber.webp'),
+        "aviation": require('../../../assets/images/MapMarkers/aviation.webp'),
+    }
+    return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/star.webp')
+}
+
+const GetUniqueCorpsIcon: ImageSource = (place: Place) => {
+    if(place.category != 'Корпуса') throw new Error('GetUniqueCorpsIcon: passed non corps')
+
+    const ICONS = {
+        "gk": require('../../../assets/images/MapMarkers/gk.webp'),
+        "a": require('../../../assets/images/MapMarkers/a.webp'),
+        "e": require('../../../assets/images/MapMarkers/e.webp'),
+        "jz": require('../../../assets/images/MapMarkers/jz.webp'),
+        "i": require('../../../assets/images/MapMarkers/i.webp'),
+        "k": require('../../../assets/images/MapMarkers/k.webp'),
+        "kl": require('../../../assets/images/MapMarkers/kl.webp'),
+        "m": require('../../../assets/images/MapMarkers/m_ie.webp'),
+        "n": require('../../../assets/images/MapMarkers/n.webp'),
+        "o": require('../../../assets/images/MapMarkers/o.webp'),
+        "p": require('../../../assets/images/MapMarkers/p.webp'),
+        "r": require('../../../assets/images/MapMarkers/r.webp'),
+        "s": require('../../../assets/images/MapMarkers/s.webp'),
+        "t": require('../../../assets/images/MapMarkers/t.webp'),
+        "f": require('../../../assets/images/MapMarkers/f.webp'),
+        "ha": require('../../../assets/images/MapMarkers/ha.webp'),
+        "ce": require('../../../assets/images/MapMarkers/ce.webp'),
+        "ch": require('../../../assets/images/MapMarkers/ch.webp'),
+        "sch": require('../../../assets/images/MapMarkers/sch.webp'),
+        "mfc": require('../../../assets/images/MapMarkers/mfc.webp')
+    }
+    return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.webp')
+}
+
+const GetRequire = (props: { shown?: boolean, place: Place, onPress: (place: Place) => void}) => {
+    switch (props.place.category) {
+        case "Точки интереса": return GetUniqueInterestsIcon(props.place);
+        case "Еда": return GetUniqueFoodIcon(props.place);
+        case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp');
+        case "Корпуса": return GetUniqueCorpsIcon(props.place);
+        case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp');
+    }
+};
+
+const GetPlaceMarker: React.FC<{ shown: boolean; place: Place; onPress: (place: Place) => void }> = (props) => {
+
+    return props.shown ? (
+        <Marker
+            point={{ lat: props.place.lat, lon: props.place.lon }}
+            source={GetRequire(props)}
+            onPress={() => props.onPress(props.place)}
+            scale={Platform.OS === 'ios' ? 0.45 : 0.3}
+        />
+    ) : null;
+};
+
+const DetailPlaceModal: React.FC<{place: Place, show: boolean, onRoute:(place: Place)=> void, onDismiss:()=>void}> = (props) => {
+    const {colors} = useTheme<CustomTheme>()
+    return (props.show ?
+        <FadeInView style={{height: '100%', width: '100%', flexDirection: 'column', justifyContent: 'center', position: 'absolute', top: 0, left: 0, backgroundColor: withOpacity(colors.background, 60)}}>
+            <TouchableOpacity onPress={props.onDismiss.bind(this)} style={{flexGrow: 1, width: '100%'}}/>
+            <View style={{minHeight: 100, alignItems: 'center', alignSelf:'flex-end', width: '100%', borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: colors.background}}>
+                <Text numberOfLines={2} style={{padding: 5, color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>{props.place.name}</Text>
+                <DailyUsageBadge feature="route" style={{marginBottom: 2}}/>
+                <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
+                    <Text style={{padding: 8, color: colors.text, fontWeight: 'bold'}}>Проложить маршрут</Text>
+                </TouchableOpacity>
+            </View>
+        </FadeInView>
+        : null
+    )
+}
+
 const RequestLocationPermission = (onRes:(res: boolean)=>void, onError:(e:any)=>void) => {
     if(Platform.OS == 'ios'){
         Geolocation.requestAuthorization('whenInUse').then((res)=>{
@@ -106,15 +216,36 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
     }
     const [locationAccess, setLocationAccess] = useState<boolean>(false)
     const [isPermissionRequested, setPermissionRequested] = useState<boolean>(false)
-    RequestLocationPermission((res)=>{
-        setLocationAccess(res)
-        setPermissionRequested(true)
-        }, (e)=>{
-        console.warn(e)
-        setLocationAccess(false)
-        setPermissionRequested(true)
-        }
-    )
+    useEffect(() => {
+        let active = true;
+        let pending = false;
+        let previousState = AppState.currentState;
+        const checkPermission = () => {
+            if (pending) return;
+            pending = true;
+            RequestLocationPermission((res) => {
+                pending = false;
+                if (!active) return;
+                setLocationAccess(res);
+                setPermissionRequested(true);
+            }, (error) => {
+                pending = false;
+                if (!active) return;
+                console.warn(error);
+                setLocationAccess(false);
+                setPermissionRequested(true);
+            });
+        };
+        checkPermission();
+        const subscription = AppState.addEventListener('change', state => {
+            if (state === 'active' && previousState !== 'active') checkPermission();
+            previousState = state;
+        });
+        return () => {
+            active = false;
+            subscription.remove();
+        };
+    }, []);
     const [showRoutes, setShowRoutes] = useState<RouteInfo<MasstransitInfo>[] | null>(null)
     const [routes, setRoutes] = useState<RouteInfo<MasstransitInfo>[]>([])
     const [showPrintRouteBtn, setShowPrintRouteBtn] = useState<boolean>(false)
@@ -134,105 +265,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
           props.category == 'Корпуса' ?
             <FA5Icon.default name={'school'} color={colors.text} size={25}/>
             :<IonIcon.default name={name} color={colors.text} size={25}/>
-        )
-    }
-
-    const GetUniqueFoodIcon: ImageSource = (place: Place) => {
-        if(place.category != 'Еда') throw new Error('GetUniqueFoodIcon: passed non food')
-
-        const ICONS = {
-            "bubbletea": require('../../../assets/images/MapMarkers/Bubble_Tea.webp'),
-            "rostics": require('../../../assets/images/MapMarkers/Rostics.webp'),
-            "harvard": require('../../../assets/images/MapMarkers/Harvard.webp'),
-            "subway": require('../../../assets/images/MapMarkers/Subway.webp'),
-            "bk": require('../../../assets/images/MapMarkers/Burger_King.webp'),
-            "sytpian": require('../../../assets/images/MapMarkers/Feeded_Drinky.webp'),
-            "dodo": require('../../../assets/images/MapMarkers/Dodo_Pizza.webp'),
-            "trlefortovo": require('../../../assets/images/MapMarkers/TraktirLefortovo.webp'),
-            "pubdaddy": require('../../../assets/images/MapMarkers/PubDaddy.webp'),
-            "olen": require('../../../assets/images/MapMarkers/Tayojny.webp'),
-            "terem": require('../../../assets/images/MapMarkers/teremok.webp')
-        }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/food.webp')
-    }
-
-    const GetUniqueInterestsIcon: ImageSource = (place: Place) => {
-        if(place.category != 'Точки интереса') throw new Error('GetUniqueInterestsIcon: passed non interests')
-
-        const ICONS = {
-            "megaphone": require('../../../assets/images/MapMarkers/megafon.webp'),
-            "mts": require('../../../assets/images/MapMarkers/mts.webp'),
-            "beeline": require('../../../assets/images/MapMarkers/beeline.webp'),
-            "sber": require('../../../assets/images/MapMarkers/sber.webp'),
-            "aviation": require('../../../assets/images/MapMarkers/aviation.webp'),
-        }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/star.webp')
-    }
-
-    const GetUniqueCorpsIcon: ImageSource = (place: Place) => {
-        if(place.category != 'Корпуса') throw new Error('GetUniqueCorpsIcon: passed non corps')
-
-        const ICONS = {
-            "gk": require('../../../assets/images/MapMarkers/gk.webp'),
-            "a": require('../../../assets/images/MapMarkers/a.webp'),
-            "e": require('../../../assets/images/MapMarkers/e.webp'),
-            "jz": require('../../../assets/images/MapMarkers/jz.webp'),
-            "i": require('../../../assets/images/MapMarkers/i.webp'),
-            "k": require('../../../assets/images/MapMarkers/k.webp'),
-            "kl": require('../../../assets/images/MapMarkers/kl.webp'),
-            "m": require('../../../assets/images/MapMarkers/m_ie.webp'),
-            "n": require('../../../assets/images/MapMarkers/n.webp'),
-            "o": require('../../../assets/images/MapMarkers/o.webp'),
-            "p": require('../../../assets/images/MapMarkers/p.webp'),
-            "r": require('../../../assets/images/MapMarkers/r.webp'),
-            "s": require('../../../assets/images/MapMarkers/s.webp'),
-            "t": require('../../../assets/images/MapMarkers/t.webp'),
-            "f": require('../../../assets/images/MapMarkers/f.webp'),
-            "ha": require('../../../assets/images/MapMarkers/ha.webp'),
-            "ce": require('../../../assets/images/MapMarkers/ce.webp'),
-            "ch": require('../../../assets/images/MapMarkers/ch.webp'),
-            "sch": require('../../../assets/images/MapMarkers/sch.webp'),
-            "mfc": require('../../../assets/images/MapMarkers/mfc.webp')
-        }
-        return typeof place.uniqueIcon != 'undefined' ? (ICONS as any)[place.uniqueIcon] : require('../../../assets/images/MapMarkers/school.webp')
-    }
-
-    const GetRequire = (props: { shown?: boolean, place: Place, onPress: (place: Place) => void}) => {
-        switch (props.place.category) {
-            case "Точки интереса": return GetUniqueInterestsIcon(props.place);
-            case "Еда": return GetUniqueFoodIcon(props.place);
-            case "Общежития": return require('../../../assets/images/MapMarkers/hostel.webp');
-            case "Корпуса": return GetUniqueCorpsIcon(props.place);
-            case "Кафедры": return require('../../../assets/images/MapMarkers/cafedra.webp');
-        }
-    };
-
-    const GetPlaceMarker: React.FC<{ shown: boolean; place: Place; onPress: (place: Place) => void }> = (props) => {
-
-        return props.shown ? (
-            <Marker
-                point={{ lat: props.place.lat, lon: props.place.lon }}
-                source={GetRequire(props)}
-                onPress={() => props.onPress(props.place)}
-                scale={Platform.OS === 'ios' ? 0.45 : 0.3}
-            />
-        ) : null;
-    };
-
-    const DetailPlaceModal: React.FC<{place: Place, show: boolean, onRoute:(place: Place)=> void, onDismiss:()=>void}> = (props) => {
-        const {colors} = useTheme<CustomTheme>()
-        return (props.show ?
-            <View style={{height: '100%', width: '100%', flexDirection: 'column', justifyContent: 'center', position: 'absolute', top: 0, left: 0, backgroundColor: withOpacity(colors.background, 60)}}>
-                <TouchableOpacity onPress={props.onDismiss.bind(this)} style={{flexGrow: 1, width: '100%'}}/>
-                <View style={{minHeight: 100, alignItems: 'center', alignSelf:'flex-end', width: '100%', borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: colors.background}}>
-                    <Text numberOfLines={2} style={{padding: 5, color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>{props.place.name}</Text>
-                    <DailyUsageBadge feature="route" style={{marginBottom: 2}}/>
-                    <TouchableOpacity onPress={props.onRoute.bind(this, props.place)} style={{height: 50,justifyContent: 'center', alignItems: 'center', borderRadius: 10, marginVertical: 10, backgroundColor: colors.primary}}>
-                        <Text style={{padding: 8, color: colors.text, fontWeight: 'bold'}}>Проложить маршрут</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-            : null
         )
     }
 
@@ -297,7 +329,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
         const Collapsed = () => (
           <TouchableOpacity
             onPress={()=>{
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                 setExpanded(true)
             }}
             style={[Styles.searchCollapsed, { backgroundColor: colors.primary}]}>
@@ -305,7 +336,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
           </TouchableOpacity>
         )
         const Expanded = () => (
-          <View
+          <FadeInView
             style={[Styles.searchExpanded, {height: selectedCategory == 'main' ? '55%' : '75%', backgroundColor: colors.surface}]}>
               {
                   <ScrollView style={{marginTop: 5, maxWidth: SCREEN_SIZE.width * 0.75}} contentContainerStyle={{alignItems: 'center'}}>
@@ -318,7 +349,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
               }
               <TouchableOpacity onPress={()=> {
                   if(selectedCategory == 'main'){
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
                       setExpanded(false)
                   } else {
                       setSelectedCategory('main')
@@ -328,7 +358,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                   <Text style={{marginRight: 10, color: colors.text, fontSize: 15}}>{selectedCategory != 'main' ? 'Назад' : 'Свернуть'}</Text>
               </TouchableOpacity>
 
-          </View>
+          </FadeInView>
         )
 
         return (
@@ -565,69 +595,26 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                         lat: longPress.nativeEvent?.lat, lon: longPress.nativeEvent?.lon,
                         howToGet: `lat. ${longPress.nativeEvent?.lat}, lon. ${longPress.nativeEvent?.lon}`
                     }
-                    LayoutAnimation.configureNext({
-                        duration: 300,
-                        create:
-                            {
-                                type: LayoutAnimation.Types.easeInEaseOut,
-                                property: LayoutAnimation.Properties.opacity,
-                            },
-                        update:
-                            {
-                                type: LayoutAnimation.Types.easeInEaseOut,
-                            }
-                    });
                     setModalShown(targetPlace)
-                    return <GetPlaceMarker
-                        shown={true}
-                        place={targetPlace}
-                        onPress={(place)=> {
-                            if(!locationAccess) return
-                            LayoutAnimation.configureNext({
-                                duration: 300,
-                                create:
-                                    {
-                                        type: LayoutAnimation.Types.easeInEaseOut,
-                                        property: LayoutAnimation.Properties.opacity,
-                                    },
-                                update:
-                                    {
-                                        type: LayoutAnimation.Types.easeInEaseOut,
-                                    }
-                            });
-                            setModalShown(place)}
-                        }/>
                     }
                 }
                 style={{ flex: 1, width: '100%', minWidth: 290, height: Dimensions.get('window').height, minHeight: 200 }}
             >
-                {mapReady && mapPoints.map((val, key) => (
+                {mapReady && mapPoints.map((val) => (
                     <GetPlaceMarker
                         // @ts-expect-error
                         shown={ targetPlace ? val.name === targetPlace.name : isShowCategory[val.category]}
                         place={val}
-                        key={key}
+                        key={`place:${val.category}:${val.name}:${val.lat}:${val.lon}`}
                         onPress={(place)=>{
                         if(!locationAccess) return
-                        LayoutAnimation.configureNext({
-                            duration: 300,
-                            create:
-                              {
-                                  type: LayoutAnimation.Types.easeInEaseOut,
-                                  property: LayoutAnimation.Properties.opacity,
-                              },
-                            update:
-                              {
-                                  type: LayoutAnimation.Types.easeInEaseOut,
-                              }
-                        });
                         setModalShown(place)
                     }}/>
                 ))}
                 {
-                    showRoutes && showRoutes.length && showRoutes.map((route, routeKey)=>route.sections.map((v,k)=>
+                    showRoutes && showRoutes.length > 0 && showRoutes.map((route, routeKey)=>route.sections.map((v,k)=>
                         <Polyline
-                            key={routeKey * k + k + Math.random()}
+                            key={`route:${routeKey}:section:${k}`}
                             points={v.points}
                             strokeColor={GetColorForRouteSelection(routeKey)}
                             strokeWidth={5}
@@ -637,7 +624,7 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     )).reduce((a,v)=>a.concat(v),[])
                 }
             </YaMap>)}
-            {(locationAccess && showRoutes && showRoutes.length || targetPlace)  &&
+            {(targetPlace !== null || (locationAccess && (showRoutes?.length ?? 0) > 0)) &&
                 <Fragment>
                     <TouchableOpacity onPress={()=>{setTargetPlace(null);setRoutes([]);setShowRoutes(null);setShowHowToGet(false)}}
                                       style={{height: 50, minWidth: '30%', borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: colors.primary, position: 'absolute', bottom: 60, left: 5}}>
@@ -673,18 +660,6 @@ const MapScreen: React.FC<{navigation: any, route: any}> = (props) => {
                     place={modalShown}
                     show={!!modalShown}
                     onDismiss={()=>{
-                        LayoutAnimation.configureNext({
-                            duration: 300,
-                            create:
-                              {
-                                  type: LayoutAnimation.Types.easeInEaseOut,
-                                  property: LayoutAnimation.Properties.opacity,
-                              },
-                            update:
-                              {
-                                  type: LayoutAnimation.Types.easeInEaseOut,
-                              }
-                        });
                         setModalShown(null)
                     }}
                     onRoute={(place)=>{
