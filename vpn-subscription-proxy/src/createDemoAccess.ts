@@ -4,6 +4,7 @@ import type {ProxyConfig} from './config.js';
 import type {DemoCooldownStore} from './demoCooldownStore.js';
 import {getMoscowRequestDate} from './time.js';
 import type {VpnPanelClient} from './vpnPanelClient.js';
+import {errorDetails, type FailureDetails} from './diagnostics.js';
 
 export type CreateDemoRequest = Readonly<{
   clientIp: string;
@@ -12,7 +13,7 @@ export type CreateDemoRequest = Readonly<{
 
 export type CreateDemoResult = Readonly<{
   demoSubURL: string;
-}>;
+}> | Readonly<{failure: 'demo_cooldown' | 'service_error'; details: FailureDetails}>;
 
 const DEMO_VOLUME_BYTES = 2 * 1024 * 1024 * 1024;
 const DEMO_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
@@ -93,41 +94,47 @@ export class CreateDemoAccessService {
     private readonly cooldownStore: DemoCooldownStore,
   ) {}
 
-  public async create(request: CreateDemoRequest, now = new Date()): Promise<CreateDemoResult | undefined> {
-    const reservation = this.cooldownStore.reserve(request.clientIp, request.deviceId, now);
-    if (!reservation) {
-      return undefined;
-    }
-
-    const clientName = createDemoName(now);
-    let created: boolean;
+  public async create(request: CreateDemoRequest, now = new Date()): Promise<CreateDemoResult> {
+    let attempt;
     try {
+      attempt = this.cooldownStore.tryReserve(request.clientIp, request.deviceId, now);
+    } catch (error) {
+      return {failure: 'service_error', details: {stage: 'reserve', ...errorDetails(error)}};
+    }
+    if (attempt.kind === 'blocked') {
+      const issued = attempt.blocking.some(identity => identity.state === 'issued');
+      return {
+        failure: issued ? 'demo_cooldown' : 'service_error',
+        details: {stage: 'reserve', category: issued ? 'demo_cooldown' : 'reservation_pending', blocking: attempt.blocking},
+      };
+    }
+    const {reservation} = attempt;
+
+    let created;
+    try {
+      const clientName = createDemoName(now);
       created = await this.panelClient.createClient(createPanelClientData(this.config, clientName, now));
-    } catch {
+      if (created.created) {
+        try {
+          this.cooldownStore.markIssued(reservation, now);
+        } catch (error) {
+          return {failure: 'service_error', details: {stage: 'commit', panelCreated: true, reservationRetained: true, ...errorDetails(error)}};
+        }
+        return {demoSubURL: createSubscriptionUrl(
+          this.hostname, this.config.subscriptionPort, this.config.subscriptionPathPrefix, clientName,
+        )};
+      }
+    } catch (error) {
       // An unknown panel result deliberately keeps the reservation in SQLite.
-      return undefined;
-    }
-
-    if (!created) {
-      this.cooldownStore.releaseKnownFailure(reservation);
-      return undefined;
+      return {failure: 'service_error', details: {stage: 'panel_create', reservationRetained: true, ...errorDetails(error)}};
     }
 
     try {
-      this.cooldownStore.markIssued(reservation, now);
-    } catch {
-      // Do not return a link if local issuance could not be committed.
-      return undefined;
+      this.cooldownStore.releaseKnownFailure(reservation);
+    } catch (error) {
+      return {failure: 'service_error', details: {stage: 'release', panelFailure: created.details, reservationRetained: true, ...errorDetails(error)}};
     }
-
-    return {
-      demoSubURL: createSubscriptionUrl(
-        this.hostname,
-        this.config.subscriptionPort,
-        this.config.subscriptionPathPrefix,
-        clientName,
-      ),
-    };
+    return {failure: 'service_error', details: {stage: 'panel_create', reservationRetained: false, ...created.details}};
   }
 }
 

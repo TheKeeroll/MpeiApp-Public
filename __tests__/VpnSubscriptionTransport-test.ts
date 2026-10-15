@@ -11,6 +11,18 @@ const configuration = {
 };
 
 describe('DragoNet mobile transport', () => {
+  it.each([
+    ['demo_cooldown', {reqStatus: 'failed', reason: 'demo_cooldown'}],
+    ['service_error', {reqStatus: 'failed', reason: 'service_error'}],
+    ['unknown_future_code', {reqStatus: 'failed'}],
+    [undefined, {reqStatus: 'failed'}],
+  ])('preserves known additive failure reasons and accepts a legacy response: %s', async (reason, expected) => {
+    const transport = createVpnSubscriptionTransport(configuration, {
+      fetchImplementation: jest.fn(async () => ({ok: true, json: async () => ({reqStatus: 'failed', reason, privateDetails: 'must-not-propagate'})})) as unknown as typeof fetch,
+      createRequestId: () => 'request-id',
+    });
+    await expect(transport.requestDemo()).resolves.toEqual(expected);
+  });
   it('accepts only a safe HTTPS domain, port, and path', () => {
     expect(isValidVpnProxyConfiguration(configuration)).toBe(true);
     expect(buildVpnProxyEndpoint(configuration)).toBe('https://proxy.dragonet.example:8443/v1/subscription');

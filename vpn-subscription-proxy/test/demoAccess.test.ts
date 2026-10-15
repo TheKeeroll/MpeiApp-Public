@@ -52,7 +52,8 @@ test('demo uses the S-UI form payload, 2 GiB, three days, and cooldown', async (
 
   try {
     const result = await service.create({clientIp: '198.51.100.15', deviceId: 'Pixel-9'}, now);
-    assert.match(result?.demoSubURL ?? '', /^https:\/\/proxy\.example\.com:2087\/sub\/MpeiApp-demo-/u);
+    assert.ok('demoSubURL' in result);
+    assert.match(result.demoSubURL, /^https:\/\/proxy\.example\.com:2087\/sub\/MpeiApp-demo-/u);
     assert.deepEqual(Object.keys(result ?? {}), ['demoSubURL']);
     assert.doesNotMatch(JSON.stringify(result), /password|uuid/iu);
     assert.equal(sentData?.volume, demoConstants.volumeBytes);
@@ -63,11 +64,34 @@ test('demo uses the S-UI form payload, 2 GiB, three days, and cooldown', async (
     assert.equal(clientConfig?.vless?.flow, 'xtls-rprx-vision');
 
     const repeat = await service.create({clientIp: '198.51.100.15', deviceId: 'Pixel-9'}, now);
-    assert.equal(repeat, undefined);
+    assert.ok('failure' in repeat);
+    assert.equal(repeat.failure, 'demo_cooldown');
     assert.equal(panelCalls, 1);
   } finally {
     store.close();
     await rm(directory, {recursive: true, force: true});
+  }
+});
+
+test('database commit and cleanup failures are distinguishable technical creation failures', async () => {
+  for (const stage of ['commit', 'release'] as const) {
+    const directory = await mkdtemp(path.join(tmpdir(), 'dragonet-demo-storage-'));
+    const store = new DemoCooldownStore(path.join(directory, 'cooldowns.sqlite'), config.cooldownHmacKey);
+    const panel = new VpnPanelClient(config.panelBaseUrl, config.panelToken, 1000,
+      async () => Response.json({success: stage === 'commit'}));
+    if (stage === 'commit') store.markIssued = () => { throw Object.assign(new Error('private filesystem path'), {code: 'SQLITE_IOERR'}); };
+    else store.releaseKnownFailure = () => { throw Object.assign(new Error('private filesystem path'), {code: 'SQLITE_IOERR'}); };
+    try {
+      const result = await new CreateDemoAccessService(config, 'proxy.example.com', panel, store)
+        .create({clientIp: '198.51.100.17', deviceId: 'device'});
+      assert.ok('failure' in result);
+      assert.equal(result.failure, 'service_error');
+      assert.equal(result.details.stage, stage);
+      assert.equal(result.details.category, 'storage_error');
+      assert.equal(result.details.code, 'SQLITE_IOERR');
+      assert.equal(result.details.reservationRetained, true);
+      assert.equal(JSON.stringify(result).includes('private filesystem path'), false);
+    } finally { store.close(); await rm(directory, {recursive: true, force: true}); }
   }
 });
 
@@ -89,9 +113,13 @@ test('a known S-UI rejection releases only its reservation for a retry', async (
   const now = new Date('2026-09-05T10:15:00.000Z');
 
   try {
-    assert.equal(await service.create({clientIp: '198.51.100.16', deviceId: 'Pixel-10'}, now), undefined);
+    const failure = await service.create({clientIp: '198.51.100.16', deviceId: 'Pixel-10'}, now);
+    assert.ok('failure' in failure);
+    assert.equal(failure.failure, 'service_error');
+    const retry = await service.create({clientIp: '198.51.100.16', deviceId: 'Pixel-10'}, now);
+    assert.ok('demoSubURL' in retry);
     assert.match(
-      (await service.create({clientIp: '198.51.100.16', deviceId: 'Pixel-10'}, now))?.demoSubURL ?? '',
+      retry.demoSubURL,
       /^https:\/\/proxy\.example\.com:2087\/sub\/MpeiApp-demo-/u,
     );
     assert.equal(panelCalls, 2);

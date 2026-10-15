@@ -17,6 +17,9 @@ LoadCredential=privkey.pem:/etc/letsencrypt/live/%i/privkey.pem
 ExecStart=/usr/bin/node /opt/vpn-subscription-proxy/dist/server.js
 Restart=on-failure
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dragonet-subscription-proxy
 UMask=0077
 
 # StateDirectory is created as /var/lib/dragonet-subscription-proxy and owned

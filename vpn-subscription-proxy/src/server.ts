@@ -1,70 +1,24 @@
 import {createSecureContext} from 'node:tls';
 import {pathToFileURL} from 'node:url';
 
-import Fastify, {type FastifyInstance, type FastifyReply, type FastifyRequest} from 'fastify';
+import Fastify, {type FastifyInstance} from 'fastify';
 
 import {loadConfig, type ProxyConfig} from './config.js';
 import {CreateDemoAccessService} from './createDemoAccess.js';
 import {DemoCooldownStore} from './demoCooldownStore.js';
-import {RequestRateLimiter, parseRequestGate, type RequestGateContext} from './requestGate.js';
+import {RequestRateLimiter} from './requestGate.js';
 import {RuntimeStats} from './runtimeStats.js';
-import {failedResponse, proxyRequestSchema} from './schema.js';
+import {registerProxyApi} from './httpApi.js';
 import {discoverStartupTls, type StartupTlsMaterial} from './startupDiscovery.js';
 import {VerifySubscriptionService} from './verifySubscription.js';
 import {VpnPanelClient} from './vpnPanelClient.js';
 
 const serviceStartedAt = Date.now();
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    dragonetGate?: RequestGateContext;
-  }
-}
-
 type ProxyServer = Readonly<{
   app: FastifyInstance;
   cooldownStore: DemoCooldownStore;
 }>;
-
-const closeWithoutResponse = (request: FastifyRequest, reply: FastifyReply): void => {
-  reply.hijack();
-  request.raw.socket.destroy();
-};
-
-const isLoopback = (remoteAddress: string | undefined): boolean => (
-  remoteAddress === '127.0.0.1'
-  || remoteAddress === '::1'
-  || remoteAddress === '::ffff:127.0.0.1'
-);
-
-const hostMatches = (header: string | string[] | undefined, expectedHostname: string): boolean => {
-  if (typeof header !== 'string' || header.length === 0 || header.includes(',')) {
-    return false;
-  }
-  try {
-    const url = new URL(`https://${header}`);
-    return (
-      url.hostname.toLowerCase() === expectedHostname
-      && url.pathname === '/'
-      && !url.username
-      && !url.password
-      && !url.search
-      && !url.hash
-    );
-  } catch {
-    return false;
-  }
-};
-
-const sniMatches = (request: FastifyRequest, expectedHostname: string): boolean => {
-  const servername = (request.raw.socket as {servername?: string}).servername;
-  return typeof servername === 'string' && servername.toLowerCase() === expectedHostname;
-};
-
-const sendFailed = (reply: FastifyReply, runtimeStats: RuntimeStats) => {
-  runtimeStats.recordFailedRequest();
-  return reply.code(200).send(failedResponse);
-};
 
 export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial): ProxyServer => {
   const secureContext = createSecureContext({
@@ -104,85 +58,8 @@ export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial):
   );
   const runtimeStats = new RuntimeStats(serviceStartedAt);
 
-  app.addHook('onRequest', (request, reply, done) => {
-    const requestUrl = request.raw.url ?? '';
-    const remoteAddress = request.raw.socket.remoteAddress;
-    if (request.method === 'GET' && (requestUrl === '/healthz' || requestUrl === '/stats')) {
-      if (!isLoopback(remoteAddress)) {
-        closeWithoutResponse(request, reply);
-      }
-      done();
-      return;
-    }
-
-    if (request.method !== 'POST' || requestUrl !== config.requestPath) {
-      closeWithoutResponse(request, reply);
-      done();
-      return;
-    }
-
-    if (!hostMatches(request.headers.host, tls.hostname) || !sniMatches(request, tls.hostname)) {
-      closeWithoutResponse(request, reply);
-      done();
-      return;
-    }
-
-    const gate = parseRequestGate({
-      requestId: request.headers['mpei-app-req-id'],
-      remoteAddress,
-      forwardedFor: request.headers['x-forwarded-for'],
-      trustedReverseProxyIps: config.trustedReverseProxyIps,
-    });
-    if (!gate) {
-      closeWithoutResponse(request, reply);
-      done();
-      return;
-    }
-
-    request.dragonetGate = gate;
-    done();
-  });
-
-  app.get('/healthz', async () => ({status: 'ok'}));
-  app.get('/stats', async () => runtimeStats.snapshot());
-
-  app.post(config.requestPath, async (request, reply) => {
-    const gate = request.dragonetGate;
-    const parsed = proxyRequestSchema.safeParse(request.body);
-    if (!gate || !parsed.success || !rateLimiter.tryConsume(gate.clientIp)) {
-      return sendFailed(reply, runtimeStats);
-    }
-
-    try {
-      if (parsed.data.purpose === 'verify') {
-        const verification = await verificationService.verify(parsed.data.clientName);
-        runtimeStats.recordSuccessfulVerify();
-        return reply.code(200).send({
-          reqStatus: 'success',
-          isClientFound: verification.isClientFound,
-          isClientActive: verification.isClientActive,
-        });
-      }
-
-      const demo = await demoService.create({clientIp: gate.clientIp, deviceId: gate.deviceId});
-      if (!demo) {
-        return sendFailed(reply, runtimeStats);
-      }
-      runtimeStats.recordSuccessfulDemo();
-      return reply.code(200).send({reqStatus: 'success', demoSubURL: demo.demoSubURL});
-    } catch {
-      return sendFailed(reply, runtimeStats);
-    }
-  });
-
-  app.setErrorHandler((_error, request, reply) => {
-    if (!reply.sent) {
-      if (request.dragonetGate) {
-        sendFailed(reply, runtimeStats);
-        return;
-      }
-      reply.code(200).send(failedResponse);
-    }
+  registerProxyApi(app, config, tls.hostname, {
+    verificationService, demoService, rateLimiter, runtimeStats,
   });
 
   return {app, cooldownStore};

@@ -24,6 +24,7 @@ import type {VpnDemoAccess, VpnVerificationResult, VpnVerificationState} from '.
 import {dragonetTelegramUrl, vpnSubscriptionService} from '../../Vpn/VpnSubscriptionRuntime';
 import {getAndroidVpnClient, type AndroidVpnClient} from '../../Vpn/AndroidVpnClients';
 import {DRAGONET_PROMO_ART, DragoNetSlogan, PromoAppIconsMarquee} from '../../Vpn/DragoNetPromoVisuals';
+import {getDemoFailureAlert} from '../../Vpn/VpnSubscriptionUiState';
 
 const INCY_APP_STORE_URL = 'https://apps.apple.com/ru/app/incy/id6756943388';
 const DEMO_CONFIGURATION_NOTE = 'Часть конфигураций у вас может не работать - это нормально: они рассчитаны на другие приложения/платформы';
@@ -385,7 +386,8 @@ const DragoNetPromoCard: React.FC = () => {
       setDemoSheetVisible(true);
       return;
     }
-    Alert.alert('Демо-доступ недоступен', 'Не удалось выдать демо-доступ. Во избежание злоупотреблений запросить демо можно лишь раз в месяц. Попробуйте позже.');
+    const alert = getDemoFailureAlert(result.kind);
+    Alert.alert(alert.title, alert.message);
   };
 
   const verifySubscription = async () => {

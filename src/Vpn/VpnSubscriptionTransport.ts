@@ -117,6 +117,9 @@ const parseDemoResponse = (value: unknown): VpnProxyDemoResponse => {
 
   const response = value as Partial<VpnProxyDemoResponse>;
   if (response.reqStatus === 'failed') {
+    if (response.reason === 'demo_cooldown' || response.reason === 'service_error') {
+      return {reqStatus: 'failed', reason: response.reason};
+    }
     return failedDemoResponse;
   }
   if (response.reqStatus === 'success' && isValidDemoUrl(response.demoSubURL)) {
