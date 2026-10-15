@@ -1,6 +1,6 @@
 /**
  * Shared DragoNet contracts. They contain no credentials and perform no I/O;
- * transport, MMKV persistence, policy, and React UI will be connected later.
+ * they are used by the transport, MMKV persistence, policy, and React UI.
  */
 
 export type VpnVerificationResult =
@@ -44,6 +44,8 @@ export type VpnProxyDemoResponse =
   }
   | {
     reqStatus: 'failed';
+    /** Missing on legacy proxies; never infer a cooldown from an unknown failure. */
+    reason?: 'demo_cooldown' | 'service_error';
   };
 
 export type VpnProxyRequest =

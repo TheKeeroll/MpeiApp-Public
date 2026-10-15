@@ -5,6 +5,7 @@ import {
 } from '../src/Vpn/VpnSubscriptionStorage';
 import {VpnSubscriptionService} from '../src/Vpn/VpnSubscriptionService';
 import type {VpnSubscriptionTransport} from '../src/Vpn/VpnSubscriptionTransport';
+import NetInfo from '@react-native-community/netinfo';
 
 const keys = {
   verificationState: 'verification',
@@ -24,6 +25,62 @@ const createMemoryBackend = () => {
 };
 
 describe('DragoNet demo persistence', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each([
+    [{reqStatus: 'failed', reason: 'demo_cooldown'}, 'cooldown'],
+    [{reqStatus: 'failed', reason: 'service_error'}, 'service_error'],
+    [{reqStatus: 'failed'}, 'service_error'],
+  ] as const)('maps a proxy refusal without claiming a technical failure is abuse: %j', async (response, kind) => {
+    const {backend, values} = createMemoryBackend();
+    const service = new VpnSubscriptionService({
+      transport: {isConfigured: true, verify: async () => ({reqStatus: 'failed'}), requestDemo: async () => response},
+      storage: createVpnSubscriptionStorage(backend, keys),
+      subscriptionLinkConfiguration: {origin: 'https://sub.dragonet.example', pathPrefix: '/subscription'},
+      isNetworkAvailable: async () => true,
+    });
+    await expect(service.requestDemo()).resolves.toEqual({kind});
+    expect(values.has(keys.demoAccess)).toBe(false);
+  });
+
+  it.each([[false, null], [true, false]])('checks NetInfo before sending demo and skips requests when connectivity is %j/%j', async (isConnected, isInternetReachable) => {
+    jest.spyOn(NetInfo, 'fetch').mockResolvedValue({isConnected, isInternetReachable} as Awaited<ReturnType<typeof NetInfo.fetch>>);
+    const requestDemo = jest.fn();
+    const {backend} = createMemoryBackend();
+    const service = new VpnSubscriptionService({
+      transport: {isConfigured: true, verify: async () => ({reqStatus: 'failed'}), requestDemo},
+      storage: createVpnSubscriptionStorage(backend, keys),
+      subscriptionLinkConfiguration: {origin: 'https://sub.dragonet.example', pathPrefix: '/subscription'},
+    });
+    await expect(service.requestDemo()).resolves.toEqual({kind: 'offline'});
+    expect(NetInfo.fetch).toHaveBeenCalled();
+    expect(requestDemo).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])('distinguishes a transport failure from connectivity lost after preflight (still online: %j)', async stillOnline => {
+    const network = jest.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(stillOnline);
+    const {backend} = createMemoryBackend();
+    const service = new VpnSubscriptionService({
+      transport: {isConfigured: true, verify: async () => ({reqStatus: 'failed'}), requestDemo: async () => {throw new Error('transport failed');}},
+      storage: createVpnSubscriptionStorage(backend, keys),
+      subscriptionLinkConfiguration: {origin: 'https://sub.dragonet.example', pathPrefix: '/subscription'},
+      isNetworkAvailable: network,
+    });
+    await expect(service.requestDemo()).resolves.toEqual({kind: stillOnline ? 'service_error' : 'offline'});
+  });
+
+  it('attempts a demo when NetInfo cannot yet determine internet reachability', async () => {
+    jest.spyOn(NetInfo, 'fetch').mockResolvedValue({isConnected: true, isInternetReachable: null} as Awaited<ReturnType<typeof NetInfo.fetch>>);
+    const requestDemo = jest.fn(async () => ({reqStatus: 'failed' as const, reason: 'service_error' as const}));
+    const {backend} = createMemoryBackend();
+    const service = new VpnSubscriptionService({
+      transport: {isConfigured: true, verify: async () => ({reqStatus: 'failed'}), requestDemo},
+      storage: createVpnSubscriptionStorage(backend, keys),
+      subscriptionLinkConfiguration: {origin: 'https://sub.dragonet.example', pathPrefix: '/subscription'},
+    });
+    await expect(service.requestDemo()).resolves.toEqual({kind: 'service_error'});
+    expect(requestDemo).toHaveBeenCalledTimes(1);
+  });
   it('restores the exact URL and issuance time until less than one hour remains', () => {
     const {backend, values} = createMemoryBackend();
     const receivedAt = new Date('2026-09-12T08:00:00.000Z');
@@ -57,7 +114,7 @@ describe('DragoNet demo persistence', () => {
       isNetworkAvailable: async () => true,
     });
 
-    await expect(service.requestDemo()).resolves.toEqual({kind: 'unavailable'});
+    await expect(service.requestDemo()).resolves.toEqual({kind: 'service_error'});
     expect(values.has(keys.demoAccess)).toBe(false);
   });
 

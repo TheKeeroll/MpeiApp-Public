@@ -27,7 +27,7 @@ export type VpnVerificationOptions = Readonly<{
 
 export type VpnDemoRequestResult =
   | Readonly<{kind: 'ready'; access: VpnDemoAccess}>
-  | Readonly<{kind: 'unavailable'}>;
+  | Readonly<{kind: 'cooldown' | 'service_error' | 'offline'}>;
 
 export type VpnSubscriptionSnapshot = Readonly<{
   verificationState: VpnVerificationState;
@@ -184,14 +184,13 @@ export class VpnSubscriptionService {
   }
 
   private async requestDemoInternal(): Promise<VpnDemoRequestResult> {
-    if (!this.options.transport.isConfigured || !await this.networkAvailable()) {
-      return {kind: 'unavailable'};
-    }
+    if (!this.options.transport.isConfigured) return {kind: 'service_error'};
 
     try {
+      if (!await this.networkAvailable()) return {kind: 'offline'};
       const response = await this.options.transport.requestDemo();
       if (!isSuccessfulDemoResponse(response)) {
-        return {kind: 'unavailable'};
+        return {kind: response.reason === 'demo_cooldown' ? 'cooldown' : 'service_error'};
       }
 
       const access: VpnDemoAccess = {
@@ -205,7 +204,11 @@ export class VpnSubscriptionService {
       this.notifyListeners();
       return {kind: 'ready', access};
     } catch {
-      return {kind: 'unavailable'};
+      // Connectivity may disappear after the preflight check.
+      try {
+        if (!await this.networkAvailable()) return {kind: 'offline'};
+      } catch { /* Unknown connectivity is not proof that the device is offline. */ }
+      return {kind: 'service_error'};
     }
   }
 

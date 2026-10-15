@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {Linking, NativeModules, Platform, Text, TouchableOpacity} from 'react-native';
+import {Alert, Linking, NativeModules, Platform, Text, TouchableOpacity} from 'react-native';
+
+const mockRequestDemo = jest.fn();
+jest.mock('../src/Vpn/DragoNetPromoVisuals', () => ({DRAGONET_PROMO_ART: 1, DragoNetSlogan: () => null, PromoAppIconsMarquee: () => null}));
 
 jest.mock('react-native-paper', () => ({
   useTheme: () => ({
@@ -30,10 +33,12 @@ jest.mock('../src/Vpn/VpnSubscriptionRuntime', () => ({
   vpnSubscriptionService: {
     getSnapshot: () => ({verificationState: {technicalFailureStreak: 0, inactiveStreak: 0, lastEffectiveStatus: 'NONE'}}),
     subscribe: () => () => undefined,
+    requestDemo: () => mockRequestDemo(),
   },
 }));
 
 const {
+  default: DragoNetPromoCard,
   ConnectionInstructions,
   DemoResultSheet,
   DemoSubscriptionLink,
@@ -56,6 +61,26 @@ describe('DragoNet result sheet', () => {
     if (platformDescriptor) Object.defineProperty(Platform, 'OS', platformDescriptor);
     NativeModules.DeviceArchitecture = nativeModule;
     jest.restoreAllMocks();
+  });
+
+  it.each([
+    ['cooldown', /раз в две недели/u, /месяц/u],
+    ['service_error', /извинения.*восстановим.*позже/u, /злоупотреблений|две недели/u],
+    ['offline', /Проверьте подключение/u, /злоупотреблений|восстановим/u],
+  ])('shows the actual demo failure in the card Alert: %s', async (kind, expected, absent) => {
+    mockRequestDemo.mockResolvedValue({kind});
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(() => { tree = ReactTestRenderer.create(<DragoNetPromoCard/>); });
+    const button = tree!.root.findAllByType(TouchableOpacity).find(node =>
+      node.findAllByType(Text).some(text => text.props.children === 'Бесплатный демо-доступ'));
+    expect(button).toBeDefined();
+    await ReactTestRenderer.act(async () => button!.props.onPress());
+    expect(mockRequestDemo).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert.mock.calls[0]![1]).toMatch(expected);
+    expect(alert.mock.calls[0]![1]).not.toMatch(absent);
+    await ReactTestRenderer.act(() => tree!.unmount());
   });
 
   it('copies a subscription link when its whole row, including its icon, is pressed', async () => {

@@ -1,5 +1,6 @@
 import {hmacIdentity} from './requestGate.js';
 import type {PanelApiResponse, VpnPanelClient} from './vpnPanelClient.js';
+import {PanelTransportError} from './diagnostics.js';
 
 export type VerifySubscriptionResult = Readonly<{
   isClientFound: boolean;
@@ -55,7 +56,7 @@ export class VerifySubscriptionService {
 
     const clients = extractClients(await this.panelClient.getClients());
     if (!clients) {
-      throw new Error('Panel client list is unavailable');
+      throw new PanelTransportError({category: 'panel_invalid_client_list', endpoint: '/apiv2/clients'});
     }
 
     const client = clients.find(candidate => candidate.name === clientName);
