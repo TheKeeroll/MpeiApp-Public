@@ -29,7 +29,7 @@ const config: ProxyConfig = {
   demoVlessFlow: 'xtls-rprx-vision',
 };
 
-test('demo uses the S-UI form payload, 2 GiB, three days, and cooldown', async () => {
+test('demo uses the S-UI form payload, named protocol credentials, 2 GiB, three days, and cooldown', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'dragonet-demo-'));
   const databasePath = path.join(directory, 'cooldowns.sqlite');
   let sentData: Record<string, unknown> | undefined;
@@ -55,18 +55,37 @@ test('demo uses the S-UI form payload, 2 GiB, three days, and cooldown', async (
     assert.ok('demoSubURL' in result);
     assert.match(result.demoSubURL, /^https:\/\/proxy\.example\.com:2087\/sub\/MpeiApp-demo-/u);
     assert.deepEqual(Object.keys(result ?? {}), ['demoSubURL']);
-    assert.doesNotMatch(JSON.stringify(result), /password|uuid/iu);
+    assert.doesNotMatch(JSON.stringify(result), /password|uuid|userkey/iu);
     assert.equal(sentData?.volume, demoConstants.volumeBytes);
     assert.equal(sentData?.expiry, Math.floor((now.getTime() + demoConstants.durationMs) / 1000));
     assert.equal(sentData?.group, "Dragon's clients");
     assert.deepEqual(sentData?.inbounds, [12, 13]);
     const clientConfig = sentData?.config as Record<string, Record<string, string>> | undefined;
+    assert.ok(clientConfig);
+    for (const protocol of ['trojan', 'anytls', 'hysteria2', 'tuic', 'vless', 'naive', 'snell']) {
+      assert.equal(clientConfig[protocol]?.name, sentData?.name, `${protocol} must use the demo client's name`);
+    }
+    const password = clientConfig.trojan?.password;
+    assert.ok(password);
+    for (const protocol of ['anytls', 'hysteria2', 'tuic', 'naive']) {
+      assert.equal(clientConfig[protocol]?.password, password, `${protocol} must share the demo password`);
+    }
+    const userkey = clientConfig.snell?.userkey;
+    assert.ok(userkey);
+    assert.match(userkey, /^[A-Za-z0-9]{32}$/u);
     assert.equal(clientConfig?.vless?.flow, 'xtls-rprx-vision');
 
     const repeat = await service.create({clientIp: '198.51.100.15', deviceId: 'Pixel-9'}, now);
     assert.ok('failure' in repeat);
     assert.equal(repeat.failure, 'demo_cooldown');
     assert.equal(panelCalls, 1);
+
+    const next = await service.create({clientIp: '198.51.100.18', deviceId: 'Pixel-10'}, now);
+    assert.ok('demoSubURL' in next);
+    const nextConfig = sentData?.config as Record<string, Record<string, string>>;
+    assert.match(nextConfig.snell!.userkey!, /^[A-Za-z0-9]{32}$/u);
+    assert.notEqual(nextConfig.snell!.userkey, userkey);
+    assert.equal(panelCalls, 2);
   } finally {
     store.close();
     await rm(directory, {recursive: true, force: true});

@@ -1,4 +1,4 @@
-import {randomBytes, randomUUID} from 'node:crypto';
+import {randomBytes, randomInt, randomUUID} from 'node:crypto';
 
 import type {ProxyConfig} from './config.js';
 import type {DemoCooldownStore} from './demoCooldownStore.js';
@@ -18,6 +18,12 @@ export type CreateDemoResult = Readonly<{
 const DEMO_VOLUME_BYTES = 2 * 1024 * 1024 * 1024;
 const DEMO_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 const NAME_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const SNELL_USERKEY_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+const createSnellUserKey = (): string => Array.from(
+  {length: 32},
+  () => SNELL_USERKEY_ALPHABET.charAt(randomInt(SNELL_USERKEY_ALPHABET.length)),
+).join('');
 
 const createRandomSuffix = (): string => {
   let suffix = '';
@@ -72,6 +78,8 @@ const createPanelClientData = (
       hysteria2: named({password}),
       tuic: named({password, uuid}),
       vless: named({uuid, flow: config.demoVlessFlow}),
+      naive: named({password}),
+      snell: named({userkey: createSnellUserKey()}),
     },
     volume: DEMO_VOLUME_BYTES,
     expiry: Math.floor((now.getTime() + DEMO_DURATION_MS) / 1000),
