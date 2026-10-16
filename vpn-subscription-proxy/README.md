@@ -23,6 +23,13 @@
 так и по устройству. Неопределённый результат панели сохраняет reservation,
 чтобы после сбоя не выдать второй demo-доступ.
 
+При создании demo передаются конфигурации `trojan`, `anytls`, `hysteria2`,
+`tuic`, `vless`, `naive` и `snell`, каждая с `name` demo-клиента.
+`naive` использует общий пароль остальных протоколов; для `snell` создаётся
+отдельный криптографически случайный `userkey` из 32 латинских букв и цифр.
+Новые протоколы добавляются только при создании клиента; ранее выданные demo
+автоматически не изменяются.
+
 Обновление существующего сервера, совместимость с MpeiApp 2.5.0,
 миграция SQLite и чтение новых журналов описаны в [UPDATING.md](UPDATING.md).
 При cooldown ответ — `{"reqStatus":"failed","reason":"demo_cooldown"}`,
@@ -308,9 +315,11 @@ $VerifyResponse | ConvertTo-Json -Compress
 Ожидается один из безопасных результатов:
 
 ```json
-{"reqStatus":"success","isClientFound":true,"isClientActive":true}
-{"reqStatus":"success","isClientFound":true,"isClientActive":false}
-{"reqStatus":"success","isClientFound":false,"isClientActive":false}
+[
+   {"reqStatus":"success","isClientFound":true,"isClientActive":true},
+   {"reqStatus":"success","isClientFound":true,"isClientActive":false},
+   {"reqStatus":"success","isClientFound":false,"isClientActive":false}
+]
 ```
 
 ### Demo
