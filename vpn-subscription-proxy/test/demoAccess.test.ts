@@ -3,6 +3,7 @@ import {mkdtemp, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import {z} from 'zod';
 
 import type {ProxyConfig} from '../src/config.js';
 import {CreateDemoAccessService, demoConstants} from '../src/createDemoAccess.js';
@@ -29,7 +30,33 @@ const config: ProxyConfig = {
   demoVlessFlow: 'xtls-rprx-vision',
 };
 
-test('demo uses the S-UI form payload, named protocol credentials, 2 GiB, three days, and cooldown', async () => {
+// Wire contract from S_UI_API_V2_1_6_5_CONTRACT.md: reject unknown credential
+// fields, including the name field that previously broke Naive user decoding.
+const namedPasswordSchema = z.object({name: z.string().min(1), password: z.string().min(1)}).strict();
+const usernamePasswordSchema = z.object({username: z.string().min(1), password: z.string().min(1)}).strict();
+const base64KeySchema = (bytes: number) => z.string().refine(value => {
+  const decoded = Buffer.from(value, 'base64');
+  return decoded.length === bytes && decoded.toString('base64') === value;
+}, `Expected a canonical base64 key of ${bytes} bytes`);
+const fullClientConfigSchema = z.object({
+  mixed: usernamePasswordSchema,
+  socks: usernamePasswordSchema,
+  http: usernamePasswordSchema,
+  shadowsocks: namedPasswordSchema.extend({password: base64KeySchema(32)}),
+  shadowsocks16: namedPasswordSchema.extend({password: base64KeySchema(16)}),
+  shadowtls: namedPasswordSchema.extend({password: base64KeySchema(32)}),
+  vmess: z.object({name: z.string().min(1), uuid: z.string().uuid(), alterId: z.literal(0)}).strict(),
+  vless: z.object({name: z.string().min(1), uuid: z.string().uuid(), flow: z.enum(['', 'xtls-rprx-vision'])}).strict(),
+  anytls: namedPasswordSchema,
+  trojan: namedPasswordSchema,
+  naive: usernamePasswordSchema,
+  hysteria: z.object({name: z.string().min(1), auth_str: z.string().min(1)}).strict(),
+  snell: z.object({name: z.string().min(1), userkey: z.string().regex(/^[A-Za-z0-9]{32}$/u)}).strict(),
+  tuic: z.object({name: z.string().min(1), uuid: z.string().uuid(), password: z.string().min(1)}).strict(),
+  hysteria2: namedPasswordSchema,
+}).strict();
+
+test('demo sends all 15 protocol sections with S-UI 1.6.5 credentials, 2 GiB, three days, and cooldown', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'dragonet-demo-'));
   const databasePath = path.join(directory, 'cooldowns.sqlite');
   let sentData: Record<string, unknown> | undefined;
@@ -60,20 +87,23 @@ test('demo uses the S-UI form payload, named protocol credentials, 2 GiB, three 
     assert.equal(sentData?.expiry, Math.floor((now.getTime() + demoConstants.durationMs) / 1000));
     assert.equal(sentData?.group, "Dragon's clients");
     assert.deepEqual(sentData?.inbounds, [12, 13]);
-    const clientConfig = sentData?.config as Record<string, Record<string, string>> | undefined;
-    assert.ok(clientConfig);
-    for (const protocol of ['trojan', 'anytls', 'hysteria2', 'tuic', 'vless', 'naive', 'snell']) {
-      assert.equal(clientConfig[protocol]?.name, sentData?.name, `${protocol} must use the demo client's name`);
+    const clientConfig = fullClientConfigSchema.parse(sentData?.config);
+    assert.equal(Object.keys(clientConfig).length, 15);
+    assert.equal(typeof sentData?.name, 'string');
+    for (const [protocol, credentials] of Object.entries(clientConfig)) {
+      const identity = 'username' in credentials ? credentials.username : credentials.name;
+      assert.equal(identity, sentData?.name, `${protocol} must use the demo client's identity`);
     }
-    const password = clientConfig.trojan?.password;
-    assert.ok(password);
-    for (const protocol of ['anytls', 'hysteria2', 'tuic', 'naive']) {
-      assert.equal(clientConfig[protocol]?.password, password, `${protocol} must share the demo password`);
+    assert.equal(Object.hasOwn(clientConfig.naive, 'name'), false);
+    const password = clientConfig.trojan.password;
+    for (const protocol of ['mixed', 'socks', 'http', 'naive', 'anytls', 'hysteria2', 'tuic'] as const) {
+      assert.equal(clientConfig[protocol].password, password, `${protocol} must share the demo password`);
     }
-    const userkey = clientConfig.snell?.userkey;
-    assert.ok(userkey);
-    assert.match(userkey, /^[A-Za-z0-9]{32}$/u);
-    assert.equal(clientConfig?.vless?.flow, 'xtls-rprx-vision');
+    assert.equal(clientConfig.hysteria.auth_str, password);
+    assert.equal(clientConfig.vmess.uuid, clientConfig.vless.uuid);
+    assert.equal(clientConfig.tuic.uuid, clientConfig.vless.uuid);
+    assert.equal(clientConfig.shadowtls.password, clientConfig.shadowsocks.password);
+    assert.equal(clientConfig.vless.flow, 'xtls-rprx-vision');
 
     const repeat = await service.create({clientIp: '198.51.100.15', deviceId: 'Pixel-9'}, now);
     assert.ok('failure' in repeat);
@@ -82,9 +112,12 @@ test('demo uses the S-UI form payload, named protocol credentials, 2 GiB, three 
 
     const next = await service.create({clientIp: '198.51.100.18', deviceId: 'Pixel-10'}, now);
     assert.ok('demoSubURL' in next);
-    const nextConfig = sentData?.config as Record<string, Record<string, string>>;
-    assert.match(nextConfig.snell!.userkey!, /^[A-Za-z0-9]{32}$/u);
-    assert.notEqual(nextConfig.snell!.userkey, userkey);
+    const nextConfig = fullClientConfigSchema.parse(sentData?.config);
+    assert.notEqual(nextConfig.snell.userkey, clientConfig.snell.userkey);
+    assert.notEqual(nextConfig.shadowsocks.password, clientConfig.shadowsocks.password);
+    assert.notEqual(nextConfig.shadowsocks16.password, clientConfig.shadowsocks16.password);
+    assert.notEqual(nextConfig.trojan.password, password);
+    assert.notEqual(nextConfig.vless.uuid, clientConfig.vless.uuid);
     assert.equal(panelCalls, 2);
   } finally {
     store.close();

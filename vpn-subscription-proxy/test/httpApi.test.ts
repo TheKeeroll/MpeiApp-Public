@@ -151,11 +151,16 @@ test('network, malformed JSON and missing success flags retain uncertainty and p
 
 test('known panel rejection logs the sanitized panel message and releases the reservation', async () => {
   let calls = 0;
+  const rejectedSecrets: string[] = [];
   const h = await createHarness({panelResponse: data => {
     const protocols = data.config as Record<string, Record<string, string>>;
-    return ++calls === 1
-      ? Response.json({success: false, msg: `Rejected ${data.name}; ${protocols.naive!.password}; ${protocols.snell!.userkey}; private-panel-token\nhttps://secret.example/token`})
-      : Response.json({success: true});
+    if (++calls === 1) {
+      rejectedSecrets.push(protocols.naive!.password!, protocols.snell!.userkey!,
+        protocols.shadowsocks!.password!, protocols.shadowsocks16!.password!,
+        protocols.hysteria!.auth_str!, protocols.vmess!.uuid!);
+      return Response.json({success: false, msg: `Rejected ${data.name}; ${rejectedSecrets.join('; ')}; private-panel-token\nhttps://secret.example/token`});
+    }
+    return Response.json({success: true});
   }});
   try {
     assert.deepEqual((await h.post({purpose: 'demo'})).json(), {reqStatus: 'failed', reason: 'service_error'});
@@ -166,8 +171,7 @@ test('known panel rejection logs the sanitized panel message and releases the re
     assert.equal(failure.reservationRetained, false);
     assert.match(String(failure.panelMessage), /Rejected \[redacted\]/u);
     assert.doesNotMatch(JSON.stringify(h.records), /private-panel-token|secret\.example|MpeiApp-demo-/u);
-    const protocols = h.panelData[0]!.config as Record<string, Record<string, string>>;
-    for (const secret of [protocols.naive!.password!, protocols.snell!.userkey!]) {
+    for (const secret of rejectedSecrets) {
       assert.ok(secret);
       assert.equal(JSON.stringify(h.records).includes(secret), false);
     }
