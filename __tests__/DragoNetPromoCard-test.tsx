@@ -1,9 +1,17 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {Alert, Linking, NativeModules, Platform, Text, TouchableOpacity} from 'react-native';
+import {Alert, Linking, Modal, NativeModules, Platform, ScrollView, Text, TouchableOpacity} from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 
 const mockRequestDemo = jest.fn();
 jest.mock('../src/Vpn/DragoNetPromoVisuals', () => ({DRAGONET_PROMO_ART: 1, DragoNetSlogan: () => null, PromoAppIconsMarquee: () => null}));
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  return {
+    SafeAreaProvider: ({children}: {children: React.ReactNode}) => React.createElement('SafeAreaProvider', null, children),
+    SafeAreaView: ({children, ...props}: {children: React.ReactNode}) => React.createElement('SafeAreaView', props, children),
+  };
+});
 
 jest.mock('react-native-paper', () => ({
   useTheme: () => ({
@@ -48,6 +56,10 @@ const access = {
   demoSubURL: 'https://sub.dragonet.example/demo/student',
   receivedAt: '2026-09-12T10:00:00.000Z',
 };
+const headResponse = (url: string, status = 200): Response => ({
+  url, status, ok: status >= 200 && status < 300,
+  headers: {get: (name: string) => name === 'content-type' ? 'application/octet-stream' : null},
+} as Response);
 
 describe('DragoNet result sheet', () => {
   const platformDescriptor = Object.getOwnPropertyDescriptor(Platform, 'OS');
@@ -56,6 +68,7 @@ describe('DragoNet result sheet', () => {
     jest.clearAllMocks();
     Object.defineProperty(Platform, 'OS', {configurable: true, value: 'android'});
     NativeModules.DeviceArchitecture = undefined;
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async url => headResponse(String(url), 404));
   });
   afterEach(() => {
     if (platformDescriptor) Object.defineProperty(Platform, 'OS', platformDescriptor);
@@ -124,13 +137,42 @@ describe('DragoNet result sheet', () => {
     await ReactTestRenderer.act(() => tree!.unmount());
   });
 
-  it.each([
-    ['arm64-v8a', 'Owenclave', '0.17.57', 'https://dragonservices.online/apps/android/Owenclave-0.17.57-arm64-v8a.apk'],
-    ['armeabi-v7a', 'NekoBox', '1.4.2', 'https://github.com/MatsuriDayo/NekoBoxForAndroid/releases/download/1.4.2/NekoBox-1.4.2-armeabi-v7a.apk'],
-    ['x86', 'NekoBox', '1.4.2', 'https://github.com/MatsuriDayo/NekoBoxForAndroid/releases/download/1.4.2/NekoBox-1.4.2-x86.apk'],
-    ['x86_64', 'NekoBox', '1.4.2', 'https://github.com/MatsuriDayo/NekoBoxForAndroid/releases/download/1.4.2/NekoBox-1.4.2-x86_64.apk'],
-  ])('matches the Android %s APK to its client and instructions', async (abi, client, version, apkUrl) => {
+  it('protects the sheet footer with its own modal safe area and keeps Done outside scrolling instructions', async () => {
+    const onClose = jest.fn();
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(<DemoResultSheet
+        visible access={access} copied={false} onCopy={jest.fn()}
+        instructionsExpanded onToggleInstructions={jest.fn()} onClose={onClose}
+      />);
+    });
+    const modal = tree!.root.findByType(Modal);
+    expect(modal.props.navigationBarTranslucent).toBe(true);
+    expect(modal.props.statusBarTranslucent).toBe(true);
+    const sheet = modal.findByType(SafeAreaProvider).findByType(SafeAreaView);
+    expect(sheet.props.edges).toEqual(expect.arrayContaining(['bottom', 'left', 'right']));
+    const scroll = sheet.findByType(ScrollView);
+    expect(scroll.findAllByProps({title: 'Готово'})).toHaveLength(0);
+    const done = sheet.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === 'Готово'))!;
+    expect(done).toBeDefined();
+    await ReactTestRenderer.act(() => done.props.onPress());
+    expect(onClose).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(() => tree!.unmount());
+  });
+
+  it.each((['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'] as const).flatMap(abi => [
+    [abi, 'latest', 'Owenclave', '0.18.2', `https://github.com/owenewans/owenclave/releases/download/v0.18.2/Owenclave-0.18.2-${abi}.apk`],
+    [abi, 'mirror', 'Owenclave', '0.17.59', `https://dragonservices.online/apps/android/Owenclave-0.17.59-${abi}.apk`],
+    [abi, 'nekobox', 'NekoBox', '1.4.2', `https://github.com/MatsuriDayo/NekoBoxForAndroid/releases/download/1.4.2/NekoBox-1.4.2-${abi}.apk`],
+  ]))('matches the Android %s APK from %s to its caption and instructions', async (abi, source, client, version, apkUrl) => {
     NativeModules.DeviceArchitecture = {getSupportedAbis: jest.fn(async () => [abi])};
+    jest.mocked(fetch).mockImplementation(async url => {
+      if (String(url).endsWith('/releases/latest')) {
+        return source === 'latest'
+          ? headResponse('https://github.com/owenewans/owenclave/releases/tag/v0.18.2') : headResponse(String(url), 404);
+      }
+      return headResponse(String(url), String(url) === apkUrl ? 200 : 404);
+    });
     // Real Android can open browser URLs even when canOpenURL reports false.
     jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(false);
     const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
@@ -139,8 +181,7 @@ describe('DragoNet result sheet', () => {
       tree = ReactTestRenderer.create(<ConnectionInstructions expanded onToggle={jest.fn()}/>);
     });
     const rendered = JSON.stringify(tree!.toJSON());
-    expect(rendered).toContain(client);
-    expect(rendered).toContain(version);
+    expect(rendered).toContain(`${client} ${version} (${abi})`);
     expect(rendered).toContain('Часть конфигураций у вас может не работать');
     expect(rendered).toContain('Инструкции для других платформ');
     if (client === 'NekoBox') {
@@ -159,7 +200,7 @@ describe('DragoNet result sheet', () => {
     await ReactTestRenderer.act(() => tree!.unmount());
   });
 
-  it('disables APK download and withholds client instructions until the ABI is resolved', async () => {
+  it('disables APK download and withholds client instructions until selection is resolved', async () => {
     let resolveAbis!: (value: unknown) => void;
     NativeModules.DeviceArchitecture = {getSupportedAbis: jest.fn(() => new Promise(resolve => { resolveAbis = resolve; }))};
     const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
@@ -176,6 +217,27 @@ describe('DragoNet result sheet', () => {
     expect(download().props.disabled).toBe(false);
     expect(JSON.stringify(tree!.toJSON())).toContain('NekoBox');
     expect(JSON.stringify(tree!.toJSON())).toContain('Импорт из буфера обмена');
+    await ReactTestRenderer.act(() => tree!.unmount());
+  });
+
+  it('checks sources only when expanded and reselects a matching client after reopening', async () => {
+    NativeModules.DeviceArchitecture = {getSupportedAbis: jest.fn(async () => ['arm64-v8a'])};
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(<ConnectionInstructions expanded={false} onToggle={jest.fn()}/>);
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(NativeModules.DeviceArchitecture.getSupportedAbis).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(() => tree!.update(<ConnectionInstructions expanded onToggle={jest.fn()}/>));
+    expect(JSON.stringify(tree!.toJSON())).toContain('NekoBox 1.4.2 (arm64-v8a)');
+    await ReactTestRenderer.act(() => tree!.update(<ConnectionInstructions expanded={false} onToggle={jest.fn()}/>));
+    jest.mocked(fetch).mockImplementation(async url => headResponse(String(url).endsWith('/releases/latest')
+      ? 'https://github.com/owenewans/owenclave/releases/tag/v0.19.0' : String(url)));
+    await ReactTestRenderer.act(() => tree!.update(<ConnectionInstructions expanded onToggle={jest.fn()}/>));
+    const rendered = JSON.stringify(tree!.toJSON());
+    expect(rendered).toContain('Owenclave 0.19.0 (arm64-v8a)');
+    expect(rendered).toContain('Groups');
+    expect(rendered).not.toContain('URL Тест');
     await ReactTestRenderer.act(() => tree!.unmount());
   });
 
