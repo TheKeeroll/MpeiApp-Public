@@ -1,6 +1,7 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import React from 'react';
 import {useTheme} from 'react-native-paper';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {
   Alert,
   ActivityIndicator,
@@ -122,11 +123,12 @@ export const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () =
   const isIos = Platform.OS === 'ios';
   const [androidClient, setAndroidClient] = React.useState<AndroidVpnClient>();
   React.useEffect(() => {
-    if (isIos) return;
+    if (isIos || !expanded) return;
     let active = true;
+    setAndroidClient(undefined);
     void getAndroidVpnClient().then(client => { if (active) setAndroidClient(client); });
     return () => { active = false; };
-  }, [isIos]);
+  }, [isIos, expanded]);
   return (
     <>
       <AccordionHeader title="Инструкция по подключению" icon="menu-book" expanded={expanded} onPress={onToggle}/>
@@ -147,11 +149,11 @@ export const ConnectionInstructions: React.FC<{expanded: boolean; onToggle: () =
           ) : (
             <>
               {androidClient ? (
-                <Text style={{color: colors.text, fontSize: 16, fontWeight: 'bold'}}>{androidClient.client} {androidClient.version}</Text>
+                <Text style={{color: colors.text, fontSize: 16, fontWeight: 'bold'}}>{`${androidClient.client} ${androidClient.version} (${androidClient.architecture})`}</Text>
               ) : (
                 <View accessibilityLiveRegion="polite" style={{gap: 8}}>
                   <ActivityIndicator color={colors.textUnderline}/>
-                  <Text style={{color: colors.text, fontSize: 15}}>Определяем приложение для вашего устройства…</Text>
+                  <Text style={{color: colors.text, fontSize: 15}}>Подбираем доступный APK для вашего устройства…</Text>
                 </View>
               )}
               <ActionButton
@@ -315,23 +317,25 @@ export const DemoResultSheet: React.FC<{
     return null;
   }
   return (
-    <Modal visible={props.visible} transparent animationType="slide" onRequestClose={props.onClose}>
-      <View style={{flex: 1, justifyContent: 'flex-end', backgroundColor: withOpacity('#000000', 60)}}>
-        <View style={{maxHeight: '88%', padding: 18, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: colors.backdrop}}>
-          <ScrollView contentContainerStyle={{paddingBottom: 2}}>
-            <Text style={{color: colors.text, fontSize: 21, fontWeight: 'bold'}}>Демо-доступ готов</Text>
-            <Text style={{marginTop: 6, color: withOpacity(colors.text, 84), fontSize: 15, lineHeight: 21}}>Скопируйте ссылку и импортируйте её в VPN-клиент.</Text>
-            <DemoSubscriptionLink
-              access={props.access}
-              copied={props.copied}
-              onCopy={props.onCopy}
-              instructionsExpanded={props.instructionsExpanded}
-              onToggleInstructions={props.onToggleInstructions}
-            />
+    <Modal visible={props.visible} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={props.onClose}>
+      <SafeAreaProvider>
+        <View style={{flex: 1, justifyContent: 'flex-end', backgroundColor: withOpacity('#000000', 60)}}>
+          <SafeAreaView edges={['bottom', 'left', 'right']} style={{maxHeight: '88%', padding: 18, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: colors.backdrop}}>
+            <ScrollView style={{flexShrink: 1}} contentContainerStyle={{paddingBottom: 2}}>
+              <Text style={{color: colors.text, fontSize: 21, fontWeight: 'bold'}}>Демо-доступ готов</Text>
+              <Text style={{marginTop: 6, color: withOpacity(colors.text, 84), fontSize: 15, lineHeight: 21}}>Скопируйте ссылку и импортируйте её в VPN-клиент.</Text>
+              <DemoSubscriptionLink
+                access={props.access}
+                copied={props.copied}
+                onCopy={props.onCopy}
+                instructionsExpanded={props.instructionsExpanded}
+                onToggleInstructions={props.onToggleInstructions}
+              />
+            </ScrollView>
             <ActionButton title="Готово" onPress={props.onClose}/>
-          </ScrollView>
+          </SafeAreaView>
         </View>
-      </View>
+      </SafeAreaProvider>
     </Modal>
   );
 };
