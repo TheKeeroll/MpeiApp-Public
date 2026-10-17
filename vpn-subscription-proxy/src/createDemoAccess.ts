@@ -65,7 +65,11 @@ const createPanelClientData = (
 ): Readonly<Record<string, unknown>> => {
   const password = randomBytes(24).toString('base64url');
   const uuid = randomUUID();
-  const named = <T extends Record<string, string>>(identity: T): T & {name: string} => ({...identity, name: clientName});
+  const shadowsocksPassword = randomBytes(32).toString('base64');
+  const shadowsocks16Password = randomBytes(16).toString('base64');
+  const named = <T extends Record<string, string | number>>(identity: T): T & {name: string} => ({...identity, name: clientName});
+  // Naive rejects name; HTTP/SOCKS authentication also uses username instead.
+  const usernamed = (password: string): {username: string; password: string} => ({username: clientName, password});
   return {
     enable: true,
     name: clientName,
@@ -73,13 +77,21 @@ const createPanelClientData = (
     inbounds: config.demoInbounds,
     links: [],
     config: {
-      trojan: named({password}),
-      anytls: named({password}),
-      hysteria2: named({password}),
-      tuic: named({password, uuid}),
+      mixed: usernamed(password),
+      socks: usernamed(password),
+      http: usernamed(password),
+      shadowsocks: named({password: shadowsocksPassword}),
+      shadowsocks16: named({password: shadowsocks16Password}),
+      shadowtls: named({password: shadowsocksPassword}),
+      vmess: named({uuid, alterId: 0}),
       vless: named({uuid, flow: config.demoVlessFlow}),
-      naive: named({password}),
+      anytls: named({password}),
+      trojan: named({password}),
+      naive: usernamed(password),
+      hysteria: named({auth_str: password}),
       snell: named({userkey: createSnellUserKey()}),
+      tuic: named({uuid, password}),
+      hysteria2: named({password}),
     },
     volume: DEMO_VOLUME_BYTES,
     expiry: Math.floor((now.getTime() + DEMO_DURATION_MS) / 1000),
