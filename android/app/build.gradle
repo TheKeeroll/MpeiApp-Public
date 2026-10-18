@@ -167,6 +167,11 @@ android {
         }
     }
     packagingOptions {
+        resources {
+            // myTarget ships this descriptor without the optional Tracer Lite runtime.
+            // Retain other SDKs' ServiceLoader entries.
+            excludes += ['META-INF/services/ru.ok.tracer.manifest.TracerLiteManifest']
+        }
         pickFirst '**/libhermes.so'
         pickFirst '**/libhermes-executor-debug.so'
         pickFirst '**/libhermes-inspector.so'
@@ -190,6 +195,10 @@ dependencies {
     implementation 'com.yandex.ads.mediation:mobileads-bigoads:6.0.0.0'
     implementation 'com.yandex.ads.mediation:mobileads-mytarget:5.51.2.1'
     implementation 'com.yandex.ads.mediation:mobileads-chartboost:9.14.0.0'
+    // The Yandex adapter excludes Chartboost's legacy player dependency, but the
+    // SDK still references it. Match Chartboost's POM so R8 and video playback
+    // have the actual classes; Media3 uses a different package and cannot replace it.
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.7'
 
     // implementation platform('com.google.firebase:firebase-bom:33.1.2')
     // implementation 'com.google.firebase:firebase-crashlytics'
