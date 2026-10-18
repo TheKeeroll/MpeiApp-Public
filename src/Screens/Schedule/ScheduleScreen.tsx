@@ -12,7 +12,7 @@ import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import BARSAPI from "../../Common/Globals";
 import { isBARSError } from "../../API/Error/Error";
 import Holidays from "../CommonComponents/Holidays";
-import InlineBannerAd from "../../Ads/InlineBannerAd";
+import {useDeferredInlineAd} from "../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../Ads/AdPlacements";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import ScheduleSearchPanel from "./ScheduleSearchPanel";
@@ -403,6 +403,13 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
     const promoDay = schedule.data?.days[safeSelectedDate]
     const promo = useDragoNetPromo(`personal:${promoDay?.date ?? ''}`,
         !isFirstTime && (schedule.status === 'LOADED' || schedule.status === 'OFFLINE') && isNonTodayScheduleDate(promoDay?.date, moscowToday))
+    const todayAdEligible = (schedule.status === 'LOADED' || schedule.status === 'OFFLINE')
+        && promoDay?.date === moscowToday && (promoDay?.lessons.length ?? 0) > 0
+    const inlineAd = useDeferredInlineAd(YANDEX_INLINE_AD_PLACEMENTS.scheduleToday, 'screen', todayAdEligible)
+    const setViewportRef = React.useCallback((view: React.ComponentRef<typeof View> | null) => {
+        promo.viewportRef.current = view
+        inlineAd.viewportRef.current = view
+    }, [promo.viewportRef, inlineAd.viewportRef])
     const openRequestedSchedule = (query: string) => {
         props.navigation.push('scheduleMain', createScheduleSearchParams(query))
     }
@@ -474,14 +481,23 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
 
                     <DateSelector days={editableScheduleData.days} selectedIndex={safeSelectedDate} onDateSelect={setSelectedDate}
                         initScrollIndex={Math.max(0, safeSelectedDate - 2)}/>
-                    <View ref={promo.viewportRef} collapsable={false} onLayout={promo.refreshVisibility} style={{flex: 1, width: '100%', marginTop: 10}}>
+                    <View ref={setViewportRef} collapsable={false} onLayout={() => {
+                        inlineAd.onViewportLayout()
+                        promo.refreshVisibility()
+                    }} style={{flex: 1, width: '100%', marginTop: 10}}>
                     {typeof schedule.data!.days[safeSelectedDate] != 'undefined' ?
                         <FlatList
+                            {...inlineAd.scrollProps}
                             style={{width: '100%'}}
                             contentContainerStyle={{alignItems: 'center'}}
-                            onScroll={promo.refreshVisibility}
-                            scrollEventThrottle={16}
-                            onContentSizeChange={promo.refreshVisibility}
+                            onScroll={event => {
+                                inlineAd.scrollProps.onScroll(event)
+                                promo.refreshVisibility()
+                            }}
+                            onContentSizeChange={() => {
+                                inlineAd.scrollProps.onContentSizeChange()
+                                promo.refreshVisibility()
+                            }}
                             data={editableScheduleData.days[safeSelectedDate].lessons}
                             renderItem={({item,index}:{item:BARSScheduleLesson, index: number})=>
                                 <LessonCell {...props} item={item} index={index} isToday={IsToday()}/>
@@ -489,9 +505,7 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
                             ItemSeparatorComponent={()=><View style={{height: 10}}/>}
                             ListFooterComponentStyle={{width: '100%'}}
                             ListFooterComponent={<>
-                                {IsToday() && editableScheduleData.days[safeSelectedDate].lessons.length > 0 && (
-                                    <InlineBannerAd placement={YANDEX_INLINE_AD_PLACEMENTS.scheduleToday}/>
-                                )}
+                                {todayAdEligible && inlineAd.banner}
                                 {promo.banner}
                                 <View style={{height: 20}}/>
                             </>}

@@ -2,7 +2,7 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {AppState, ScrollView, StyleSheet, View} from 'react-native';
 import InlineBannerAd from '../src/Ads/InlineBannerAd';
-import {YANDEX_INLINE_AD_PLACEMENTS} from '../src/Ads/AdPlacements';
+import {YANDEX_INLINE_AD_PLACEMENTS, type YandexInlineAdPlacement} from '../src/Ads/AdPlacements';
 
 let mockFocused = true;
 let mockAdsEnabled = true;
@@ -24,11 +24,17 @@ jest.mock('yandex-mobile-ads', () => ({
 const {DrawerStatusContext} = require('@react-navigation/drawer');
 const {useDeferredInlineAd} = require('../src/Ads/useDeferredInlineAd');
 let mockHandle: ReturnType<typeof import('../src/Ads/useDeferredInlineAd').useDeferredInlineAd>;
-const Harness = ({surface = 'screen', drawer}: {surface?: 'screen' | 'drawer'; drawer?: string}) => (
-  <DrawerStatusContext.Provider value={drawer}><Body surface={surface}/></DrawerStatusContext.Provider>
+type HarnessProps = {
+  surface?: 'screen' | 'drawer';
+  drawer?: string;
+  placement?: YandexInlineAdPlacement;
+  eligible?: boolean;
+};
+const Harness = ({drawer, ...props}: HarnessProps) => (
+  <DrawerStatusContext.Provider value={drawer}><Body {...props}/></DrawerStatusContext.Provider>
 );
-const Body = ({surface}: {surface: 'screen' | 'drawer'}) => {
-  const ad = useDeferredInlineAd(surface === 'drawer' ? 'inlineBannerDrawer' : 'inlineBannerMarks', surface);
+const Body = ({surface = 'screen', placement, eligible = true}: Omit<HarnessProps, 'drawer'>) => {
+  const ad = useDeferredInlineAd(placement ?? (surface === 'drawer' ? 'inlineBannerDrawer' : 'inlineBannerMarks'), surface, eligible);
   mockHandle = ad;
   return <View ref={ad.viewportRef} collapsable={false} onLayout={ad.onViewportLayout}>
     <ScrollView {...ad.scrollProps}>{ad.banner}</ScrollView>
@@ -46,7 +52,7 @@ describe('deferred inline native requests', () => {
     const anchor = tree.root.findAllByType(View).find(node => node.props.style?.width === '100%')!;
     anchor.instance.measureInWindow = (callback: (...args: number[]) => void) => callback(0, slotY, 320, 0);
   };
-  const mount = async (props = {}) => {
+  const mount = async (props: HarnessProps = {}) => {
     await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Harness {...props}/>);});
     measure();
     await ReactTestRenderer.act(() => mockHandle.onViewportLayout());
@@ -70,8 +76,9 @@ describe('deferred inline native requests', () => {
     jest.restoreAllMocks();
   });
 
-  it('requires a user scroll near the slot; mount/layout/programmatic scroll and a top gesture do not load', async () => {
-    await mount();
+  it.each([YANDEX_INLINE_AD_PLACEMENTS.marks, YANDEX_INLINE_AD_PLACEMENTS.scheduleToday])(
+    '%s requires a user scroll near the slot; mount/layout/programmatic scroll and a top gesture do not load', async placement => {
+    await mount({placement});
     expect(mockCreateRequest).not.toHaveBeenCalled();
     slotY = 700;
     await ReactTestRenderer.act(() => scroll().onScroll(event(600)));
@@ -95,16 +102,19 @@ describe('deferred inline native requests', () => {
     await ReactTestRenderer.act(() => {
       scroll().onScroll(event(550));
       mockHandle.onViewportLayout();
-      tree.update(<Harness/>);
+      tree.update(<Harness placement={placement}/>);
     });
     expect(mockBannerMount).toHaveBeenCalledTimes(1);
   });
-  it.each([150, 450])('loads an initially visible marks footer at y=%i without a gesture for an empty/short list', async y => {
+  it.each([
+    [YANDEX_INLINE_AD_PLACEMENTS.marks, 150], [YANDEX_INLINE_AD_PLACEMENTS.marks, 450],
+    [YANDEX_INLINE_AD_PLACEMENTS.scheduleToday, 150], [YANDEX_INLINE_AD_PLACEMENTS.scheduleToday, 450],
+  ] as const)('loads an initially visible %s footer at y=%i without a gesture for a short list', async (placement, y) => {
     slotY = y;
-    await mount();
+    await mount({placement});
     await layoutNative();
     expect(mockBannerMount).toHaveBeenCalledTimes(1);
-    await ReactTestRenderer.act(() => {mockHandle.onViewportLayout(); tree.update(<Harness/>);});
+    await ReactTestRenderer.act(() => {mockHandle.onViewportLayout(); tree.update(<Harness placement={placement}/>);});
     expect(mockBannerMount).toHaveBeenCalledTimes(1);
   });
   it('does not apply the visible-without-scroll exception to Drawer', async () => {
@@ -115,9 +125,10 @@ describe('deferred inline native requests', () => {
     await layoutNative();
     expect(mockBannerMount).toHaveBeenCalledTimes(1);
   });
-  it('does not load an offscreen marks footer merely because it is inside the prefetch distance', async () => {
+  it.each([YANDEX_INLINE_AD_PLACEMENTS.marks, YANDEX_INLINE_AD_PLACEMENTS.scheduleToday])(
+    'does not load an offscreen %s footer merely because it is inside the prefetch distance', async placement => {
     slotY = 800;
-    await mount();
+    await mount({placement});
     expect(mockCreateRequest).not.toHaveBeenCalled();
   });
   it('does not treat a visible footer reached by programmatic scrolling as an initially visible short list', async () => {
@@ -173,6 +184,30 @@ describe('deferred inline native requests', () => {
     await ReactTestRenderer.act(() => tree.update(<Harness/>));
     await ReactTestRenderer.act(() => resolve({width: 320, height: 120}));
     expect(mockBannerMount).not.toHaveBeenCalled();
+  });
+  it('discards a pending schedule request when the date becomes ineligible and starts a fresh visit on return', async () => {
+    let resolve!: (size: {width: number; height: number}) => void;
+    mockInlineSize.mockImplementationOnce(() => new Promise(done => {resolve = done;}));
+    const placement = YANDEX_INLINE_AD_PLACEMENTS.scheduleToday;
+    slotY = 450;
+    await mount({placement, eligible: false});
+    expect(mockCreateRequest).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(() => tree.update(<Harness placement={placement}/>));
+    await layoutNative();
+    expect(mockInlineSize).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(() => tree.update(<Harness placement={placement} eligible={false}/>));
+    await ReactTestRenderer.act(() => resolve({width: 320, height: 120}));
+    expect(mockBannerMount).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(() => tree.update(<Harness placement={placement}/>));
+    await layoutNative();
+    expect(mockBannerMount).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(() => tree.root.findByType('NativeBanner' as React.ElementType).props.onAdFailedToLoad({nativeEvent: {code: 'no-fill'}}));
+    await ReactTestRenderer.act(() => {mockHandle.onViewportLayout(); tree.update(<Harness placement={placement}/>);});
+    expect(mockBannerMount).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(() => tree.update(<Harness placement={placement} eligible={false}/>));
+    await ReactTestRenderer.act(() => tree.update(<Harness placement={placement}/>));
+    await layoutNative();
+    expect(mockBannerMount).toHaveBeenCalledTimes(2);
   });
   it('suppresses the marks slot while an open Drawer covers the screen', async () => {
     slotY = 700;

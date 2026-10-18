@@ -7,39 +7,48 @@ import {useAdScreenActivity} from './useAdScreenActivity';
 import {useAdViewport} from './useAdViewport';
 
 /** The visit belongs to the screen, so footer virtualization cannot grant another attempt. */
-export const useDeferredInlineAd = (placement: YandexInlineAdPlacement, surface: 'screen' | 'drawer' = 'screen') => {
+export const useDeferredInlineAd = (
+  placement: YandexInlineAdPlacement,
+  surface: 'screen' | 'drawer' = 'screen',
+  eligible = true,
+) => {
   const activity = useAdScreenActivity(surface);
   const {adsEnabled} = useAds();
   const [allowed, setAllowed] = React.useState(false);
   const granted = React.useRef(false);
   const attempt = React.useRef<InlineBannerAttempt>({started: false, failed: false});
-  const latest = React.useRef({activity, adsEnabled});
-  latest.current = {activity, adsEnabled};
+  const visitActive = activity.isVisible && eligible;
+  const latest = React.useRef({activity, adsEnabled, eligible});
+  latest.current = {activity, adsEnabled, eligible};
+  const isLoadAllowedNow = React.useCallback(() => (
+    latest.current.adsEnabled && latest.current.eligible && latest.current.activity.isActiveNow()
+  ), []);
   const viewport = useAdViewport({
     // Once the visit has an attempt, further scrolls need no native measurements.
-    active: activity.isActive && adsEnabled && !allowed,
-    visitActive: activity.isVisible,
-    isActiveNow: () => latest.current.adsEnabled && latest.current.activity.isActiveNow(),
+    active: activity.isActive && eligible && adsEnabled && !allowed,
+    visitActive,
+    isActiveNow: isLoadAllowedNow,
     onGeometry: (geometry, hasUserScrolled, scrollOffsetY) => {
-      const current = latest.current;
-      // Empty/short marks lists may expose the footer without any scrollable
+      // Short marks/schedule lists may expose the footer without any scrollable
       // content. An offscreen slot still requires a real user gesture.
-      const initiallyVisibleMarks = placement === YANDEX_INLINE_AD_PLACEMENTS.marks
+      const allowsInitiallyVisibleSlot = placement === YANDEX_INLINE_AD_PLACEMENTS.marks
+        || placement === YANDEX_INLINE_AD_PLACEMENTS.scheduleToday;
+      const initiallyVisible = allowsInitiallyVisibleSlot
         && scrollOffsetY <= 1 && geometry?.nearViewport && geometry.distanceToSlot < 0;
-      if (!granted.current && (hasUserScrolled || initiallyVisibleMarks) && geometry?.nearViewport
-        && current.adsEnabled && current.activity.isActiveNow()) {
+      if (!granted.current && (hasUserScrolled || initiallyVisible) && geometry?.nearViewport
+        && isLoadAllowedNow()) {
         granted.current = true;
         setAllowed(true);
       }
     },
   });
   React.useEffect(() => {
-    if (!activity.isVisible) {
+    if (!visitActive) {
       granted.current = false;
       attempt.current = {started: false, failed: false};
       setAllowed(false);
     }
-  }, [activity.isVisible]);
+  }, [visitActive]);
 
   return {
     viewportRef: viewport.viewportRef,
@@ -47,9 +56,9 @@ export const useDeferredInlineAd = (placement: YandexInlineAdPlacement, surface:
     scrollProps: viewport.scrollProps,
     banner: (
       <View ref={viewport.slotRef} collapsable={false} onLayout={viewport.refresh} style={{width: '100%', minHeight: 1}}>
-        {activity.isVisible && adsEnabled && allowed && (
+        {visitActive && adsEnabled && allowed && (
           <InlineBannerAd placement={placement} attempt={attempt.current}
-            loadEnabled={activity.isActive} isLoadAllowedNow={activity.isActiveNow}/>
+            loadEnabled={activity.isActive} isLoadAllowedNow={isLoadAllowedNow}/>
         )}
       </View>
     ),
