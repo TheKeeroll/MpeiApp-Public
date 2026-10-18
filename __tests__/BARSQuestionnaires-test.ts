@@ -203,6 +203,87 @@ describe('BARS mandatory questionnaire integration', () => {
     expect(bars.GetCreds()).toEqual(credentials);
   });
 
+  it('keeps the accepted session and refreshes the list when a recheck still finds mandatory questionnaires', async () => {
+    const bars = account();
+    const page = ParseMandatoryQuestionnaires(fixture('blocked-page-1.html'));
+    bars.RecordMandatoryQuestionnaires(page);
+    const profile = bars.GetBARSCommonHeaders();
+    bars.CollectQuestionnaires = jest.fn(async () => ({rows: page.rows, complete: true, blocked: true}));
+    bars.HandleLoginResponse = jest.fn();
+    bars.LoadOnlineData = jest.fn();
+    const fetchMock = jest.fn().mockResolvedValue(reply(fixture('blocked-page-1.html')));
+    globalThis.fetch = fetchMock as typeof fetch;
+    await bars.RetryMandatoryQuestionnaires();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(bars.CollectQuestionnaires).toHaveBeenCalledTimes(1);
+    expect(bars.HandleLoginResponse).not.toHaveBeenCalled();
+    expect(bars.LoadOnlineData).not.toHaveBeenCalled();
+    expect(bars.LoginState).toBe('QUESTIONNAIRES_REQUIRED');
+    expect(bars.GetCreds()).toEqual(credentials);
+    expect(bars.GetBARSCommonHeaders()).toMatchObject(profile);
+    expect(bars.MandatoryQuestionnairesSnapshot).toMatchObject({status: 'idle', error: undefined, questionnaires: page.questionnaires});
+  });
+
+  it('shares one pending recheck when the button is pressed twice', async () => {
+    const bars = account();
+    const page = ParseMandatoryQuestionnaires(fixture('blocked-page-1.html'));
+    bars.RecordMandatoryQuestionnaires(page);
+    bars.CollectQuestionnaires = jest.fn(async () => ({rows: page.rows, complete: true, blocked: true}));
+    let release: (value: unknown) => void = () => undefined;
+    const fetchMock = jest.fn(() => new Promise<unknown>(resolve => { release = resolve; }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const first = bars.RetryMandatoryQuestionnaires();
+    const second = bars.RetryMandatoryQuestionnaires();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(bars.MandatoryQuestionnairesSnapshot.status).toBe('checking');
+    release(reply(fixture('blocked-page-1.html')));
+    await Promise.all([first, second]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(bars.CollectQuestionnaires).toHaveBeenCalledTimes(1);
+    expect(bars.LoginState).toBe('QUESTIONNAIRES_REQUIRED');
+    expect(bars.MandatoryQuestionnairesSnapshot.status).toBe('idle');
+  });
+
+  it('ignores a late recheck response after switching to another account', async () => {
+    const bars = account();
+    bars.RecordMandatoryQuestionnaires(ParseMandatoryQuestionnaires(fixture('blocked-page-1.html')));
+    bars.HandleLoginResponse = jest.fn();
+    bars.LoadOnlineData = jest.fn();
+    let release: (value: unknown) => void = () => undefined;
+    globalThis.fetch = jest.fn(() => new Promise<unknown>(resolve => { release = resolve; })) as unknown as typeof fetch;
+    const retry = bars.RetryMandatoryQuestionnaires();
+    await Promise.resolve();
+    await Promise.resolve();
+    const otherAccount = {login: 'AnotherStudent', password: 'other-fixture-password'};
+    bars.BeginLoginAttempt(otherAccount, true);
+    bars.SetLoginState('NOT_LOGGED_IN');
+    release(reply(fixture('blocked-page-1.html')));
+    await retry;
+    expect(bars.mCredentials).toEqual(otherAccount);
+    // Persisted credentials belong to the last accepted login until the new one succeeds.
+    expect(bars.GetCreds()).toEqual(credentials);
+    expect(bars.LoginState).toBe('NOT_LOGGED_IN');
+    expect(bars.MandatoryQuestionnairesSnapshot.questionnaires).toHaveLength(0);
+    expect(bars.MandatoryQuestionnairesSnapshot.generation).toBeUndefined();
+    expect(bars.HandleLoginResponse).not.toHaveBeenCalled();
+    expect(bars.LoadOnlineData).not.toHaveBeenCalled();
+  });
+
+  it('starts with automatic filling disabled and persists only an explicitly enabled preference', () => {
+    const bars = account();
+    expect(bars.AutomaticQuestionnaireFilling).toBe(false);
+    bars.SetAutomaticQuestionnaireFilling(true);
+    expect(bars.mStorage.getString(STORAGE_KEYS.AUTO_FILL_MANDATORY_QUESTIONNAIRES)).toBe('true');
+    expect(bars.MandatoryQuestionnairesSnapshot.enabled).toBe(true);
+    bars.mStorage.set(STORAGE_KEYS.AUTO_FILL_MANDATORY_QUESTIONNAIRES, 'invalid-setting');
+    expect(bars.AutomaticQuestionnaireFilling).toBe(false);
+    bars.SetAutomaticQuestionnaireFilling(false);
+    expect(bars.mStorage.getString(STORAGE_KEYS.AUTO_FILL_MANDATORY_QUESTIONNAIRES)).toBe('false');
+    expect(bars.MandatoryQuestionnairesSnapshot.enabled).toBe(false);
+  });
+
   it('does not retry a failed automatic operation, and switching it off aborts further writes', async () => {
     const bars = account();
     const row = ParseMandatoryQuestionnaires(fixture('blocked-page-1.html')).questionnaires[0]!;

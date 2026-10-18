@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches: [dev, v2]
+    tags: ['**']
+    # GitHub does not apply path filters to tag pushes: tags always run all checks.
+    paths-ignore: ['**.[mM][dD]', 'docs/**']
   pull_request:
     branches: [dev, v2]
+    paths-ignore: ['**.[mM][dD]', 'docs/**']
 
 permissions:
   contents: read
@@ -14,8 +18,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed paths
+    if: github.event_name != 'push' || !github.event.deleted
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      mobile: ${{ steps.paths.outputs.mobile }}
+      android: ${{ steps.paths.outputs.android }}
+      proxy: ${{ steps.paths.outputs.proxy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select checks from the pushed range or pull request
+        id: paths
+        run: node .github/scripts/ci-changes.cjs
+
   mobile-quality:
     name: Mobile quality
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -45,6 +68,8 @@ jobs:
 
   metro-smoke:
     name: Metro smoke
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -94,6 +119,8 @@ jobs:
 
   android-debug-apk:
     name: Android debug APK
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -148,6 +175,8 @@ jobs:
 
   vpn-proxy-quality:
     name: DragoNet proxy quality
+    needs: changes
+    if: needs.changes.outputs.proxy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
