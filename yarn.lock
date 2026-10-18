@@ -6897,10 +6897,10 @@ yaml@^2.2.1, yaml@^2.2.2:
   resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.8.0.tgz#15f8c9866211bdc2d3781a0890e44d4fa1a5fff6"
   integrity sha512-4lLa/EcQCB0cJkyts+FpIRx5G/llPxfP6VQU5KByHEhLxY3IJCH0f0Hy1MHI8sClTvsIb8qwRJ6R/ZdlDJ/leQ==
 
-yandex-mobile-ads@8.3.0:
-  version "8.3.0"
-  resolved "https://registry.yarnpkg.com/yandex-mobile-ads/-/yandex-mobile-ads-8.3.0.tgz#782d7c568b4497cfbe83e7a0ffa4387352ab8ac5"
-  integrity sha512-Gn4IKItRqy14OZuNohjRcOCDgCo302/qQSlPS3F5UX5pFCnCAcTMw+JkeynYlOm9l1RbPLtGIhU+AbkKkhzvVQ==
+yandex-mobile-ads@8.5.0:
+  version "8.5.0"
+  resolved "https://registry.yarnpkg.com/yandex-mobile-ads/-/yandex-mobile-ads-8.5.0.tgz#2fa284314d22b7f65ee6244b8317b62db7d150aa"
+  integrity sha512-cl/K060j1/2zHNVHOUz1SfHRL9zbMGHAVf3VrBq0TST/QVDI1cmsNeTmj50fy6oUvzJvBjq07W6U4LnryUdhCQ==
 
 yargs-parser@^18.1.2:
   version "18.1.3"

@@ -40,6 +40,14 @@ allprojects {
     repositories {
         maven { url "$rootDir/../node_modules/react-native-background-fetch/android/libs" }
         mavenCentral()
+        // Chartboost's SDK is not published to Maven Central.
+        maven {
+            url "https://cboost.jfrog.io/artifactory/chartboost-ads/"
+            content {
+                includeGroup "com.chartboost"
+                includeModule "com.iab.omid.library", "chartboost-omsdk-android"
+            }
+        }
     }
     configurations.all {
         resolutionStrategy {

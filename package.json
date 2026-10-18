@@ -55,7 +55,7 @@
     "react-native-worklets": "0.12.1",
     "react-native-yamap": "^4.8.3",
     "react-redux": "^9.2.0",
-    "yandex-mobile-ads": "8.3.0"
+    "yandex-mobile-ads": "8.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
