@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {FlatList, LayoutAnimation} from 'react-native';
+import {AppState, FlatList, LayoutAnimation, View} from 'react-native';
 import type {BARSSchedule} from '../src/API/DataTypes';
 
 let mockStatus = 'LOADED';
@@ -20,7 +20,9 @@ jest.mock('react-native-paper', () => ({useTheme: () => ({colors: {background: '
 jest.mock('react-native-safe-area-context', () => ({SafeAreaView: ({children}: {children: React.ReactNode}) => <>{children}</>, useSafeAreaInsets: () => ({top: 0, bottom: 0, left: 0, right: 0})}));
 jest.mock('../src/Themes/Themes', () => ({withOpacity: (color: string) => color}));
 jest.mock('../src/Screens/CommonComponents/DrawerHeader', () => ({__esModule: true, default: () => null, NavigationHeader: () => null}));
-jest.mock('@react-navigation/native', () => ({useNavigation: () => ({})}));
+jest.mock('@react-navigation/native', () => ({useNavigation: () => ({isFocused: () => true}), useIsFocused: () => true}));
+jest.mock('@react-navigation/drawer', () => ({DrawerStatusContext: require('react').createContext(undefined)}));
+jest.mock('../src/Ads/AdsProvider', () => ({useAds: () => ({adsEnabled: true})}));
 jest.mock('../src/Common/Globals', () => ({__esModule: true, default: {TestMode: false, FetchRequestedSchedule: (...args: unknown[]) => mockFetchRequestedSchedule(...args)}}));
 jest.mock('../src/Screens/BARS/Marks/BARSMainScreen', () => ({convertDate: () => new Date()}));
 jest.mock('../src/Screens/LoadingScreen/LoadingScreen', () => () => null);
@@ -42,6 +44,8 @@ const navigation = {push: jest.fn(), goBack: jest.fn()};
 
 describe('DragoNet banner placements', () => {
   let tree: ReactTestRenderer.ReactTestRenderer;
+  let slotY = 450;
+  const previousAppState = AppState.currentState;
   const originalMonthName = Date.prototype.getMonthName;
   beforeEach(() => {
     jest.useFakeTimers();
@@ -49,6 +53,8 @@ describe('DragoNet banner placements', () => {
     jest.clearAllMocks();
     Date.prototype.getMonthName = () => 'Октябрь';
     mockStatus = 'LOADED';
+    AppState.currentState = 'active';
+    slotY = 450;
     mockSchedule = {todayIndex: 0, days: [
       {date: '12.10.2026', lessons: [], isEmpty: false, isToday: false},
       {date: '13.10.2026', lessons: [], isEmpty: false, isToday: true},
@@ -58,9 +64,20 @@ describe('DragoNet banner placements', () => {
   afterEach(async () => {
     if (tree) await ReactTestRenderer.act(() => tree.unmount());
     Date.prototype.getMonthName = originalMonthName;
+    AppState.currentState = previousAppState;
     jest.useRealTimers();
   });
   const lastOpportunity = () => mockPromo.mock.calls.at(-1)!;
+  const lessonsList = () => tree.root.findAllByType(FlatList).find(node => !node.props.horizontal)!;
+  const measureTodaySlot = async () => {
+    const viewport = tree.root.findAllByType(View).find(node => node.props.style?.marginTop === 10 && typeof node.props.onLayout === 'function')!;
+    const slot = tree.root.findAllByType(View).find(node => node.props.style?.minHeight === 1)!;
+    viewport.instance.measureInWindow = (callback: (...args: number[]) => void) => callback(0, 100, 320, 500);
+    slot.instance.measureInWindow = (callback: (...args: number[]) => void) => callback(0, slotY, 320, 1);
+    await ReactTestRenderer.act(() => viewport.props.onLayout());
+  };
+  const makeLessons = (count: number) => Array.from({length: count}, () => ({name: 'Test lesson', lessonIndex: '1-2', lessonType: 'Lecture',
+    place: 'A', cabinet: '101', group: 'A-01', type: 'COMMON' as const, teacher: {name: '-', fullName: '-', lec_oid: ''}}));
 
   it.each([['tasks', Tasks], ['reports', Reports], ['orders', Orders], ['books', Books]])(
     'offers a footer for an empty loaded/offline %s section, excluding loading/errors', async (key, Screen) => {
@@ -131,10 +148,11 @@ describe('DragoNet banner placements', () => {
     expect(tree.root.findAllByType(FlatList).find(node => node.props.horizontal)!.props.initialScrollIndex).toBe(0);
   });
 
-  it('keeps the today Yandex footer full-width and removes it for another day or an empty today', async () => {
-    mockSchedule.days[0].lessons = [{name: 'Test lesson', lessonIndex: '1-2', lessonType: 'Lecture',
-      place: 'A', cabinet: '101', group: 'A-01', type: 'COMMON', teacher: {name: '-', fullName: '-', lec_oid: ''}}];
+  it.each([1, 2])('loads the full-width today footer for %i lessons only when visible, removing it for another day or an empty today', async count => {
+    mockSchedule.days[0].lessons = makeLessons(count);
     await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+    await measureTodaySlot();
     expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(1);
     expect(tree.root.findByType('InlineBannerAdMock' as React.ElementType).props.placement).toBe('inlineBannerScheduleToday');
     const list = tree.root.findAllByType(FlatList).find(node => node.props.ListFooterComponentStyle?.width === '100%');
@@ -143,10 +161,36 @@ describe('DragoNet banner placements', () => {
     await ReactTestRenderer.act(() => selector.props.onDateSelect(1));
     expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
     await ReactTestRenderer.act(() => selector.props.onDateSelect(0));
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+    await measureTodaySlot();
     expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(1);
     mockSchedule = {...mockSchedule, days: mockSchedule.days.map(day => ({...day, lessons: []}))};
     await ReactTestRenderer.act(() => tree.update(<Schedule navigation={navigation} route={{}}/>));
     expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+  });
+  it('defers a long today schedule until an actual scroll approaches the footer and preserves DragoNet measurements', async () => {
+    mockSchedule.days[0].lessons = makeLessons(8);
+    slotY = 1300;
+    await ReactTestRenderer.act(() => {tree = ReactTestRenderer.create(<Schedule navigation={navigation} route={{}}/>);});
+    await measureTodaySlot();
+    const list = lessonsList();
+    const event = (y: number) => ({nativeEvent: {contentOffset: {y}}});
+    expect(list.props.removeClippedSubviews).toBe(false);
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+    await ReactTestRenderer.act(() => {
+      list.props.onScrollBeginDrag(event(0));
+      list.props.onScroll(event(10));
+      list.props.onScrollEndDrag(event(10));
+    });
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(0);
+    slotY = 974;
+    await ReactTestRenderer.act(() => list.props.onScroll(event(336)));
+    expect(tree.root.findAllByType('InlineBannerAdMock' as React.ElementType)).toHaveLength(1);
+    const refreshPromo = mockPromo.mock.results.at(-1)!.value.refreshVisibility;
+    await ReactTestRenderer.act(() => lessonsList().props.onContentSizeChange(320, 900));
+    expect(refreshPromo).toHaveBeenCalled();
+    const viewport = tree.root.findAllByType(View).find(node => node.props.style?.marginTop === 10 && typeof node.props.onLayout === 'function')!;
+    expect(mockPromo.mock.results.at(-1)!.value.viewportRef.current).toBe(viewport.instance);
   });
 
   it.each(['group', 'teacher', 'auditorium'])('applies the same rule to a requested %s schedule, including guest navigation', async query => {
