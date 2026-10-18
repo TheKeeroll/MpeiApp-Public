@@ -1,82 +1,11 @@
-diff --git a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
---- a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
-+++ b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
-@@ -1,26 +1,42 @@
--import Foundation
--import CoreLocation
--import React
--
--class LocationFactory {
--    func createFromDictionary(_ dict: [String: Any]?) -> CLLocation? {
--        guard let dict,
--              let latitude = dict[Constants.Key.latitude],
--              let longitude = dict[Constants.Key.longitude]
--        else {
--            return nil
--        }
--        let latitudeDegrees = RCTConvert.clLocationDegrees(latitude)
--        let longitudeDegrees = RCTConvert.clLocationDegrees(longitude)
--        return CLLocation(
--            coordinate: CLLocationCoordinate2D(
--                latitude: latitudeDegrees,
--                longitude: longitudeDegrees
--            ),
--            altitude: 0,
--            horizontalAccuracy: 0.1,
--            verticalAccuracy: 0.1,
--            timestamp: Date()
--        )
--    }
--}
-+import Foundation
-+import CoreLocation
-+
-+class LocationFactory {
-+    func createFromDictionary(_ dict: [String: Any]?) -> CLLocation? {
-+        guard let dict,
-+              let latitude = coordinateDegrees(from: dict[Constants.Key.latitude]),
-+              let longitude = coordinateDegrees(from: dict[Constants.Key.longitude])
-+        else {
-+            return nil
-+        }
-+        return CLLocation(
-+            coordinate: CLLocationCoordinate2D(
-+                latitude: latitude,
-+                longitude: longitude
-+            ),
-+            altitude: 0,
-+            horizontalAccuracy: 0.1,
-+            verticalAccuracy: 0.1,
-+            timestamp: Date()
-+        )
-+    }
-+
-+    /**
-+     * React Native serializes JavaScript numbers as NSNumber. Accept a numeric
-+     * string too, but deliberately avoid RCTConvert's CoreLocation category:
-+     * it is no longer exposed by the React module in React Native 0.87.
-+     */
-+    private func coordinateDegrees(from value: Any?) -> CLLocationDegrees? {
-+        if let number = value as? NSNumber {
-+            return number.doubleValue.isFinite ? number.doubleValue : nil
-+        }
-+
-+        if let string = value as? String,
-+           let degrees = Double(string),
-+           degrees.isFinite {
-+            return degrees
-+        }
-+
-+        return nil
-+    }
-+}
 diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt b/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
+index b545a46..d6bc312 100644
 --- a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
 +++ b/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobileads/banner/YandexBannerView.kt
-@@ -1,11 +1,13 @@
- package com.yandexmobileads.banner
-
+@@ -2,11 +2,13 @@ package com.yandexmobileads.banner
+ 
  import android.annotation.SuppressLint
+ import android.view.MotionEvent
 +import android.view.View
  import android.widget.FrameLayout
  import androidx.annotation.VisibleForTesting
@@ -84,10 +13,10 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
  import com.facebook.react.bridge.ReactContext
  import com.facebook.react.uimanager.ThemedReactContext
 +import com.facebook.react.uimanager.UIManagerHelper
+ import com.facebook.react.uimanager.events.NativeGestureUtil
  import com.yandex.mobile.ads.banner.BannerAdSize
  import com.yandex.mobile.ads.banner.BannerAdView
- import com.yandex.mobile.ads.banner.BannerAdEventListener
-@@ -35,14 +37,32 @@
+@@ -37,14 +39,32 @@ class YandexBannerView(
      private var adUnitId: String? = null
      private var adRequest: AdRequest? = null
      private var bannerAdSize: BannerAdSize? = null
@@ -107,11 +36,11 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
 +            }
 +        }
 +    }
-
+ 
      init {
          context.addLifecycleEventListener(reactLifecycleEventListener)
      }
-
+ 
      override fun requestLayout() {
 +        if (isDestroyed) return
          super.requestLayout()
@@ -120,10 +49,10 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
              measure(
                  MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                  MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
-@@ -51,25 +71,76 @@
+@@ -53,6 +73,52 @@ class YandexBannerView(
          }
      }
-
+ 
 +    override fun onAttachedToWindow() {
 +        super.onAttachedToWindow()
 +        scheduleNativeWork()
@@ -170,13 +99,17 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
 +        runCatching { viewTreeObserver.dispatchOnGlobalLayout() }
 +    }
 +
+     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+             NativeGestureUtil.notifyNativeGestureStarted(this, ev)
+@@ -63,22 +129,27 @@ class YandexBannerView(
      fun setAdUnitIdAndAdRequest(adUnitId: String, adRequest: AdRequest?) {
          this.adUnitId = adUnitId
          this.adRequest = adRequest
 -        createAdViewIfCan()
 +        scheduleNativeWork()
      }
-
+ 
      fun destroy() {
 +        if (isDestroyed) return
 +        isDestroyed = true
@@ -187,20 +120,20 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
          adView?.destroy()
          adView = null
      }
-
+ 
      fun setSize(bannerSize: BannerAdSize) {
          bannerAdSize = bannerSize
 -        createAdViewIfCan()
 +        scheduleNativeWork()
      }
-
+ 
      private fun createAdViewIfCan() {
 -        if (adView != null) {
 +        if (hasRequestedAd || isDestroyed) {
              return
          }
          val adUnitId = adUnitId ?: return
-@@ -79,6 +150,7 @@
+@@ -88,6 +159,7 @@ class YandexBannerView(
              setAdSize(bannerAdSize)
              setBannerAdEventListener(bannerEventListener)
          }
@@ -208,7 +141,7 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
          adView = bannerAdView
          loadBannerAd(adRequest)
      }
-@@ -93,48 +165,38 @@
+@@ -102,48 +174,38 @@ class YandexBannerView(
          private val adInfoMapper: AdInfoMapper = AdInfoMapper(),
      ) : BannerAdEventListener {
          override fun onImpression(impressionData: ImpressionData?) {
@@ -222,12 +155,12 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
 -            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_IMPRESSION, payload)
 +            enqueueEvent(Constants.EventName.ON_AD_IMPRESSION, payload)
          }
-
+ 
          override fun onAdClicked() {
 -            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_CLICKED)
 +            enqueueEvent(Constants.EventName.ON_AD_CLICKED)
          }
-
+ 
          override fun onAdLoaded() {
 -            removeAllViews()
 -            val size = bannerAdSize ?: return
@@ -254,7 +187,7 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
 -            eventEmitter.receiveEvent(id, Constants.EventName.ON_AD_LOADED, payload)
 +            enqueueEvent(Constants.EventName.ON_AD_LOADED, payload)
          }
-
+ 
          override fun onAdFailedToLoad(error: AdRequestError) {
 -            eventEmitter.receiveEvent(
 -                id,
@@ -269,3 +202,57 @@ diff --git a/node_modules/yandex-mobile-ads/android/src/main/java/com/yandexmobi
              adView = null
          }
      }
+diff --git a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
+index 951f89c..a1457da 100644
+--- a/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
++++ b/node_modules/yandex-mobile-ads/ios/Utils/Factory/LocationFactory.swift
+@@ -1,21 +1,18 @@
+ import Foundation
+ import CoreLocation
+-import React
+ 
+ class LocationFactory {
+     func createFromDictionary(_ dict: [String: Any]?) -> CLLocation? {
+         guard let dict,
+-              let latitude = dict[Constants.Key.latitude],
+-              let longitude = dict[Constants.Key.longitude]
++              let latitude = coordinateDegrees(from: dict[Constants.Key.latitude]),
++              let longitude = coordinateDegrees(from: dict[Constants.Key.longitude])
+         else {
+             return nil
+         }
+-        let latitudeDegrees = RCTConvert.clLocationDegrees(latitude)
+-        let longitudeDegrees = RCTConvert.clLocationDegrees(longitude)
+         return CLLocation(
+             coordinate: CLLocationCoordinate2D(
+-                latitude: latitudeDegrees,
+-                longitude: longitudeDegrees
++                latitude: latitude,
++                longitude: longitude
+             ),
+             altitude: 0,
+             horizontalAccuracy: 0.1,
+@@ -23,4 +20,23 @@ class LocationFactory {
+             timestamp: Date()
+         )
+     }
++
++    /**
++     * React Native serializes JavaScript numbers as NSNumber. Accept a numeric
++     * string too, but deliberately avoid RCTConvert's CoreLocation category:
++     * it is no longer exposed by the React module in React Native 0.87.
++     */
++    private func coordinateDegrees(from value: Any?) -> CLLocationDegrees? {
++        if let number = value as? NSNumber {
++            return number.doubleValue.isFinite ? number.doubleValue : nil
++        }
++
++        if let string = value as? String,
++           let degrees = Double(string),
++           degrees.isFinite {
++            return degrees
++        }
++
++        return nil
++    }
+ }

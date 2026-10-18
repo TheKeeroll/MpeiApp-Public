@@ -183,6 +183,14 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // Keep the native SDK aligned with the published React Native plugin.
+    implementation('com.yandex.android:mobileads:8.5.0') {
+        version { strictly '8.5.0' }
+    }
+    implementation 'com.yandex.ads.mediation:mobileads-bigoads:6.0.0.0'
+    implementation 'com.yandex.ads.mediation:mobileads-mytarget:5.51.2.1'
+    implementation 'com.yandex.ads.mediation:mobileads-chartboost:9.14.0.0'
+
     // implementation platform('com.google.firebase:firebase-bom:33.1.2')
     // implementation 'com.google.firebase:firebase-crashlytics'
     // implementation 'com.google.firebase:firebase-analytics'
