@@ -1,5 +1,5 @@
 [Unit]
-Description=DragoNet subscription HTTPS proxy for Let's Encrypt certificate %i
+Description=DragoNet subscription HTTPS proxy for certificate %i
 Wants=network-online.target
 After=network-online.target
 
@@ -10,6 +10,7 @@ Group=dragonet-proxy
 WorkingDirectory=/opt/vpn-subscription-proxy
 EnvironmentFile=/etc/dragonet-subscription-proxy.env
 # PID 1 reads this original pair from /etc/letsencrypt/live at every start.
+# For S-UI /root/cert/%i install s-ui-tls.conf as an instance drop-in.
 # CREDENTIALS_DIRECTORY exposes it only to the unprivileged process, without
 # a persistent copy or a custom Certbot deploy-hook.
 LoadCredential=fullchain.pem:/etc/letsencrypt/live/%i/fullchain.pem

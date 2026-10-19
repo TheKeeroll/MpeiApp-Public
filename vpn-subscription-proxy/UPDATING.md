@@ -1,10 +1,81 @@
-# Обновление proxy: journal, demo на 14 суток и совместимость с MpeiApp 2.5.0
+# Обновление и перенос vpn-subscription-proxy
 
 Обновляется только самостоятельный серверный каталог. APK/IPA для этого
 не нужны: новый proxy совместим с уже опубликованной MpeiApp 2.5.0.
-Домен, порт, путь, TLS discovery и `Mpei-App-Req-Id` не меняются.
+Контракт запросов/ответов и `Mpei-App-Req-Id` не меняются. Для совместимости
+при переносе сохраните прежние публичные DNS-host, порт и путь; меняется
+A-запись на IPv4 нового VPS. Новый сертификат должен включать прежний host.
 Новые сообщения об ошибках и offline появятся после обновления самого приложения.
 Сборка proxy ниже выполняется вами на VPS; при подготовке изменений она не запускалась.
+
+## Автоматический способ
+
+Для установки и обновления используйте
+[единый deploy/install.sh](README.md#автоматическая-установка-и-обновление).
+Передайте новый tar, распакуйте во временный каталог и запустите скрипт
+от root. Он запрашивает настройки, сохраняет текущие значения/ключ,
+сам выполняет тесты/build, backup, замену кода, настройку systemd и HTTPS-проверки.
+При нескольких подходящих сертификатах предлагается выбор.
+
+Если proxy ранее установлен вручную, скрипт читает стандартный env и находит
+работающий/включённый instance. Для нестандартного env укажите его путь в
+первом вопросе. После первого запуска пути хранятся в
+`/etc/dragonet-subscription-proxy-installation.json`; дополнительные env-поля
+сохраняются, Token не показывается. Установщик рассчитан на одну установку
+proxy, а не на несколько независимых одновременно работающих instances.
+
+Сбой подготовки не останавливает текущий proxy. После начала замены
+предусмотрено восстановление кода/env/units и прежнего состояния запуска.
+SQLite сохраняет актуальные выдачи; старый snapshot не подменяет живую БД.
+Скрипт возвращает ошибку, если установка/проверки не удались; проверьте journal
+после сообщения о восстановлении, особенно при сетевой проблеме/продлении TLS.
+
+Резервный каталог автоматического способа содержит `files.json`, `file-N`,
+`services.json`, `deployment.json`, `candidate.env` и snapshot `state/`.
+`candidate.env` — закрытая конфигурация попытки, включая HMAC; при ручном
+восстановлении ориентируйтесь на пути/режимы в JSON. Прежний код сохраняется
+рядом как `.previous-<дата>`, неудачный новый — как `.failed-<дата>`.
+Это другой формат, чем `systemd.tar.gz` ручного способа ниже.
+
+Пути кода/env/state могут настраиваться, но они должны быть раздельными
+абсолютными путями без symlink, пробелов и системных корней. Установщик
+не меняет владельца посторонних данных. Продление сертификатов остаётся
+за Certbot/acme.sh; installer и watcher не выпускают сертификаты.
+
+На новом VPS сначала перенесите env/HMAC/SQLite по разделу ниже. При
+нестандартных путях перенесите также файл метаданных установки и фактические
+env/state из него. При необходимости можно выбрать новые пути в мастере.
+Ранее установленный `30-installation.conf` настраивает и TLS, и пути:
+последующие обновления выполняйте тем же скриптом. Ручные команды ниже
+предназначены для прежнего ручного способа.
+
+## Дополнение 19.10.2026: сертификаты S-UI
+
+Startup discovery теперь проверяет `/root/cert/` и его непосредственные
+подкаталоги, в том числе пару
+`/root/cert/<имя>/{fullchain.pem,privkey.pem}` от `s-ui.sh`.
+Проверки срока, соответствия ключа, SAN/CN и DNS/IP остаются прежними.
+
+В systemd базовый unit сохраняет Certbot-пути. Для S-UI устанавливается
+[s-ui-tls.conf](deploy/s-ui-tls.conf) как drop-in конкретного instance:
+он сбрасывает прежние `LoadCredential` и задаёт `/root/cert/%i/`.
+PID 1 читает root-only ключ и передаёт временный read-only snapshot
+пользователю `dragonet-proxy`. Расширять права `/root`, копировать ключ в
+каталог приложения или запускать Node от root не требуется.
+
+Watcher теперь отслеживает оба источника — Certbot и S-UI/acme.sh.
+При обновлении устанавливайте **все три units**, а для S-UI — также drop-in,
+как показано ниже. Новых обязательных env, зависимостей или миграций SQLite для TLS нет.
+Клиент MpeiApp 2.5.0 получает прежние HTTPS-ответы.
+
+Локально прошли typecheck и **68 tests**: прежние HTTP/SQLite-проверки,
+синтетические TLS-пары, выбор S-UI/Certbot и multi-SAN, приоритет выбранных
+credentials, env со спецсимволами, файловое восстановление, перенос SQLite
+без старого WAL и ошибки этапов установки/отката. Также проходит прежний
+HTTP-тест совместимости 2.5.0. Bash проверен `bash -n` и ShellCheck 0.11.0;
+скрытый ввод проверен в терминале. Установщик проверялся без установки пакетов
+и запуска systemd в Windows — реальная установка/build и HTTPS-приёмка
+выполняются на VPS.
 
 ## Исправление 17.10.2026: полный config S-UI 1.6.5
 
@@ -69,6 +140,60 @@ deadline, причём календарное прибавление месяц�
 проверьте фактическое состояние S-UI. Нельзя автоматически удалять все reservation:
 среди них могут быть успешно созданные клиенты с потерянным ответом.
 
+## Перенос на другой VPS
+
+На новом VPS сначала выполните подготовку пользователя/Node и выбор TLS-пары
+из [первичной инструкции](README.md#развёртывание-на-debian-111213).
+Не запускайте proxy до восстановления state. Если старый VPS ещё доступен,
+перенесите **оба** объекта: EnvironmentFile с прежним HMAC-ключом и весь
+`/var/lib/dragonet-subscription-proxy`, включая возможные WAL/SHM.
+Стандартные пути приведены ниже; для изменённого `STATE_DIRECTORY`
+подставьте фактический каталог в команды упаковки/восстановления.
+
+На **старом VPS**, из обычной SSH-сессии:
+
+```bash
+export OLD_CERTIFICATE_NAME='proxy.example.com'
+export PRIVATE_TRANSFER="$(mktemp -d)"
+chmod 0700 "$PRIVATE_TRANSFER"
+sudo systemctl stop \
+  "dragonet-subscription-proxy-certificate-reload@$OLD_CERTIFICATE_NAME.path" \
+  "dragonet-subscription-proxy-certificate-reload@$OLD_CERTIFICATE_NAME.service" \
+  "dragonet-subscription-proxy@$OLD_CERTIFICATE_NAME.service"
+sudo tar -czf "$PRIVATE_TRANSFER/dragonet-proxy-state.tar.gz" -C / \
+  etc/dragonet-subscription-proxy.env var/lib/dragonet-subscription-proxy
+sudo chown "$(id -u):$(id -g)" "$PRIVATE_TRANSFER/dragonet-proxy-state.tar.gz"
+chmod 0600 "$PRIVATE_TRANSFER/dragonet-proxy-state.tar.gz"
+scp "$PRIVATE_TRANSFER/dragonet-proxy-state.tar.gz" \
+  <ssh-user>@<new-vps-address>:dragonet-proxy-state.tar.gz
+```
+
+Это закрытый архив с секретами и БД, в отличие от архива исходников.
+Он передаётся только по SSH и не добавляется в репозиторий. Старый proxy
+после снимка не запускайте: новые выдачи иначе остались бы только в старой БД.
+
+На **новом VPS**, после создания пользователя `dragonet-proxy` и до первого
+старта сервиса:
+
+```bash
+chmod 0600 "$HOME/dragonet-proxy-state.tar.gz"
+sudo tar -xzf "$HOME/dragonet-proxy-state.tar.gz" -C /
+sudo chown root:root /etc/dragonet-subscription-proxy.env
+sudo chmod 0600 /etc/dragonet-subscription-proxy.env
+sudo chown -R dragonet-proxy:dragonet-proxy /var/lib/dragonet-subscription-proxy
+sudo chmod 0700 /var/lib/dragonet-subscription-proxy
+sudoedit /etc/dragonet-subscription-proxy.env
+```
+
+Сохраните `DEMO_COOLDOWN_HMAC_KEY`; адрес/Token и inbound ID панели проверьте
+для новой инфраструктуры. Дальше продолжите первичную установку с шагов 3–6,
+выбрав нужный TLS-источник. Прежние `issued` и `reservation` сохраняются,
+данные в панели этим переносом не изменяются.
+
+Если старого VPS и резервной копии больше нет, прежнюю историю запретов
+demo восстановить невозможно. Это не требует изменения клиента, но новый
+state будет пустым — существующую копию не заменяйте пустой базой.
+
 ## 1. Передать код с Windows
 
 В корне репозитория выполните PowerShell-команды. Архив содержит текущие
@@ -83,23 +208,36 @@ scp $ProxyArchive <ssh-user>@<vps-address>:/tmp/vpn-subscription-proxy-update.ta
 
 ## 2. Подготовить новый каталог на VPS
 
-Ниже используются штатные пути из unit. Подставьте существующее имя Certbot
-instance и порт. Если меняли пути установки/state, используйте свои фактические
-пути и сохраняйте прежний state directory. Node должен оставаться версии 24.
+Далее описано обновление уже установленного proxy на том же VPS. Для пустого
+нового VPS используйте раздел переноса и README. Ниже — штатные пути из unit;
+для изменённых установки/state используйте фактические каталоги. Node — 24.x.
+Укажите текущий источник и имя каталога сертификата; имя systemd instance
+сохраните прежним, если источник не менялся.
 
 ```bash
-export CERTBOT_NAME='proxy.example.com'
+export CERTIFICATE_SOURCE='s-ui' # либо letsencrypt для существующего Certbot
+export CERTIFICATE_NAME='proxy.example.com'
 export PROXY_HOST='proxy.example.com'
 export PROXY_PORT='8443'
-export SERVICE="dragonet-subscription-proxy@$CERTBOT_NAME.service"
-export WATCHER="dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path"
-export RELOADER="dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.service"
+case "$CERTIFICATE_SOURCE" in
+  s-ui) export CERTIFICATE_DIRECTORY="/root/cert/$CERTIFICATE_NAME" ;;
+  letsencrypt) export CERTIFICATE_DIRECTORY="/etc/letsencrypt/live/$CERTIFICATE_NAME" ;;
+  *) echo 'CERTIFICATE_SOURCE must be s-ui or letsencrypt' >&2; exit 1 ;;
+esac
+export SERVICE="dragonet-subscription-proxy@$CERTIFICATE_NAME.service"
+export WATCHER="dragonet-subscription-proxy-certificate-reload@$CERTIFICATE_NAME.path"
+export RELOADER="dragonet-subscription-proxy-certificate-reload@$CERTIFICATE_NAME.service"
+export TLS_DROP_IN="/etc/systemd/system/$SERVICE.d/20-s-ui-tls.conf"
 export UPDATE_ID="$(date -u +%Y%m%dT%H%M%SZ)"
 export STAGING="/opt/vpn-subscription-proxy.release-$UPDATE_ID"
 export PREVIOUS="/opt/vpn-subscription-proxy.previous-$UPDATE_ID"
 export STATE_BACKUP="/var/backups/dragonet-subscription-proxy/$UPDATE_ID"
 
 node --version
+sudo test -r "$CERTIFICATE_DIRECTORY/privkey.pem"
+sudo openssl x509 -in "$CERTIFICATE_DIRECTORY/fullchain.pem" \
+  -noout -subject -dates -ext subjectAltName
+sudo openssl x509 -in "$CERTIFICATE_DIRECTORY/fullchain.pem" -noout -checkend 0
 sudo install -d -o root -g root -m 0755 "$STAGING"
 sudo tar -xzf /tmp/vpn-subscription-proxy-update.tar.gz -C "$STAGING"
 cd "$STAGING"
@@ -112,9 +250,10 @@ sudo chown -R root:root "$STAGING"
 sudo chmod -R a+rX "$STAGING"
 ```
 
-`CERTBOT_NAME` — имя существующего каталога сертификата/instance (иногда
-с суффиксом `-0001`), а `PROXY_HOST` — фактическое DNS-имя proxy из SAN.
-Они могут различаться; для HTTPS-проверок ниже используется `PROXY_HOST`.
+`CERTIFICATE_NAME` — имя существующего каталога сертификата/instance
+(у Certbot бывает суффикс `-0001`), а `PROXY_HOST` — фактическое DNS-имя
+из SAN. Они могут различаться; для HTTPS-проверок используется `PROXY_HOST`.
+Переменные этого блока относятся только к командам установки, не к env proxy.
 
 До успешного завершения этих команд работающий сервис не останавливайте.
 Зависимости устанавливаются на Linux, чтобы получить подходящий better-sqlite3.
@@ -123,8 +262,8 @@ sudo chmod -R a+rX "$STAGING"
 
 Остановите watcher, чтобы обновление сертификата не перезапустило proxy
 во время замены каталога. SQLite копируется только после остановки процесса:
-вместе с БД сохраняются возможные WAL/SHM и права. Env сохраняется отдельно
-в root-only каталоге; его содержимое не выводится в терминал.
+вместе с БД сохраняются возможные WAL/SHM и права. Env и systemd-конфигурация
+сохраняются отдельно в root-only каталоге; содержимое env не выводится.
 
 ```bash
 cd /opt
@@ -133,13 +272,32 @@ sudo systemctl stop "$SERVICE"
 sudo install -d -o root -g root -m 0700 "$STATE_BACKUP"
 sudo cp -a /var/lib/dragonet-subscription-proxy "$STATE_BACKUP/state"
 sudo cp -a /etc/dragonet-subscription-proxy.env "$STATE_BACKUP/environment.env"
+sudo tar -czf "$STATE_BACKUP/systemd.tar.gz" -C /etc/systemd/system \
+  dragonet-subscription-proxy@.service \
+  dragonet-subscription-proxy-certificate-reload@.service \
+  dragonet-subscription-proxy-certificate-reload@.path
+if sudo test -d "/etc/systemd/system/$SERVICE.d"; then
+  sudo cp -a "/etc/systemd/system/$SERVICE.d" "$STATE_BACKUP/instance-drop-ins"
+fi
 
 sudo mv /opt/vpn-subscription-proxy "$PREVIOUS"
 sudo mv "$STAGING" /opt/vpn-subscription-proxy
 sudo install -o root -g root -m 0644 \
   /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
-  /etc/systemd/system/dragonet-subscription-proxy@.service
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.service \
+  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.path \
+  /etc/systemd/system/
+case "$CERTIFICATE_SOURCE" in
+  s-ui)
+    sudo install -d -o root -g root -m 0755 "$(dirname "$TLS_DROP_IN")"
+    sudo install -o root -g root -m 0644 \
+      /opt/vpn-subscription-proxy/deploy/s-ui-tls.conf "$TLS_DROP_IN"
+    ;;
+  letsencrypt) sudo rm -f "$TLS_DROP_IN" ;;
+  *) echo 'CERTIFICATE_SOURCE must be s-ui or letsencrypt' >&2; exit 1 ;;
+esac
 sudo systemctl daemon-reload
+sudo systemd-analyze verify "$SERVICE" "$WATCHER" "$RELOADER"
 sudo systemctl start "$SERVICE"
 sudo systemctl start "$WATCHER"
 sudo systemctl status "$SERVICE" --no-pager
@@ -147,8 +305,11 @@ sudo systemctl status "$SERVICE" --no-pager
 
 Не запускайте установку «с нуля» с заменой EnvironmentFile. Новых обязательных
 env-переменных нет, Token, inbound ID, HMAC и state path остаются прежними.
-Новый unit явно направляет stdout/stderr в journal; LoadCredential и защита
-файловой системы сохранены. Миграция SQLite выполняется до открытия listener.
+Unit направляет stdout/stderr в journal; LoadCredential и защита файловой
+системы сохранены. Если раньше использовались собственные drop-in для TLS,
+проверьте `sudo systemctl cat "$SERVICE"`: последние источники credentials
+должны относиться к выбранной паре. Watcher отслеживает оба штатных каталога,
+а продление выполняет прежний Certbot либо acme.sh, не сам proxy.
 
 ## 4. Проверить сервер и совместимость
 
@@ -163,8 +324,11 @@ sudo journalctl -u "$SERVICE" -n 80 --no-pager -o cat
 ```
 
 Ожидаются `{"status":"ok"}` и обычная статистика; её счётчики после рестарта
-обнуляются. При ошибке discovery проверяйте DNS, исходный сертификат и
-Certbot по [основной инструкции](README.md), не отключая TLS-проверки.
+обнуляются. При ошибке discovery проверяйте DNS, выбранную исходную пару
+и её продление по [основной инструкции](README.md), не отключая TLS-проверки.
+Если Node не запускается и systemd пишет `Failed to load credentials`,
+проверьте имя каталога/instance и наличие S-UI drop-in. Одна правка TypeScript
+без обновления units эту проблему не устраняет.
 
 Затем используйте [PowerShell-примеры verify/demo](README.md#проверка-с-текущего-windows-ноутбука):
 
@@ -231,7 +395,8 @@ sudo journalctl -u "$SERVICE" --since '30 minutes ago' -o cat --no-pager \
 
 ## Откат
 
-При неудачном запуске остановите watcher и service. Верните прежний код и unit;
+При неудачном запуске остановите watcher и service. Верните прежний код и
+сохранённые systemd units/drop-in;
 БД оставьте текущей: старый код понимает добавочную колонку. Восстановление
 старого snapshot потеряло бы выдачи, сделанные после обновления.
 
@@ -240,15 +405,18 @@ sudo systemctl stop "$WATCHER" "$RELOADER" "$SERVICE"
 export FAILED="/opt/vpn-subscription-proxy.failed-$UPDATE_ID"
 sudo mv /opt/vpn-subscription-proxy "$FAILED"
 sudo mv "$PREVIOUS" /opt/vpn-subscription-proxy
-sudo install -o root -g root -m 0644 \
-  /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
-  /etc/systemd/system/dragonet-subscription-proxy@.service
+sudo tar -xzf "$STATE_BACKUP/systemd.tar.gz" -C /etc/systemd/system
+sudo rm -f "$TLS_DROP_IN"
+if sudo test -d "$STATE_BACKUP/instance-drop-ins"; then
+  sudo install -d -o root -g root -m 0755 "/etc/systemd/system/$SERVICE.d"
+  sudo cp -a "$STATE_BACKUP/instance-drop-ins/." "/etc/systemd/system/$SERVICE.d/"
+fi
 sudo systemctl daemon-reload
 sudo systemctl start "$SERVICE" "$WATCHER"
 sudo systemctl status "$SERVICE" --no-pager
 ```
 
-Прежняя версия снова будет выдавать новые cooldown по своей месячной политике;
-уже сокращённые сроки не восстанавливаются автоматически. Резервная копия state
+Само TLS-дополнение не меняет cooldown и схему БД. Политика новых выдач после
+отката определяется возвращённой версией кода. Резервная копия state
 предназначена для отдельного восстановления при повреждении БД, после сверки
 фактически созданных клиентов, а не для обычного отката кода.

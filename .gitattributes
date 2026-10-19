@@ -3,3 +3,6 @@
 
 # Keep unified patches valid for git apply and patch-package on Windows.
 patches/*.patch text eol=lf
+
+# Deployment scripts are transferred from Windows to Linux inside a tar archive.
+vpn-subscription-proxy/deploy/*.sh text eol=lf
