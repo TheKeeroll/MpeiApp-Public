@@ -14,8 +14,10 @@ export function assertNoSymlinks(filename) {
   let part = root;
   for (const entry of absolute.slice(root.length).split(path.sep).filter(Boolean)) {
     part = path.join(part, entry);
-    try { if (lstatSync(part).isSymbolicLink()) throw new Error(`Symlink недопустим: ${part}`); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    let entryInfo;
+    try { entryInfo = lstatSync(part); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; continue; }
+    if (entryInfo.isSymbolicLink()) throw new Error(`Symlink недопустим: ${part}`);
   }
 }
 

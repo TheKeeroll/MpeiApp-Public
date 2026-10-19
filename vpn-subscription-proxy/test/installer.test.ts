@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, statSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
@@ -9,7 +9,39 @@ import {loadConfig} from '../src/config.js';
 
 // The deployment helper runs on Node 24 before npm install and uses only core modules.
 const libraryUrl = new URL('../deploy/setup-lib.mjs', import.meta.url);
-const {DEFAULTS, parseEnvironment, serializeEnvironment, validatePath, validateLayout, renderInstallationDropIn, executeDeployment, sanitizedChildEnvironment, atomicWrite, restoreFileSnapshots, copyClosedState, serviceFlags} = await import(libraryUrl.href);
+const {DEFAULTS, parseEnvironment, serializeEnvironment, validatePath, validateLayout, renderInstallationDropIn, executeDeployment, sanitizedChildEnvironment, atomicWrite, restoreFileSnapshots, copyClosedState, serviceFlags, assertNoSymlinks} = await import(libraryUrl.href);
+const setupUrl = new URL('../deploy/setup.mjs', import.meta.url);
+const {previousService} = await import(setupUrl.href);
+
+const commandResult = (output = '', status: number | null = 0, errorOutput = '', executionError?: string) =>
+  ({success: status === 0 && !executionError, status, output, errorOutput, executionError});
+
+function systemdFixture(files = commandResult(), loaded = commandResult(), states: Record<string, {active: string; enabled: string}> = {}) {
+  const calls: string[][] = [];
+  const execute = (command: string, args: string[], options: {capture?: boolean; allowFailure?: boolean} = {}) => {
+    assert.equal(command, 'systemctl');
+    assert.equal(options.capture, true);
+    calls.push(args);
+    let result;
+    switch (args[0]) {
+      case 'list-unit-files':
+        assert.ok(args.includes('dragonet-subscription-proxy@*.service'));
+        result = files; break;
+      case 'list-units':
+        assert.ok(args.includes('dragonet-subscription-proxy@*.service'));
+        result = loaded; break;
+      case 'show': result = commandResult(states[args.at(-1)!]?.active ?? 'inactive'); break;
+      case 'is-enabled': {
+        const state = states[args.at(-1)!]?.enabled ?? 'disabled';
+        result = commandResult(state, state === 'disabled' ? 1 : 0); break;
+      }
+      default: throw new Error(`Unexpected systemctl operation: ${args[0]}`);
+    }
+    if (!result.success && !options.allowFailure) throw new Error(`systemctl ${args[0]}: ${result.errorOutput}`);
+    return result;
+  };
+  return {execute, calls};
+}
 
 const temporaryDirectory = (t: import('node:test').TestContext) => {
   const directory = mkdtempSync(path.join(tmpdir(), 'dragonet-installer-test-'));
@@ -26,6 +58,64 @@ test('oneshot/static units are not treated as boot-enabled; activating services 
   assert.deepEqual(serviceFlags('inactive', 'static'), {active: false, enabled: false, runtime: false});
   assert.deepEqual(serviceFlags('activating', 'enabled-runtime'), {active: true, enabled: true, runtime: true});
   assert.deepEqual(serviceFlags('active', 'enabled'), {active: true, enabled: true, runtime: false});
+});
+
+test('fresh installation and retries accept empty unit-file lists on systemd 247 and newer versions', () => {
+  // v247 list-unit-files returns ENOENT/exit 1 without stdout or stderr for no matches.
+  for (const status of [1, 0]) {
+    const fixture = systemdFixture(commandResult('', status));
+    for (let attempt = 0; attempt < 2; attempt++) assert.equal(previousService({}, fixture.execute), undefined);
+    assert.deepEqual(fixture.calls.map(args => args[0]), ['list-unit-files', 'list-units', 'list-unit-files', 'list-units']);
+  }
+});
+
+test('discovery finds an active instance even when it only appears in loaded units', () => {
+  const unit = 'dragonet-subscription-proxy@proxy.example.com.service';
+  const fixture = systemdFixture(commandResult('', 1), commandResult(`${unit} loaded active running Proxy`),
+    {[unit]: {active: 'active', enabled: 'disabled'}});
+  assert.equal(previousService({}, fixture.execute), unit);
+});
+
+test('discovery deduplicates installed/loaded instances and preserves a saved inactive instance', () => {
+  const unit = 'dragonet-subscription-proxy@proxy.example.com.service';
+  const fixture = systemdFixture(commandResult(`${unit} enabled enabled\ndragonet-subscription-proxy@.service disabled enabled`),
+    commandResult(`${unit} loaded inactive dead Proxy`), {[unit]: {active: 'inactive', enabled: 'enabled'}});
+  assert.equal(previousService({}, fixture.execute), unit);
+  assert.equal(fixture.calls.filter(args => args[0] === 'show').length, 1);
+  assert.equal(previousService({service: unit}, systemdFixture(commandResult('', 1)).execute), unit);
+});
+
+test('discovery still refuses multiple running/enabled instances and invalid saved service names', () => {
+  const first = 'dragonet-subscription-proxy@one.example.com.service';
+  const second = 'dragonet-subscription-proxy@two.example.com.service';
+  const fixture = systemdFixture(commandResult(`${first} enabled enabled\n${second} enabled enabled`), commandResult(),
+    {[first]: {active: 'active', enabled: 'enabled'}, [second]: {active: 'inactive', enabled: 'enabled'}});
+  assert.throws(() => previousService({}, fixture.execute), /несколько/);
+  const unused = systemdFixture();
+  assert.throws(() => previousService({service: 'unrelated.service'}, unused.execute), /Некорректный service/);
+  assert.equal(unused.calls.length, 0);
+});
+
+test('empty-list handling does not swallow systemd diagnostics, unexpected output, exec errors or timeouts', () => {
+  const failures = [commandResult('', 1, 'Failed to connect to bus: Permission denied'), commandResult('unexpected output', 1),
+    commandResult('', 2), commandResult('', null, '', 'ETIMEDOUT'), commandResult('', 1, '', 'ENOENT')];
+  for (const failure of failures) {
+    const fixture = systemdFixture(failure);
+    assert.throws(() => previousService({}, fixture.execute), error => error instanceof Error
+      && error.message.includes('systemctl list-unit-files')
+      && (!failure.errorOutput || error.message.includes(failure.errorOutput)));
+    assert.equal(fixture.calls.length, 1);
+  }
+  assert.throws(() => previousService({}, systemdFixture(commandResult('', 1), commandResult('', 1, 'Failed to list units')).execute), /Failed to list units/);
+});
+
+test('path validation rejects symlink/junction ancestors while accepting missing paths for a fresh install', t => {
+  const directory = temporaryDirectory(t);
+  assertNoSymlinks(path.join(directory, 'not-created', 'config.env'));
+  const target = path.join(directory, 'target'), link = path.join(directory, 'link');
+  mkdirSync(target);
+  symlinkSync(target, link, process.platform === 'win32' ? 'junction' : 'dir');
+  assert.throws(() => assertNoSymlinks(path.join(link, 'config.env')), /Symlink/);
 });
 
 test('rollback restores prior env/unit contents and modes while removing newly created files', t => {
@@ -169,6 +259,23 @@ test('optional PROXY_PUBLIC_HOST keeps old env compatible and validates the sele
   assert.equal(loadConfig(env).publicHostname, undefined);
   assert.equal(loadConfig({...env, PROXY_PUBLIC_HOST: 'Proxy.Example.com'}).publicHostname, 'proxy.example.com');
   for (const hostname of ['*.example.com', '127.0.0.1', 'proxy.example.com/route']) assert.throws(() => loadConfig({...env, PROXY_PUBLIC_HOST: hostname}));
+});
+
+test('config accepts HTTPS panel paths and rejects malformed/unsupported URLs without exposing their values', () => {
+  const env = {...DEFAULTS, VPN_PANEL_TOKEN: 'fixture', DEMO_COOLDOWN_HMAC_KEY: 'a'.repeat(64)};
+  assert.equal(loadConfig({...env, VPN_PANEL_BASE_URL: 'https://panel.example.com/hidden/'}).panelBaseUrl, 'https://panel.example.com/hidden');
+  for (const url of ['private-secret', 'http://panel.example.com/private-secret', 'https://private-secret@panel.example.com',
+    'https://panel.example.com/?token=private-secret', 'https://panel.example.com/#private-secret']) {
+    assert.throws(() => loadConfig({...env, VPN_PANEL_BASE_URL: url}), {message: 'Invalid VPN_PANEL_BASE_URL'});
+  }
+});
+
+test('config validates parsed inbound JSON separately and still deduplicates valid positive IDs', () => {
+  const env = {...DEFAULTS, VPN_PANEL_BASE_URL: 'https://panel.example.com/hidden', VPN_PANEL_TOKEN: 'fixture', DEMO_COOLDOWN_HMAC_KEY: 'a'.repeat(64)};
+  assert.deepEqual(loadConfig({...env, VPN_DEMO_INBOUNDS: '[12,13,12]'}).demoInbounds, [12, 13]);
+  for (const raw of ['private-secret', 'null', '{}', '[]', '[0]', '[-1]', '[1.5]', '["12"]']) {
+    assert.throws(() => loadConfig({...env, VPN_DEMO_INBOUNDS: raw}), {message: 'Invalid VPN_DEMO_INBOUNDS'});
+  }
 });
 
 test('Linux bootstrap has LF and its help prints attribution/colors without installing anything', t => {
