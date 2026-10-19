@@ -53,38 +53,40 @@ const readPath = (env: NodeJS.ProcessEnv, name: string): string => {
 
 const readHttpsUrl = (env: NodeJS.ProcessEnv, name: string): string => {
   const value = readRequired(env, name);
+  let url: URL;
   try {
-    const url = new URL(value);
-    if (
-      url.protocol !== 'https:'
-      || url.username
-      || url.password
-      || url.search
-      || url.hash
-    ) {
-      throw new Error('Unsupported URL');
-    }
-    return url.href.endsWith('/') ? url.href.slice(0, -1) : url.href;
+    url = new URL(value);
   } catch {
     throw new Error(`Invalid ${name}`);
   }
+  if (
+    url.protocol !== 'https:'
+    || url.username
+    || url.password
+    || url.search
+    || url.hash
+  ) {
+    throw new Error(`Invalid ${name}`);
+  }
+  return url.href.endsWith('/') ? url.href.slice(0, -1) : url.href;
 };
 
 const readDemoInbounds = (env: NodeJS.ProcessEnv): readonly number[] => {
   const raw = readRequired(env, 'VPN_DEMO_INBOUNDS');
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      !Array.isArray(parsed)
-      || parsed.length === 0
-      || parsed.some(value => !Number.isSafeInteger(value) || value < 1)
-    ) {
-      throw new Error('Invalid inbounds');
-    }
-    return [...new Set(parsed)];
+    parsed = JSON.parse(raw);
   } catch {
     throw new Error('Invalid VPN_DEMO_INBOUNDS');
   }
+  if (
+    !Array.isArray(parsed)
+    || parsed.length === 0
+    || parsed.some(value => !Number.isSafeInteger(value) || value < 1)
+  ) {
+    throw new Error('Invalid VPN_DEMO_INBOUNDS');
+  }
+  return [...new Set(parsed)];
 };
 
 const normaliseIp = (value: string): string | undefined => {

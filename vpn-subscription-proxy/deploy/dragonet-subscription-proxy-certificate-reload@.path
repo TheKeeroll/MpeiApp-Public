@@ -11,7 +11,7 @@ PathChanged=/etc/letsencrypt/live/%i/privkey.pem
 PathChanged=/root/cert/%i
 PathChanged=/root/cert/%i/fullchain.pem
 PathChanged=/root/cert/%i/privkey.pem
-Unit=dragonet-subscription-proxy-certificate-reload@%i.service
+# The matching .service (same name and instance) is activated by default.
 
 [Install]
 WantedBy=multi-user.target

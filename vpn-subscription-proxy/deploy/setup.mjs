@@ -31,9 +31,11 @@ function run(command, args = [], {cwd, capture = false, allowFailure = false, ti
     stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit', maxBuffer: 16 * 1024 * 1024,
   });
   if ((result.status !== 0 || result.error) && !allowFailure) {
-    throw new Error(`Команда ${command} не завершена успешно (код ${result.status ?? 'timeout/exec'}).`);
+    const operation = command === 'systemctl' ? `${command} ${args[0] ?? ''}`.trim() : command;
+    throw new Error(`Команда ${operation} не завершена успешно (код ${result.status ?? 'timeout/exec'}).`);
   }
-  return {success: result.status === 0 && !result.error, output: (result.stdout ?? '').trim()};
+  return {success: result.status === 0 && !result.error, output: (result.stdout ?? '').trim(),
+    status: result.status, errorOutput: (result.stderr ?? '').trim(), executionError: result.error ? (result.error.code ?? 'exec_error') : undefined};
 }
 
 export function ask(label, {current = '', example = '', secret = false, optional = false} = {}) {
@@ -80,9 +82,12 @@ function readEnvironment(filename) {
 function validateProject(directory) {
   if (!existsSync(directory)) return;
   assertNoSymlinks(directory);
+  const message = `Каталог ${directory} не является установленным vpn-subscription-proxy; он не будет заменён.`;
+  let project;
   try {
-    if (JSON.parse(readFileSync(path.join(directory, 'package.json'), 'utf8')).name !== 'vpn-subscription-proxy') throw new Error();
-  } catch { throw new Error(`Каталог ${directory} не является установленным vpn-subscription-proxy; он не будет заменён.`); }
+    project = JSON.parse(readFileSync(path.join(directory, 'package.json'), 'utf8'));
+  } catch { throw new Error(message); }
+  if (project?.name !== 'vpn-subscription-proxy') throw new Error(message);
 }
 
 function validateState(directory) {
@@ -102,19 +107,26 @@ const validService = value => /^dragonet-subscription-proxy@[a-zA-Z0-9._-]+\.ser
 const watcherFor = service => service.replace('dragonet-subscription-proxy@', 'dragonet-subscription-proxy-certificate-reload@').replace(/\.service$/, '.path');
 const reloaderFor = service => watcherFor(service).replace(/\.path$/, '.service');
 
-function stateOf(unit) {
+function stateOf(unit, execute = run) {
   return serviceFlags(
-    run('systemctl', ['show', '--property=ActiveState', '--value', unit], {capture: true, allowFailure: true}).output,
-    run('systemctl', ['is-enabled', unit], {capture: true, allowFailure: true}).output,
+    execute('systemctl', ['show', '--property=ActiveState', '--value', unit], {capture: true, allowFailure: true}).output,
+    execute('systemctl', ['is-enabled', unit], {capture: true, allowFailure: true}).output,
   );
 }
 
-async function previousService(metadata) {
+export function previousService(metadata, execute = run) {
   if (metadata.service && !validService(metadata.service)) throw new Error('Некорректный service в файле установки.');
-  const files = run('systemctl', ['list-unit-files', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true}).output;
-  const loaded = run('systemctl', ['list-units', '--all', '--plain', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true}).output;
-  const choices = [...new Set((files + '\n' + loaded).split('\n').map(line => line.trim().split(/\s+/)[0]).filter(validService))];
-  const enabled = choices.filter(unit => { const s = stateOf(unit); return s.active || s.enabled; });
+  const files = execute('systemctl', ['list-unit-files', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true, allowFailure: true});
+  // systemd 247 returns ENOENT (exit 1) for an empty list, without diagnostics.
+  // Other failures, including D-Bus/permissions/exec errors, must still stop setup.
+  const emptyList = files.status === 1 && !files.output && !files.errorOutput && !files.executionError;
+  if (!files.success && !emptyList) {
+    const diagnostic = files.errorOutput ? ` ${files.errorOutput.replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')}` : '';
+    throw new Error(`Команда systemctl list-unit-files не завершена успешно (код ${files.status ?? 'timeout/exec'}).${diagnostic}`);
+  }
+  const loaded = execute('systemctl', ['list-units', '--all', '--plain', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true}).output;
+  const choices = [...new Set((files.output + '\n' + loaded).split('\n').map(line => line.trim().split(/\s+/)[0]).filter(validService))];
+  const enabled = choices.filter(unit => { const s = stateOf(unit, execute); return s.active || s.enabled; });
   if (enabled.length < 2) return enabled[0] ?? metadata.service;
   throw new Error('Найдено несколько активных/включённых proxy instances. Автоустановка рассчитана на один proxy; сначала выберите единственную рабочую установку вручную.');
 }
@@ -251,14 +263,15 @@ export async function install() {
   let metadata = {};
   assertNoSymlinks(METADATA);
   if (existsSync(METADATA)) {
+    const message = 'Файл метаданных установки повреждён; восстановите его из backup.';
     try {
       metadata = JSON.parse(readFileSync(METADATA, 'utf8'));
-      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error();
     }
-    catch { throw new Error('Файл метаданных установки повреждён; восстановите его из backup.'); }
+    catch { throw new Error(message); }
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error(message);
   }
   stage(2, 'Пути, env и сервисный пользователь');
-  const oldService = await previousService(metadata);
+  const oldService = previousService(metadata);
   if (oldService && (!existsSync(METADATA) || metadata.service !== oldService)) {
     const directory = run('systemctl', ['show', '--property=WorkingDirectory', '--value', oldService], {capture: true}).output;
     try { metadata.installDir = validatePath(directory); } catch { /* ask for a path if the old unit omitted it */ }
