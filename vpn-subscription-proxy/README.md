@@ -39,33 +39,129 @@ demo-клиента. UUID и общий пароль согласованы ме
 при технической ошибке — `{"reqStatus":"failed","reason":"service_error"}`.
 HTTP 200 и успешные ответы сохранены; старый клиент игнорирует новое поле.
 
+## Автоматическая установка и обновление
+
+В архив входит [deploy/install.sh](deploy/install.sh) и его Node helpers.
+Одна и та же команда подходит для первого запуска, нового VPS с перенесённым
+state и обновления работающего proxy. Поддерживаются **Debian/Ubuntu с apt
+и запущенным systemd >= 247**. Нужна интерактивная SSH-сессия от root.
+
+На Windows, из корня репозитория:
+
+```powershell
+$ProxyArchive = Join-Path $env:TEMP 'vpn-subscription-proxy-update.tar.gz'
+tar -czf $ProxyArchive --exclude=node_modules --exclude=dist --exclude='.env*' --exclude='*.sqlite*' -C .\vpn-subscription-proxy .
+if ($LASTEXITCODE -ne 0) { throw 'Не удалось создать архив proxy' }
+scp $ProxyArchive <ssh-user>@<vps-address>:/tmp/vpn-subscription-proxy-update.tar.gz
+```
+
+На VPS:
+
+```bash
+sudo -i
+PROXY_SOURCE="$(mktemp -d /root/dragonet-proxy-source.XXXXXX)"
+tar -xzf /tmp/vpn-subscription-proxy-update.tar.gz -C "$PROXY_SOURCE"
+bash "$PROXY_SOURCE/deploy/install.sh"
+```
+
+При переносе сначала восстановите прежние env и SQLite по
+[инструкции](UPDATING.md#перенос-на-другой-vps), затем запустите установщик.
+Код и закрытый архив state передаются отдельно. История demo сохраняется
+только вместе с прежним `DEMO_COOLDOWN_HMAC_KEY`.
+
+Установщик последовательно:
+
+1. Показывает рамку `Developed by DragonSavA with Codex` с зелёным ником,
+   проверяет root, systemd и зависимости. Недостающие пакеты и Node.js 24/npm
+   устанавливаются автоматически; Node устанавливается через
+   [NodeSource](https://github.com/nodesource/distributions#installation-instructions).
+   Повторный запуск сохраняет подходящий Node. Helpers используют
+   [встроенную обработку TypeScript в Node 24](https://nodejs.org/docs/latest-v24.x/api/typescript.html#type-stripping),
+   поэтому для чтения env и поиска TLS не нужна предварительная установка npm-пакетов.
+2. Запрашивает пути к коду, env и SQLite, параметры listener/подписки,
+   HTTPS URL панели, Token и JSON demo inbound ID. Enter сохраняет значение
+   из существующего env, иначе предлагается значение по умолчанию/пример.
+   Token и закрытый URL вводятся без эха и не выводятся. Дополнительные
+   лимиты можно оставить прежними. HMAC-ключ сохраняется, а для новой
+   установки генерируется автоматически. Создаётся непривилегированный
+   пользователь `dragonet-proxy`.
+3. Находит подходящие пары Certbot и S-UI, проверяя срок, ключ, DNS/IP,
+   цепочку доверия ОС и пригодность для HTTPS через OpenSSL.
+   Если пар несколько, показывает источник, DNS-имена, срок и fingerprint
+   и запрашивает номер. Для multi-SAN также можно выбрать DNS-имя proxy.
+4. В отдельном staging-каталоге выполняет `npm ci`, typecheck, все тесты,
+   build и удаление dev-зависимостей. Проверяет доступ к S-UI/Token read-only
+   запросом списка клиентов; содержимое списка не печатается, demo не создаётся.
+   Работающий proxy до завершения подготовки не останавливается.
+5. Останавливает watcher/service, сохраняет env, SQLite и systemd в
+   `/var/backups/dragonet-subscription-proxy/<дата>/`, заменяет код и
+   записывает env атомарно с правами 0600. State получает 0700 и владельца
+   `dragonet-proxy`; при изменении state-пути переносится закрытая SQLite.
+6. Устанавливает все units и instance drop-in `30-installation.conf`
+   с выбранной парой и путями. Выполняет daemon-reload, verify и
+   enable/restart service и watcher. Старый instance при смене имени
+   сертификата отключается.
+7. Дожидается доверенного HTTPS/SNI `/healthz`, проверяет `/stats` и состояния
+   systemd, затем показывает адрес proxy, пути и команду journal. Для активного
+   UFW добавляет правило выбранного TCP-порта; сам firewall не включается.
+   Правила провайдера и другого firewall нужно проверить отдельно.
+
+Этапы разделены звёздочками; успехи зелёные, предупреждения жёлтые,
+ошибки красные. При ошибке после остановки скрипт возвращает прежние файлы
+и состояние запуска systemd. Актуальная SQLite не откатывается старым снимком;
+при возврате state-пути переносятся новые записи. Неудачная первая установка
+сохраняет созданный env/HMAC для повтора. Код возврата при ошибке — ненулевой,
+даже если восстановление файлов удалось.
+
+Метаданные путей/instance хранятся root-only в
+`/etc/dragonet-subscription-proxy-installation.json`. Env может содержать
+неизвестные дополнительные поля — их значения сохраняются. Для обновления
+передайте новый tar и повторите ту же команду; вручную заменять файлы в
+установленном каталоге не нужно. Если применялся установщик, дальнейшие
+обновления/смену TLS выполняйте им: его `30-installation.conf` имеет приоритет
+над старым ручным `20-s-ui-tls.conf`.
+
+Для уже опубликованной MpeiApp 2.5.0 сохраняйте прежние DNS-host, публичные
+порт и путь. Выбранное имя записывается в необязательный `PROXY_PUBLIC_HOST`;
+без него старые env продолжают работать с автоматическим выбором имени.
+При наличии systemd credentials используется только выбранная пара,
+без незаметного переключения на другой сертификат при ошибке обновления.
+
+Ниже сохранены ручные процедуры для установок без этого скрипта.
+
 ## Что проверяется на старте
 
 До открытия публичного listener сервис:
 
 1. Запрашивает IPv4 у `api.ipify.org`, `ifconfig.me/ip` и `icanhazip.com`.
    Нужны как минимум два одинаковых глобальных IPv4.
-2. Ищет пары `fullchain.pem` + `privkey.pem` в
+2. При systemd credentials проверяет только переданный snapshot выбранной
+   пары. PID 1 читает исходные Certbot/S-UI файлы, а непривилегированный
+   процесс получает временную read-only копию; ключ в код/env не копируется.
+3. При отсутствии credentials ищет пары `fullchain.pem` + `privkey.pem` в
    `/etc/letsencrypt/live/*/`, раскрывает symlink и проверяет чтение,
    соответствие сертификата ключу, срок действия и SAN/CN.
-3. В systemd-режиме использует `LoadCredential`: PID 1 читает ту же пару из
-   `/etc/letsencrypt/live/` и передаёт сервисному пользователю краткоживущий
-   read-only snapshot. Он проходит те же проверки и не является
-   настраиваемым путём к сертификату.
 4. При отсутствии подходящей пары ограниченно проверяет `/etc/ssl`,
-   `/etc/nginx/ssl`, `/opt/*/ssl`, `/root/{fullchain.pem,privkey.pem}`,
+   `/etc/nginx/ssl`, `/root/cert/` и его непосредственные подкаталоги
+   (включая `/root/cert/<домен>/fullchain.pem` + `privkey.pem` от `s-ui.sh`),
+   `/opt/*/ssl`, `/root/{fullchain.pem,privkey.pem}`,
    `/root/{cert.pem,key.pem}` и один уровень `/root/.acme.sh`.
 5. Принимает только конкретное DNS-имя из сертификата, чей единственный A
-   record совпадает с IPv4 из голосования. Wildcard сам по себе не подходит.
+   record совпадает с IPv4 из голосования. Если задан `PROXY_PUBLIC_HOST`,
+   выбирается именно он. Wildcard сам по себе не подходит.
 
 При любой неудаче listener не открывается. Сервис сам завершает TLS и
 сверяет SNI и Host с обнаруженным именем; обычный Nginx с TLS termination
 перед ним использовать нельзя.
 
-## Развёртывание на Debian 11/12
+## Развёртывание на Debian 11/12/13
 
 Команды ниже выполняются на VPS от пользователя с `sudo`. Заменяйте только
 явные примеры `proxy.example.com`, имена сертификатов и значения env-файла.
+Для переноса с прежнего VPS сначала прочитайте
+[раздел переноса](UPDATING.md#перенос-на-другой-vps): он сохраняет env/HMAC и
+SQLite. На новом сервере не нужно заново выдавать сертификат, если `s-ui.sh`
+уже установил действующую пару.
 
 ### 1. Подготовить DNS, Node и сервисного пользователя
 
@@ -80,74 +176,103 @@ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt install -y nodejs
 node --version
 systemctl --version
-sudo useradd --system --home /nonexistent --shell /usr/sbin/nologin dragonet-proxy
+id -u dragonet-proxy >/dev/null 2>&1 || \
+  sudo useradd --system --home /nonexistent --shell /usr/sbin/nologin dragonet-proxy
 ```
 
 `node --version` должен вывести версию 24.x. `build-essential` нужен на
 случай, если `better-sqlite3` будет собран из исходного кода для архитектуры
-VPS. Нужен systemd 247 или новее для `LoadCredential`; штатные Debian 11 и
-12 этому соответствуют.
+VPS. Нужен systemd 247 или новее для `LoadCredential`; штатные Debian 11–13
+этому соответствуют.
 
-### 2. Использовать существующий сертификат Let’s Encrypt
+### 2. Выбрать существующую TLS-пару: S-UI или Certbot
 
-Нужен действующий сертификат именно для `proxy.example.com`. Если Certbot уже
-выпускает такой сертификат, используйте его. Для нового сертификата выберите
-подходящий для инфраструктуры способ Certbot (HTTP-01 требует доступного
-порта 80, DNS-01 его не требует).
+Нужен действующий публично доверенный сертификат с DNS-именем proxy в SAN.
+Поддерживаются оба типовых расположения:
 
-Не копируйте сертификат и не создавайте Certbot deploy-hook. Закрытый ключ
-обычно доступен только root, поэтому systemd читает исходные файлы в
-`/etc/letsencrypt/live/` как PID 1 через `LoadCredential`, а процесс proxy
-остаётся непривилегированным. При каждом старте он получает новый временный
-read-only snapshot этой же пары; постоянной копии ключа не появляется.
+| Источник | `CERTIFICATE_SOURCE` | Исходная пара |
+| --- | --- | --- |
+| Меню `s-ui.sh`, использующее acme.sh | `s-ui` | `/root/cert/<CERTIFICATE_NAME>/{fullchain.pem,privkey.pem}` |
+| Certbot | `letsencrypt` | `/etc/letsencrypt/live/<CERTIFICATE_NAME>/{fullchain.pem,privkey.pem}` |
 
-Поставляемый `.path` unit следит за каталогом и symlink `fullchain.pem` /
-`privkey.pem`. После атомарного обновления Certbot он автоматически запускает
-one-shot restart proxy, и startup discovery повторяется уже на новой паре.
-Не добавляйте пути к сертификату в env: arbitrary certificate path по-прежнему
-не поддерживается.
-
-До запуска proxy проверьте именно существующую пару и включите штатный таймер
-Certbot. `notAfter` должен быть в будущем, а SAN — содержать имя proxy:
+Для вашего случая выберите `s-ui`. `CERTIFICATE_NAME` — точное имя каталога
+сертификата и instance systemd. У Certbot оно иногда имеет суффикс `-0001`.
+`PROXY_HOST` — DNS-имя из SAN, которое открывает приложение; эти имена могут
+различаться. Следующие переменные нужны только для команд установки, в
+EnvironmentFile их добавлять не нужно:
 
 ```bash
-export CERTBOT_NAME='proxy.example.com'
-sudo certbot certificates
-sudo openssl x509 -in "/etc/letsencrypt/live/$CERTBOT_NAME/fullchain.pem" \
+export CERTIFICATE_SOURCE='s-ui' # либо letsencrypt
+export CERTIFICATE_NAME='proxy.example.com'
+export PROXY_HOST='proxy.example.com'
+export PROXY_PORT='8443'
+case "$CERTIFICATE_SOURCE" in
+  s-ui) export CERTIFICATE_DIRECTORY="/root/cert/$CERTIFICATE_NAME" ;;
+  letsencrypt) export CERTIFICATE_DIRECTORY="/etc/letsencrypt/live/$CERTIFICATE_NAME" ;;
+  *) echo 'CERTIFICATE_SOURCE must be s-ui or letsencrypt' >&2; exit 1 ;;
+esac
+export SERVICE="dragonet-subscription-proxy@$CERTIFICATE_NAME.service"
+export WATCHER="dragonet-subscription-proxy-certificate-reload@$CERTIFICATE_NAME.path"
+export RELOADER="dragonet-subscription-proxy-certificate-reload@$CERTIFICATE_NAME.service"
+export TLS_DROP_IN="/etc/systemd/system/$SERVICE.d/20-s-ui-tls.conf"
+```
+
+Закрытый ключ остаётся root-only в исходном каталоге. PID 1 читает пару через
+`LoadCredential`, а процесс `dragonet-proxy` получает временный read-only
+snapshot. Для S-UI в шаге 5 устанавливается готовый drop-in, который заменяет
+обязательные Certbot-пути в unit: простого добавления каталога в Node discovery
+недостаточно для запуска systemd без `/etc/letsencrypt/live/`.
+Права на `/root` и ключ расширять не требуется; постоянных копий ключа нет.
+[Механизм systemd credentials](https://www.freedesktop.org/software/systemd/man/247/systemd.exec.html#Credentials).
+
+Проверьте выбранную исходную пару. `notAfter` должен быть в будущем, SAN —
+содержать `PROXY_HOST`. Команды не выводят содержимое закрытого ключа:
+
+```bash
+sudo test -r "$CERTIFICATE_DIRECTORY/privkey.pem"
+sudo openssl x509 -in "$CERTIFICATE_DIRECTORY/fullchain.pem" \
   -noout -subject -dates -ext subjectAltName
+sudo openssl x509 -in "$CERTIFICATE_DIRECTORY/fullchain.pem" -noout -checkend 0
+```
+
+Сохраняйте тот механизм продления, который выпустил сертификат:
+
+```bash
+# S-UI/acme.sh: проверить регистрацию сертификата и задачу автопродления.
+sudo /root/.acme.sh/acme.sh --list
+sudo crontab -l
+
+# Только для Certbot:
+sudo certbot certificates
 sudo systemctl enable --now certbot.timer
 sudo systemctl list-timers certbot.timer --all
 ```
 
-Если `notAfter` уже прошёл, proxy намеренно не запустится. Сначала обновите
-существующий сертификат через его обычную Certbot-конфигурацию, затем повторите
-проверку и перезапустите instance:
-
-```bash
-sudo certbot renew
-sudo openssl x509 -in "/etc/letsencrypt/live/$CERTBOT_NAME/fullchain.pem" \
-  -noout -dates -ext subjectAltName
-sudo systemctl restart "dragonet-subscription-proxy@$CERTBOT_NAME.service"
-```
-
-Если `certbot renew` сообщает ошибку validation, исправьте её в настройке
-Certbot для этого уже существующего сертификата. Не обходите проверку срока
-действия и не подменяйте сертификат в proxy.
+Выполняйте только подходящий блок. Для acme.sh проверьте, что его install-cert
+по-прежнему обновляет именно пару в `/root/cert/<имя>/`; `s-ui.sh` регистрирует
+эти пути при выпуске. Если используется systemd timer вместо cron, проверяйте
+его. Если сертификат истёк, сначала продлите его через S-UI/acme.sh либо
+`sudo certbot renew` соответственно, повторите OpenSSL-проверку и после
+установки proxy перезапустите `$SERVICE`. При validation-ошибке исправляется
+выпуск сертификата, проверки proxy остаются включёнными.
 
 ### 3. Установить код и зависимости
 
-Скопируйте каталог `vpn-subscription-proxy` из этого репозитория на VPS. С
-текущего Windows-ноутбука это можно сделать встроенным OpenSSH-клиентом:
+Передайте исходники архивом, исключив Windows-зависимости, локальные env и
+SQLite. Команды выполняются из корня репозитория на Windows:
 
 ```powershell
-scp -r .\vpn-subscription-proxy <ssh-user>@<vps-address>:/tmp/
+$ProxyArchive = Join-Path $env:TEMP 'vpn-subscription-proxy-update.tar.gz'
+tar -czf $ProxyArchive --exclude=node_modules --exclude=dist --exclude='.env*' --exclude='*.sqlite*' -C .\vpn-subscription-proxy .
+if ($LASTEXITCODE -ne 0) { throw 'Не удалось создать архив proxy' }
+scp $ProxyArchive <ssh-user>@<vps-address>:/tmp/vpn-subscription-proxy-update.tar.gz
 ```
 
 Затем на VPS соберите именно этот самостоятельный проект:
 
 ```bash
 sudo install -d -o root -g root -m 0755 /opt/vpn-subscription-proxy
-sudo rsync -a --delete /tmp/vpn-subscription-proxy/ /opt/vpn-subscription-proxy/
+sudo tar -xzf /tmp/vpn-subscription-proxy-update.tar.gz -C /opt/vpn-subscription-proxy
 cd /opt/vpn-subscription-proxy
 sudo npm ci
 sudo npm run typecheck
@@ -163,13 +288,22 @@ iOS MpeiApp.
 
 ### 4. Создать root-owned EnvironmentFile
 
+При переносе VPS восстановите env и SQLite по
+[инструкции переноса](UPDATING.md#перенос-на-другой-vps) до первого старта.
+Существующий env не затирайте, `DEMO_COOLDOWN_HMAC_KEY` не генерируйте заново.
+Для первой установки:
+
 ```bash
-sudo install -o root -g root -m 0600 /dev/null /etc/dragonet-subscription-proxy.env
+if ! sudo test -e /etc/dragonet-subscription-proxy.env; then
+  sudo install -o root -g root -m 0600 /dev/null /etc/dragonet-subscription-proxy.env
+fi
 sudoedit /etc/dragonet-subscription-proxy.env
 ```
 
-Перенесите значения из [`.env.example`](.env.example), заменив все
-placeholder. Минимально важные строки выглядят так:
+Для новой установки перенесите значения из [`.env.example`](.env.example)
+в репозитории, заменив placeholder. Шаблон и реальные env не входят в архив
+выше; его можно открыть локально. При переносе проверьте адрес/Token новой
+панели и inbound ID, сохранив HMAC-ключ и прежний state. Основные строки:
 
 ```dotenv
 PROXY_LISTEN_HOST=0.0.0.0
@@ -184,7 +318,7 @@ DEMO_COOLDOWN_HMAC_KEY=<output-of-openssl-rand-hex-32>
 STATE_DIRECTORY=/var/lib/dragonet-subscription-proxy
 ```
 
-Задайте ключ безопасно, не записывая его в shell history:
+Только для первой установки создайте новый HMAC-ключ:
 
 ```bash
 openssl rand -hex 32
@@ -197,21 +331,31 @@ proxy. Это разные порты.
 
 ### 5. Включить systemd и firewall
 
+Используйте переменные из шага 2. Устанавливаются все три units и, для S-UI,
+drop-in конкретного instance; базовый unit сохраняет совместимость с Certbot:
+
 ```bash
 sudo install -o root -g root -m 0644 \
   /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
   /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.service \
   /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy-certificate-reload@.path \
   /etc/systemd/system/
+case "$CERTIFICATE_SOURCE" in
+  s-ui)
+    sudo install -d -o root -g root -m 0755 "$(dirname "$TLS_DROP_IN")"
+    sudo install -o root -g root -m 0644 \
+      /opt/vpn-subscription-proxy/deploy/s-ui-tls.conf "$TLS_DROP_IN"
+    ;;
+  letsencrypt) sudo rm -f "$TLS_DROP_IN" ;;
+  *) echo 'CERTIFICATE_SOURCE must be s-ui or letsencrypt' >&2; exit 1 ;;
+esac
 sudo systemctl daemon-reload
-export CERTBOT_NAME='proxy.example.com'
-sudo systemctl enable --now \
-  "dragonet-subscription-proxy@$CERTBOT_NAME.service" \
-  "dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path"
-sudo systemctl status "dragonet-subscription-proxy@$CERTBOT_NAME.service" --no-pager
-sudo systemctl status "dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path" --no-pager
-sudo ss -ltnp '( sport = :8443 )'
-sudo ufw allow 8443/tcp
+sudo systemd-analyze verify "$SERVICE" "$WATCHER" "$RELOADER"
+sudo systemctl enable --now "$SERVICE" "$WATCHER"
+sudo systemctl status "$SERVICE" --no-pager
+sudo systemctl status "$WATCHER" --no-pager
+sudo ss -ltnp "( sport = :$PROXY_PORT )"
+sudo ufw allow "$PROXY_PORT/tcp"
 ```
 
 `RestrictAddressFamilies` в unit намеренно разрешает также `AF_NETLINK`.
@@ -225,8 +369,8 @@ sudo install -o root -g root -m 0644 \
   /opt/vpn-subscription-proxy/deploy/dragonet-subscription-proxy@.service \
   /etc/systemd/system/dragonet-subscription-proxy@.service
 sudo systemctl daemon-reload
-sudo systemctl restart "dragonet-subscription-proxy@$CERTBOT_NAME.service"
-sudo systemctl status "dragonet-subscription-proxy@$CERTBOT_NAME.service" --no-pager
+sudo systemctl restart "$SERVICE"
+sudo systemctl status "$SERVICE" --no-pager
 ```
 
 Также откройте TCP 8443 в firewall провайдера VPS. Если выбран другой
@@ -234,10 +378,14 @@ sudo systemctl status "dragonet-subscription-proxy@$CERTBOT_NAME.service" --no-p
 его. `CAP_NET_BIND_SERVICE` в unit позволяет при необходимости использовать
 и порт ниже 1024, но не освобождает уже занятый 443.
 
-Шаблон `dragonet-subscription-proxy-certificate-reload@.path` не зависит от
-Certbot deploy-hook. После обычного продления Certbot instance с тем же
-`CERTBOT_NAME` перезапускает proxy и перечитывает исходные файлы Let’s
-Encrypt. Статус watcher проверяется второй командой `systemctl status` выше.
+Шаблон `dragonet-subscription-proxy-certificate-reload@.path` следит за
+Certbot и `/root/cert/<CERTIFICATE_NAME>`: каталогом, `fullchain.pem` и
+`privkey.pem`. Замена файлов или запись на месте вызывает restart proxy,
+и systemd перечитывает исходную пару. Отсутствие второго расположения
+не мешает watcher; он не создаёт каталоги сертификатов. Дополнительный
+deploy-hook не требуется. Watcher только подхватывает обновлённые файлы —
+сам сертификаты он не продлевает.
+[Поведение PathChanged](https://www.freedesktop.org/software/systemd/man/247/systemd.path.html).
 
 Панель S-UI и `/apiv2/*` не должны быть доступны извне. Открывается только
 выбранный порт proxy.
@@ -248,22 +396,21 @@ Encrypt. Статус watcher проверяется второй командо
 использовать домен сертификата, чтобы пройти проверку SNI:
 
 ```bash
-export PROXY_HOST='proxy.example.com'
-export PROXY_PORT='8443'
-export CERTBOT_NAME='proxy.example.com'
 curl --fail --silent --show-error \
   --resolve "$PROXY_HOST:$PROXY_PORT:127.0.0.1" \
   "https://$PROXY_HOST:$PROXY_PORT/healthz"
 curl --fail --silent --show-error \
   --resolve "$PROXY_HOST:$PROXY_PORT:127.0.0.1" \
   "https://$PROXY_HOST:$PROXY_PORT/stats"
-sudo journalctl -u "dragonet-subscription-proxy@$CERTBOT_NAME.service" -n 50 --no-pager
+sudo journalctl -u "$SERVICE" -n 50 --no-pager
 ```
 
 Ожидаемый ответ: `{"status":"ok"}`. При ошибке запуска не ослабляйте
-проверки discovery: проверьте A-запись, `notAfter` исходной пары Let’s
-Encrypt, вывод `certbot renew` и статус instance
-`dragonet-subscription-proxy-certificate-reload@$CERTBOT_NAME.path`.
+проверки discovery: проверьте A-запись, `notAfter` выбранной исходной пары,
+её механизм продления и `$WATCHER`. Ошибка systemd `Failed to load
+credentials` до запуска Node обычно означает неверный `CERTIFICATE_NAME`
+или отсутствие S-UI drop-in. Проверьте `sudo systemctl cat "$SERVICE"`:
+последние `LoadCredential` должны указывать на выбранный источник.
 Сразу после запуска `/stats` вернёт нулевые счётчики и uptime, например:
 
 ```json
@@ -358,4 +505,8 @@ gate можно повторить любой запрос с `Mpei-App-Req-Id =
 
 `PROXY_LISTEN_PORT` должен совпадать с публичной константой
 `DRAGONET_PROXY_PORT` в `src/config/Secrets.ts`. При этом обновлении
-домен, порт, путь и значения конфигурации приложения менять не требуется.
+домен, порт, путь и значения конфигурации приложения менять не требуется,
+если при переносе сохранён прежний публичный endpoint. Для уже выпущенной
+2.5.0 сохраните тот же DNS-host/порт/путь и перенаправьте его A-запись на
+новый VPS; сертификат должен подходить этому host. Замена самого endpoint
+вместо DNS потребовала бы обновления конфигурации приложения.

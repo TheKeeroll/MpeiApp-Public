@@ -33,11 +33,22 @@ type LoadedCertificate = Readonly<{
   certificatePem: string;
   privateKeyPem: string;
   dnsNames: readonly string[];
+  validTo: string;
+  fingerprint: string;
+}>;
+
+type CertificateFileSystem = Readonly<{
+  readdir: (directory: string) => Promise<readonly {name: string; isDirectory: () => boolean}[]>;
+  realpath: (filename: string) => Promise<string>;
+  access: (filename: string) => Promise<void>;
+  readFile: (filename: string) => Promise<string>;
 }>;
 
 type DiscoveryDependencies = Readonly<{
   fetchText: (url: string) => Promise<string>;
   resolve4: (hostname: string) => Promise<readonly string[]>;
+  files: CertificateFileSystem;
+  preferredHostname?: string;
 }>;
 
 const normaliseIpv4 = (value: string): string | undefined => {
@@ -109,6 +120,12 @@ const fetchPublicIpText = async (url: string): Promise<string> => {
 const defaultDependencies: DiscoveryDependencies = {
   fetchText: fetchPublicIpText,
   resolve4: resolveIpv4,
+  files: {
+    readdir: directory => readdir(directory, {withFileTypes: true}),
+    realpath,
+    access: filename => access(filename, constants.R_OK),
+    readFile: filename => readFile(filename, 'utf8'),
+  },
 };
 
 const isConcreteDnsName = (value: string): string | undefined => {
@@ -144,17 +161,17 @@ const candidatePairsAt = (directory: string): CertificatePair[] => CERTIFICATE_P
   privateKeyPath: path.join(directory, names.privateKey),
 }));
 
-const readDirectoryEntries = async (directory: string): Promise<readonly import('node:fs').Dirent[]> => {
+const readDirectoryEntries = async (directory: string, files: CertificateFileSystem) => {
   try {
-    return await readdir(directory, {withFileTypes: true});
+    return await files.readdir(directory);
   } catch {
     return [];
   }
 };
 
-const oneLevelCandidatePairs = async (directory: string): Promise<CertificatePair[]> => {
+const oneLevelCandidatePairs = async (directory: string, files: CertificateFileSystem): Promise<CertificatePair[]> => {
   const pairs = candidatePairsAt(directory);
-  const entries = await readDirectoryEntries(directory);
+  const entries = await readDirectoryEntries(directory, files);
   for (const entry of entries) {
     if (entry.isDirectory()) {
       pairs.push(...candidatePairsAt(path.join(directory, entry.name)));
@@ -163,9 +180,9 @@ const oneLevelCandidatePairs = async (directory: string): Promise<CertificatePai
   return pairs;
 };
 
-const letsEncryptCandidatePairs = async (): Promise<CertificatePair[]> => {
+const letsEncryptCandidatePairs = async (files: CertificateFileSystem): Promise<CertificatePair[]> => {
   const root = '/etc/letsencrypt/live';
-  const entries = await readDirectoryEntries(root);
+  const entries = await readDirectoryEntries(root, files);
   return entries
     .filter(entry => entry.isDirectory())
     .flatMap(entry => [{
@@ -175,7 +192,7 @@ const letsEncryptCandidatePairs = async (): Promise<CertificatePair[]> => {
 };
 
 /**
- * systemd LoadCredential reads the existing Let’s Encrypt files as root at
+ * systemd LoadCredential reads the existing certificate files as root at
  * service start, then exposes a short-lived, read-only copy to the
  * unprivileged service. This is not a configurable certificate path.
  */
@@ -200,18 +217,19 @@ const systemdCredentialCandidatePairs = (): CertificatePair[] => {
   }];
 };
 
-const fallbackCandidatePairs = async (): Promise<CertificatePair[]> => {
+const fallbackCandidatePairs = async (files: CertificateFileSystem): Promise<CertificatePair[]> => {
   const pairs = [
-    ...(await oneLevelCandidatePairs('/etc/ssl')),
-    ...(await oneLevelCandidatePairs('/etc/nginx/ssl')),
+    ...(await oneLevelCandidatePairs('/etc/ssl', files)),
+    ...(await oneLevelCandidatePairs('/etc/nginx/ssl', files)),
+    ...(await oneLevelCandidatePairs('/root/cert', files)),
     ...candidatePairsAt('/root'),
-    ...(await oneLevelCandidatePairs('/root/.acme.sh')),
+    ...(await oneLevelCandidatePairs('/root/.acme.sh', files)),
   ];
 
-  const optEntries = await readDirectoryEntries('/opt');
+  const optEntries = await readDirectoryEntries('/opt', files);
   for (const entry of optEntries) {
     if (entry.isDirectory()) {
-      pairs.push(...(await oneLevelCandidatePairs(path.join('/opt', entry.name, 'ssl'))));
+      pairs.push(...(await oneLevelCandidatePairs(path.join('/opt', entry.name, 'ssl'), files)));
     }
   }
   return pairs;
@@ -231,19 +249,19 @@ const keysMatch = (certificate: X509Certificate, privateKeyPem: string): boolean
   publicKeyMatchesPrivateKey(certificate.publicKey, privateKeyPem)
 );
 
-const loadCertificate = async (pair: CertificatePair, now: Date): Promise<LoadedCertificate | undefined> => {
+const loadCertificate = async (pair: CertificatePair, now: Date, files: CertificateFileSystem): Promise<LoadedCertificate | undefined> => {
   try {
     const [certificatePath, privateKeyPath] = await Promise.all([
-      realpath(pair.certificatePath),
-      realpath(pair.privateKeyPath),
+      files.realpath(pair.certificatePath),
+      files.realpath(pair.privateKeyPath),
     ]);
     await Promise.all([
-      access(certificatePath, constants.R_OK),
-      access(privateKeyPath, constants.R_OK),
+      files.access(certificatePath),
+      files.access(privateKeyPath),
     ]);
     const [certificatePem, privateKeyPem] = await Promise.all([
-      readFile(certificatePath, 'utf8'),
-      readFile(privateKeyPath, 'utf8'),
+      files.readFile(certificatePath),
+      files.readFile(privateKeyPath),
     ]);
     const certificate = new X509Certificate(certificatePem);
     const validFrom = Date.parse(certificate.validFrom);
@@ -255,7 +273,7 @@ const loadCertificate = async (pair: CertificatePair, now: Date): Promise<Loaded
       return undefined;
     }
     const dnsNames = extractConcreteDnsNames(certificate);
-    return dnsNames.length > 0 ? {certificatePem, privateKeyPem, dnsNames} : undefined;
+    return dnsNames.length > 0 ? {certificatePem, privateKeyPem, dnsNames, validTo: certificate.validTo, fingerprint: certificate.fingerprint256} : undefined;
   } catch {
     return undefined;
   }
@@ -275,12 +293,14 @@ const findMatchingMaterial = async (
     }
     tried.add(pairKey);
 
-    const certificate = await loadCertificate(pair, now);
+    const certificate = await loadCertificate(pair, now, dependencies.files);
     if (!certificate) {
       continue;
     }
     const hostname = await findDnsNameForPublicIpv4(
-      certificate.dnsNames,
+      dependencies.preferredHostname
+        ? certificate.dnsNames.filter(name => name === dependencies.preferredHostname)
+        : certificate.dnsNames,
       publicIpv4,
       dependencies.resolve4,
     );
@@ -327,6 +347,58 @@ export const selectFirstStartupTlsMaterial = async (
   return undefined;
 };
 
+const discoverPublicIpv4 = async (dependencies: DiscoveryDependencies): Promise<string> => {
+  const responses = await Promise.allSettled(PUBLIC_IP_SOURCES.map(dependencies.fetchText));
+  const publicIpv4 = selectQuorumIpv4(responses.flatMap(response => (
+    response.status === 'fulfilled' ? [response.value] : []
+  )));
+  if (!publicIpv4) throw new Error('Public IPv4 quorum was not reached');
+  return publicIpv4;
+};
+
+export type InstallerTlsCandidate = CertificatePair & Readonly<{
+  source: 'letsencrypt' | 's-ui';
+  name: string;
+  hostnames: readonly string[];
+  validTo: string;
+  fingerprint: string;
+}>;
+
+/** Root-only installer discovery. Returns public metadata, never PEM/key contents. */
+export const discoverInstallerCertificates = async (
+  dependencies: Partial<DiscoveryDependencies> = {},
+  now = new Date(),
+): Promise<{publicIpv4: string; candidates: InstallerTlsCandidate[]; rejected: string[]}> => {
+  const resolved: DiscoveryDependencies = {...defaultDependencies, ...dependencies};
+  const publicIpv4 = await discoverPublicIpv4(resolved);
+  const candidates: InstallerTlsCandidate[] = [];
+  const rejected: string[] = [];
+  for (const [source, root] of [['letsencrypt', '/etc/letsencrypt/live'], ['s-ui', '/root/cert']] as const) {
+    for (const entry of await readDirectoryEntries(root, resolved.files)) {
+      if (!entry.isDirectory() || !/^[a-zA-Z0-9._-]+$/u.test(entry.name)) continue;
+      const pair = {
+        certificatePath: path.join(root, entry.name, 'fullchain.pem'),
+        privateKeyPath: path.join(root, entry.name, 'privkey.pem'),
+      };
+      const certificate = await loadCertificate(pair, now, resolved.files);
+      if (!certificate) {
+        rejected.push(`${source}/${entry.name}: invalid, expired, unreadable or mismatched certificate/key`);
+        continue;
+      }
+      const hostnames: string[] = [];
+      for (const name of certificate.dnsNames) {
+        if (await findDnsNameForPublicIpv4([name], publicIpv4, resolved.resolve4)) hostnames.push(name);
+      }
+      if (!hostnames.length) {
+        rejected.push(`${source}/${entry.name}: no concrete DNS name points exclusively to this VPS`);
+        continue;
+      }
+      candidates.push({...pair, source, name: entry.name, hostnames, validTo: certificate.validTo, fingerprint: certificate.fingerprint});
+    }
+  }
+  return {publicIpv4, candidates, rejected};
+};
+
 /**
  * Fails closed before Fastify opens a socket. There is intentionally no
  * configurable certificate path: discovery is bounded to known safe places.
@@ -336,29 +408,22 @@ export const discoverStartupTls = async (
   now = new Date(),
 ): Promise<StartupTlsMaterial> => {
   const resolvedDependencies: DiscoveryDependencies = {...defaultDependencies, ...dependencies};
-  const responses = await Promise.allSettled(PUBLIC_IP_SOURCES.map(resolvedDependencies.fetchText));
-  const publicIpv4 = selectQuorumIpv4(responses.flatMap(response => (
-    response.status === 'fulfilled' ? [response.value] : []
-  )));
-  if (!publicIpv4) {
-    throw new Error('Public IPv4 quorum was not reached');
-  }
+  const publicIpv4 = await discoverPublicIpv4(resolvedDependencies);
+  const credentials = systemdCredentialCandidatePairs();
 
-  const material = await selectFirstStartupTlsMaterial([
+  // An explicitly selected systemd pair must not be replaced by another
+  // readable certificate, including during an incomplete renewal.
+  const material = await selectFirstStartupTlsMaterial(credentials.length ? [
+    async () => findMatchingMaterial(credentials, publicIpv4, resolvedDependencies, now),
+  ] : [
     async () => findMatchingMaterial(
-      await letsEncryptCandidatePairs(),
+      await letsEncryptCandidatePairs(resolvedDependencies.files),
       publicIpv4,
       resolvedDependencies,
       now,
     ),
     async () => findMatchingMaterial(
-      systemdCredentialCandidatePairs(),
-      publicIpv4,
-      resolvedDependencies,
-      now,
-    ),
-    async () => findMatchingMaterial(
-      await fallbackCandidatePairs(),
+      await fallbackCandidatePairs(resolvedDependencies.files),
       publicIpv4,
       resolvedDependencies,
       now,

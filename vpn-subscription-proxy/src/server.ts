@@ -67,7 +67,7 @@ export const createProxyServer = (config: ProxyConfig, tls: StartupTlsMaterial):
 
 const start = async (): Promise<void> => {
   const config = loadConfig();
-  const tls = await discoverStartupTls();
+  const tls = await discoverStartupTls(config.publicHostname ? {preferredHostname: config.publicHostname} : {});
   const {app, cooldownStore} = createProxyServer(config, tls);
   let closing = false;
   const close = async (): Promise<void> => {

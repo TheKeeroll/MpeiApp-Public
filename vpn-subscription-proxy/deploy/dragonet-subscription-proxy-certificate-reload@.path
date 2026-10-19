@@ -1,12 +1,16 @@
 [Unit]
-Description=Watch Let's Encrypt certificate %i for DragoNet proxy
+Description=Watch Certbot and S-UI certificate %i for DragoNet proxy
 
 [Path]
 # Certbot atomically swaps live symlinks. Watching the directory and both
-# links triggers the paired one-shot restart without a Certbot deploy-hook.
+# links also covers S-UI/acme.sh, which may replace files or write in place.
+# Missing paths are allowed; no certificate directories are created here.
 PathChanged=/etc/letsencrypt/live/%i
 PathChanged=/etc/letsencrypt/live/%i/fullchain.pem
 PathChanged=/etc/letsencrypt/live/%i/privkey.pem
+PathChanged=/root/cert/%i
+PathChanged=/root/cert/%i/fullchain.pem
+PathChanged=/root/cert/%i/privkey.pem
 Unit=dragonet-subscription-proxy-certificate-reload@%i.service
 
 [Install]

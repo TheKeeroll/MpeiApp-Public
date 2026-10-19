@@ -4,6 +4,7 @@ import path from 'node:path';
 export type ProxyConfig = Readonly<{
   listenHost: string;
   listenPort: number;
+  publicHostname?: string;
   requestPath: string;
   panelBaseUrl: string;
   panelToken: string;
@@ -105,6 +106,11 @@ const readTrustedProxyIps = (env: NodeJS.ProcessEnv): readonly string[] => {
 };
 
 export const loadConfig = (env: NodeJS.ProcessEnv = process.env): ProxyConfig => {
+  const publicHostname = env.PROXY_PUBLIC_HOST?.trim().toLowerCase();
+  if (publicHostname && (isIP(publicHostname) || publicHostname.length > 253 || !publicHostname.includes('.')
+    || !publicHostname.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label)))) {
+    throw new Error('Invalid PROXY_PUBLIC_HOST');
+  }
   const stateDirectory = readRequired(env, 'STATE_DIRECTORY');
   if (!path.isAbsolute(stateDirectory)) {
     throw new Error('STATE_DIRECTORY must be absolute');
@@ -126,6 +132,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): ProxyConfig =>
   }
 
   return {
+    ...(publicHostname ? {publicHostname} : {}),
     listenHost,
     listenPort: readInteger(env, 'PROXY_LISTEN_PORT', 1, 65535),
     requestPath: readPath(env, 'PROXY_REQUEST_PATH'),
