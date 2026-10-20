@@ -6,19 +6,70 @@ enum ScheduleWidgetContract {
     static let dayKey = "widgetKeyDay"
     static let kind = "ScheduleWidget"
     static let notice = "Откройте MpeiApp, чтобы загрузить или обновить расписание в виджете."
+
+    // Match the Moscow date used by the app's schedule, including when travelling.
+    static var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Moscow") ?? TimeZone(secondsFromGMT: 10800) ?? .current
+        calendar.firstWeekday = 2
+        return calendar
+    }
 }
 
-enum WidgetDayChoice: String, CaseIterable, Hashable {
-    case yesterday, today, tomorrow
+struct WidgetScheduleWindow {
+    let dates: [Date]
 
-    var offset: Int {
-        switch self { case .yesterday: return -1; case .today: return 0; case .tomorrow: return 1 }
+    init(containing now: Date, calendar: Calendar = ScheduleWidgetContract.calendar) {
+        let today = calendar.startOfDay(for: now)
+        let offset = (calendar.component(.weekday, from: today) + 5) % 7
+        let monday = calendar.date(byAdding: .day, value: -offset, to: today) ?? today
+        dates = (0..<14).compactMap { calendar.date(byAdding: .day, value: $0, to: monday) }
     }
-    var title: String {
-        switch self { case .yesterday: return "Вчера"; case .today: return "Сегодня"; case .tomorrow: return "Завтра" }
+
+    func date(for key: String, calendar: Calendar = ScheduleWidgetContract.calendar) -> Date? {
+        dates.first { WidgetSchedulePayload.dateString($0, calendar: calendar) == key }
     }
-    static func restored(_ rawValue: String?) -> Self {
-        return rawValue.flatMap(Self.init(rawValue:)) ?? .today
+
+    func week(containing date: Date, calendar: Calendar = ScheduleWidgetContract.calendar) -> [Date] {
+        let index = dates.firstIndex { calendar.isDate($0, inSameDayAs: date) } ?? 0
+        return Array(dates.dropFirst(index / 7 * 7).prefix(7))
+    }
+
+    func adjacentWeek(to date: Date, offset: Int, calendar: Calendar = ScheduleWidgetContract.calendar) -> Date? {
+        guard offset == -1 || offset == 1,
+              let index = dates.firstIndex(where: { calendar.isDate($0, inSameDayAs: date) }),
+              dates.indices.contains(index + offset * 7) else { return nil }
+        return dates[index + offset * 7]
+    }
+}
+
+enum WidgetDaySelection: Equatable {
+    case today
+    case date(String)
+
+    var rawValue: String {
+        switch self { case .today: return "today"; case .date(let key): return key }
+    }
+
+    static func restored(_ rawValue: String?, relativeTo now: Date,
+                         calendar: Calendar = ScheduleWidgetContract.calendar) -> Self {
+        let window = WidgetScheduleWindow(containing: now, calendar: calendar)
+        var key = rawValue ?? "today"
+        // Migrate the old relative choices to an actual date on the first read.
+        if key == "yesterday" || key == "tomorrow" {
+            guard let date = calendar.date(byAdding: .day, value: key == "yesterday" ? -1 : 1, to: now) else { return .today }
+            key = WidgetSchedulePayload.dateString(date, calendar: calendar)
+        }
+        guard window.date(for: key, calendar: calendar) != nil else { return .today }
+        return .date(key)
+    }
+
+    func date(relativeTo now: Date, calendar: Calendar = ScheduleWidgetContract.calendar) -> Date {
+        if case .date(let key) = self,
+           let date = WidgetScheduleWindow(containing: now, calendar: calendar).date(for: key, calendar: calendar) {
+            return date
+        }
+        return calendar.startOfDay(for: now)
     }
 }
 
@@ -35,12 +86,14 @@ struct WidgetLesson: Decodable {
 
 struct WidgetScheduleDay: Decodable {
     let date: String
+    let isLoaded: Bool
     let lessons: [WidgetLesson]
 
-    private enum CodingKeys: String, CodingKey { case date, lessons }
+    private enum CodingKeys: String, CodingKey { case date, isLoaded, lessons }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         date = try values.decodeIfPresent(String.self, forKey: .date) ?? "NOT_SET"
+        isLoaded = try values.decodeIfPresent(Bool.self, forKey: .isLoaded) ?? true
         lessons = try values.decodeIfPresent([WidgetLesson].self, forKey: .lessons) ?? []
     }
 
@@ -84,18 +137,16 @@ struct WidgetSchedulePayload: Decodable {
         return try? JSONDecoder().decode(Self.self, from: data)
     }
 
-    static func dateString(_ date: Date, calendar: Calendar = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = calendar.timeZone
-        formatter.dateFormat = "dd.MM.yyyy"
-        return formatter.string(from: date)
+    static func dateString(_ date: Date, calendar: Calendar = ScheduleWidgetContract.calendar) -> String {
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        let parts = gregorian.dateComponents([.day, .month, .year], from: date)
+        guard let day = parts.day, let month = parts.month, let year = parts.year else { return "" }
+        return String(format: "%02d.%02d.%04d", day, month, year)
     }
 
-    func day(_ choice: WidgetDayChoice, relativeTo now: Date, calendar: Calendar = .current) -> WidgetScheduleDay? {
-        guard let target = calendar.date(byAdding: .day, value: choice.offset, to: now) else { return nil }
-        let date = Self.dateString(target, calendar: calendar)
-        return days.first { $0.date == date }
+    func day(on date: Date, calendar: Calendar = ScheduleWidgetContract.calendar) -> WidgetScheduleDay? {
+        let key = Self.dateString(date, calendar: calendar)
+        return days.first { $0.date == key && $0.isLoaded }
     }
 }

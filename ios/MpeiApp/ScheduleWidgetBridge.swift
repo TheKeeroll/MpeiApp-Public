@@ -22,7 +22,7 @@ final class ScheduleWidgetBridge: NSObject {
             return
         }
         defaults.set(json, forKey: ScheduleWidgetContract.dataKey)
-        let day = WidgetDayChoice.restored(defaults.string(forKey: ScheduleWidgetContract.dayKey))
+        let day = WidgetDaySelection.restored(defaults.string(forKey: ScheduleWidgetContract.dayKey), relativeTo: Date())
         defaults.set(day.rawValue, forKey: ScheduleWidgetContract.dayKey)
         WidgetCenter.shared.reloadTimelines(ofKind: ScheduleWidgetContract.kind)
         resolve(nil)
