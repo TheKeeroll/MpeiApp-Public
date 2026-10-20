@@ -355,12 +355,16 @@ export async function install() {
       console.log(`Staging: ${staging}`);
       makeParents(path.dirname(staging));
       mkdirSync(staging, {mode: 0o700}); copySources(staging);
+      info('Установка npm-зависимостей candidate release...');
       run('npm', ['ci', '--include=dev', '--no-audit', '--no-fund'], {cwd: staging, timeout: 1800000});
+      run('npm', ['run', 'prepare:sqlite'], {cwd: staging, timeout: 1920000});
+      info('Typecheck, тесты и сборка proxy...');
       run('npm', ['run', 'typecheck'], {cwd: staging, timeout: 600000});
       run('npm', ['test'], {cwd: staging, timeout: 600000});
       run('npm', ['run', 'build'], {cwd: staging, timeout: 600000});
       await checkPanel(staging, plan.env);
       run('npm', ['prune', '--omit=dev', '--no-audit', '--no-fund'], {cwd: staging, timeout: 600000});
+      run('npm', ['run', 'check:sqlite'], {cwd: staging, timeout: 60000});
       run('chown', ['-R', 'root:root', '--', staging]); run('chmod', ['-R', 'a+rX', '--', staging]);
       for (const unit of managed) before.set(unit, stateOf(unit));
       ok('Зависимости, typecheck, тесты, сборка и доступ к S-UI проверены.');

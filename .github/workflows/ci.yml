@@ -190,5 +190,6 @@ jobs:
           cache: npm
           cache-dependency-path: vpn-subscription-proxy/package-lock.json
       - run: npm ci
+      - run: npm run prepare:sqlite
       - run: npm run typecheck
       - run: npm test

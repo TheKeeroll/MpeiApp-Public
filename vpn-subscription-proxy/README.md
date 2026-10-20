@@ -104,8 +104,13 @@ Ctrl+C отменяет запуск. Вопросы корректно пере
    цепочку доверия ОС и пригодность для HTTPS через OpenSSL.
    Если пар несколько, показывает источник, DNS-имена, срок и fingerprint
    и запрашивает номер. Для multi-SAN также можно выбрать DNS-имя proxy.
-4. В отдельном staging-каталоге выполняет `npm ci`, typecheck, все тесты,
-   build и удаление dev-зависимостей. Проверяет доступ к S-UI/Token read-only
+4. В отдельном staging-каталоге выполняет `npm ci --include=dev` и проверяет
+   открытие SQLite с транзакцией/чтением/записью в памяти. Если готовый native
+   бинарник несовместим с glibc VPS, отключает его и принудительно собирает
+   модуль через локальный `node-gyp` одним процессом; это может занять несколько
+   минут. Затем выполняет typecheck, все тесты, build и удаление dev-зависимостей.
+   После удаления dev-зависимостей повторно проверяет SQLite в новом процессе.
+   Проверяет доступ к S-UI/Token read-only
    запросом списка клиентов; содержимое списка не печатается, demo не создаётся.
    Работающий proxy до завершения подготовки не останавливается.
 5. Останавливает watcher/service, сохраняет env, SQLite и systemd в
@@ -195,9 +200,10 @@ id -u dragonet-proxy >/dev/null 2>&1 || \
   sudo useradd --system --home /nonexistent --shell /usr/sbin/nologin dragonet-proxy
 ```
 
-`node --version` должен вывести версию 24.x. `build-essential` нужен на
-случай, если `better-sqlite3` будет собран из исходного кода для архитектуры
-VPS. Нужен systemd 247 или новее для `LoadCredential`; штатные Debian 11–13
+`node --version` должен вывести версию 24.x. `build-essential` и Python 3 нужны
+для сборки `better-sqlite3`, если готовый бинарник не подходит архитектуре
+или glibc VPS. Установщик проверяет это автоматически; обновлять системную
+glibc вручную не требуется. Нужен systemd 247 или новее для `LoadCredential`; штатные Debian 11–13
 этому соответствуют.
 
 ### 2. Выбрать существующую TLS-пару: S-UI или Certbot
@@ -289,17 +295,27 @@ scp $ProxyArchive <ssh-user>@<vps-address>:/tmp/vpn-subscription-proxy-update.ta
 sudo install -d -o root -g root -m 0755 /opt/vpn-subscription-proxy
 sudo tar -xzf /tmp/vpn-subscription-proxy-update.tar.gz -C /opt/vpn-subscription-proxy
 cd /opt/vpn-subscription-proxy
-sudo npm ci
+sudo npm ci --include=dev
+sudo npm run prepare:sqlite
 sudo npm run typecheck
 sudo npm test
 sudo npm run build
 sudo npm prune --omit=dev
+sudo npm run check:sqlite
 sudo chown -R root:root /opt/vpn-subscription-proxy
 sudo chmod -R a+rX /opt/vpn-subscription-proxy
 ```
 
 `npm run build` здесь выполняется на VPS. Он не относится к сборке Android или
 iOS MpeiApp.
+
+`prepare:sqlite` проверяет реальную загрузку native-модуля и при необходимости
+собирает его из исходников под этот VPS. В `better-sqlite3` 13 готовые файлы
+имеют приоритет над `build/Release`, поэтому helper сохраняет их в
+`node_modules/better-sqlite3/prebuilds.disabled-<случайный суффикс>` и исключает
+из поиска загрузчика. `check:sqlite` ничего не пересобирает и работает после
+удаления dev-зависимостей. Обе проверки используют только БД в памяти,
+не открывая SQLite с историей demo.
 
 ### 4. Создать root-owned EnvironmentFile
 
