@@ -7,11 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D26010200000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000004 /* PrivacyInfo.xcprivacy */; };
-		D26010200000000000000011 /* ScheduleWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000001 /* ScheduleWidgetBridge.swift */; };
-		D26010200000000000000012 /* ScheduleWidgetBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000002 /* ScheduleWidgetBridge.m */; };
-		D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
-		D26010200000000000000014 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
 		00E356F31AD99517003FC87E /* MpeiAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* MpeiAppTests.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1469CF4D28AEB3F100848D43 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1469CF4C28AEB3F000848D43 /* GoogleService-Info.plist */; };
@@ -44,6 +39,11 @@
 		499B6AA929F07C94005E9A24 /* simple@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 499B6AA829F07C94005E9A24 /* simple@3x.png */; };
 		7A3EDC2EEDDA3492B7890081 /* libPods-MpeiApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4577486093D4F10838A3F71D /* libPods-MpeiApp.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D26010200000000000000011 /* ScheduleWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000001 /* ScheduleWidgetBridge.swift */; };
+		D26010200000000000000012 /* ScheduleWidgetBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000002 /* ScheduleWidgetBridge.m */; };
+		D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
+		D26010200000000000000014 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
+		D26010200000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000004 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,10 +78,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		D26010200000000000000004 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		D26010200000000000000001 /* ScheduleWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetBridge.swift; path = MpeiApp/ScheduleWidgetBridge.swift; sourceTree = "<group>"; };
-		D26010200000000000000002 /* ScheduleWidgetBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScheduleWidgetBridge.m; path = MpeiApp/ScheduleWidgetBridge.m; sourceTree = "<group>"; };
-		D26010200000000000000003 /* ScheduleWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetData.swift; path = ScheduleWidgetCore/Sources/ScheduleWidgetCore/ScheduleWidgetData.swift; sourceTree = "<group>"; };
 		00E356EE1AD99517003FC87E /* MpeiAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MpeiAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* MpeiAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MpeiAppTests.m; sourceTree = "<group>"; };
@@ -125,6 +121,10 @@
 		499B6AA829F07C94005E9A24 /* simple@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "simple@3x.png"; path = "../Icons/simple@3x.png"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-MpeiApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MpeiApp.release.xcconfig"; path = "Target Support Files/Pods-MpeiApp/Pods-MpeiApp.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = MpeiApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		D26010200000000000000001 /* ScheduleWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetBridge.swift; path = MpeiApp/ScheduleWidgetBridge.swift; sourceTree = "<group>"; };
+		D26010200000000000000002 /* ScheduleWidgetBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScheduleWidgetBridge.m; path = MpeiApp/ScheduleWidgetBridge.m; sourceTree = "<group>"; };
+		D26010200000000000000003 /* ScheduleWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetData.swift; path = ScheduleWidgetCore/Sources/ScheduleWidgetCore/ScheduleWidgetData.swift; sourceTree = "<group>"; };
+		D26010200000000000000004 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E52CA6F25B9939630329EC68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = MpeiApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -475,9 +475,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MpeiApp/Pods-MpeiApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MpeiApp/Pods-MpeiApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -514,9 +518,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MpeiApp/Pods-MpeiApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MpeiApp/Pods-MpeiApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -685,7 +693,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.5.0;
+				MARKETING_VERSION = 2.6.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -724,7 +732,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.5.0;
+				MARKETING_VERSION = 2.6.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -901,10 +909,7 @@
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				PODFILE_DIR = "$(SRCROOT)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
@@ -980,10 +985,7 @@
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				PODFILE_DIR = "$(SRCROOT)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
