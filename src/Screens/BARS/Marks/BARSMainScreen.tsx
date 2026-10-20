@@ -26,15 +26,12 @@ import Moment from "moment";
 import OfflineDataNotification from "../../CommonComponents/OfflineDataNotification";
 import parse from "node-html-parser";
 import { updateAdditionalData } from "../../../API/Redux/Slices";
-import SharedGroupPreferences from "react-native-shared-group-preferences";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_CONFIG } from "../../../Common/Config.ts";
 import {useDeferredInlineAd} from "../../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../../Ads/AdPlacements";
 
 const Stack = createStackNavigator()
-
-const group = 'group.com.mpeiapp'
 
 const SharedStorage = NativeModules.SharedStorage
 
@@ -110,13 +107,8 @@ const FeedWidget = async (studentSchedule: any) => {
       }
     }
     // --- отправка ---
-    if (Platform.OS == 'ios') {
-      await SharedGroupPreferences.setItem('widgetKey', dataForWidget, group)
-      console.log('iOS - dataForWidget shared')
-    } else {
-      SharedStorage.set(JSON.stringify({ dataForWidget }))
-      console.log('Android - dataForWidget shared')
-    }
+    SharedStorage.set(JSON.stringify({ dataForWidget }))
+    console.log('Android - dataForWidget shared')
   } catch (error: any) {
     console.warn('FeedWidget failed: ' + error?.toString())
   }
@@ -562,7 +554,7 @@ const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     const {colors} = useTheme()
     const studentSchedule = useSelector((state: RootState) => state.Schedule)
     useEffect(() => {
-        FeedWidget(studentSchedule).then(r => console.log('Schedule provided to widget'))
+        if (Platform.OS === 'android') FeedWidget(studentSchedule).then(r => console.log('Schedule provided to widget'))
     }, [studentSchedule])
     return (
       <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.mainView,{backgroundColor: colors.background}]}>

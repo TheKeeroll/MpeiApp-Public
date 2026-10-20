@@ -1,372 +1,180 @@
-//
-//  ScheduleWidget.swift
-//  ScheduleWidget
-//
-//  Created by DragonSavA on 02.08.2024.
-//
-
+import Foundation
 import WidgetKit
 import SwiftUI
-import AppIntents
-import Intents
 
-extension Color {
-    init(hex: String) {
-        var cleanHexCode = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        cleanHexCode = cleanHexCode.replacingOccurrences(of: "#", with: "")
-        // print(cleanHexCode)
-        var rgb: UInt64 = 0
-        
-        Scanner(string: cleanHexCode).scanHexInt64(&rgb)
-        
-        let redValue = Double((rgb >> 16) & 0xFF) / 255.0
-        let greenValue = Double((rgb >> 8) & 0xFF) / 255.0
-        let blueValue = Double(rgb & 0xFF) / 255.0
-        self.init(red: redValue, green: greenValue, blue: blueValue)
-    }
-}
-
-struct Teacher: Decodable {
-  var name: String?
-  var lec_oid: String?
-  var fullName: String?
-}
-
-struct Lesson: Decodable, Hashable {
-  // var id: UUID = UUID()
-  var name: String?
-  var lessonIndex: String?
-  var lessonType: String?
-  var place: String?
-  var cabinet: String?
-  var teacher: Teacher?
-  var group: String?
-  var type: String?
-  
-  static func == (lhs: Lesson, rhs: Lesson) -> Bool {
-    return lhs.name == rhs.name && lhs.lessonIndex == rhs.lessonIndex && lhs.lessonType == rhs.lessonType && lhs.cabinet == rhs.cabinet
-  }
-
-  func hash(into hasher: inout Hasher) {
-    hasher.combine(name)
-    hasher.combine(lessonIndex)
-    hasher.combine(lessonType)
-    hasher.combine(cabinet)
-   }
-}
-
-struct Day: Decodable {
-  var date: String = ""
-  var lessons: [Lesson]?
-  var isEmpty: Bool = true
-  var isToday: Bool = false
-}
-
-struct DataForWidget: Decodable {
-  var yesterday: Day = Day()
-  var today: Day = Day()
-  var tomorrow: Day = Day()
-}
-
-@available(iOSApplicationExtension 17, *)
-struct Provider: AppIntentTimelineProvider {
-
-  func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-    return SimpleEntry(date: Date(), configuration: configuration, text: "Data goes here")
-  }
-  
-  func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-    var entry = SimpleEntry(date: Date(), configuration: configuration, text: "Default sign")
-    var timeline = Timeline(entries: [entry], policy: .atEnd)
-    let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
-    if userDefaults != nil {
-    // print("iOS Widget - userDefaults: ")
-    // print(userDefaults?.object(forKey: "widgetKey") ?? "failed to obtain")
-      let entryDate = Date()
-      if let savedData = userDefaults!.object(forKey: "widgetKey") as? String {
-        print("iOS Widget - Data obtained: " + savedData)
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-        entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: savedData)
-        timeline = Timeline(entries: [entry], policy: .atEnd)
-        //let testSchObj = try? JSONDecoder().decode(DataForWidget.self, from: savedData.data(using: .utf8)!)
-        //do
-        //  {
-        //    let testSchObj = try JSONDecoder().decode(DataForWidget.self, from: savedData.data(using: .utf8)!)
-        //    print("TestSchObj - tomorrow date = " + (testSchObj.tomorrow.date))
-        //    }catch let error as NSError {
-        //      print("\(error)") //Error Domain=Swift.DecodingError Code=2 "(null)"
-        //  }
-      } else {
-        print("iOS Widget - No data obtained!")
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: entryDate)!
-        entry = SimpleEntry(date: nextRefresh, configuration: configuration, text: "No data obtained")
-        timeline = Timeline(entries: [entry], policy: .atEnd)
-      }
-    }
-    return timeline
-  }
-  
-  typealias Entry = SimpleEntry
-  
-  typealias Intent = ConfigurationAppIntent
-  
-   func placeholder(in context: Context) -> SimpleEntry {
-      SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), text: "Placeholder")
-  }
-}
-
-@available(iOSApplicationExtension 17, *)
 struct SimpleEntry: TimelineEntry {
-   let date: Date
-      let configuration: ConfigurationAppIntent
-      let text: String
+    let date: Date
+    let payload: WidgetSchedulePayload?
+    let selection: WidgetDayChoice
 }
 
-@available(iOSApplicationExtension 17, *)
-struct ScheduleWidgetEntryView : View {
-  var entry: Provider.Entry?
-  
-  let calendar = Calendar.current
-  let formatter = DateFormatter()
-  
-  func extraChosenCounter(from lessons:[Lesson]) -> Int? {
-    var counter = 0;
-    for lesson in lessons {
-      if (lesson.name!.contains("по выбору")) {
-        counter = counter + 1;
-      }
+struct Provider: TimelineProvider {
+    func placeholder(in context: Context) -> SimpleEntry { previewEntry() }
+
+    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
+        completion(context.isPreview ? previewEntry() : readEntry(at: Date()))
     }
-    if (counter > 0) {
-      return (counter - 1);
-    } else {
-      return 0;
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
+        let now = Date()
+        let entry = readEntry(at: now)
+        let calendar = Calendar.current
+        var entries = [entry] // Show current data immediately, not five minutes later.
+        for offset in 1...3 {
+            if let midnight = calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: now)) {
+                entries.append(SimpleEntry(date: midnight, payload: entry.payload, selection: entry.selection))
+            }
+        }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
-  }
-  
-  func formatDate(from dateString: String) -> String? {
-      let formatter = DateFormatter()
-      formatter.dateFormat = "dd.MM.yyyy" // Формат исходной строки
-      formatter.locale = Locale(identifier: "ru_RU") // Локализация для корректной работы с русскими датами
-      
-      if dateString == "NOT_SET" {
-        return "Нет расписания."
-      }
-    
-      // Преобразуем строку в дату
-      guard let date = formatter.date(from: dateString) else {
-          return nil // Если дата некорректна, возвращаем nil
-      }
 
-      // Настраиваем форматтер для нужного формата вывода
-      formatter.dateFormat = "EE d MMM" // Требуемый формат вывода
-
-      // Форматируем дату и возвращаем строку
-      let formattedDate = formatter.string(from: date).capitalized // Делаем первую букву большой для дней недели
-      return formattedDate
-  }
-  
-  var body: some View {
-    let decoder = JSONDecoder()
-    let strangeData = entry?.text.data(using: .utf8)
-    let schObj = try? decoder.decode(DataForWidget.self, from: strangeData!)
-    // let placeholderForTest = DataForWidget(yesterday: Day(date: "08.08.2024", lessons: [Lesson(name: "Test name", lessonIndex: "10:00 - 12:00", lessonType: "Лабораторная работа", teacher: Teacher(name: "Test teacher name", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: false), today: Day(date: "09.08.2024", lessons: [Lesson(lessonType: "Практическое занятие", type: "COMMON"), Lesson(lessonType: "Практическое занятие", type: "DINNER"), Lesson(name: "Test name 2", lessonIndex: "10:00 - 14:00", lessonType: "Лекция", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMBINED"), Lesson(name: "Test lesson name very very long to check how this will be shown in widget - is it okay? If not, I have to do something, right? Right... ", lessonIndex: "10:00 - 14:00", lessonType: "test lesson type", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 2", lec_oid: ""), type: "COMMON"), Lesson(name: "Test name 3", lessonIndex: "10:00 - 14:00", lessonType: "Практическое занятие", cabinet: "Test-100", teacher: Teacher(name: "Test teacher name 3", lec_oid: ""), type: "COMMON")], isEmpty: false, isToday: true), tomorrow: Day(date: "10.08.2024", lessons: [], isEmpty: true, isToday: false))
-    
-    let userDefaults = UserDefaults.init(suiteName: "group.com.mpeiapp")
-    
-    let savedDay = userDefaults!.object(forKey: "widgetKeyDay") as? String
-    
-    VStack(spacing: 8) {
-      
-      HStack {
-        
-        Button(intent:
-                YesterdayClickHandler()
-        ) {
-          Text(formatDate(from: schObj?.yesterday.date ?? "") ?? "Нет данных")
-            .frame(width: 80, height: 30)
-            .background(Color(hex: "#2B2B2B"))
-            .foregroundColor(savedDay == "yesterday" ? Color(hex: "#00FF00") : .white)
-            .cornerRadius(8)
-            .bold()
-        }
-        Button(intent:
-                TodayClickHandler()
-        ) {
-          Text(formatDate(from: schObj?.today.date ?? "") ?? "Нет данных")
-            .frame(width: 80, height: 30)
-            .background(Color(hex: "#FF5666"))
-            .foregroundColor(savedDay == "today" ? Color(hex: "#6600CC") : .white)
-            .cornerRadius(8)
-            .bold()
-        }
-        Button(intent:
-                TomorrowClickHandler()
-        ) {
-          Text(formatDate(from: schObj?.tomorrow.date ?? "") ?? "Нет данных")
-            .frame(width: 80, height: 30)
-            .background(Color(hex: "#2B2B2B"))
-            .foregroundColor(savedDay == "tomorrow" ? Color(hex: "#00FF00") : .white)
-            .cornerRadius(8)
-            .bold()
-        }
-      }
-      .padding(.bottom, 4)
-      
-      if savedDay == "yesterday" {
-        // Отфильтровываем занятия, исключая те, где type == "DINNER"
-        let prefilteredLessons = schObj?.yesterday.lessons?.filter { $0.type != "DINNER" }
-        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
-        // Подсчитываем количество отфильтрованных занятий
-        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
-
-        // Отображаем дату и количество занятий
-        Text((formatDate(from: schObj?.yesterday.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
-              .font(.subheadline)
-              .padding(.top, 8)
-              .foregroundColor(.white)
-              .bold()
-
-          // Отображаем отфильтрованные занятия
-          ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
-              if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
-                  LessonView(item: item, typeColor: Color(hex: "#FF0500"))
-              } else if item.lessonType!.contains("екция") {
-                  LessonView(item: item, typeColor: Color(hex: "#00FF00"))
-              } else {
-                  LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
-              }
-          }
-      } else if savedDay == "today" {
-        let prefilteredLessons = schObj?.today.lessons?.filter { $0.type != "DINNER" }
-        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
-        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
-
-        Text((formatDate(from: schObj?.today.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
-              .font(.subheadline)
-              .padding(.top, 8)
-              .foregroundColor(.white)
-              .bold()
-
-        ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
-              if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
-                  LessonView(item: item, typeColor: Color(hex: "#FF0500"))
-              } else if item.lessonType!.contains("екция") {
-                  LessonView(item: item, typeColor: Color(hex: "#00FF00"))
-              } else {
-                  LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
-              }
-          }
-      } else if savedDay == "tomorrow" {
-        let prefilteredLessons = schObj?.tomorrow.lessons?.filter { $0.type != "DINNER" }
-        let filteredLessons = prefilteredLessons?.filter { $0.type != "PLACEHOLDER"}
-        let lessonCount = (filteredLessons?.count ?? 0) - (extraChosenCounter(from: filteredLessons!) ?? 0);
-        
-        Text((formatDate(from: schObj?.tomorrow.date ?? "") ?? "") + " Пар - " + lessonCount.formatted())
-          .font(.subheadline)
-          .padding(.top, 8)
-          .foregroundColor(.white)
-          .bold()
-        
-        ForEach(filteredLessons?.prefix(4) ?? [], id: \.self) { item in
-          if (item.lessonType!.contains("абота") || item.lessonType!.contains("кзамен")) {
-            LessonView(item: item, typeColor: Color(hex: "#FF0500"))
-          } else if item.lessonType!.contains("екция") {
-            LessonView(item: item, typeColor: Color(hex: "#00FF00"))
-          } else {
-            LessonView(item: item, typeColor: Color(hex: "#F7EF02"))
-          }
-        }
-      }
-      
+    private func readEntry(at date: Date) -> SimpleEntry {
+        let defaults = UserDefaults(suiteName: ScheduleWidgetContract.appGroup)
+        return SimpleEntry(date: date,
+                           payload: WidgetSchedulePayload.decode(defaults?.string(forKey: ScheduleWidgetContract.dataKey)),
+                           selection: .restored(defaults?.string(forKey: ScheduleWidgetContract.dayKey)))
     }
-    .padding()
-    .background(Color.black)
-    .cornerRadius(12)
-  }
+
+    fileprivate func previewEntry() -> SimpleEntry {
+        let now = Date()
+        let days = WidgetDayChoice.allCases.compactMap { choice -> [String: Any]? in
+            guard let date = Calendar.current.date(byAdding: .day, value: choice.offset, to: now) else { return nil }
+            return ["date": WidgetSchedulePayload.dateString(date), "lessons": [
+                ["name": "Математический анализ", "lessonIndex": "09:20 – 10:55", "lessonType": "Лекция", "cabinet": "Б-302", "type": "COMMON"],
+                ["name": "Физика", "lessonIndex": "11:10 – 12:45", "lessonType": "Практическое занятие", "cabinet": "Г-210", "type": "COMMON"]
+            ]]
+        }
+        let example: [String: Any] = ["schemaVersion": 1, "days": days]
+        let data = try? JSONSerialization.data(withJSONObject: example)
+        let payload = data.flatMap { try? JSONDecoder().decode(WidgetSchedulePayload.self, from: $0) }
+        return SimpleEntry(date: now, payload: payload, selection: .today)
+    }
 }
 
-@available(iOSApplicationExtension 16.0, *)
-struct LessonView: View {
-          var item: Lesson
-          var typeColor: Color
+@available(iOSApplicationExtension 17.0, *)
+struct ScheduleWidgetEntryView: View {
+    let entry: SimpleEntry
+    @ScaledMetric(relativeTo: .caption) private var lessonHeight: CGFloat = 52
 
-          var body: some View {
-            
-              HStack {
-                  VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                      Text(item.lessonIndex ?? " ? ")
-                        .padding(.horizontal, 4)
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .background(Color(hex: "#464646"))
-                        .cornerRadius(5)
-                        .bold()
-                      Text(item.lessonType ?? " ? ")
-                        .font(.caption)
-                        .foregroundColor(typeColor)
-                        .bold()
+    var body: some View {
+        GeometryReader { geometry in
+            let day = entry.payload?.day(entry.selection, relativeTo: entry.date)
+            let lessons = day?.visibleLessons ?? []
+            let limit = max(1, min(4, Int(max(0, geometry.size.height - 148) / lessonHeight)))
+            VStack(alignment: .leading, spacing: 7) {
+                Label("Расписание", systemImage: "calendar").font(.headline).foregroundStyle(.primary)
+                if let payload = entry.payload, !payload.days.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(WidgetDayChoice.allCases, id: \.self) { choice in
+                            DayTab(choice: choice, selected: entry.selection == choice)
+                        }
                     }
-                      Text(item.name ?? " ")
-                          .padding(.horizontal, 4)
-                          .font(.subheadline)
-                          .foregroundColor(.white)
-                          .background(Color(hex: "#464646"))
-                          .cornerRadius(5)
-                          .bold()
-                    HStack {
-                      if item.cabinet == "Спортзал" {
-                        Text("Стадион")
-                          .font(.caption)
-                          .foregroundColor(Color(hex: "#BB86FC"))
-                          .bold()
-                      } else {
-                        Text(item.cabinet ?? " ? ")
-                          .font(.caption)
-                          .foregroundColor(Color(hex: "#BB86FC"))
-                          .bold()
-                      }
-                      if (item.teacher?.name != "-") {
-                        Text(item.teacher?.name ?? " ")
-                          .padding(.horizontal, 4)
-                          .font(.caption)
-                          .foregroundColor(.white)
-                          .background(Color(hex: "#464646"))
-                          .cornerRadius(5)
-                          .bold()
-                      }
+                    Text(dayHeading(day))
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+                    if day == nil {
+                        Text("На эту дату нет загруженного расписания.").font(.subheadline).foregroundStyle(.primary)
+                    } else if lessons.isEmpty {
+                        Text("Занятий нет").font(.subheadline).foregroundStyle(.primary)
+                    } else {
+                        ForEach(Array(lessons.prefix(limit).enumerated()), id: \.offset) { _, lesson in
+                            LessonView(item: lesson)
+                        }
+                        if lessons.count > limit {
+                            Text("Ещё занятий: \(lessons.count - limit)").font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
-                  }
-                  Spacer()
-              }
-              .padding(.vertical, 4)
-              .padding(.horizontal, 8)
-              .background(Color(hex: "#2B2B2B"))
-              .cornerRadius(8)
-              .padding(.horizontal, 4)
-          }
-      }
+                } else {
+                    Text("Расписание ещё не загружено").font(.subheadline).foregroundStyle(.primary)
+                }
+                Spacer(minLength: 0)
+                // A read-only notice replaces the editable configuration parameter.
+                Text(ScheduleWidgetContract.notice)
+                    .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func dayHeading(_ day: WidgetScheduleDay?) -> String {
+        let date = Calendar.current.date(byAdding: .day, value: entry.selection.offset, to: entry.date) ?? entry.date
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "EEE, d MMM"
+        let title = formatter.string(from: date).capitalized
+        return day.map { "\(title) · Пар: \($0.lessonCount)" } ?? title
+    }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+private struct DayTab: View {
+    let choice: WidgetDayChoice
+    let selected: Bool
+    private var label: some View {
+        Text(choice.title)
+            .font(.caption).fontWeight(selected ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.75)
+            .frame(maxWidth: .infinity, minHeight: 32)
+            .foregroundStyle(.primary).padding(.horizontal, 2)
+            .background(Color.primary.opacity(selected ? 0.18 : 0.07), in: RoundedRectangle(cornerRadius: 8))
+            .widgetAccentable(selected)
+    }
+    var body: some View {
+        Group {
+            switch choice {
+            case .yesterday: Button(intent: YesterdayClickHandler()) { label }
+            case .today: Button(intent: TodayClickHandler()) { label }
+            case .tomorrow: Button(intent: TomorrowClickHandler()) { label }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct LessonView: View {
+    let item: WidgetLesson
+    private var typeColor: Color {
+        let type = item.lessonType ?? ""
+        if type.contains("абота") || type.contains("кзамен") { return .red }
+        return type.contains("екция") ? .green : .orange
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 5) {
+                Text(item.lessonIndex ?? "Время не указано").foregroundStyle(.primary)
+                Text(item.lessonType ?? "Занятие").foregroundStyle(typeColor)
+            }
+            .font(.caption2).lineLimit(1)
+            Text(item.name?.isEmpty == false ? item.name ?? "Занятие" : "Занятие")
+                .font(.caption).fontWeight(.semibold).foregroundStyle(.primary).lineLimit(1)
+            HStack(spacing: 5) {
+                Text(item.cabinet == "Спортзал" ? "Стадион" : item.cabinet ?? "")
+                if let teacher = item.teacher?.name, !teacher.isEmpty, teacher != "-" { Text(teacher) }
+            }
+            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 7).padding(.vertical, 4)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
 
 @available(iOSApplicationExtension 17.0, *)
 struct ScheduleWidget: Widget {
-  let kind: String = "ScheduleWidget"
-  
-  var body: some WidgetConfiguration {
-    AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
-      ScheduleWidgetEntryView(entry: entry)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .containerBackground(Color.black, for: .widget)
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: ScheduleWidgetContract.kind, provider: Provider()) { entry in
+            ScheduleWidgetEntryView(entry: entry)
+                .containerBackground(for: .widget) { Color(uiColor: .systemBackground) }
+        }
+        .configurationDisplayName("Виджет расписания")
+        .description("Откройте MpeiApp, чтобы загрузить или обновить расписание в виджете.")
+        .supportedFamilies([.systemLarge])
     }
-    .configurationDisplayName("Виджет расписания")
-    .description("Виджет расписания MpeiApp от DragonSavA")
-    .supportedFamilies([.systemLarge])
-  }
 }
 
-@available(iOSApplicationExtension 17, *)
+@available(iOSApplicationExtension 17.0, *)
 struct ScheduleWidget_Previews: PreviewProvider {
-  static var previews: some View {
-    ScheduleWidgetEntryView(entry: SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), text: "Предпоказ виджета"))
-      .previewContext(WidgetPreviewContext(family: .systemExtraLarge))
-  }
+    static var previews: some View {
+        ScheduleWidgetEntryView(entry: Provider().previewEntry())
+            .containerBackground(for: .widget) { Color(uiColor: .systemBackground) }
+            .previewContext(WidgetPreviewContext(family: .systemLarge))
+    }
 }
