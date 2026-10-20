@@ -40,6 +40,7 @@ jest.mock('../src/Ads/AdsProvider', () => ({AdsProvider: passThrough}));
 jest.mock('../src/Loyalty/LoyaltyProvider', () => ({LoyaltyProvider: passThrough}));
 jest.mock('../src/Loyalty/TokenBalanceBadge', () => () => <></>);
 jest.mock('../src/Vpn/VpnSubscriptionRuntime', () => ({}));
+jest.mock('../src/Widgets/useIOSScheduleWidgetSync', () => ({useIOSScheduleWidgetSync: jest.fn()}));
 
 const App = require('../App').default;
 

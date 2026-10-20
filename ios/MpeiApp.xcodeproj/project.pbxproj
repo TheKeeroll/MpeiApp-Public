@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D26010200000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000004 /* PrivacyInfo.xcprivacy */; };
+		D26010200000000000000011 /* ScheduleWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000001 /* ScheduleWidgetBridge.swift */; };
+		D26010200000000000000012 /* ScheduleWidgetBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000002 /* ScheduleWidgetBridge.m */; };
+		D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
+		D26010200000000000000014 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
 		00E356F31AD99517003FC87E /* MpeiAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* MpeiAppTests.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1469CF4D28AEB3F100848D43 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1469CF4C28AEB3F000848D43 /* GoogleService-Info.plist */; };
@@ -73,6 +78,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D26010200000000000000004 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D26010200000000000000001 /* ScheduleWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetBridge.swift; path = MpeiApp/ScheduleWidgetBridge.swift; sourceTree = "<group>"; };
+		D26010200000000000000002 /* ScheduleWidgetBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScheduleWidgetBridge.m; path = MpeiApp/ScheduleWidgetBridge.m; sourceTree = "<group>"; };
+		D26010200000000000000003 /* ScheduleWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetData.swift; path = ScheduleWidgetCore/Sources/ScheduleWidgetCore/ScheduleWidgetData.swift; sourceTree = "<group>"; };
 		00E356EE1AD99517003FC87E /* MpeiAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MpeiAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* MpeiAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MpeiAppTests.m; sourceTree = "<group>"; };
@@ -179,6 +188,9 @@
 				495282B02E477D8C00050EFC /* AppDelegate.swift */,
 				495282B22E477D9B00050EFC /* MpeiApp-Bridging-Header.h */,
 				495282B32E477F8700050EFC /* YandexMapsInitializer.swift */,
+				D26010200000000000000001 /* ScheduleWidgetBridge.swift */,
+				D26010200000000000000002 /* ScheduleWidgetBridge.m */,
+				D26010200000000000000003 /* ScheduleWidgetData.swift */,
 			);
 			name = MpeiApp;
 			sourceTree = "<group>";
@@ -225,6 +237,7 @@
 				49040C492C5D3DFB001822A2 /* ScheduleWidgetBundle.swift */,
 				49040C4B2C5D3DFC001822A2 /* ScheduleWidget.swift */,
 				49040C4D2C5D3DFC001822A2 /* AppIntent.swift */,
+				D26010200000000000000004 /* PrivacyInfo.xcprivacy */,
 				49040C4F2C5D3DFE001822A2 /* Assets.xcassets */,
 				49040C512C5D3DFE001822A2 /* Info.plist */,
 			);
@@ -433,6 +446,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				49040C502C5D3DFE001822A2 /* Assets.xcassets in Resources */,
+				D26010200000000000000015 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -544,6 +558,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				495282B42E477F8700050EFC /* YandexMapsInitializer.swift in Sources */,
+				D26010200000000000000011 /* ScheduleWidgetBridge.swift in Sources */,
+				D26010200000000000000012 /* ScheduleWidgetBridge.m in Sources */,
+				D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */,
 				495282B12E477D8C00050EFC /* AppDelegate.swift in Sources */,
 				495282AF2E477CF600050EFC /* main.m in Sources */,
 			);
@@ -556,6 +573,7 @@
 				49040C4C2C5D3DFC001822A2 /* ScheduleWidget.swift in Sources */,
 				49040C4A2C5D3DFB001822A2 /* ScheduleWidgetBundle.swift in Sources */,
 				49040C4E2C5D3DFC001822A2 /* AppIntent.swift in Sources */,
+				D26010200000000000000014 /* ScheduleWidgetData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -745,7 +763,7 @@
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -789,7 +807,7 @@
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

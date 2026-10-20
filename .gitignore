@@ -85,3 +85,5 @@ ios/MpeiApp/YandexMapsInitializer.swift
 src/config/Secrets.ts
 /vpn-subscription-proxy/.env
 /vpn-subscription-proxy/dist/
+/ios/ScheduleWidgetCore/.build/
+/ios/ScheduleWidgetCore/.swiftpm/
