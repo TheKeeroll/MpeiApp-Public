@@ -49,6 +49,41 @@ env/state из него. При необходимости можно выбра
 последующие обновления выполняйте тем же скриптом. Ручные команды ниже
 предназначены для прежнего ручного способа.
 
+## Исправление 20.10.2026: native SQLite и старая glibc
+
+На VPS с glibc старше, чем у готового бинарника `better-sqlite3`, тесты падали
+с `GLIBC_2.33 not found` / `ERR_DLOPEN_FAILED`. Это сбой загрузки native-модуля,
+не повреждение БД. Теперь после `npm ci --include=dev` установщик запускает
+`npm run prepare:sqlite`: открывает временную БД в памяти, выполняет транзакцию
+и проверяет чтение/запись. Совместимый модуль используется без пересборки.
+
+При ошибке загрузки helper отключает packaged prebuilds только в candidate
+release, сохраняя их в `prebuilds.disabled-<суффикс>`, и вызывает закреплённый
+в lockfile `node-gyp` 12.4.0 с `--force_build=1 --jobs=1`. Для Linux используется
+`/usr/bin/python3`; компилятор и Python устанавливаются этапом 1.
+Это необходимо, поскольку в
+[загрузчике better-sqlite3 13.0.3](https://github.com/WiseLibs/better-sqlite3/blob/v13.0.3/lib/binding.js)
+готовый бинарник имеет приоритет над локальной сборкой, а
+[binding.gyp](https://github.com/WiseLibs/better-sqlite3/blob/v13.0.3/binding.gyp)
+может пропустить компиляцию, если prebuild присутствует.
+
+После сборки проверка повторяется в новом процессе. Ещё одна проверка
+`npm run check:sqlite` выполняется после `npm prune --omit=dev`, до остановки
+текущего proxy. Ошибка компиляции/повторной загрузки останавливает подготовку.
+Реальные env и SQLite не меняются; совместимость с MpeiApp 2.5.0 сохранена.
+Сборка может занять несколько минут, системную glibc заменять не нужно.
+
+Передайте новый tar целиком, включая package.json/lockfile и deploy helpers,
+и повторите запуск из нового временного каталога. Зависимости ОС, ранее
+сохранённые env/HMAC используются повторно; прежняя неудачная staging-папка
+для повтора не нужна. При ручном способе добавлены те же команды ниже.
+
+Локально проходят typecheck и **93 tests**. Регрессии включают несовместимый
+native-файл с настоящим загрузчиком, точную ошибку GLIBC, отключение prebuilds,
+повтор после ошибки компилятора и проверку без dev tools. Компилятор в тестах
+подменён копированием рабочего бинарника для текущей ОС; компиляция на Linux
+и полный запуск установщика проверяются на VPS.
+
 ## Исправление 20.10.2026: невидимые вопросы в SSH/PuTTY
 
 После устранения ошибки пустого списка units обнаружена следующая причина
@@ -292,11 +327,13 @@ sudo openssl x509 -in "$CERTIFICATE_DIRECTORY/fullchain.pem" -noout -checkend 0
 sudo install -d -o root -g root -m 0755 "$STAGING"
 sudo tar -xzf /tmp/vpn-subscription-proxy-update.tar.gz -C "$STAGING"
 cd "$STAGING"
-sudo npm ci
+sudo npm ci --include=dev
+sudo npm run prepare:sqlite
 sudo npm run typecheck
 sudo npm test
 sudo npm run build
 sudo npm prune --omit=dev
+sudo npm run check:sqlite
 sudo chown -R root:root "$STAGING"
 sudo chmod -R a+rX "$STAGING"
 ```
