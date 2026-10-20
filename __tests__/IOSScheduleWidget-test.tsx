@@ -34,6 +34,8 @@ const Probe = ({loginState = 'LOGGED_IN'}: {loginState?: LoginState}) => {
 };
 
 beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2026-10-20T09:00:00Z'));
   jest.clearAllMocks();
   Platform.OS = 'ios';
   bridge.setSchedule.mockResolvedValue(undefined);
@@ -41,24 +43,62 @@ beforeEach(() => {
   state = {status: 'LOADED', data: schedule};
   jest.mocked(useSelector).mockImplementation(selector => selector({Schedule: state}));
 });
-afterEach(async () => { if (renderer) await act(() => renderer?.unmount()); renderer = undefined; });
+afterEach(async () => {
+  if (renderer) await act(() => renderer?.unmount());
+  renderer = undefined;
+  jest.useRealTimers();
+});
 
-test('payload includes every available day, excludes unused personal fields and does not mutate Redux data', () => {
+test('payload includes exactly this and next week, excludes unused personal fields and does not mutate Redux data', () => {
   const before = JSON.stringify(schedule);
-  const payload = JSON.parse(serializeIOSSchedule(schedule));
+  const extended = {...schedule, days: [
+    {...schedule.days[0]!, date: '18.10.2026'}, ...schedule.days,
+    {...schedule.days[0]!, date: '01.11.2026'}, {...schedule.days[0]!, date: '02.11.2026'},
+  ]};
+  const payload = JSON.parse(serializeIOSSchedule(extended));
   expect(payload.schemaVersion).toBe(1);
-  expect(payload.days[0].lessons[0].name).toBe('Физика');
-  expect(payload.days[0].lessons[0].teacher).toEqual({name: 'Преподаватель'});
+  expect(payload.days).toHaveLength(14);
+  expect(payload.days[0].date).toBe('19.10.2026');
+  expect(payload.days[13]).toMatchObject({date: '01.11.2026', isLoaded: true});
+  expect(payload.days.map((day: {date: string}) => day.date)).not.toContain('18.10.2026');
+  expect(payload.days.map((day: {date: string}) => day.date)).not.toContain('02.11.2026');
+  expect(payload.days[1].isLoaded).toBe(true);
+  expect(payload.days[1].lessons[0].name).toBe('Физика');
+  expect(payload.days[1].lessons[0].teacher).toEqual({name: 'Преподаватель'});
   expect(JSON.stringify(payload)).not.toMatch(/private-group|private-unneeded-id/);
   expect(JSON.stringify(schedule)).toBe(before);
 });
 
 test('partial cached schedule has a safe empty payload instead of throwing in the app', () => {
-  expect(JSON.parse(serializeIOSSchedule({days: null} as unknown as BARSSchedule)).days).toEqual([]);
+  const empty = JSON.parse(serializeIOSSchedule({days: null} as unknown as BARSSchedule));
+  expect(empty.days).toHaveLength(14);
+  expect(empty.days.every((day: {isLoaded: boolean; lessons: unknown[]}) => !day.isLoaded && !day.lessons.length)).toBe(true);
   const partial = {days: [null, {date: '20.10.2026', lessons: [null, {lessonIndex: 2}]}]} as unknown as BARSSchedule;
-  expect(JSON.parse(serializeIOSSchedule(partial)).days[0].lessons).toEqual([
+  expect(JSON.parse(serializeIOSSchedule(partial)).days[1].lessons).toEqual([
     {name: '', lessonIndex: '2', lessonType: '', cabinet: '', teacher: {name: ''}},
   ]);
+});
+
+test('a loaded empty day is distinguished from a missing or incomplete date', () => {
+  const partial = {days: [{date: '20.10.2026', lessons: []}, {date: '21.10.2026'}]} as unknown as BARSSchedule;
+  const payload = JSON.parse(serializeIOSSchedule(partial));
+  expect(payload.days[1]).toEqual({date: '20.10.2026', isLoaded: true, lessons: []});
+  expect(payload.days[2]).toEqual({date: '21.10.2026', isLoaded: false, lessons: []});
+  expect(payload.days[3]).toEqual({date: '22.10.2026', isLoaded: false, lessons: []});
+});
+
+test.each([
+  ['2026-10-25T20:59:59Z', '19.10.2026', '01.11.2026'], // Sunday in Moscow.
+  ['2026-10-25T21:00:00Z', '26.10.2026', '08.11.2026'], // Monday, still Sunday in UTC.
+  ['2026-12-31T09:00:00Z', '28.12.2026', '10.01.2027'],
+  ['2028-02-29T09:00:00Z', '28.02.2028', '12.03.2028'],
+])('week window for %s is calendar based, including year/leap-day boundaries', (now, start, end) => {
+  const payload = JSON.parse(serializeIOSSchedule(schedule, new Date(now)));
+  const dates = payload.days.map((day: {date: string}) => day.date);
+  expect(dates).toHaveLength(14);
+  expect(new Set(dates).size).toBe(14);
+  expect(dates[0]).toBe(start);
+  expect(dates[13]).toBe(end);
 });
 
 test('publisher deduplicates payloads but can explicitly request a foreground refresh', async () => {
@@ -137,6 +177,27 @@ test('foreground requests a refresh and removes its AppState listener on unmount
   const subscription = (AppState.addEventListener as jest.Mock).mock.results[0].value;
   await act(() => { renderer?.unmount(); renderer = undefined; });
   expect(subscription.remove).toHaveBeenCalled();
+});
+
+test('returning to the app in a new week republishes the new two-week window', async () => {
+  await act(() => { renderer = ReactTestRenderer.create(<Probe />); });
+  jest.setSystemTime(new Date('2026-10-26T09:00:00Z'));
+  const callback = (AppState.addEventListener as jest.Mock).mock.calls[0][1];
+  await act(() => callback('active'));
+  const payload = JSON.parse(bridge.setSchedule.mock.calls[1]![0]);
+  expect(payload.days[0].date).toBe('26.10.2026');
+  expect(payload.days[13].date).toBe('08.11.2026');
+});
+
+test('the window updates at Moscow Monday midnight while the app stays open', async () => {
+  jest.setSystemTime(new Date('2026-10-25T20:59:59Z'));
+  await act(() => { renderer = ReactTestRenderer.create(<Probe />); });
+  await act(async () => { await jest.advanceTimersByTimeAsync(1100); });
+  expect(bridge.setSchedule).toHaveBeenCalledTimes(2);
+  expect(JSON.parse(bridge.setSchedule.mock.calls[0]![0]).days[0].date).toBe('19.10.2026');
+  expect(JSON.parse(bridge.setSchedule.mock.calls[1]![0]).days[0].date).toBe('26.10.2026');
+  await act(() => { renderer?.unmount(); renderer = undefined; });
+  expect(jest.getTimerCount()).toBe(0);
 });
 
 test('Android does not use the iOS bridge or add iOS widget listeners', async () => {

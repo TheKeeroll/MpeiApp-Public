@@ -3,6 +3,7 @@ import {AppState, NativeModules, Platform} from 'react-native';
 import {useSelector} from 'react-redux';
 import type {LoginState} from '../API/BARS';
 import type {RootState} from '../API/Redux/Store';
+import {millisecondsUntilMoscowMidnight} from '../Common/MoscowDate';
 import {createIOSWidgetPublisher, serializeIOSSchedule, type IOSScheduleWidgetBridge} from './IOSScheduleWidget';
 
 export function useIOSScheduleWidgetSync(loginState: LoginState) {
@@ -29,10 +30,17 @@ export function useIOSScheduleWidgetSync(loginState: LoginState) {
         console.warn('iOS schedule widget: could not update shared data. Check the App Group and signing.');
       });
     };
-    sync();
+    let midnightTimer: ReturnType<typeof setTimeout>;
+    const refresh = (force = false) => {
+      clearTimeout(midnightTimer);
+      sync(force);
+      // Refresh the two-week window even if the app stays open across a Monday.
+      midnightTimer = setTimeout(() => refresh(), millisecondsUntilMoscowMidnight() + 25);
+    };
+    refresh();
     const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') sync(true);
+      if (state === 'active') refresh(true);
     });
-    return () => subscription.remove();
+    return () => { clearTimeout(midnightTimer); subscription.remove(); };
   }, [schedule, loginState]);
 }
