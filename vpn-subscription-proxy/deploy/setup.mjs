@@ -20,6 +20,7 @@ const separator = '*'.repeat(64);
 const stage = (number, text) => console.log(`\n${separator}\n[${number}/8] ${text}`);
 const ok = text => console.log(`${C.green}[OK] ${text}${C.reset}`);
 const warn = text => console.log(`${C.yellow}${text}${C.reset}`);
+const info = text => console.log(`${C.yellow}[ДЕЙСТВИЕ] ${text}${C.reset}`);
 let cancelled = false;
 let recovering = false;
 const checkCancellation = () => { if (cancelled && !recovering) throw new Error('Установка прервана пользователем.'); };
@@ -38,22 +39,35 @@ function run(command, args = [], {cwd, capture = false, allowFailure = false, ti
     status: result.status, errorOutput: (result.stderr ?? '').trim(), executionError: result.error ? (result.error.code ?? 'exec_error') : undefined};
 }
 
-export function ask(label, {current = '', example = '', secret = false, optional = false} = {}) {
-  const hint = secret ? (current ? 'Enter — сохранить текущее значение' : example) : (current || example || (optional ? 'пусто; "-" — очистить' : 'обязательно'));
-  process.stdout.write(`${label}${hint ? ` [${hint}]` : ''}: `);
+export function ask(label, {current = '', example = '', secret = false, optional = false} = {}, {input = process.stdin, output = process.stdout} = {}) {
+  const hint = secret ? (current ? 'скрытый ввод; Enter — сохранить текущее значение' : `скрытый ввод${example ? `; пример: ${example}` : ''}`)
+    : (current ? `Enter — ${current}` : example || (optional ? 'пусто; "-" — очистить' : 'обязательно'));
+  const prompt = `${C.yellow}[ВВОД] ${label} [${hint}]: ${C.reset}`;
   return new Promise((resolve, reject) => {
-    const silent = new Writable({write(_chunk, _encoding, callback) { callback(); }});
-    const output = secret ? silent : process.stdout;
-    const rl = createInterface({input: process.stdin, output, terminal: true});
+    let muted = false;
+    const terminalOutput = secret ? new Writable({write(chunk, encoding, callback) {
+      // Forward the initial prompt synchronously; suppress only subsequent input echo.
+      if (!muted) output.write(chunk, encoding);
+      callback();
+    }}) : output;
+    if (secret) Object.defineProperty(terminalOutput, 'columns', {get: () => output.columns});
+    const rl = createInterface({input, output: terminalOutput, terminal: true});
     let done = false;
     rl.once('SIGINT', () => rl.close());
-    rl.once('close', () => { if (!done) reject(new Error('Установка прервана пользователем.')); });
-    rl.question('', answer => {
-      done = true; rl.close();
-      if (secret) console.log();
+    rl.once('close', () => {
+      if (!done) {
+        done = true; muted = false; output.write('\n');
+        reject(new Error('Установка прервана пользователем.'));
+      }
+    });
+    // readline must own the prompt, otherwise its first ANSI refresh erases it.
+    rl.question(prompt, answer => {
+      done = true; muted = false; rl.close();
+      if (secret) output.write('\n');
       if (/[\u0000-\u001f\u007f]/u.test(answer)) { reject(new Error('Управляющие символы во вводе недопустимы.')); return; }
       resolve(answer === '-' && optional ? '' : answer || current);
     });
+    muted = secret;
   });
 }
 
@@ -114,8 +128,9 @@ function stateOf(unit, execute = run) {
   );
 }
 
-export function previousService(metadata, execute = run) {
+export function previousService(metadata, execute = run, progress = () => {}) {
   if (metadata.service && !validService(metadata.service)) throw new Error('Некорректный service в файле установки.');
+  progress('systemctl list-unit-files: поиск установленных proxy instances...');
   const files = execute('systemctl', ['list-unit-files', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true, allowFailure: true});
   // systemd 247 returns ENOENT (exit 1) for an empty list, without diagnostics.
   // Other failures, including D-Bus/permissions/exec errors, must still stop setup.
@@ -124,9 +139,13 @@ export function previousService(metadata, execute = run) {
     const diagnostic = files.errorOutput ? ` ${files.errorOutput.replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')}` : '';
     throw new Error(`Команда systemctl list-unit-files не завершена успешно (код ${files.status ?? 'timeout/exec'}).${diagnostic}`);
   }
+  progress('systemctl list-units: поиск загруженных proxy instances...');
   const loaded = execute('systemctl', ['list-units', '--all', '--plain', '--type=service', '--no-legend', '--no-pager', 'dragonet-subscription-proxy@*.service'], {capture: true}).output;
   const choices = [...new Set((files.output + '\n' + loaded).split('\n').map(line => line.trim().split(/\s+/)[0]).filter(validService))];
-  const enabled = choices.filter(unit => { const s = stateOf(unit, execute); return s.active || s.enabled; });
+  const enabled = choices.filter(unit => {
+    progress(`Проверка состояния ${unit}...`);
+    const s = stateOf(unit, execute); return s.active || s.enabled;
+  });
   if (enabled.length < 2) return enabled[0] ?? metadata.service;
   throw new Error('Найдено несколько активных/включённых proxy instances. Автоустановка рассчитана на один proxy; сначала выберите единственную рабочую установку вручную.');
 }
@@ -135,12 +154,15 @@ async function configuration(metadata) {
   const oldEnvFile = metadata.envFile ?? '/etc/dragonet-subscription-proxy.env';
   validatePath(oldEnvFile, 'EnvironmentFile');
   const envFile = validatePath(await required('EnvironmentFile', {current: oldEnvFile}), 'EnvironmentFile');
+  info('Чтение существующего env; значения Token и HMAC не выводятся.');
   if (envFile !== oldEnvFile && existsSync(envFile) && Object.keys(readEnvironment(oldEnvFile)).length) throw new Error('Новый env-путь уже занят; существующий файл не будет затёрт.');
   const oldEnvironment = readEnvironment(oldEnvFile);
   const existing = Object.keys(oldEnvironment).length ? oldEnvironment : readEnvironment(envFile);
+  ok(Object.keys(existing).length ? 'Существующие настройки загружены; Enter сохраняет текущее значение.' : 'Env не найден: выполняется первичная настройка.');
   const env = {...DEFAULTS, ...existing};
   const installDir = validatePath(await required('Каталог кода', {current: metadata.installDir ?? '/opt/vpn-subscription-proxy'}));
   env.STATE_DIRECTORY = validatePath(await required('Каталог SQLite state', {current: env.STATE_DIRECTORY}));
+  info('Проверка путей кода/env/state и наличия прежней SQLite...');
   const oldStateDir = existing.STATE_DIRECTORY ?? env.STATE_DIRECTORY;
   validatePath(oldStateDir, 'Прежний state');
   validateLayout({installDir, envFile, stateDir: env.STATE_DIRECTORY, backupRoot: BACKUPS});
@@ -260,6 +282,8 @@ function statePermissions(directory) {
 
 export async function install() {
   if (process.platform !== 'linux' || process.getuid?.() !== 0 || !process.stdin.isTTY) throw new Error('Запускайте deploy/install.sh от root в интерактивной Linux SSH-сессии.');
+  stage(2, 'Пути, env и сервисный пользователь');
+  info(`Чтение метаданных установки: ${METADATA}`);
   let metadata = {};
   assertNoSymlinks(METADATA);
   if (existsSync(METADATA)) {
@@ -270,16 +294,21 @@ export async function install() {
     catch { throw new Error(message); }
     if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error(message);
   }
-  stage(2, 'Пути, env и сервисный пользователь');
-  const oldService = previousService(metadata);
+  ok(existsSync(METADATA) ? 'Метаданные прежней установки прочитаны.' : 'Метаданных прежней установки нет.');
+  const oldService = previousService(metadata, run, info);
+  ok(oldService ? `Найден прежний proxy: ${oldService}` : 'Прежний proxy instance не найден; это допустимо для новой установки.');
   if (oldService && (!existsSync(METADATA) || metadata.service !== oldService)) {
+    info('Чтение путей из прежнего systemd unit...');
     const directory = run('systemctl', ['show', '--property=WorkingDirectory', '--value', oldService], {capture: true}).output;
     try { metadata.installDir = validatePath(directory); } catch { /* ask for a path if the old unit omitted it */ }
     const environment = run('systemctl', ['show', '--property=EnvironmentFiles', '--value', oldService], {capture: true}).output;
     const match = /^(\/[A-Za-z0-9._/-]+) \(ignore_errors=(?:yes|no)\)$/.exec(environment);
     if (match) metadata.envFile = match[1];
   }
+  info('Настройка env и путей. Жёлтая строка [ВВОД] означает ожидание ответа; Enter сохраняет текущее значение. Обязательные поля нужно заполнить.');
   const plan = await configuration(metadata);
+  ok('Параметры env и пути проверены.');
+  info(`Проверка/создание служебного пользователя и группы ${USER}...`);
   createUser();
   ok('Пути проверены; сервисный пользователь готов.');
   stage(3, 'Поиск и выбор TLS-пары');
