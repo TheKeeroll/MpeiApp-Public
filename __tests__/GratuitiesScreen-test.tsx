@@ -106,8 +106,8 @@ test('the screen caps sections at 75% of the display or the available viewport a
   let height = 800;
   jest.spyOn(require('react-native'), 'useWindowDimensions').mockImplementation(() => ({width: 400, height, scale: 1, fontScale: 1}));
   await act(() => { tree = ReactTestRenderer.create(<GratuitiesScreen navigation={{}} route={{}}/>); });
-  expect(GRATITUDE_CATEGORIES).toHaveLength(10);
-  expect(GRATITUDE_CATEGORIES.flatMap((item: GratitudeCategory) => item.people)).toHaveLength(46);
+  // Editorial changes to people, categories or links must not require test updates.
+  expect(tree.root.findAllByType(GratitudeSection).map(section => section.props.category)).toEqual(GRATITUDE_CATEGORIES);
   expect(tree.root.findAllByType(GratitudeSection).every(section => section.props.maxHeight === 600)).toBe(true);
   const viewport = tree.root.findAllByType(View).find(view => view.props.style?.flex === 1 && view.props.onLayout)!;
   await act(() => viewport.props.onLayout({nativeEvent: {layout: {height: 500}}}));
