@@ -1,93 +1,35 @@
-import React from "react";
-import {Fragment} from "react";
-import {useTheme} from "react-native-paper";
-import {ScrollView, View} from "react-native";
-import {NavigationHeader} from "../CommonComponents/DrawerHeader";
-import {ListAvatarItem, ListSeparator} from "./Components";
-import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
-import {CustomTheme} from "../../Themes/Themes"
+import React from 'react';
+import {ScrollView, View, useWindowDimensions} from 'react-native';
+import {useTheme} from 'react-native-paper';
+import {useIsFocused} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {NavigationHeader} from '../CommonComponents/DrawerHeader';
+import type {CustomTheme} from '../../Themes/Themes';
+import {GRATITUDE_CATEGORIES} from './GratuitiesData';
+import {GratitudeSection} from './GratitudeSection';
 
-const GratuitiesScreen: React.FC<{navigation: any, route: any}> = (props)=>{
-    const {colors} = useTheme<CustomTheme>()
-    const unknown_avatar = require('../../../assets/images/Gratitudies/unknown.webp')
-    return (
-      // <SafeAreaView edges={['left', 'right', 'bottom']} style={{flex:1, justifyContent: 'flex-start', backgroundColor: colors.backdrop}}>
-      <Fragment>
-          <NavigationHeader {...props} backable title={'Благодарности'}/>
-            <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
-                <ScrollView showsVerticalScrollIndicator={false} style={{width: '90%'}}>
+const GratuitiesScreen: React.FC<{navigation: any; route: any}> = props => {
+  const {colors} = useTheme<CustomTheme>();
+  const {height} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
+  const [viewportHeight, setViewportHeight] = React.useState(0);
+  const maxSectionHeight = Math.floor(Math.min(height * 0.75, viewportHeight || height * 0.75));
 
-                    <ListSeparator title={'Тестеры версий pre-alpha'}/>
-                    <ListAvatarItem title={'Гэсэр Петрунин'} link={'https://vk.com/g.petrunin'} image={require('../../../assets/images/Gratitudies/GAS.webp')}/>
-                    <ListAvatarItem title={'Александр Ерёмичев'} link={'https://vk.com/micke259'} image={require('../../../assets/images/Gratitudies/San.webp')}/>
-                    <ListAvatarItem title={'Сергей Выскиль'} link={'https://vk.com/seeeergey'} image={require('../../../assets/images/Gratitudies/Sergey.webp')}/>
-                    <ListAvatarItem title={'Егор Гаврилов'} link={'https://vk.com/nxce16'} image={require('../../../assets/images/Gratitudies/Egor.webp')}/>
+  return (
+    <>
+      <NavigationHeader {...props} backable title="Благодарности"/>
+      <View onLayout={event => setViewportHeight(event.nativeEvent.layout.height)}
+        style={{flex: 1, alignItems: 'center', backgroundColor: colors.background}}>
+        <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false} style={{width: '90%'}}
+          contentContainerStyle={{paddingBottom: Math.max(16, insets.bottom)}}>
+          {GRATITUDE_CATEGORIES.map(category => (
+            <GratitudeSection key={category.id} category={category} maxHeight={maxSectionHeight} active={focused}/>
+          ))}
+        </ScrollView>
+      </View>
+    </>
+  );
+};
 
-                    <ListSeparator title={'Оказали финансовую поддержку'}/>
-                    <ListAvatarItem title={'Егор Клишин'} link={'https://vk.com/astralcheak'} image={require('../../../assets/images/Gratitudies/Klishin.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете поддержать проект!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
-
-                    <ListSeparator title={'Помощь с реализацией поддержки временных кодов 2ФА'}/>
-                    <ListAvatarItem title={'Максим Агафошин'} link={'https://vk.com/inclydeahaha'} image={require('../../../assets/images/Gratitudies/MaxAgafoshin.webp')}/>
-
-                    <ListSeparator title={'Помощь с актуализацией поведения для входа в аккаунт'}/>
-                    <ListAvatarItem title={'Макс Горячев'} link={'https://vk.ru/kreozi'} image={require('../../../assets/images/Gratitudies/MaxHot.webp')}/>
-
-                    <ListSeparator title={'Предоставили доступ к аккаунту БАРС'}/>
-                    <ListAvatarItem title={'Злата Винарская'} link={'https://vk.ru/zlatavina'} image={require('../../../assets/images/Gratitudies/ZlataV.webp')}/>
-                    <ListAvatarItem title={'Соня Головина'} link={'https://vk.ru/soflairy'} image={require('../../../assets/images/Gratitudies/SonyaGo.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете помочь!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
-
-                    <ListSeparator title={'Предоставили аккаунт БАРС (до введения 2ФА)'}/>
-                    <ListAvatarItem title={'Николай'} link={'https://vk.com/naavdeev'} image={require('../../../assets/images/Gratitudies/Nick.webp')}/>
-                    <ListAvatarItem title={'Иван'} link={'https://vk.com/iva_derevo'} image={require('../../../assets/images/Gratitudies/Ivan.webp')}/>
-                    <ListAvatarItem title={'Алиса'} link={'https://vk.com/space_cat_1'} image={require('../../../assets/images/Gratitudies/Alisa.webp')}/>
-                    <ListAvatarItem title={'Максим'} link={'https://vk.com/m.nistratov'} image={require('../../../assets/images/Gratitudies/Maksim.webp')}/>
-                    <ListAvatarItem title={'Анастасия'} link={'https://vk.com/nikelkatalizator'} image={require('../../../assets/images/Gratitudies/Anastasia.webp')}/>
-                    <ListAvatarItem title={'Екатерина'} link={'https://vk.com/s_kat27'} image={require('../../../assets/images/Gratitudies/Katya.webp')}/>
-                    <ListAvatarItem title={'Степан'} link={'https://vk.com/vvvizg'} image={require('../../../assets/images/Gratitudies/Adam.webp')}/>
-                    <ListAvatarItem title={'Александр'} link={'https://vk.com/morbiuse'} image={require('../../../assets/images/Gratitudies/shabanin.webp')}/>
-                    <ListAvatarItem title={'Богдан Потапкин'} link={'https://vk.com/bodyapotapkin'} image={require('../../../assets/images/Gratitudies/BogdanPotapkin.webp')}/>
-                    <ListAvatarItem title={'Андрей Кошеваров'} link={'https://vk.com/drewshiiiiish'} image={require('../../../assets/images/Gratitudies/AndreyKoshevarov.webp')}/>
-                    <ListAvatarItem title={'Лилияна Рожница'} link={'https://vk.com/lovlycherry'} image={require('../../../assets/images/Gratitudies/Lilia.webp')}/>
-                    <ListAvatarItem title={'Артём Темнышев'} link={'https://vk.com/begun1ok'} image={require('../../../assets/images/Gratitudies/ArtemTemn.webp')}/>
-                    <ListAvatarItem title={'Джалал Гусейнов'} link={'https://vk.com/jjjall'} image={require('../../../assets/images/Gratitudies/jjjall.webp')}/>
-                    <ListAvatarItem title={'Сергей Мелихов'} link={'https://vk.com/sergeymelikhov'} image={require('../../../assets/images/Gratitudies/SergeyMelihov.webp')}/>
-                    <ListAvatarItem title={'Никита Помогалов'} link={'https://vk.com/disokily'} image={require('../../../assets/images/Gratitudies/NickPomogalov.webp')}/>
-                    <ListAvatarItem title={'Максим Андреев'} link={'https://vk.com/id520560547'} image={require('../../../assets/images/Gratitudies/MaxAndreev.webp')}/>
-                    <ListAvatarItem title={'Екатерина Филязова'} link={'https://vk.com/katriiiiinnnnnnn'} image={require('../../../assets/images/Gratitudies/KatrinFeel.webp')}/>
-                    <ListAvatarItem title={'Рания Шабанова'} link={'https://vk.com/qwrssq'} image={require('../../../assets/images/Gratitudies/RaniaShab.webp')}/>
-                    <ListAvatarItem title={'Кирилл Рожков'} link={'https://vk.com/idkiryhaa'} image={require('../../../assets/images/Gratitudies/KirillRozhkov.webp')}/>
-                    <ListAvatarItem title={'Дмитрий Гущин'} link={'https://vk.com/gudimlol'} image={require('../../../assets/images/Gratitudies/GushchinDV.webp')}/>
-                    <ListAvatarItem title={'Максим Аванесов'} link={'https://vk.com/inspektor_skelet'} image={require('../../../assets/images/Gratitudies/MaxAvanesov.webp')}/>
-                    <ListAvatarItem title={'Егор Афанасьев'} link={'https://vk.com/egoraffonya'} image={require('../../../assets/images/Gratitudies/EgorAfanasyev.webp')}/>
-                    <ListAvatarItem title={'Никита Тимофеев'} link={'https://vk.com/no_mercy_or_forgiveness'} image={require('../../../assets/images/Gratitudies/NickTimofeev.webp')}/>
-                    <ListAvatarItem title={'Яша Рубинова'} link={'https://vk.com/trancqiue'} image={require('../../../assets/images/Gratitudies/YashaRuby.webp')}/>
-                    <ListAvatarItem title={'Кирилл Дедов'} link={'https://vk.com/dedov_k'} image={require('../../../assets/images/Gratitudies/KirillDed.webp')}/>
-
-                    <ListSeparator title={'Наполнение/уточнение карты'}/>
-                    <ListAvatarItem title={'Денис'} link={'https://vk.com/aokich0'} image={require('../../../assets/images/Gratitudies/Den.webp')}/>
-                    <ListAvatarItem title={'Анна'} link={'https://vk.com/minina0803'} image={require('../../../assets/images/Gratitudies/Anna.webp')}/>
-                    <ListAvatarItem title={'Даниил Подзюбан'} link={'https://vk.com/danko3264'} image={require('../../../assets/images/Gratitudies/DanylPodzuban.webp')}/>
-                    <ListAvatarItem title={'Анастасия Карабанова'} link={'https://vk.com/rastvorilas'} image={require('../../../assets/images/Gratitudies/AK.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете помочь с картой!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
-
-                    <ListSeparator title={'Дизайн'}/>
-                    <ListAvatarItem title={'Максим Крайнов'} link={'https://vk.com/id240979343'} image={require('../../../assets/images/Gratitudies/MaxKryanov.webp')}/>
-
-                    <ListSeparator title={'Выявление проблем с адаптивностью UI'}/>
-                    <ListAvatarItem title={'Чокопай'} link={'https://vk.ru/kamila137'} image={require('../../../assets/images/Gratitudies/ChocoKamila.webp')}/>
-
-                    <ListSeparator title={'Альтернативные иконки'}/>
-                    <ListAvatarItem title={"Алиса 'Alnijen' Балашова"} link={'https://vk.com/alnijen'} image={require('../../../assets/images/Gratitudies/alnijen.webp')}/>
-                    <ListAvatarItem title={'Даниил Шеремет'} link={'https://vk.com/sheremetvideo'} image={require('../../../assets/images/Gratitudies/Sheremet.webp')}/>
-                    <ListAvatarItem title={'Вы тоже можете предложить свою иконку!'} link={'https://vk.com/dragonsava'} image={unknown_avatar}/>
-                    <ListSeparator title={''}/>
-                </ScrollView>
-            </View>
-      </Fragment>
-      // </SafeAreaView>
-          )
-}
-
-export default GratuitiesScreen
+export default GratuitiesScreen;
