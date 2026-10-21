@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect, useState } from "react";
 import {
     FlatList,
-    NativeModules,
     Platform,
     StyleSheet,
     Text,
@@ -9,7 +8,7 @@ import {
     View,
 } from "react-native";
 import { SCREEN_SIZE, URLS } from "../../../Common/Constants";
-import { AdditionalData, BARSDiscipline, BARSScheduleCell, Mark, ScheduleForWidget } from "../../../API/DataTypes";
+import { AdditionalData, BARSDiscipline, Mark } from "../../../API/DataTypes";
 import { AverageScoreToColor, MarkToColor, withOpacity, CustomTheme } from "../../../Themes/Themes";
 import { createStackNavigator } from "@react-navigation/stack";
 import DetailedMarksScreen from "./DetailedMarksScreen";
@@ -32,87 +31,6 @@ import {useDeferredInlineAd} from "../../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../../Ads/AdPlacements";
 
 const Stack = createStackNavigator()
-
-const SharedStorage = NativeModules.SharedStorage
-
-const FeedWidget = async (studentSchedule: any) => {
-  try {
-    const todayStr = new Date().getDDMMYY()
-
-    const placeholderDay = (isToday = false): BARSScheduleCell => ({
-      date: "NOT_SET",
-      lessons: [{
-        name: "", lessonIndex: "", lessonType: "", place: "", cabinet: "",
-        teacher: { name: "", lec_oid: "", fullName: "" },
-        group: "", type: "PLACEHOLDER"
-      }],
-      isEmpty: true,
-      isToday
-    })
-
-    let dataForWidget: ScheduleForWidget = {
-      yesterday: placeholderDay(),
-      today: placeholderDay(true),
-      tomorrow: placeholderDay()
-    }
-    // создаём копию массива, чтобы не мутировать state
-    const days = (studentSchedule?.data?.days ?? []).map((d:any) => ({ ...d }))
-
-    if (days.length === 0) {
-      console.log('FeedWidget - no days in schedule, using placeholders')
-    } else {
-      // --- поиск today ---
-      const idxToday = days.findIndex((d:any) => d.date === todayStr)
-
-      if (idxToday !== -1) {
-        // есть today
-        dataForWidget = {
-          yesterday: days[idxToday - 1] ?? placeholderDay(),
-          today: days[idxToday],
-          tomorrow: days[idxToday + 1] ?? placeholderDay()
-        }
-      } else {
-        // today нет → ищем соседей
-        const todayTime = convertDate(todayStr).getTime()
-        const prevCandidates = days.filter((d:any) => convertDate(d.date).getTime() < todayTime)
-        const nextCandidates = days.filter((d:any) => convertDate(d.date).getTime() > todayTime)
-        const prevDay = prevCandidates.length ? prevCandidates[prevCandidates.length - 1] : undefined
-        const nextDay = nextCandidates.length ? nextCandidates[0] : undefined
-
-        if (prevDay || nextDay) {
-          console.log('FeedWidget - Today missing. Prev:', prevDay?.date ?? 'none', ' Next:', nextDay?.date ?? 'none')
-          dataForWidget = {
-            yesterday: prevDay ?? placeholderDay(),
-            today: placeholderDay(true),
-            tomorrow: nextDay ?? placeholderDay()
-          }
-        } else {
-          // вообще нет соседей → ищем ближайший день по модулю
-          let nearest: { day: BARSScheduleCell, diff: number } | null = null
-          for (const d of days) {
-            const diff = Math.abs(convertDate(d.date).getTime() - todayTime)
-            if (!nearest || diff < nearest.diff) nearest = { day: d, diff }
-          }
-          if (nearest) {
-            console.log('FeedWidget - No adjacent days; using nearest available as tomorrow:', nearest.day.date)
-            dataForWidget = {
-              yesterday: placeholderDay(),
-              today: placeholderDay(true),
-              tomorrow: nearest.day
-            }
-          } else {
-            console.log('FeedWidget - No suitable schedule found - keeping placeholders')
-          }
-        }
-      }
-    }
-    // --- отправка ---
-    SharedStorage.set(JSON.stringify({ dataForWidget }))
-    console.log('Android - dataForWidget shared')
-  } catch (error: any) {
-    console.warn('FeedWidget failed: ' + error?.toString())
-  }
-}
 
 let weekDemonstration = "";
 let closeBARSDate = new Date(3000, 4, 21);
@@ -552,10 +470,7 @@ const BARSMainScreen: React.FC<{navigation: any, route: any}> = () => {
 
 const BARSMarksScreen: React.FC<{navigation: any, route: any}> =(props) => {
     const {colors} = useTheme()
-    const studentSchedule = useSelector((state: RootState) => state.Schedule)
-    useEffect(() => {
-        if (Platform.OS === 'android') FeedWidget(studentSchedule).then(r => console.log('Schedule provided to widget'))
-    }, [studentSchedule])
+
     return (
       <SafeAreaView edges={['left', 'right', 'bottom']} style={[Styles.mainView,{backgroundColor: colors.background}]}>
             <DrawerHeader {...props} title={'Оценки'}/>

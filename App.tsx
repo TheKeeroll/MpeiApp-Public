@@ -22,12 +22,14 @@ import TokenBalanceBadge from "./src/Loyalty/TokenBalanceBadge";
 import {LOADING_PROGRESS_KEYS} from "./src/Loading/LoadingProgressKeys";
 import './src/Vpn/VpnSubscriptionRuntime';
 import {useIOSScheduleWidgetSync} from './src/Widgets/useIOSScheduleWidgetSync';
+import {useAndroidScheduleWidgetSync} from './src/Widgets/useAndroidScheduleWidgetSync';
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()
   const insets = useSafeAreaInsets();
   const [loggedIn, setLoggedIn] = useState<LoginState>(BARSAPI.LoginState)
   useIOSScheduleWidgetSync(loggedIn);
+  useAndroidScheduleWidgetSync(loggedIn);
   React.useEffect(() => {
     const subscription = DeviceEventEmitter.addListener('LoginState', (state: LoginState)=>{
       setLoggedIn(state)

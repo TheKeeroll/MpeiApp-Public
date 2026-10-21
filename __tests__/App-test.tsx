@@ -41,6 +41,7 @@ jest.mock('../src/Loyalty/LoyaltyProvider', () => ({LoyaltyProvider: passThrough
 jest.mock('../src/Loyalty/TokenBalanceBadge', () => () => <></>);
 jest.mock('../src/Vpn/VpnSubscriptionRuntime', () => ({}));
 jest.mock('../src/Widgets/useIOSScheduleWidgetSync', () => ({useIOSScheduleWidgetSync: jest.fn()}));
+jest.mock('../src/Widgets/useAndroidScheduleWidgetSync', () => ({useAndroidScheduleWidgetSync: jest.fn()}));
 
 const App = require('../App').default;
 
