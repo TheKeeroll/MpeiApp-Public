@@ -112,7 +112,7 @@ const AF2Screen: React.FC<AF2ScreenProps> = (props) => {
                   <Text style={{padding: '2%', fontSize: 16, fontWeight: 'bold', color: withOpacity(colors.warning, 80)}}>
                       Если на сайте привязали VK:
                   </Text>
-                  <TouchableOpacity onPress={()=>Linking.openURL('https://vk.com/bars_mpei')}>
+                  <TouchableOpacity onPress={()=>Linking.openURL('https://vk.ru/bars_mpei')}>
                       <FaIcon.default name={'vk'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', justifySelf: 'flex-start', color: colors.textUnderline}}/>
                       <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} title={'подпишитесь на группу ВК\nБАРС МЭИ и разрешите\nличные сообщения'}/>
                   </TouchableOpacity>

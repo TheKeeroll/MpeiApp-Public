@@ -15,11 +15,12 @@ import {withOpacity, CustomTheme} from "../../Themes/Themes";
 // @ts-expect-error
 import * as MtIcons from 'react-native-vector-icons/MaterialIcons'
 // @ts-expect-error
-import * as EtIcons from 'react-native-vector-icons/Entypo'
+import * as FA5Icons from 'react-native-vector-icons/FontAwesome5'
 import {AvatarImageSource} from "react-native-paper/lib/typescript/components/Avatar/AvatarImage";
 import BARSAPI, { openTelegram } from "../../Common/Globals";
 import type {AppIconName, QRFrameName} from "../../API/BARS";
 import Clipboard from "@react-native-clipboard/clipboard";
+import {avatarTitle, profileLinks, type ProfileLink} from './ProfileLinks';
 
 export const ListSwitch: React.FC<{
     title: string,
@@ -97,25 +98,61 @@ export const ListSeparator: React.FC<{title: string}> = (props) => {
     )
 }
 
-export const ListAvatarItem: React.FC<{title: string, link: string, textStyle?: TextStyle, image: AvatarImageSource}> = (props) => {
-    const {colors} = useTheme<CustomTheme>()
-    return (
-        <TouchableOpacity onPress={()=>{
-            return Linking.openURL(props.link)
-        }}
-            style={{alignItems: 'center', flexDirection: 'row', width: '100%', justifyContent: 'center', minHeight: 80, marginTop: 10, paddingVertical: 8, borderRadius: 5, backgroundColor: colors.primary}}>
-            <View style={{width: 76, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>
-                <Avatar.Image size={60} source={props.image}/>
-            </View>
-            <View style={{flex: 1, flexShrink: 1, justifyContent: 'center'}}>
-                <Text style={[{color: colors.text, fontSize: 18}, props.textStyle]}>{props.title}</Text>
-            </View>
-            <View style={{width: 56, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
-                <EtIcons.default size={40} color={withOpacity(colors.text, 20)} name={'vk-alternitive'}/>
-            </View>
-        </TouchableOpacity>
-    )
+export interface ListAvatarItemProps {
+    title: string;
+    link?: string | readonly string[];
+    links?: readonly string[];
+    textStyle?: TextStyle;
+    image: AvatarImageSource;
+    multilineTitle?: boolean;
 }
+
+export const ListAvatarItem: React.FC<ListAvatarItemProps> = (props) => {
+    const {colors} = useTheme<CustomTheme>();
+    const links = profileLinks(props.links ?? props.link);
+    const multiple = links.length > 1;
+    const open = async (link: ProfileLink) => {
+        try { await Linking.openURL(link.url); }
+        catch { Alert.alert('Не удалось открыть ссылку', 'Попробуйте ещё раз или откройте ссылку в браузере.'); }
+    };
+    const icon = (link: ProfileLink, size: number) => (
+        <FA5Icons.default name={link.icon} brand={link.platform !== 'link'} solid={link.platform === 'link'}
+            size={size} color={withOpacity(colors.text, 75)} accessible={false}/>
+    );
+    const content = (
+        <>
+            <View style={{width: 68, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch'}}>
+                <Avatar.Image size={56} source={props.image} accessible={false}/>
+            </View>
+            <View style={{flex: 1, minWidth: 0, justifyContent: 'center', paddingRight: 8}}>
+                <Text style={[{color: colors.text, fontSize: 16, flexShrink: 1}, props.textStyle]}>
+                    {props.multilineTitle === false ? props.title : avatarTitle(props.title)}
+                </Text>
+            </View>
+            {multiple ? (
+                <View style={{width: 96, gap: 4, paddingRight: 4}}>
+                    {Array.from({length: Math.ceil(links.length / 2)}, (_, row) => (
+                        <View key={row} style={{flexDirection: 'row', gap: 4}}>
+                            {links.slice(row * 2, row * 2 + 2).map(link => (
+                                <TouchableOpacity key={link.url} onPress={() => void open(link)} accessibilityRole="link"
+                                    accessibilityLabel={`${props.title}: ${link.label}`}
+                                    style={{width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: colors.surface}}>
+                                    {icon(link, 24)}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ))}
+                </View>
+            ) : links[0] ? <View style={{width: 48, alignItems: 'center', justifyContent: 'center'}}>{icon(links[0], 32)}</View> : null}
+        </>
+    );
+    const style: ViewStyle = {alignItems: 'center', flexDirection: 'row', width: '100%', minHeight: 80, marginTop: 10, paddingVertical: 8, borderRadius: 5, backgroundColor: colors.primary};
+    return links.length === 1 ? (
+        <TouchableOpacity style={style} onPress={() => void open(links[0]!)} accessibilityRole="link" accessibilityLabel={`${props.title}: ${links[0]!.label}`}>
+            {content}
+        </TouchableOpacity>
+    ) : <View style={style}>{content}</View>;
+};
 
 export const IconSelector: React.FC<{
     title: string,
@@ -395,7 +432,7 @@ export const openSupportChat = async (mode: 'vk' | 'tg') => {
   console.log(message)
   let url: string
   if (mode == 'vk') {
-      url = `https://vk.com/im?sel=-215610947`
+      url = `https://vk.ru/im?sel=-215610947`
   }  else {
       url = 'https://t.me/DragonSavA'
   }
