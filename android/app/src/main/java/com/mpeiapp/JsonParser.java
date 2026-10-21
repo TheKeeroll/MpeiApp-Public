@@ -1,79 +1,49 @@
 package com.mpeiapp;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.List;
 
-public class JsonParser {
-    public static ScheduleWidget.Root parseJson(String jsonString) throws Exception {
-        ScheduleWidget.Root root = new ScheduleWidget.Root();
+final class JsonParser {
+    private JsonParser() {}
 
-        JSONObject rootJsonObject = new JSONObject(jsonString);
-        JSONObject dataForWidgetJsonObject = rootJsonObject.getJSONObject("dataForWidget");
-
-        ScheduleWidget.DataForWidget dataForWidget = new ScheduleWidget.DataForWidget();
-
-        // Parsing each day: yesterday, today, tomorrow
-        dataForWidget.setYesterday(parseDay(dataForWidgetJsonObject.getJSONObject("yesterday")));
-        dataForWidget.setToday(parseDay(dataForWidgetJsonObject.getJSONObject("today")));
-        dataForWidget.setTomorrow(parseDay(dataForWidgetJsonObject.getJSONObject("tomorrow")));
-
-        root.setDataForWidget(dataForWidget);
-
-        return root;
+    static ScheduleWidgetData parseJson(String raw) throws JSONException {
+        JSONObject root = new JSONObject(raw);
+        ScheduleWidgetData data = new ScheduleWidgetData();
+        if (root.has("days")) {
+            JSONArray days = root.optJSONArray("days");
+            if (root.optInt("schemaVersion", 1) != 1 || days == null) throw new JSONException("Unsupported widget payload");
+            for (int index = 0; index < days.length(); index++) readDay(days.optJSONObject(index), data);
+        } else {
+            // Keep the cache written by 2.5.0 until the app publishes two weeks.
+            JSONObject legacy = root.optJSONObject("dataForWidget");
+            if (legacy == null) throw new JSONException("No widget schedule");
+            for (String key : new String[]{"yesterday", "today", "tomorrow"}) readDay(legacy.optJSONObject(key), data);
+        }
+        return data;
     }
 
-    private static ScheduleWidget.Day parseDay(JSONObject dayJsonObject) throws Exception {
-        ScheduleWidget.Day day = new ScheduleWidget.Day();
+    private static String text(JSONObject object, String key) {
+        Object value = object == null ? null : object.opt(key);
+        return value instanceof String ? (String) value : "";
+    }
 
-        day.setDate(dayJsonObject.getString("date"));
-        day.setIsEmpty(dayJsonObject.getBoolean("isEmpty"));
-        day.setIsToday(dayJsonObject.getBoolean("isToday"));
-
-        JSONArray lessonsJsonArray = dayJsonObject.getJSONArray("lessons");
-        List<ScheduleWidget.Lesson> lessons = new ArrayList<>();
-        if (!day.getIsEmpty()) {
-            for (int i = 0; i < lessonsJsonArray.length(); i++) {
-                JSONObject lessonJsonObject = lessonsJsonArray.getJSONObject(i);
-                ScheduleWidget.Lesson lesson = new ScheduleWidget.Lesson();
-
-                lesson.setType(lessonJsonObject.getString("type"));
-                if (!lesson.getType().contains("DINNER")) {
-                    lesson.setName(lessonJsonObject.getString("name"));
-                    lesson.setLessonIndex(lessonJsonObject.getString("lessonIndex"));
-                    lesson.setLessonType(lessonJsonObject.getString("lessonType"));
-                    lesson.setPlace(lessonJsonObject.getString("place"));
-                    if (lessonJsonObject.getString("cabinet").contains("Спортзал")) {
-                        lesson.setCabinet("Стадион");
-                    } else {
-                        lesson.setCabinet(lessonJsonObject.getString("cabinet"));
-                    }
-                    lesson.setGroup(lessonJsonObject.getString("group"));
-
-                    // Parsing teacher object
-                    JSONObject teacherJsonObject = lessonJsonObject.getJSONObject("teacher");
-                    ScheduleWidget.Teacher teacher = new ScheduleWidget.Teacher();
-                    if (teacherJsonObject.getString("name").equals("-")){
-                        teacher.setName("");
-                    } else {
-                        teacher.setName(teacherJsonObject.getString("name"));
-                    }
-                    try {
-                        teacher.setLec_oid(teacherJsonObject.getString("lec_oid"));
-                        teacher.setFullName(teacherJsonObject.getString("fullName"));
-                    } catch (Exception e) {
-                        teacher.setLec_oid("-");
-                        teacher.setFullName("-");
-                    }
-                    lesson.setTeacher(teacher);
-                }
-                lessons.add(lesson);
+    private static void readDay(JSONObject object, ScheduleWidgetData data) {
+        if (object == null) return;
+        String date = text(object, "date");
+        if (!date.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) return;
+        JSONArray lessons = object.optJSONArray("lessons");
+        ScheduleWidgetData.Day day = new ScheduleWidgetData.Day(date, object.optBoolean("isLoaded", lessons != null));
+        if (lessons != null && day.loaded) {
+            for (int index = 0; index < lessons.length(); index++) {
+                JSONObject lesson = lessons.optJSONObject(index);
+                if (lesson == null) continue;
+                String type = text(lesson, "type");
+                if ("DINNER".equals(type) || "PLACEHOLDER".equals(type)) continue;
+                day.lessons.add(new ScheduleWidgetData.Lesson(text(lesson, "name"), text(lesson, "lessonIndex"),
+                        text(lesson, "lessonType"), text(lesson, "cabinet"), text(lesson.optJSONObject("teacher"), "name")));
             }
         }
-
-        day.setLessons(lessons);
-
-        return day;
+        data.days.put(date, day);
     }
 }

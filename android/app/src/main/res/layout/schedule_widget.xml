@@ -1,91 +1,62 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/app_widget_initial_rounded_corner"
-    android:padding="10dp">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="6dp"
+    android:background="@drawable/app_widget_initial_rounded_corner">
 
-    <!-- Date selection buttons -->
-
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="1dp">
-
-        <Button
-            android:id="@+id/btnYesterday"
-            android:layout_width="1dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/app_widget_rounded_corner"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:minLines="1"
-            android:padding="1dp"
-            android:text="@string/btnYesterday_text"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnToday"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/app_widget_btn_today_rounded_corner"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:minLines="1"
-            android:padding="1dp"
-            android:text="@string/btnToday_text"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnTomorrow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/app_widget_rounded_corner"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:minLines="1"
-            android:padding="1dp"
-            android:text="@string/btnTomorrow_text"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
-
+    <LinearLayout android:id="@+id/widget_week_controls"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_week_previous" style="@style/ScheduleWidgetArrow"
+            android:text="‹" android:contentDescription="Предыдущая неделя" />
+        <TextView android:id="@+id/widget_week_title" style="@style/ScheduleWidgetText"
+            android:layout_width="0dp" android:layout_weight="1" android:gravity="center"
+            android:paddingStart="2dp" android:paddingEnd="2dp" android:maxLines="2" android:textStyle="bold"
+            android:text="Расписание" />
+        <TextView android:id="@+id/widget_week_next" style="@style/ScheduleWidgetArrow"
+            android:text="›" android:contentDescription="Следующая неделя" />
+        <TextView android:id="@+id/widget_today" style="@style/ScheduleWidgetButton"
+            android:layout_width="58dp" android:layout_marginStart="4dp" android:text="Сегодня"
+            android:textColor="#BB86FC" android:contentDescription="Вернуться к сегодняшнему дню" />
     </LinearLayout>
 
-    <!-- Schedule details -->
-
-    <TextView
-        android:id="@+id/date_text"
-        android:layout_width="390dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/linearLayout"
-        android:layout_marginTop="3dp"
-        android:text="@string/date_text"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
-    <LinearLayout
-        android:layout_width="402dp"
-        android:layout_height="604dp"
-        android:layout_below="@id/date_text">
-
-        <LinearLayout
-            android:id="@+id/schedule_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="3dp"
-            android:orientation="vertical">
-
-        </LinearLayout>
+    <LinearLayout android:id="@+id/widget_day_strip"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_days_previous" style="@style/ScheduleWidgetArrow"
+            android:text="‹" android:contentDescription="Предыдущие дни этой недели" />
+        <LinearLayout android:id="@+id/widget_days" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:orientation="horizontal" />
+        <TextView android:id="@+id/widget_days_next" style="@style/ScheduleWidgetArrow"
+            android:text="›" android:contentDescription="Следующие дни этой недели" />
     </LinearLayout>
 
-</RelativeLayout>
+    <TextView android:id="@+id/date_text" style="@style/ScheduleWidgetText"
+        android:layout_width="match_parent" android:textColor="#C4BCD1" android:gravity="center_vertical"
+        android:text="Расписание ещё не загружено" />
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:id="@+id/schedule_container" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+        <TextView android:id="@+id/widget_empty" style="@style/ScheduleWidgetText"
+            android:layout_width="match_parent" android:layout_height="match_parent" android:maxLines="4"
+            android:gravity="center" android:text="Откройте MpeiApp, чтобы загрузить расписание." />
+    </FrameLayout>
+
+    <LinearLayout android:id="@+id/widget_lesson_controls"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical"
+        android:visibility="gone">
+        <TextView android:id="@+id/widget_lessons_previous" style="@style/ScheduleWidgetArrow"
+            android:text="‹" android:contentDescription="Предыдущие занятия" />
+        <TextView android:id="@+id/widget_lesson_page" style="@style/ScheduleWidgetText"
+            android:layout_width="0dp" android:layout_weight="1" android:gravity="center" android:textColor="#C4BCD1" />
+        <TextView android:id="@+id/widget_lessons_next" style="@style/ScheduleWidgetArrow"
+            android:text="›" android:contentDescription="Следующие занятия" />
+    </LinearLayout>
+
+    <TextView android:id="@+id/widget_notice" style="@style/ScheduleWidgetText"
+        android:layout_width="match_parent" android:textSize="10sp" android:maxLines="2"
+        android:textColor="#AAA2B7" android:gravity="center_vertical"
+        android:text="Откройте MpeiApp, чтобы обновить расписание в виджете." />
+</LinearLayout>

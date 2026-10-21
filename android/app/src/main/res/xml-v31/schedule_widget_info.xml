@@ -6,10 +6,12 @@
     android:initialLayout="@layout/schedule_widget"
     android:minWidth="180dp"
     android:minHeight="180dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="180dp"
     android:previewImage="@drawable/example_appwidget_preview"
     android:previewLayout="@layout/schedule_widget"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="3"
     android:targetCellHeight="4"
-    android:updatePeriodMillis="86400000"
+    android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />

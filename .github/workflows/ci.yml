@@ -133,6 +133,8 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Test Android widget calendar, pagination and sizing
+        run: node scripts/test-android-widget.cjs
       - name: Install Yarn Classic
         run: npm install --global yarn@1.22.22
       - name: Resolve Yarn cache directory

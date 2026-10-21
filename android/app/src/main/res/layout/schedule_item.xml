@@ -1,98 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="match_parent"
-	android:layout_height="wrap_content"
-	android:layout_margin="3dp"
-	android:background="@drawable/app_widget_rounded_corner"
-	android:orientation="vertical">
-
-	<LinearLayout
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:background="@drawable/app_widget_rounded_corner"
-		android:orientation="horizontal"
-		android:padding="1dp">
-
-		<TextView
-			android:id="@+id/schedule_time"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_margin="1dp"
-			android:background="@drawable/app_widget_item_content_rounded_corner"
-			android:padding="3dp"
-			android:text="@string/schedule_time"
-			android:textColor="#FFFFFF"
-			android:textSize="12sp"
-			android:textStyle="bold" />
-
-		<TextView
-			android:id="@+id/schedule_lesson_type"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_margin="1dp"
-			android:background="@drawable/app_widget_rounded_corner"
-			android:ellipsize="end"
-			android:maxLines="1"
-			android:padding="1dp"
-			android:text="@string/schedule_lesson_type"
-			android:textColor="#FFFF00"
-			android:textSize="12sp"
-			android:textStyle="bold" />
-	</LinearLayout>
-
-	<LinearLayout
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:background="#2B2B2B"
-		android:orientation="horizontal"
-		android:padding="1dp">
-
-		<TextView
-			android:id="@+id/schedule_discipline"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_margin="1dp"
-			android:background="@drawable/app_widget_item_content_rounded_corner"
-			android:ellipsize="end"
-			android:maxLines="1"
-			android:padding="3dp"
-			android:text="@string/schedule_discipline"
-			android:textColor="#FFFFFF"
-			android:textSize="11sp"
-			android:textStyle="bold" />
-	</LinearLayout>
-
-	<LinearLayout
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:background="@drawable/app_widget_rounded_corner"
-		android:orientation="horizontal"
-		android:padding="1dp">
-
-		<TextView
-			android:id="@+id/schedule_cabinet"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:background="@drawable/app_widget_rounded_corner"
-			android:ellipsize="end"
-			android:maxLines="1"
-			android:padding="3dp"
-			android:text="@string/schedule_cabinet"
-			android:textColor="#BB86FC"
-			android:textSize="12sp"
-			android:textStyle="bold" />
-
-		<TextView
-			android:id="@+id/schedule_teacher"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:background="@drawable/app_widget_item_content_rounded_corner"
-			android:ellipsize="end"
-			android:maxLines="1"
-			android:padding="3dp"
-			android:text="@string/schedule_teacher"
-			android:textColor="#FFFFFF"
-			android:textSize="12sp"
-			android:textStyle="bold" />
-	</LinearLayout>
+    android:id="@+id/widget_lesson_root" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginBottom="3dp" android:orientation="vertical" android:padding="3dp"
+    android:background="@drawable/app_widget_rounded_corner">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+        <TextView android:id="@+id/schedule_time" style="@style/ScheduleWidgetText"
+            android:textSize="10sp" android:textStyle="bold" android:layout_marginEnd="5dp" />
+        <TextView android:id="@+id/schedule_lesson_type" style="@style/ScheduleWidgetText"
+            android:layout_width="0dp" android:layout_weight="1" android:textSize="10sp" android:textColor="#F4C97A" />
+    </LinearLayout>
+    <TextView android:id="@+id/schedule_discipline" style="@style/ScheduleWidgetText"
+        android:layout_width="match_parent" android:textSize="12sp" android:textStyle="bold" />
+    <LinearLayout android:id="@+id/widget_lesson_details" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:id="@+id/schedule_cabinet" style="@style/ScheduleWidgetText"
+            android:textSize="10sp" android:textColor="#BB86FC" android:layout_marginEnd="5dp" />
+        <TextView android:id="@+id/schedule_teacher" style="@style/ScheduleWidgetText"
+            android:layout_width="0dp" android:layout_weight="1" android:textSize="10sp" />
+    </LinearLayout>
 </LinearLayout>

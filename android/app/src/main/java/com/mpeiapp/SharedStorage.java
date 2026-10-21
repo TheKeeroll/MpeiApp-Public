@@ -1,48 +1,53 @@
 package com.mpeiapp;
 
-import com.facebook.react.bridge.NativeModule;
+import android.content.Context;
+import android.util.Log;
+import androidx.annotation.NonNull;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
-import android.app.Activity;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-
-import java.util.Objects;
-
 public class SharedStorage extends ReactContextBaseJavaModule {
-    ReactApplicationContext context;
+    private final ReactApplicationContext context;
 
     public SharedStorage(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
     }
 
-    @NonNull
-    @Override
-    public String getName() {
-        return "SharedStorage";
+    @NonNull @Override public String getName() { return "SharedStorage"; }
+
+    private void writeSchedule(String json) throws Exception {
+        JsonParser.parseJson(json);
+        if (!context.getSharedPreferences("DATA", Context.MODE_PRIVATE).edit().putString("appData", json).commit()) {
+            throw new java.io.IOException("Widget storage write failed");
+        }
+        // Application context also works during background updates; no Activity required.
+        ScheduleWidget.updateAll(context);
     }
 
-    @ReactMethod
-    public void set(String message) {
-        SharedPreferences.Editor editor = context.getSharedPreferences("DATA", Context.MODE_PRIVATE).edit();
-        editor.putString("appData", message);
-        editor.commit();
+    @ReactMethod public void setSchedule(String json, Promise promise) {
+        try { writeSchedule(json); promise.resolve(null); }
+        catch (Exception error) { promise.reject("E_WIDGET_DATA", "Could not save the widget schedule"); }
+    }
 
-        Intent intent = new Intent(Objects.requireNonNull(getCurrentActivity()).getApplicationContext(), ScheduleWidget.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-        int[] ids = AppWidgetManager.getInstance(getCurrentActivity().getApplicationContext()).getAppWidgetIds(new ComponentName(getCurrentActivity().getApplicationContext(), ScheduleWidget.class));
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
-        getCurrentActivity().getApplicationContext().sendBroadcast(intent);
+    @ReactMethod public void clearSchedule(Promise promise) {
+        try {
+            if (!context.getSharedPreferences("DATA", Context.MODE_PRIVATE).edit().remove("appData").commit()) {
+                throw new java.io.IOException("Widget storage clear failed");
+            }
+            ScheduleWidget.clearState(context);
+            ScheduleWidget.updateAll(context);
+            promise.resolve(null);
+        } catch (Exception error) {
+            promise.reject("E_WIDGET_STORAGE", "Could not clear the widget schedule");
+        }
+    }
 
+    // Retain the original bridge entry point for an already running old JS bundle.
+    @ReactMethod public void set(String json) {
+        try { writeSchedule(json); }
+        catch (Exception error) { Log.w("ScheduleWidget", "Could not save legacy schedule"); }
     }
 }
