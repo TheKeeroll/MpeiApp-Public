@@ -6,3 +6,6 @@ patches/*.patch text eol=lf
 
 # Deployment scripts are transferred from Windows to Linux inside a tar archive.
 vpn-subscription-proxy/deploy/*.sh text eol=lf
+
+# Xcode Cloud invokes these scripts directly on macOS.
+ios/ci_scripts/*.sh text eol=lf
