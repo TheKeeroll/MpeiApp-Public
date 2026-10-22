@@ -17,6 +17,14 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: Math.max(24, insets.bottom + 12)}}>
+                    <WhatsNewLogo title={'Борьба за доступность'} version={'2.6.0'}/>
+                    <WhatsNewChange title={'Выявление блокировки БАРС обязательными анкетами и их экспериментальное автозаполнение!'}/>
+                    <WhatsNewChange title={'Переработан виджет расписания: две недели и удобное переключение дней!'}/>
+                    <WhatsNewChange title={'Скорректирована и улучшена интеграция DragoNet, включая пробный доступ'}/>
+                    <WhatsNewChange title={'Оптимизация и обновление рекламных интеграций'}/>
+                    <WhatsNewChange title={'Обновлён экран благодарностей, добавлены ссылки на разные платформы'}/>
+                    <WhatsNewChange title={'Исправления расписания и карты, правки визуала'}/>
+
                     <WhatsNewLogo title={'Сентябрь горит (не опять, а снова)'} version={'2.5.0'}/>
                     <WhatsNewChange title={'Актуализация и адаптация поведения для различных сценариев входа и состояний аккаунта'}/>
                     <WhatsNewChange title={'Оптимизированы загрузки - главная страница и разделы доступны быстрее!'}/>
