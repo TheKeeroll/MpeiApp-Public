@@ -4,44 +4,43 @@
 `ru.NoobDragons.MpeiApp` в текущем аккаунте получателя. Workspace —
 `ios/MpeiApp.xcworkspace`, shared scheme — `MpeiApp`, Archive — **Release**.
 Действия участников — в [этапе 11](../../docs/v2.6.0-stage-11-xcode-cloud.md).
+Для разовой настройки Account Holder — [краткая инструкция владельцу](../../docs/v2.6.0-xcode-cloud-owner.md).
 
-## Сначала получить lockfiles на Mac
+## Проверенные lockfiles и установка на Mac
 
-Gemfile закрепляет CocoaPods **1.17.0** / xcodeproj **1.28.1**. Старые
-Gemfile.lock и Podfile.lock ещё требуют настоящего resolver на Mac. До этого
-Cloud preflight намеренно останавливается с понятным сообщением.
+Gemfile и lockfiles согласованы: CocoaPods **1.17.0**, xcodeproj **1.28.1**,
+Bundler **2.4.10**. Resolver выполнен пользователем на Mac и сохранён в
+`049ad61` от 23.10.2026; приложение собрано и запущено в Simulator с
+**Xcode 26.4 (17E192)**, preflight успешен.
 
-На Mac, в корне проверяемого среза, после получения обычных локальных
-Secrets.ts/Swift initializer существующим закрытым каналом:
+После получения актуальной dev и обычных локальных Secrets.ts/Swift initializer
+закрытым каналом установить зависимости по lockfiles. Полный набор команд,
+включая Node/Yarn/Ruby и выбор Xcode, — в инструкции владельцу. Ключевые команды
+из корня с уже настроенными Node 24 / Ruby 3.3 / Bundler 2.4.10 / Yarn 1.22.22:
 
 ```bash
-brew install node@24 ruby@3.3
-export PATH="$(brew --prefix node@24)/bin:$(brew --prefix ruby@3.3)/bin:$PATH"
-gem install bundler --version 2.4.10 --user-install --no-document
-export PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"
-
-bundle _2.4.10_ update cocoapods xcodeproj
-bundle _2.4.10_ update --ruby
+export BUNDLE_FROZEN=true
+bundle _2.4.10_ install
+yarn install --frozen-lockfile --non-interactive --production=false
 bundle _2.4.10_ exec pod --version
 cd ios
-bundle _2.4.10_ exec pod install
+bundle _2.4.10_ exec pod install --deployment
 cd ..
 node scripts/xcode-cloud.cjs preflight
 ```
 
-Bundler 2.4.10 — текущий `BUNDLED WITH`; при отдельном согласованном обновлении
-Bundler использовать новую совместимую версию во всех этих командах и сохранить
-её в lockfile. Cloud устанавливает именно версию из `BUNDLED WITH`.
-Ruby Cloud — **3.3.x**, Node — **24.x**, Yarn — **1.22.22**; Homebrew устанавливает
-их при необходимости. [Ruby 3.3](https://formulae.brew.sh/formula/ruby@3.3),
+Повторный resolver, `bundle update` и полный `pod update` для onboarding не
+нужны. Cloud устанавливает Bundler из `BUNDLED WITH`. Его Ruby — **3.3.x**,
+Node — **24.x**, Yarn — **1.22.22**; Homebrew устанавливает их при необходимости.
+Ruby metadata 3.2.2p53 в lockfile не ограничивают runtime ровно этой версией:
+Gemfile допускает Ruby >= 3.2 и < 3.5. [Ruby 3.3](https://formulae.brew.sh/formula/ruby@3.3),
 [Node 24](https://formulae.brew.sh/formula/node@24).
 
-Проверить изменения Gemfile.lock/Podfile.lock и native-проекта, выполнить Swift
-tests/Simulator smoke по этапу 11.B и сохранить результаты в Git до Cloud.
-SDK медиации остаются ранее проверенными; полный `pod update` не нужен.
-Удалён старый post_install, запускавший bitcode_strip для LogRocket/старых
-путей Hermes; текущий React Native post_install сохранён. Проверка Archive на
-Mac/Cloud подтвердит native-совместимость.
+SDK медиации сохранены; устаревший bitcode_strip для отсутствующих
+LogRocket/старых путей Hermes удалён, React Native post_install сохранён.
+Simulator-проверка успешна; подписанный Cloud Archive ещё предстоит проверить.
+Первое подключение выполняет владелец: Admin подтвердил отсутствие целевой
+Team/доступа Certificates, Identifiers & Profiles в Xcode.
 
 ## Обязательные настройки двух workflow
 
@@ -172,7 +171,8 @@ Hooks подписывают стадии source/tools/Bundler/Yarn/Pods и не
 
 Локально выполняются typecheck, Jest-проверки генерации/редактирования metadata,
 Bash syntax и реальный Git со временным локальным remote (без Apple/GitHub).
-Они не подтверждают resolver CocoaPods, подпись или работу Apple-сервиса.
-Части 11.B–E, облачные номера и возможность выбрать dev-сборку для App Review
-подтверждаются на Mac и в App Store Connect. Фактические результаты записываются
+Они не подтверждают подпись или работу Apple-сервиса. Resolver и Simulator
+пользователь подтвердил 23.10; onboarding владельца, облачные номера и
+возможность выбрать dev-сборку для App Review проверяются в Xcode/App Store
+Connect. Фактические результаты записываются
 в основной отчёт; один Archive на событие, включённая квота — 25 часов/месяц.
