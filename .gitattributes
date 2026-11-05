@@ -9,3 +9,6 @@ vpn-subscription-proxy/deploy/*.sh text eol=lf
 
 # Xcode Cloud invokes these scripts directly on macOS.
 ios/ci_scripts/*.sh text eol=lf
+
+# CocoaPods hashes the Podfile contents; keep its checksum stable on Windows/macOS.
+ios/Podfile text eol=lf

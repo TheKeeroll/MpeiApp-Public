@@ -8,6 +8,11 @@ cd "${CI_PRIMARY_REPOSITORY_PATH:?Missing CI_PRIMARY_REPOSITORY_PATH}"
 printf '\n[1/5] Verify source before installing tools\n'
 /bin/bash "$MPEIAPP_SCRIPT_DIR/verify-source.sh"
 
+# Use the workflow's selected toolchain on both Xcode 26.4 and 27.2 images.
+# Keep the exact versions in the log even when workflow editing is unavailable.
+xcodebuild -version
+sw_vers
+
 printf '\n[2/5] Node 24 and committed release metadata\n'
 if ! command -v node >/dev/null || [[ "$(node -p 'process.versions.node.split(".")[0]')" != 24 ]]; then brew install node@24; fi
 [[ "$(node -p 'process.versions.node.split(".")[0]')" == 24 ]] || { printf 'Node 24 is required.\n' >&2; exit 1; }
