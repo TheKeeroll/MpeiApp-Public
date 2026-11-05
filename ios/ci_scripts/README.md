@@ -1,10 +1,52 @@
 # Xcode Cloud: MpeiApp 2.6.0
 
-Оба workflow собирают **один существующий продукт MpeiApp** с bundle ID
+Целевая конфигурация из двух workflow собирает **один существующий продукт MpeiApp** с bundle ID
 `ru.NoobDragons.MpeiApp` в текущем аккаунте получателя. Workspace —
 `ios/MpeiApp.xcworkspace`, shared scheme — `MpeiApp`, Archive — **Release**.
 Действия участников — в [этапе 11](../../docs/v2.6.0-stage-11-xcode-cloud.md).
 Для разовой настройки Account Holder — [краткая инструкция владельцу](../../docs/v2.6.0-xcode-cloud-owner.md).
+
+## Текущее состояние: Default и Xcode 27.2 (05.11.2026)
+
+По сообщению пользователя, владелец подключил Cloud; состоялись сборки 1–3
+ветки dev. Существующий workflow называется `Default`: Admin видит сборки и
+использование shared variables, но сам workflow не отображается, а сохранение
+нового завершается `User does not exist`. Причина ограничения доступа пока
+не установлена. Для исправления deployment target создавать или редактировать
+workflow не требуется: hooks не зависят от его имени.
+
+Выбранный образ, по обзору пользователя: **Xcode 27.2 (27B52)** и
+**macOS Golden Gate 27.2 (26B123)**. Post-clone выводит `xcodebuild -version`
+и `sw_vers`, чтобы следующий запуск зафиксировал фактические версии.
+Скрипты используют выбранный Cloud Xcode без подмены `DEVELOPER_DIR` или
+`xcode-select`; совместимость с ранее проверенным Xcode 26.4 сохраняется.
+
+Последняя сборка сообщила о 26 Pod-целях с `IPHONEOS_DEPLOYMENT_TARGET = 13.0`,
+включая AppMetrica, KSCrash, BigoADS и Lottie privacy bundles. `platform :ios`
+сам по себе не задаёт минимум всем генерируемым целям. В `post_install` после
+React Native теперь поднимаются до **15.6** все более низкие/незаданные минимумы
+Pod-целей во всех конфигурациях, включая resource/privacy bundles. Более высокие
+требования зависимостей сохраняются; minimum приложения/виджета — **15.6/17.0**.
+Это соответствует диапазону deployment targets
+[Xcode 26/27](https://developer.apple.com/xcode/system-requirements/) и выполняется
+через стандартный [CocoaPods post_install](https://guides.cocoapods.org/syntax/podfile#post_install).
+
+`Podfile.lock` обновляется только в части SHA-1 Podfile с LF; версии SDK и gems
+сохраняются. `pod install --deployment` в post-clone применяет исправление
+перед xcodebuild. Для следующей проверки нужен **новый запуск на коммите
+с исправлением**; повтор старой сборки на старом SHA его не получит.
+При корректном Tag Changes опубликовать новый `ios-dev-*` тег на таком коммите
+из dev либо запустить его вручную, если действие доступно. Триггеры `Default`
+по скриншотам не подтверждены; действующая проверка источника по-прежнему
+отклоняет обычный автоматический push dev. После успеха остаётся проверить
+Archive, подпись, TestFlight и режим TestFlight and App Store.
+
+Локальная проверка исправления: preflight и **32 Cloud-теста** успешны;
+Bash-синтаксис hooks проверен. Ruby 3.3 выполнил настоящий `post_install` из
+Podfile с подменёнными входными объектами CocoaPods/RN: **10 целей / 20 Debug/Release
+конфигураций**, включая незаданные/старые минимумы и сохранение 15.10/16/17/27.2.
+SHA-1 сверён алгоритмом CocoaPods. Это проверка hook, а не нативная сборка:
+новый `pod install` и Archive на macOS/Xcode здесь не выполнялись.
 
 ## Проверенные lockfiles и установка на Mac
 
@@ -39,8 +81,8 @@ Gemfile допускает Ruby >= 3.2 и < 3.5. [Ruby 3.3](https://formulae.bre
 SDK медиации сохранены; устаревший bitcode_strip для отсутствующих
 LogRocket/старых путей Hermes удалён, React Native post_install сохранён.
 Simulator-проверка успешна; подписанный Cloud Archive ещё предстоит проверить.
-Первое подключение выполняет владелец: Admin подтвердил отсутствие целевой
-Team/доступа Certificates, Identifiers & Profiles в Xcode.
+Первое подключение выполнено владельцем; доступ Admin к workflow пока ограничен,
+как описано выше.
 
 ## Обязательные настройки двух workflow
 
