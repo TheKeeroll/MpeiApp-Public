@@ -1,12 +1,47 @@
 # Xcode Cloud: MpeiApp 2.6.0
 
-Целевая конфигурация из двух workflow собирает **один существующий продукт MpeiApp** с bundle ID
+Workflow собирают **один существующий продукт MpeiApp** с bundle ID
 `ru.NoobDragons.MpeiApp` в текущем аккаунте получателя. Workspace —
 `ios/MpeiApp.xcworkspace`, shared scheme — `MpeiApp`, Archive — **Release**.
 Действия участников — в [этапе 11](../../docs/v2.6.0-stage-11-xcode-cloud.md).
 Для разовой настройки Account Holder — [краткая инструкция владельцу](../../docs/v2.6.0-xcode-cloud-owner.md).
 
+## Текущее состояние: экспорт Archive и новые теги (07.11.2026)
+
+Исправление minimum iOS из `8946f03` сработало: пользователь подтвердил успешную
+сборку. Первоначальный workflow выполнял только Build; для появления бинарного
+файла в App Store Connect требуется Archive с подготовкой распространения.
+Владелец добавил Archive и сообщил новые триггеры: **`release-*` — App Store
+Connect, `testflight-*` — публичный TestFlight**. Реальную доставку определяют
+настройки Archive/post-actions в Cloud, а не имя тега в скрипте.
+
+Проверены последние коммиты и GitHub CI: `4f4c5be`/`5440614` — пробные изменения,
+`a5dac77` — отключение source guard. На `a5dac77` проверки GitHub Actions
+[ветки dev](https://github.com/TheKeeroll/MpeiApp-Public/actions/runs/42362146324)
+и [release-тега](https://github.com/TheKeeroll/MpeiApp-Public/actions/runs/42362163682)
+успешны. Xcode Cloud Release Build тоже успешен, но
+[Release Archive](https://appstoreconnect.apple.com/teams/48da0c81-5889-4932-bfe1-94c6d282a45b/apps/1618910681/ci/builds/4ddb923c-e515-42af-8dd3-4c9e096eaa44/action/3576656b-12fa-4136-bb4c-d18a2f2730d8)
+сообщает `Exporting for App Store Distribution failed`.
+На скриншотах сборки 12 `xcodebuild archive` успешен; `-exportArchive` для
+App Store/development/ad hoc завершается **70**. Это не ошибка компиляции.
+Точная причина ещё не установлена: нужны строки `error: exportArchive` из
+`xcodebuild-export-archive.log` или ошибки из `IDEDistribution*.log` в артефакте
+Logs действия Archive. По одному exit code менять Team, App Group или
+entitlements нельзя; успешная выгрузка пока не подтверждена.
+
+`verify-source.sh` снова подключён как **диагностика, всегда exit 0**.
+Он распознаёт `release-*`, `testflight-*` и прежние `ios-dev-*`, сравнивает
+HEAD/CI_COMMIT, локальные refs и доступную историю. Неожиданные теги/ветки,
+PR/manual события, отсутствующие переменные/refs/Git и несовпадения только
+предупреждают. Fetch/скачивание истории не выполняются; отсутствующий CI_BRANCH
+для tag build допустим. Вызов в post-clone защищён `if ! ...`, поэтому даже
+отсутствующий или сломанный helper не останавливает подготовку, Archive и доставку.
+Эта диагностика не скрывает реальные ошибки установки зависимостей, сборки,
+подписи или экспорта.
+
 ## Текущее состояние: Default и Xcode 27.2 (05.11.2026)
+
+История предыдущего исправления; текущие триггеры и состояние экспорта — выше.
 
 По сообщению пользователя, владелец подключил Cloud; состоялись сборки 1–3
 ветки dev. Существующий workflow называется `Default`: Admin видит сборки и
@@ -35,11 +70,8 @@ Pod-целей во всех конфигурациях, включая resource
 сохраняются. `pod install --deployment` в post-clone применяет исправление
 перед xcodebuild. Для следующей проверки нужен **новый запуск на коммите
 с исправлением**; повтор старой сборки на старом SHA его не получит.
-При корректном Tag Changes опубликовать новый `ios-dev-*` тег на таком коммите
-из dev либо запустить его вручную, если действие доступно. Триггеры `Default`
-по скриншотам не подтверждены; действующая проверка источника по-прежнему
-отклоняет обычный автоматический push dev. После успеха остаётся проверить
-Archive, подпись, TestFlight и режим TestFlight and App Store.
+На 05.11 триггеры `Default` по скриншотам не были подтверждены.
+Ограничивавшая события проверка источника заменена предупреждениями 07.11.
 
 Локальная проверка исправления: preflight и **32 Cloud-теста** успешны;
 Bash-синтаксис hooks проверен. Ruby 3.3 выполнил настоящий `post_install` из
@@ -84,23 +116,22 @@ Simulator-проверка успешна; подписанный Cloud Archive 
 Первое подключение выполнено владельцем; доступ Admin к workflow пока ограничен,
 как описано выше.
 
-## Обязательные настройки двух workflow
+## Настройки распространения и запуска
 
-| Параметр | dev | v2 |
+| Параметр | App Store Connect | Публичный TestFlight |
 | --- | --- | --- |
-| Start condition | Tag Changes, префикс `ios-dev-` | Branch Changes, ровно `v2` |
-| Дополнительная проверка | Commit тега входит в `origin/dev` | Commit входит в `origin/v2` |
+| Start condition, по сообщению владельца 07.11 | Tag Changes, префикс `release-` | Tag Changes, префикс `testflight-` |
+| Проверка источника | Только предупреждения | Только предупреждения |
 | Scheme / action | MpeiApp / один Release iOS Archive | MpeiApp / один Release iOS Archive |
 | Deployment Preparation | **TestFlight and App Store** | **TestFlight and App Store** |
 | Restrict Editing | **Включить** | **Включить** |
 | Clean | Включить для workflow распространения | Включить для workflow распространения |
-| Post-action | TestFlight, нужная группа тестеров | TestFlight, нужная группа тестеров |
-| File/PR filters | Без PR; обычный push dev не запускается | Без фильтров файлов и PR |
-| Auto-cancel | По желаемой политике тестовых тегов | Выключить для обработки каждого push |
+| Доставка | Проверить обработку сборки в App Store Connect; отправка на App Review — отдельный шаг | TestFlight External Testing, нужная внешняя группа/public link; beta review по правилам Apple |
+| Другие события | Запуск определяется workflow; скрипт не блокирует | Запуск определяется workflow; скрипт не блокирует |
 
 Ветка, которую собирает Cloud, должна содержать эти hooks и обновлённые
-lockfiles. Workflow v2 можно подготовить заранее и активировать после
-переноса подготовленного среза; публикация успешной dev-сборки этого не требует.
+lockfiles. Прежнее соглашение `ios-dev-*`/push v2 не является обязательным
+условием скриптов; по тегу не требуется доказывать принадлежность конкретной ветке.
 
 Режим **Internal Testing Only не использовать ни в одном workflow**:
 такую сборку нельзя выбрать для App Review. Возможность обычного релиза
@@ -108,19 +139,18 @@ lockfiles. Workflow v2 можно подготовить заранее и ак�
 отправляется TestFlight-сборка. Внешнему тестированию требуется beta review.
 См. [Archive и Deployment Preparation](https://developer.apple.com/documentation/xcode/configuring-your-xcode-cloud-workflow-s-actions).
 
-Пример запуска dev после push коммита в `dev`:
+Пример запуска публичного TestFlight после push исправления в `dev`:
 
 ```bash
-git tag ios-dev-2.6.0-beta.1
-git push origin ios-dev-2.6.0-beta.1
+git tag testflight-2.6.0-beta.1
+git push origin testflight-2.6.0-beta.1
 ```
 
-Первоначальный ручной запуск из мастера Xcode допускает ветку dev без тега.
-Автоматический обычный push dev, PR, чужой тег и тег вне истории dev
-отклоняются. Проверка выполняется до установки зависимостей; поддерживаются
-annotated tags и shallow checkout, наличие CI_BRANCH у тега не предполагается.
-Для коммита на вершине ветки достаточно shallow fetch; полная история
-запрашивается только для проверки более раннего коммита.
+Для App Store использовать новый `release-*` тег на нужном коммите.
+Тег сам не меняет marketing version: версия берётся из package.json/native
+проекта, build number — из CI_BUILD_NUMBER. Не переиспользовать старый тег
+для проверки нового кода. Любой другой тег или ручной/PR/branch запуск,
+разрешённый workflow, также проходит source diagnostics с предупреждениями.
 
 ## Общий Build Number и публикация проверенного бинарного файла
 
