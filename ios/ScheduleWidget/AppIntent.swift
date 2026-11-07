@@ -16,7 +16,7 @@ private func selectWidgetDay(_ rawValue: String) throws {
     WidgetCenter.shared.reloadTimelines(ofKind: ScheduleWidgetContract.kind)
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct SelectScheduleDayIntent: AppIntent {
     static var title: LocalizedStringResource = "Выбрать день расписания"
     static var isDiscoverable: Bool = false
@@ -33,7 +33,7 @@ struct SelectScheduleDayIntent: AppIntent {
 }
 
 // Keep the old intent names for taps on a timeline archived before the update.
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct YesterdayClickHandler: AppIntent {
     static var title: LocalizedStringResource = "Расписание на вчера"
     func perform() async throws -> some IntentResult {
@@ -42,7 +42,7 @@ struct YesterdayClickHandler: AppIntent {
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct TodayClickHandler: AppIntent {
     static var title: LocalizedStringResource = "Расписание на сегодня"
     func perform() async throws -> some IntentResult {
@@ -51,7 +51,7 @@ struct TodayClickHandler: AppIntent {
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct TomorrowClickHandler: AppIntent {
     static var title: LocalizedStringResource = "Расписание на завтра"
     func perform() async throws -> some IntentResult {

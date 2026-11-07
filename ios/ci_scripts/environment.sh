@@ -11,3 +11,9 @@ export GEM_HOME="$HOME/.mpeiapp-cloud/gems"
 export PATH="$HOME/.mpeiapp-cloud/node/bin:$GEM_HOME/bin:$PATH"
 export RCT_NO_LAUNCH_PACKAGER=1
 umask 077
+
+# The 27.2 Cloud image may lack the parent directories for Xcode's capability
+# cache. Cache setup is optional and must not prevent building or exporting.
+if ! mkdir -p "$HOME/Library/Developer/Xcode/UserData/Capabilities"; then
+  printf 'warning: [Xcode Cloud] Could not prepare the Xcode capabilities cache; continuing.\n' >&2
+fi
