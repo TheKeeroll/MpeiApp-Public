@@ -24,10 +24,24 @@ Connect, `testflight-*` — публичный TestFlight**. Реальную д
 сообщает `Exporting for App Store Distribution failed`.
 На скриншотах сборки 12 `xcodebuild archive` успешен; `-exportArchive` для
 App Store/development/ad hoc завершается **70**. Это не ошибка компиляции.
-Точная причина ещё не установлена: нужны строки `error: exportArchive` из
-`xcodebuild-export-archive.log` или ошибки из `IDEDistribution*.log` в артефакте
-Logs действия Archive. По одному exit code менять Team, App Group или
-entitlements нельзя; успешная выгрузка пока не подтверждена.
+Полная папка сборки 12 проверена: **38 файлов** — archive, три export-лога,
+30 distribution/provisioning/service logs и четыре лога подготовки/hooks.
+Причина установлена: Cloud не может зарегистрировать App ID виджета и настроить
+App Groups у основного приложения. Эти ошибки повторяются во всех трёх режимах
+экспорта; сообщения `No profiles ... were found` сопровождают те же блокеры.
+
+| Сообщение в export/provisioning logs | Что исправить |
+| --- | --- |
+| `Automatic signing cannot register bundle identifier "ru.NoobDragons.MpeiApp.ScheduleWidget"` | Владелец регистрирует explicit App ID виджета в текущей Team |
+| `Automatic signing cannot update bundle identifier "ru.NoobDragons.MpeiApp"` / `enable App Groups` | Владелец включает App Groups и назначает нужную группу обоим App ID |
+| `No profiles for ...` для app/widget | После настройки App ID/группы обновить provisioning через automatic signing; подробности ниже |
+| `Unable to authenticate with App Store Connect`, `Failed to find an account with App Store Connect access` | Дополнительная ошибка ASC session proxy; проверить доступ и повторить после настройки идентификаторов, как описано ниже |
+
+Команда архива из логов явно содержит `DEVELOPMENT_TEAM=JGUC7QM6M5`.
+В репозитории ещё стояла `58KV3BTJAZ`; теперь Debug/Release app и widget
+согласованы с **JGUC7QM6M5**. Cloud уже переопределял Team командной строкой,
+поэтому сама замена в проекте **не устранит серверные ошибки регистрации**.
+Bundle IDs и App Group сохранены.
 
 `verify-source.sh` снова подключён как **диагностика, всегда exit 0**.
 Он распознаёт `release-*`, `testflight-*` и прежние `ios-dev-*`, сравнивает
@@ -38,6 +52,102 @@ PR/manual события, отсутствующие переменные/refs/G
 отсутствующий или сломанный helper не останавливает подготовку, Archive и доставку.
 Эта диагностика не скрывает реальные ошибки установки зависимостей, сборки,
 подписи или экспорта.
+
+### Владелец: исправить Identifiers и App Groups перед следующим экспортом
+
+Действия выполняются в **Apple Developer → Account → Certificates, Identifiers
+& Profiles**, в Team **JGUC7QM6M5** из логов, а не в форме создания приложения
+App Store Connect. При индивидуальном членстве Admin ASC не получает ресурсы
+Developer Program; в текущей ситуации эти шаги выполняет Account Holder.
+См. [роли Apple](https://developer.apple.com/help/account/access/roles/).
+
+1. **Identifiers → App Groups:** проверить регистрацию **`group.com.mpeiapp`**
+   в этой Team. Если группы нет — создать её через `+ → App Groups`, указав
+   этот точный identifier. Если имя осталось у прежней Team после переноса
+   приложения, согласовать с прежним владельцем освобождение группы и её
+   регистрацию у получателя по [правилам переноса Apple](https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/#apps-using-app-groups).
+   Код app/bridge/widget использует одно и то же имя, поэтому произвольная
+   замена только на портале не подойдёт.
+2. **Identifiers → App IDs → `ru.NoobDragons.MpeiApp`:** открыть существующий
+   identifier, включить **App Groups**, нажать **Configure**, выбрать
+   **`group.com.mpeiapp`**, подтвердить назначение и сохранить изменения.
+   Если capability уже включена, проверить именно назначенную группу.
+3. **Identifiers → `+` → App IDs → App:** зарегистрировать **Explicit App ID**
+   с Bundle ID **`ru.NoobDragons.MpeiApp.ScheduleWidget`** и описанием, например,
+   `MpeiApp Schedule Widget`. Для него включить **App Groups** и через Configure
+   назначить ту же **`group.com.mpeiapp`**. Если точный ID уже есть в этой Team,
+   отредактировать его. Если портал сообщает, что ID занят, передать точную
+   ошибку для проверки принадлежности ID. Для виджета нужна регистрация
+   identifier; отдельная карточка приложения в App Store Connect не требуется.
+4. Повторить Cloud Archive с **automatic signing**, чтобы Cloud повторно
+   получил/создал profiles с обновлёнными capabilities **обоих** App ID.
+   Для шагов 1–3 достаточно браузера; Mac не обязателен. В актуальном проекте
+   обе цели уже используют automatic signing и Team **JGUC7QM6M5**. Если
+   проверяется также локальный Xcode, открыть `ios/MpeiApp.xcworkspace` и
+   сверить это в Signing & Capabilities **MpeiApp** и **ScheduleWidgetExtension**.
+   Если используются созданные вручную профили, после изменения capabilities
+   их нужно перегенерировать. Для App Store экспорта необходимы App Store
+   profiles приложения и extension; ошибки Development/Ad Hoc диагностируются
+   отдельно, если останутся после этой настройки.
+
+Инструкции Apple: [App ID](https://developer.apple.com/help/account/identifiers/register-an-app-id/),
+[App Group](https://developer.apple.com/help/account/identifiers/register-an-app-group/),
+[назначение App Groups и обновление profiles](https://developer.apple.com/help/account/identifiers/enable-app-capabilities/).
+Cloud signing в сборке 12 находил managed certificates; подтверждённой причины
+перевыпускать или отзывать сертификаты в этих логах нет.
+
+### Дополнительная ошибка доступа App Store Connect
+
+В двух App Store export attempts в `IDEDistribution.critical.log` и
+`DVTITunesSoftwareService.log` есть ошибка **Session Proxy Provider** при
+получении store configuration: ответ и configuration — `null`.
+`IDEDistribution.standard.log` также сообщает отсутствие аккаунта с доступом
+ASC к Team **JGUC7QM6M5**. Из этих логов нельзя установить, временный ли это
+сбой Cloud или проблема разрешений/сессии; настройка identifiers сама по себе
+не гарантирует устранение этой ошибки.
+
+Владелец проверяет вход своим Apple Account в App Store Connect, доступ к
+существующей MpeiApp, активность членства и наличие требующих принятия
+соглашений. При сопровождении другим пользователем проверить его доступ
+к приложению и [cloud-managed distribution signing](https://developer.apple.com/help/account/certificates/cloud-managed-certificates/)
+в рамках доступных его членству разрешений. После исправления identifiers
+выполнить один повторный экспорт. Если ошибки идентификаторов исчезли, а
+Session Proxy Provider остаётся — передать Apple Developer Support ссылку
+на запуск, Team ID и новые distribution/service logs для проверки Cloud-сессии.
+Дополнительный API key или изменение клиентских Secrets.ts эту ошибку не исправляют.
+
+### Остальные логи и внесённые изменения
+
+| Область | Результат проверки / изменение |
+| --- | --- |
+| Dependencies и hooks | Node/Ruby/Yarn/patches/136 Pods установлены; resolve packages успешен. Pre-hook подготовил 2.6.0 (12); post-hook проверил номера и minimum 15.6/17.0. Это проверка metadata, а не успешного экспорта/доставки |
+| `xcodebuild archive` | `ARCHIVE SUCCEEDED`, ошибок компиляции нет. `CODE_SIGN_IDENTITY=-` и отсутствие embedded.mobileprovision на этой стадии соответствуют отдельному последующему signing/export в Cloud |
+| Project signing | Исправлена старая Team на JGUC7QM6M5 в четырёх конфигурациях app/widget |
+| `AppIntent.swift:24` | Предупреждения availability синтезированных setter/_modify у `@Parameter`: intent types переведены с extension-only availability на `@available(iOS 17.0, *)`, согласованную с minimum виджета. Исчезновение предупреждений проверить на Xcode |
+| Иконки `crymat`/`crysign` | Удалены ошибочные iPhone-слоты 76×76; корректные iPad-слоты и сами изображения сохранены |
+| Xcode UserData/Capabilities | В общем Cloud environment добавлен `mkdir -p` для отсутствующих родителей кеша. Неудача даёт только предупреждение; это не заменяет регистрацию capabilities на портале |
+| Внешние SDK | Warnings React headers/nullability, Lottie Sendable, Yandex deprecated APIs, BigoADS `.pcm`, пустые object symbols и peer dependencies не остановили Archive. По этим логам обновлять lockfiles для исправления экспорта не требуется |
+| Cloud toolchain | Missing Metal search path и служебные сообщения относятся к образу 27.2; ошибки компиляции/линковки за ними не последовали |
+
+Локально после правок прошли **71 тест в трёх suites** (Cloud/source/widget),
+preflight, проверка JSON/ссылок иконок и Bash-синтаксиса. Новый native Archive
+и проверка исправленных Swift/asset diagnostics требуют macOS/Xcode и ещё
+не выполнялись. Оригинальные distribution logs хранятся отдельно от Git;
+в документации сохранены только необходимые диагностические сведения.
+
+### Пользователь: проверка после действий владельца
+
+Для проверки изменений только в Developer Account можно повторить сборку 12
+на прежнем SHA: signing использует состояние портала на момент экспорта.
+Чтобы проверить также правки репозитория, опубликовать новый коммит в нужной
+ветке и новый `release-*` или `testflight-*` тег на нём либо вручную выбрать
+этот коммит в Cloud. Повтор старого SHA не получит новые правки файлов.
+
+Проверить App Store export и обработку бинарного файла **2.6.0 (новый номер
+CI_BUILD_NUMBER)** в существующей MpeiApp. Далее для публичного TestFlight
+проверить внешнюю группу/public link и beta review; для релиза выбрать
+принятую сборку и отправить её на App Review. Успешность сборки 12 не означает
+успешного экспорта: у неё выгрузка в ASC не состоялась.
 
 ## Текущее состояние: Default и Xcode 27.2 (05.11.2026)
 
