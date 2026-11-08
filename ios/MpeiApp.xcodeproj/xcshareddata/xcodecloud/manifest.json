@@ -1,0 +1,9 @@
+{
+  "id" : "b5ce8ca1-3c58-4b72-baed-adf10113f2e3",
+  "targets" : [
+    {
+      "id" : "3c16a79a-a5b5-406e-a2ef-4eaf64d211b2",
+      "name" : "MpeiApp"
+    }
+  ]
+}

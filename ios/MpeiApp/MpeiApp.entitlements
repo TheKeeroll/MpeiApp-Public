@@ -10,7 +10,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.mpeiapp</string>
+		<string>group.org.mpeiapp</string>
 	</array>
 </dict>
 </plist>
