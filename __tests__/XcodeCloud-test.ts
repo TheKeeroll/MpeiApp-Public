@@ -154,9 +154,29 @@ test('release metadata rejects a preview version or a mismatched native target',
 
 test('archive metadata verifies both targets, marketing/build numbers and the minimum iOS', () => {
   const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6.0'};
-  const widget = {...app, CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidget', MinimumOSVersion: '17.0'};
+  const widget = {...app, CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidgets', MinimumOSVersion: '17.0'};
   expect(() => cloud.validateArchiveMetadata(app, widget, version, '122')).not.toThrow();
   expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleVersion: '1'}, version, '122')).toThrow('widget version/build');
   expect(() => cloud.validateArchiveMetadata({...app, MinimumOSVersion: '16.0'}, widget, version, '122')).toThrow('MinimumOSVersion');
   expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleIdentifier: 'another.bundle'}, version, '122')).toThrow('bundle identifier');
+  expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidget'}, version, '122')).toThrow('bundle identifier');
+});
+
+test('the widget runtime suite, app/extension entitlements and Cloud archive check agree with the native project', () => {
+  const contract = readFileSync(join(repository, 'ios/ScheduleWidgetCore/Sources/ScheduleWidgetCore/ScheduleWidgetData.swift'), 'utf8');
+  const appGroup = contract.match(/static let appGroup\s*=\s*"([^"]+)"/)?.[1];
+  expect(appGroup).toMatch(/^group\..+/);
+  for (const path of ['ios/MpeiApp/MpeiApp.entitlements', 'ios/ScheduleWidgetExtension.entitlements']) {
+    const plist = readFileSync(join(repository, path), 'utf8');
+    const groups = plist.match(/<key>com\.apple\.security\.application-groups<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1];
+    expect(groups).toBeDefined();
+    expect([...groups!.matchAll(/<string>([^<]+)<\/string>/g)].map(match => match[1])).toEqual([appGroup]);
+  }
+  const project = readFileSync(join(repository, projectFile), 'utf8');
+  const widgetIDs = [...project.matchAll(/\bPRODUCT_BUNDLE_IDENTIFIER\s*=\s*"?(ru\.NoobDragons\.MpeiApp\.[^;"\s]+)"?;/g)].map(match => match[1]);
+  expect(widgetIDs).toHaveLength(2); // Debug and Release must both pass post-archive verification.
+  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6'};
+  for (const identifier of widgetIDs) {
+    expect(() => cloud.validateArchiveMetadata(app, {...app, CFBundleIdentifier: identifier, MinimumOSVersion: '17.0'}, version, '122')).not.toThrow();
+  }
 });

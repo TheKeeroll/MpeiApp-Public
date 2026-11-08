@@ -1,7 +1,7 @@
 import Foundation
 
 enum ScheduleWidgetContract {
-    static let appGroup = "group.com.mpeiapp"
+    static let appGroup = "group.org.mpeiapp"
     static let dataKey = "widgetKey"
     static let dayKey = "widgetKeyDay"
     static let kind = "ScheduleWidget"
