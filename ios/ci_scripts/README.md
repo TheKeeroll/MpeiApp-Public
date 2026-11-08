@@ -6,6 +6,39 @@ Workflow собирают **один существующий продукт Mpe
 Действия участников — в [этапе 11](../../docs/v2.6.0-stage-11-xcode-cloud.md).
 Для разовой настройки Account Holder — [краткая инструкция владельцу](../../docs/v2.6.0-xcode-cloud-owner.md).
 
+## Новые идентификаторы (08.11.2026)
+
+В `b9d6073` владелец заменил занятые прежней Apple Team идентификаторы:
+
+| Назначение | Актуальное значение |
+| --- | --- |
+| Основное приложение | `ru.NoobDragons.MpeiApp` |
+| Виджет, Debug и Release | `ru.NoobDragons.MpeiApp.ScheduleWidgets` |
+| Общий контейнер app/widget | `group.org.mpeiapp` |
+| Team | `JGUC7QM6M5` |
+
+Entitlements обеих целей и Bundle ID extension уже обновлены владельцем.
+Общий `ScheduleWidgetContract.appGroup` теперь также использует новую группу:
+один Swift-файл компилируется в приложение и extension, поэтому native bridge,
+timeline provider и AppIntent-кнопки читают/пишут в один новый контейнер.
+Cloud `verify-archive` ожидает новый Bundle ID с окончанием **ScheduleWidgets**;
+имя target и файла `ScheduleWidgetExtension.appex` при этом сохраняются.
+Ключи `widgetKey`/`widgetKeyDay`, WidgetKit kind `ScheduleWidget` и формат
+данных сохранены. Android не затронут.
+
+Согласованность runtime App Group с обоими entitlements и Debug/Release Bundle
+IDs с Cloud-проверкой покрыта регрессией. Старые имена ниже в цитатах логов
+относятся к сборке 12; для настройки аккаунта использовать новые значения.
+Проверить назначение **group.org.mpeiapp** обоим актуальным App ID и обновлённый
+provisioning; результат нового Cloud-экспорта пока не подтверждён.
+
+Общий кэш старой группы автоматически не переносится: приложение повторно
+публикует доступное расписание при восстановлении аккаунта/возврате в foreground.
+После установки открыть MpeiApp и загрузить расписание; проверить пустой виджет
+до первой публикации и его обновление после неё. При обновлении существующей
+установки также проверить размещённый виджет: если старый экземпляр не
+обновляется после смены Bundle ID extension, заново добавить виджет.
+
 ## Текущее состояние: экспорт Archive и новые теги (07.11.2026)
 
 Исправление minimum iOS из `8946f03` сработало: пользователь подтвердил успешную
@@ -41,7 +74,8 @@ App Groups у основного приложения. Эти ошибки по�
 В репозитории ещё стояла `58KV3BTJAZ`; теперь Debug/Release app и widget
 согласованы с **JGUC7QM6M5**. Cloud уже переопределял Team командной строкой,
 поэтому сама замена в проекте **не устранит серверные ошибки регистрации**.
-Bundle IDs и App Group сохранены.
+На момент разбора 07.11 Bundle IDs и App Group сохранялись; актуальная замена
+от 08.11 описана выше.
 
 `verify-source.sh` снова подключён как **диагностика, всегда exit 0**.
 Он распознаёт `release-*`, `testflight-*` и прежние `ios-dev-*`, сравнивает
@@ -61,21 +95,20 @@ App Store Connect. При индивидуальном членстве Admin AS
 Developer Program; в текущей ситуации эти шаги выполняет Account Holder.
 См. [роли Apple](https://developer.apple.com/help/account/access/roles/).
 
-1. **Identifiers → App Groups:** проверить регистрацию **`group.com.mpeiapp`**
+1. **Identifiers → App Groups:** проверить регистрацию **`group.org.mpeiapp`**
    в этой Team. Если группы нет — создать её через `+ → App Groups`, указав
-   этот точный identifier. Если имя осталось у прежней Team после переноса
-   приложения, согласовать с прежним владельцем освобождение группы и её
-   регистрацию у получателя по [правилам переноса Apple](https://developer.apple.com/help/app-store-connect/transfer-an-app/overview-of-app-transfer/#apps-using-app-groups).
+   этот точный identifier. Это новая группа владельца вместо занятой прежней
+   `group.com.mpeiapp`; освобождение прежнего имени для этой конфигурации не требуется.
    Код app/bridge/widget использует одно и то же имя, поэтому произвольная
    замена только на портале не подойдёт.
 2. **Identifiers → App IDs → `ru.NoobDragons.MpeiApp`:** открыть существующий
    identifier, включить **App Groups**, нажать **Configure**, выбрать
-   **`group.com.mpeiapp`**, подтвердить назначение и сохранить изменения.
+   **`group.org.mpeiapp`**, подтвердить назначение и сохранить изменения.
    Если capability уже включена, проверить именно назначенную группу.
 3. **Identifiers → `+` → App IDs → App:** зарегистрировать **Explicit App ID**
-   с Bundle ID **`ru.NoobDragons.MpeiApp.ScheduleWidget`** и описанием, например,
+   с Bundle ID **`ru.NoobDragons.MpeiApp.ScheduleWidgets`** и описанием, например,
    `MpeiApp Schedule Widget`. Для него включить **App Groups** и через Configure
-   назначить ту же **`group.com.mpeiapp`**. Если точный ID уже есть в этой Team,
+   назначить ту же **`group.org.mpeiapp`**. Если точный ID уже есть в этой Team,
    отредактировать его. Если портал сообщает, что ID занят, передать точную
    ошибку для проверки принадлежности ID. Для виджета нужна регистрация
    identifier; отдельная карточка приложения в App Store Connect не требуется.

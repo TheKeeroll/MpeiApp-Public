@@ -195,7 +195,7 @@ function validateArchiveMetadata(app, widget, version, number) {
   };
   for (const [label, info, minimum, bundle] of [
     ['app', app, '15.6', 'ru.NoobDragons.MpeiApp'],
-    ['widget', widget, '17.0', 'ru.NoobDragons.MpeiApp.ScheduleWidget'],
+    ['widget', widget, '17.0', 'ru.NoobDragons.MpeiApp.ScheduleWidgets'],
   ]) {
     if (info.CFBundleIdentifier !== bundle) throw new Error(`The archived ${label} bundle identifier is incorrect.`);
     if (info.CFBundleShortVersionString !== version || info.CFBundleVersion !== build) {
