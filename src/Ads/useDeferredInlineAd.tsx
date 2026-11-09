@@ -43,12 +43,12 @@ export const useDeferredInlineAd = (
     },
   });
   React.useEffect(() => {
-    if (!visitActive) {
+    if (!visitActive || !adsEnabled) {
       granted.current = false;
       attempt.current = {started: false, failed: false};
       setAllowed(false);
     }
-  }, [visitActive]);
+  }, [adsEnabled, visitActive]);
 
   return {
     viewportRef: viewport.viewportRef,

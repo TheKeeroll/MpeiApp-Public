@@ -1,11 +1,15 @@
 import React from 'react';
-import {Alert, DeviceEventEmitter} from 'react-native';
+import {AppState, DeviceEventEmitter} from 'react-native';
 import {MobileAds, type AdRequestParams} from 'yandex-mobile-ads';
 import BARSAPI from '../Common/Globals';
 import {APP_EVENTS, VpnEntitlementChangedEvent, VpnEntitlementStatus} from '../Common/AppEvents';
 import {STORAGE_KEYS} from '../Common/Constants';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
 import {createAdsTargeting} from './AdTargeting';
+import AdPrivacyModal from './AdPrivacyModal';
+import {
+  type AdPrivacyPreferences, DEFAULT_AD_PRIVACY, readAdPrivacy, saveAdPrivacy,
+} from './AdPrivacyPreferences';
 import {getYandexAdUnitId} from './AdUnitIds';
 import {rewardedAdService} from './RewardedAdService';
 import {
@@ -26,12 +30,14 @@ export const AD_PLACEMENTS = YANDEX_STICKY_AD_PLACEMENTS;
 export type StickyAdPlacement = YandexStickyAdPlacement;
 
 type StickyReservedHeights = Record<StickyAdPlacement, number>;
-type SavedAdConsent = 'GRANTED' | 'DENIED';
 
 type AdsContextValue = {
   adsEnabled: boolean;
   isSdkInitialized: boolean;
   isPersonalizedTargetingEnabled: boolean;
+  isAdLocationSharingEnabled: boolean;
+  privacyRevision: number;
+  openAdPrivacySettings: () => void;
   vpnEntitlementStatus: VpnEntitlementStatus;
   createAdRequest: (placement: YandexAdUnitPlacement) => AdRequestParams | undefined;
   isStickyPlacementEnabled: (placement: StickyAdPlacement) => boolean;
@@ -50,7 +56,6 @@ const initialStickyReservedHeights: StickyReservedHeights = {
 };
 
 let mobileAdsInitializationPromise: Promise<void> | undefined;
-let consentPromptPromise: Promise<SavedAdConsent> | undefined;
 
 const normalizeVpnEntitlementStatus = (value: unknown): VpnEntitlementStatus => {
   switch (value) {
@@ -82,45 +87,23 @@ const getCachedVpnEntitlementStatus = (): VpnEntitlementStatus => {
   }
 };
 
-const getSavedAdConsent = (): SavedAdConsent | undefined => {
-  const consent = BARSAPI.mStorage.getString(STORAGE_KEYS.AD_USER_CONSENT);
-  return consent === 'GRANTED' || consent === 'DENIED' ? consent : undefined;
+const applySdkPrivacy = (preferences: AdPrivacyPreferences) => {
+  MobileAds.setUserConsent(preferences.personalizedAds);
+  MobileAds.setLocationConsent(preferences.personalizedAds && preferences.locationSharing);
+  MobileAds.setAgeRestrictedUser(!preferences.adultConfirmed);
 };
 
-const requestAdConsent = (): Promise<SavedAdConsent> => {
-  const savedConsent = getSavedAdConsent();
-  if (savedConsent) {
-    return Promise.resolve(savedConsent);
-  }
-
-  if (!consentPromptPromise) {
-    consentPromptPromise = new Promise(resolve => {
-      Alert.alert(
-        'Реклама и персонализация',
-        'Разрешить обработку данных для персонализации рекламы? При согласии приложение передаёт приблизительный возраст, определённый пол и, если вы используете карту, координаты только текущего сеанса. При отказе реклама останется неперсонализированной.',
-        [
-          {text: 'Не разрешать', style: 'cancel', onPress: () => resolve('DENIED')},
-          {text: 'Разрешить', onPress: () => resolve('GRANTED')},
-        ],
-        {cancelable: false},
-      );
-    });
-  }
-
-  return consentPromptPromise;
-};
-
-const initializeMobileAds = (consent: SavedAdConsent): Promise<void> => {
-  const userConsent = consent === 'GRANTED';
-  MobileAds.setUserConsent(userConsent);
-  MobileAds.setLocationConsent(userConsent);
+const initializeMobileAds = (): Promise<void> => {
 
   if (__DEV__) {
     MobileAds.enableLogging(true);
   }
 
   if (!mobileAdsInitializationPromise) {
-    mobileAdsInitializationPromise = Promise.resolve(MobileAds.initialize()).then(() => undefined);
+    mobileAdsInitializationPromise = Promise.resolve(MobileAds.initialize()).then(() => undefined).catch(error => {
+      mobileAdsInitializationPromise = undefined;
+      throw error;
+    });
   }
 
   return mobileAdsInitializationPromise;
@@ -130,6 +113,9 @@ const disabledAdsContext: AdsContextValue = {
   adsEnabled: false,
   isSdkInitialized: false,
   isPersonalizedTargetingEnabled: false,
+  isAdLocationSharingEnabled: false,
+  privacyRevision: 0,
+  openAdPrivacySettings: () => undefined,
   vpnEntitlementStatus: 'NONE',
   createAdRequest: () => undefined,
   isStickyPlacementEnabled: () => false,
@@ -151,7 +137,12 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
   );
   const [stickyClaims, setStickyClaims] = React.useState<StickyAdPlacement[]>([]);
   const [sessionLocation, setSessionLocationState] = React.useState<MapCoordinates | null>(null);
-  const [consent, setConsent] = React.useState<SavedAdConsent | undefined>(getSavedAdConsent);
+  const sessionLocationRef = React.useRef<MapCoordinates | null>(null);
+  const [consent, setConsent] = React.useState<AdPrivacyPreferences | undefined>(readAdPrivacy);
+  const [editingPrivacy, setEditingPrivacy] = React.useState(false);
+  const [privacyRevision, setPrivacyRevision] = React.useState(0);
+  const consentRef = React.useRef(consent);
+  consentRef.current = consent;
   const [isSdkInitialized, setSdkInitialized] = React.useState(false);
   const [targetingRevision, setTargetingRevision] = React.useState(0);
 
@@ -164,33 +155,60 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
       },
     );
     const loginSubscription = DeviceEventEmitter.addListener('LoginState', () => {
+      sessionLocationRef.current = null;
+      setSessionLocationState(null);
       setTargetingRevision(previous => previous + 1);
+    });
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      // Never reuse map coordinates after a background permission change.
+      if (state !== 'active') {
+        sessionLocationRef.current = null;
+        setSessionLocationState(null);
+      }
     });
 
     return () => {
       vpnSubscription.remove();
       loginSubscription.remove();
+      appStateSubscription.remove();
     };
   }, []);
 
   const entitlementAllowsAds = isAdEntitlementEligible(vpnEntitlementStatus, adsRemovalUnlocked);
+  const privacyModalVisible = editingPrivacy || (entitlementAllowsAds && !consent);
+  const requestsBlocked = React.useRef(true);
+
+  const openAdPrivacySettings = React.useCallback(() => {
+    requestsBlocked.current = true;
+    rewardedAdService.reset();
+    setEditingPrivacy(true);
+  }, []);
+
+  const updatePrivacy = React.useCallback((preferences: AdPrivacyPreferences) => {
+    const saved = saveAdPrivacy(preferences);
+    // Revoke SDK access and invalidate outstanding JS requests synchronously.
+    requestsBlocked.current = true;
+    consentRef.current = saved;
+    applySdkPrivacy(saved);
+    rewardedAdService.reset();
+    sessionLocationRef.current = null;
+    setSessionLocationState(null);
+    setSdkInitialized(false);
+    setConsent(saved);
+    setPrivacyRevision(revision => revision + 1);
+    setEditingPrivacy(false);
+  }, []);
 
   React.useEffect(() => {
-    if (!entitlementAllowsAds) {
+    applySdkPrivacy(consent ?? DEFAULT_AD_PRIVACY);
+    if (!entitlementAllowsAds || !consent) {
       return;
     }
 
     let isMounted = true;
     const startSdk = async () => {
       try {
-        const resolvedConsent = await requestAdConsent();
-        BARSAPI.mStorage.set(STORAGE_KEYS.AD_USER_CONSENT, resolvedConsent);
-        if (!isMounted) {
-          return;
-        }
-
-        setConsent(resolvedConsent);
-        await initializeMobileAds(resolvedConsent);
+        await initializeMobileAds();
         if (isMounted) {
           setSdkInitialized(true);
         }
@@ -206,9 +224,10 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     return () => {
       isMounted = false;
     };
-  }, [entitlementAllowsAds]);
+  }, [consent, entitlementAllowsAds]);
 
-  const adsEnabled = entitlementAllowsAds && isSdkInitialized;
+  const adsEnabled = entitlementAllowsAds && isSdkInitialized && !!consent && !privacyModalVisible;
+  requestsBlocked.current = !adsEnabled;
   React.useEffect(() => {
     if (!adsEnabled) rewardedAdService.reset();
   }, [adsEnabled]);
@@ -230,17 +249,19 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
   }, []);
 
   const setSessionLocation = React.useCallback((location: MapCoordinates) => {
-    if (!isValidMapCoordinates(location)) {
+    if (!consentRef.current?.personalizedAds || !consentRef.current.locationSharing
+      || AppState.currentState !== 'active' || !isValidMapCoordinates(location)) {
       return;
     }
 
-    setSessionLocationState(previous => (
-      previous?.lat === location.lat && previous.lon === location.lon ? previous : {...location}
-    ));
+    const previous = sessionLocationRef.current;
+    if (previous?.lat === location.lat && previous.lon === location.lon) return;
+    sessionLocationRef.current = {...location};
+    setSessionLocationState(sessionLocationRef.current);
   }, []);
 
   const createAdRequest = React.useCallback((placement: YandexAdUnitPlacement): AdRequestParams | undefined => {
-    if (!adsEnabled) {
+    if (!adsEnabled || requestsBlocked.current) {
       return undefined;
     }
 
@@ -252,8 +273,9 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     return {
       adUnitId,
       targeting: createAdsTargeting(
-        consent === 'GRANTED' ? sessionLocation : undefined,
-        consent === 'GRANTED',
+        consentRef.current?.locationSharing ? sessionLocationRef.current : undefined,
+        consentRef.current?.personalizedAds === true,
+        consentRef.current?.locationSharing === true,
       ),
     };
   }, [adsEnabled, consent, sessionLocation, targetingRevision]);
@@ -262,7 +284,10 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
   const contextValue = React.useMemo<AdsContextValue>(() => ({
     adsEnabled,
     isSdkInitialized,
-    isPersonalizedTargetingEnabled: consent === 'GRANTED',
+    isPersonalizedTargetingEnabled: consent?.personalizedAds === true,
+    isAdLocationSharingEnabled: consent?.locationSharing === true,
+    privacyRevision,
+    openAdPrivacySettings,
     vpnEntitlementStatus,
     createAdRequest,
     isStickyPlacementEnabled: placement => adsEnabled && activeStickyPlacement === placement,
@@ -276,6 +301,8 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     consent,
     createAdRequest,
     isSdkInitialized,
+    openAdPrivacySettings,
+    privacyRevision,
     registerStickyPlacement,
     setSessionLocation,
     setStickyReservedHeight,
@@ -283,7 +310,11 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     vpnEntitlementStatus,
   ]);
 
-  return <AdsContext.Provider value={contextValue}>{children}</AdsContext.Provider>;
+  return <AdsContext.Provider value={contextValue}>
+    {children}
+    {privacyModalVisible && <AdPrivacyModal preferences={consent ?? DEFAULT_AD_PRIVACY} onSave={updatePrivacy}
+      onCancel={consent ? () => setEditingPrivacy(false) : undefined}/>}
+  </AdsContext.Provider>;
 };
 
 export const useAds = (): AdsContextValue => React.useContext(AdsContext);

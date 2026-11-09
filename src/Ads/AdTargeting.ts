@@ -1,7 +1,6 @@
 import {Gender, Location, type AdTargetingParams} from 'yandex-mobile-ads';
 import BARSAPI from '../Common/Globals';
 import {isValidMapCoordinates, type MapCoordinates} from '../Common/MapRegion';
-import {getAdFallbackLocation} from './AdFallbackLocation';
 
 const DEFAULT_AGE = 19;
 
@@ -52,17 +51,18 @@ export const getTargetedGender = (firstName?: string): Gender => (
  */
 export const createAdsTargeting = (
   sessionLocation?: MapCoordinates | null,
-  includePersonalData = true,
+  includePersonalData = false,
+  includeLocation = false,
 ): AdTargetingParams => {
-  const location = includePersonalData && sessionLocation && isValidMapCoordinates(sessionLocation)
+  const location = includePersonalData && includeLocation && sessionLocation && isValidMapCoordinates(sessionLocation)
     ? sessionLocation
-    : getAdFallbackLocation();
+    : undefined;
 
   return {
     ...(includePersonalData ? {
       age: String(getTargetedAge(BARSAPI.mCurrentData.student?.group)),
       gender: getTargetedGender(BARSAPI.mCurrentData.student?.name),
     } : {}),
-    location: new Location(location.lat, location.lon),
+    ...(location ? {location: new Location(location.lat, location.lon)} : {}),
   };
 };

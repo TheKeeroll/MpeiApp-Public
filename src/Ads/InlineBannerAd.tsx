@@ -20,7 +20,7 @@ const StartedBanner: React.FC<React.ComponentProps<typeof BannerView> & {onStart
   return <BannerView {...props}/>;
 };
 
-const InlineBannerAd: React.FC<InlineBannerAdProps> = ({
+const InlineBannerSession: React.FC<InlineBannerAdProps> = ({
   placement, maxHeight = 250, style, loadEnabled = true, isLoadAllowedNow, attempt,
 }) => {
   const {adsEnabled, createAdRequest} = useAds();
@@ -111,6 +111,12 @@ const InlineBannerAd: React.FC<InlineBannerAdProps> = ({
       ) : null}
     </View>
   );
+};
+
+const InlineBannerAd: React.FC<InlineBannerAdProps> = props => {
+  const {adsEnabled, privacyRevision} = useAds();
+  // A previous native request must never survive a change of privacy choices.
+  return adsEnabled ? <InlineBannerSession key={privacyRevision} {...props}/> : null;
 };
 
 export default InlineBannerAd;

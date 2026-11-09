@@ -181,7 +181,8 @@ export const STORAGE_KEYS = {
   ADDITIONAL_DATA: 'additionalData',
   VPN_VERIFICATION_STATE: 'vpnVerificationState',
   VPN_DEMO_ACCESS: 'vpnDemoAccess',
-  AD_USER_CONSENT: 'adUserConsent'
+  AD_USER_CONSENT: 'adUserConsent',
+  AD_PRIVACY_PREFERENCES: 'adPrivacyPreferences'
 }
 
 export const TEACHER_RANKS: string[] = [
