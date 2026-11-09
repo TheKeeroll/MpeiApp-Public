@@ -7,7 +7,7 @@ type StickyBannerAdProps = {
   placement: StickyAdPlacement;
 };
 
-const StickyBannerAd: React.FC<StickyBannerAdProps> = ({placement}) => {
+const StickyBannerSession: React.FC<StickyBannerAdProps> = ({placement}) => {
   const {adsEnabled, createAdRequest, setStickyReservedHeight} = useAds();
   const [availableWidth, setAvailableWidth] = React.useState(0);
   const [adSize, setAdSize] = React.useState<BannerAdSize | null>(null);
@@ -82,6 +82,11 @@ const StickyBannerAd: React.FC<StickyBannerAdProps> = ({placement}) => {
       ) : null}
     </View>
   );
+};
+
+const StickyBannerAd: React.FC<StickyBannerAdProps> = props => {
+  const {adsEnabled, privacyRevision} = useAds();
+  return adsEnabled ? <StickyBannerSession key={privacyRevision} {...props}/> : null;
 };
 
 export default StickyBannerAd;

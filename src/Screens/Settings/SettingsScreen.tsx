@@ -43,6 +43,8 @@ import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import DragoNetPromoCard from './DragoNetPromoCard';
 import AutomaticQuestionnairesSwitch from '../../Questionnaires/AutomaticQuestionnairesSwitch';
 import {useDragoNetCardScroll} from '../../Vpn/useDragoNetCardScroll';
+import AdPrivacySettingsButton from '../../Ads/AdPrivacySettingsButton';
+import {PRIVACY_POLICY_URL, TERMS_OF_USE_URL} from '../../Ads/AdPrivacyPreferences';
 
 const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
@@ -105,6 +107,7 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                             style={{width: '90%'}} contentContainerStyle={{paddingBottom: 24}}>
                     <ListSeparator title={'Настройки'}/>
                     <AutomaticQuestionnairesSwitch/>
+                    <AdPrivacySettingsButton/>
                     <ListSeparator title={'Оформление'}/>
                     <ListSwitch icon={
                         <McIcon.default name={'theme-light-dark'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', color: withOpacity(colors.text, 80)}}/>
@@ -222,6 +225,20 @@ const SettingsScreen: React.FC<{navigation: any, route: any}> = (props) => {
                                 <TouchableOpacity onPress={()=>Linking.openURL('https://github.com/TheKeeroll/MpeiApp-Public')}>
                                     <FIcon.default name={'github'} adjustsFontSizeToFit size={25} style={{alignSelf: 'center', justifySelf: 'flex-start', color: colors.textUnderline}}/>
                                     <ListText textStyle={{color: colors.textUnderline, marginBottom: 16}} title={'Проект на GitHub'}/>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        <View style={{width: '100%', flexDirection: 'row', alignItems: 'flex-start', marginTop: 14, marginBottom: 8}}>
+                            <View style={{width: '50%', alignItems: 'center'}}>
+                                <TouchableOpacity accessibilityRole="link" onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} style={{minHeight: 48, paddingHorizontal: 6}}>
+                                    <McIcon.default name="shield-lock-outline" size={25} style={{alignSelf: 'center', color: colors.textUnderline}}/>
+                                    <ListText textStyle={{color: colors.textUnderline}} title={'Политика\nконфиденциальности'}/>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={{width: '50%', alignItems: 'center'}}>
+                                <TouchableOpacity accessibilityRole="link" onPress={() => Linking.openURL(TERMS_OF_USE_URL)} style={{minHeight: 48, paddingHorizontal: 6}}>
+                                    <McIcon.default name="file-document-outline" size={25} style={{alignSelf: 'center', color: colors.textUnderline}}/>
+                                    <ListText textStyle={{color: colors.textUnderline}} title={'Условия\nиспользования'}/>
                                 </TouchableOpacity>
                             </View>
                         </View>
