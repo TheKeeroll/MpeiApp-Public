@@ -371,6 +371,10 @@ export default class BARS{
     return CreateBARSCommonHttpHeader(this.EnsureBARSBrowserProfile())
   }
 
+  public GetBARSBrowserProfile(): BARSBrowserProfile {
+    return {...this.EnsureBARSBrowserProfile()}
+  }
+
   public GetBARSLoginHeaders() {
     return CreateBARSLoginHeader(this.EnsureBARSBrowserProfile())
   }

@@ -23,6 +23,7 @@ import {LOADING_PROGRESS_KEYS} from "./src/Loading/LoadingProgressKeys";
 import './src/Vpn/VpnSubscriptionRuntime';
 import {useIOSScheduleWidgetSync} from './src/Widgets/useIOSScheduleWidgetSync';
 import {useAndroidScheduleWidgetSync} from './src/Widgets/useAndroidScheduleWidgetSync';
+import AppUpdateCheck from './src/Updates/AppUpdateCheck';
 const App: React.FC = () =>{
 
   const {colors} = useTheme<CustomTheme>()
@@ -40,7 +41,8 @@ const App: React.FC = () =>{
     return () => subscription.remove()
   }, [])
 
-  switch (loggedIn){
+  const renderScreen = () => {
+    switch (loggedIn){
       case "NOT_LOGGED_IN" : return <LoginScreenWrapper/>
       case "STUDENTS_NOT_FOUND" : return <LoginScreenWrapper/>
       case "QUESTIONNAIRES_REQUIRED": return <MandatoryQuestionnairesScreen/>
@@ -64,7 +66,9 @@ const App: React.FC = () =>{
         </SafeAreaView>
       )
       case "LOGGED_IN": return <Navigator/>
+    }
   }
+  return <>{renderScreen()}<AppUpdateCheck loginState={loggedIn}/></>;
 }
 
 
