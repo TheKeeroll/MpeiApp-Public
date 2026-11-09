@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  AccessibilityInfo, Animated, AppState, Linking, Modal, ScrollView,
+  Linking, Modal, ScrollView,
   StyleSheet, Switch, Text, TouchableOpacity, View,
 } from 'react-native';
 import {useTheme} from 'react-native-paper';
@@ -10,51 +10,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {type CustomTheme, withOpacity} from '../Themes/Themes';
 import {requestForegroundLocationPermission} from '../Common/LocationPermission';
 import {type AdPrivacyPreferences, PRIVACY_POLICY_URL} from './AdPrivacyPreferences';
+import AnimatedActionButton from '../Screens/CommonComponents/AnimatedActionButton';
 
 type Props = {
   preferences: AdPrivacyPreferences;
   onSave: (preferences: AdPrivacyPreferences) => void;
   onCancel?: () => void;
-};
-
-const ConsentButton: React.FC<{disabled: boolean; onPress: () => void}> = ({disabled, onPress}) => {
-  const {colors} = useTheme<CustomTheme>();
-  const shine = React.useRef(new Animated.Value(0)).current;
-  const [reduceMotion, setReduceMotion] = React.useState(true);
-  const [active, setActive] = React.useState(AppState.currentState === 'active');
-  React.useEffect(() => {
-    let mounted = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then(value => {
-      if (mounted) setReduceMotion(value);
-    }).catch(() => undefined);
-    const motion = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    const appState = AppState.addEventListener('change', value => setActive(value === 'active'));
-    return () => { mounted = false; motion.remove(); appState.remove(); };
-  }, []);
-  React.useEffect(() => {
-    shine.setValue(0);
-    if (disabled || reduceMotion || !active) return;
-    const animation = Animated.loop(Animated.sequence([
-      Animated.timing(shine, {toValue: 1, duration: 1800, useNativeDriver: true, isInteraction: false}),
-      Animated.delay(1600),
-    ]));
-    animation.start();
-    return () => animation.stop();
-  }, [active, disabled, reduceMotion, shine]);
-  return <TouchableOpacity accessibilityRole="button" accessibilityLabel="Согласиться"
-    accessibilityState={{disabled}} disabled={disabled} onPress={onPress} activeOpacity={0.8}
-    style={[styles.accept, {
-      backgroundColor: disabled ? colors.surface : colors.accent,
-      borderColor: disabled ? withOpacity(colors.text, 20) : colors.accent,
-      shadowColor: colors.accent, shadowOpacity: disabled ? 0 : 0.25,
-    }]}>
-    {!disabled && !reduceMotion && <Animated.View pointerEvents="none" style={[styles.shine, {
-      transform: [{translateX: shine.interpolate({inputRange: [0, 1], outputRange: [-100, 380]})}, {rotate: '22deg'}],
-      opacity: shine.interpolate({inputRange: [0, 0.2, 0.8, 1], outputRange: [0, 0.45, 0.45, 0]}),
-    }]}/>}
-    <Icon name="check-circle-outline" size={21} color={disabled ? withOpacity(colors.text, 45) : '#102014'} accessible={false}/>
-    <Text style={{color: disabled ? withOpacity(colors.text, 45) : '#102014', fontSize: 17, fontWeight: '700', flexShrink: 1, textAlign: 'center'}}>Согласиться</Text>
-  </TouchableOpacity>;
 };
 
 /** Mounted per opening, so unsaved choices never leak into SDK consent. */
@@ -158,7 +119,7 @@ const AdPrivacyModal: React.FC<Props> = ({preferences, onSave, onCancel}) => {
               style={[styles.decline, {borderColor: withOpacity(colors.text, 35)}]}>
               <Text style={{color: colors.text, fontSize: 16, fontWeight: '600'}}>Отказаться</Text>
             </TouchableOpacity>
-            <ConsentButton disabled={!adultConfirmed} onPress={() => { if (adultConfirmed) save(true); }}/>
+            <AnimatedActionButton title="Согласиться" icon="check-circle-outline" disabled={!adultConfirmed} onPress={() => { if (adultConfirmed) save(true); }}/>
           </View>
         </View>
       </SafeAreaView>
@@ -179,9 +140,7 @@ const styles = StyleSheet.create({
   location: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 14, borderTopWidth: 1},
   footer: {flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16, borderTopWidth: 1},
   decline: {flex: 1, minHeight: 52, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 8},
-  accept: {flex: 1.4, minHeight: 60, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center',
-    borderRadius: 18, borderWidth: 1, padding: 10, overflow: 'hidden', shadowOffset: {width: 0, height: 3}, shadowRadius: 10},
-  shine: {position: 'absolute', left: 0, top: -30, bottom: -30, width: 40, backgroundColor: '#FFFFFF'},
+
 });
 
 export default AdPrivacyModal;

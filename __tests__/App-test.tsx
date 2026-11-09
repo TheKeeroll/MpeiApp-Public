@@ -37,6 +37,7 @@ jest.mock('../src/Screens/Login/LoginScreen', () => ({
 jest.mock('../src/Screens/Login/AF2Screen', () => () => <></>);
 jest.mock('../src/Screens/Login/MandatoryQuestionnairesScreen', () => () => <></>);
 jest.mock('../src/Ads/AdsProvider', () => ({AdsProvider: passThrough}));
+jest.mock('../src/Updates/AppUpdateCheck', () => () => null);
 jest.mock('../src/Loyalty/LoyaltyProvider', () => ({LoyaltyProvider: passThrough}));
 jest.mock('../src/Loyalty/TokenBalanceBadge', () => () => <></>);
 jest.mock('../src/Vpn/VpnSubscriptionRuntime', () => ({}));

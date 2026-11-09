@@ -36,6 +36,7 @@ type AdsContextValue = {
   isSdkInitialized: boolean;
   isPersonalizedTargetingEnabled: boolean;
   isAdLocationSharingEnabled: boolean;
+  isPrivacyModalVisible: boolean;
   privacyRevision: number;
   openAdPrivacySettings: () => void;
   vpnEntitlementStatus: VpnEntitlementStatus;
@@ -114,6 +115,7 @@ const disabledAdsContext: AdsContextValue = {
   isSdkInitialized: false,
   isPersonalizedTargetingEnabled: false,
   isAdLocationSharingEnabled: false,
+  isPrivacyModalVisible: false,
   privacyRevision: 0,
   openAdPrivacySettings: () => undefined,
   vpnEntitlementStatus: 'NONE',
@@ -286,6 +288,7 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     isSdkInitialized,
     isPersonalizedTargetingEnabled: consent?.personalizedAds === true,
     isAdLocationSharingEnabled: consent?.locationSharing === true,
+    isPrivacyModalVisible: privacyModalVisible,
     privacyRevision,
     openAdPrivacySettings,
     vpnEntitlementStatus,
@@ -304,6 +307,7 @@ export const AdsProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     openAdPrivacySettings,
     privacyRevision,
     registerStickyPlacement,
+    privacyModalVisible,
     setSessionLocation,
     setStickyReservedHeight,
     stickyReservedHeights,

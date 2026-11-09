@@ -1,5 +1,10 @@
 import { Dimensions } from "react-native";
 
+export const APP_STORE_PAGES = {
+  android: {name: 'Google Play', url: 'https://play.google.com/store/apps/details?id=com.mpeiapp'},
+  ios: {name: 'App Store', url: 'https://apps.apple.com/ru/app/mpeiapp/id1618910681'},
+} as const;
+
 export const URLS = {
   BARS_MAIN: 'https://bars.mpei.ru/bars_web/',
   BARS_MULTI_ACCOUNT: 'https://bars.mpei.ru/bars_web/ST/Student/ListStudent',
@@ -77,6 +82,15 @@ export const BARS_BROWSER_PROFILES: readonly BARSBrowserProfile[] = [
 ]
 
 const DEFAULT_BARS_BROWSER_PROFILE = BARS_BROWSER_PROFILES[0]!
+
+/** Public store pages reuse only the browser identity, never BARS session headers. */
+export const CreateAppStoreHeaders = (profile: BARSBrowserProfile) => ({
+  ...profile,
+  accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
+  'accept-language': 'ru,en;q=0.9',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+});
 
 const CreateBARSBrowserSpecificHeaders = (
   profile: BARSBrowserProfile,
