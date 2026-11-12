@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="99" height="24" viewBox="0 0 99 24" role="img" aria-labelledby="title">
+  <title id="title">Node.js: 24</title>
+  <clipPath id="corners"><rect width="99" height="24" rx="4"/></clipPath>
+  <g clip-path="url(#corners)">
+    <path fill="#303746" d="M0 0h63v24H0z"/>
+    <path fill="#4B7D34" d="M63 0h36v24H63z"/>
+    <path fill="#FFFFFF" fill-opacity=".08" d="M0 0h99v1H0z"/>
+  </g>
+  <g font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">
+    <text x="31.5" y="16" fill="#FFFFFF">Node.js</text>
+    <text x="81" y="16" fill="#FFFFFF">24</text>
+  </g>
+</svg>
