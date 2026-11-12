@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="24" viewBox="0 0 120 24" role="img" aria-labelledby="title">
+  <title id="title">Proxy: 93 tests</title>
+  <clipPath id="corners"><rect width="120" height="24" rx="4"/></clipPath>
+  <g clip-path="url(#corners)">
+    <path fill="#303746" d="M0 0h53v24H0z"/>
+    <path fill="#147D6F" d="M53 0h67v24H53z"/>
+    <path fill="#FFFFFF" fill-opacity=".08" d="M0 0h120v1H0z"/>
+  </g>
+  <g font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">
+    <text x="26.5" y="16" fill="#FFFFFF">Proxy</text>
+    <text x="86.5" y="16" fill="#FFFFFF">93 tests</text>
+  </g>
+</svg>

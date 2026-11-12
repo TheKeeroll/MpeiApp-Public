@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="102" height="24" viewBox="0 0 102 24" role="img" aria-labelledby="title">
+  <title id="title">license: MIT</title>
+  <clipPath id="corners"><rect width="102" height="24" rx="4"/></clipPath>
+  <g clip-path="url(#corners)">
+    <path fill="#303746" d="M0 0h59v24H0z"/>
+    <path fill="#F59E0B" d="M59 0h43v24H59z"/>
+    <path fill="#FFFFFF" fill-opacity=".08" d="M0 0h102v1H0z"/>
+  </g>
+  <g font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">
+    <text x="29.5" y="16" fill="#FFFFFF">license</text>
+    <text x="80.5" y="16" fill="#29200A">MIT</text>
+  </g>
+</svg>
