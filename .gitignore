@@ -88,3 +88,7 @@ src/config/Secrets.ts
 /vpn-subscription-proxy/dist/
 /ios/ScheduleWidgetCore/.build/
 /ios/ScheduleWidgetCore/.swiftpm/
+
+# Local planning documents
+/docs/update_plans/
+/docs/roadmap/
