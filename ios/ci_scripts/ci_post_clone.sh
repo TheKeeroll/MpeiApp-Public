@@ -44,4 +44,5 @@ printf '\n[5/5] Synchronize React Native Pods and install locked dependencies\n'
 node scripts/migrate-rn-pods.cjs "$MPEIAPP_BUNDLER_VERSION"
 cd ios
 bundle "_${MPEIAPP_BUNDLER_VERSION}_" exec pod install --deployment
+node ../scripts/pod-lockfile.cjs print
 printf '[OK] Cloud dependencies and client configuration ready.\n'

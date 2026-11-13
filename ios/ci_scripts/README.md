@@ -29,7 +29,7 @@ Entitlements, App IDs в Developer Account, общий ScheduleWidgetContract
 
 - ci_post_clone устанавливает Node 24, Yarn 1.22.22, Ruby 3.3/Bundler,
   зависимости из frozen lockfiles и запускает `pod install --deployment`.
-  Переход на RN 0.88.1 с прежнего Podfile.lock обрабатывается разовым resolver ниже.
+  Переход на RN 0.88.1 / Ads 8.6.0 с прежнего Podfile.lock обрабатывается разовым resolver ниже.
 - Генератор создаёт локальные Secrets.ts/Swift initializer и Node env из Cloud
   Secret variables; сообщения не содержат значений.
 - verify-source диагностирует CI event/branch/tag и доступную локальную историю.
@@ -45,26 +45,47 @@ Podfile post_install после React Native поднимает до 15.6 бол
 Более высокие минимумы сохраняются. Старый bitcode_strip отсутствующих библиотек
 удалён; native SDK медиации закреплены в Podfile.lock.
 
-## Разовая миграция Pods на React Native 0.88.1 в Cloud
+## Разовая миграция Pods на RN 0.88.1 / Ads 8.6.0 в Cloud
 
 После frozen-установки Yarn hook вызывает [migrate-rn-pods.cjs](../../scripts/migrate-rn-pods.cjs).
-Если React-Core, Reanimated, Worklets и Gesture Handler уже согласованы с package.json,
-resolver не запускается. В остальных случаях разрешён только переход с известного
-Podfile.lock на закреплённые RN 0.88.1 / Reanimated 4.7.1 / Worklets 0.13.1 /
-Gesture Handler 3.4.0. Проверяется SHA-256 исходного lockfile с нормализацией CRLF.
+Если RN, Reanimated, Worklets, Gesture Handler, Yandex и адаптеры уже согласованы
+с package.json/Podfile, а Chartboost отсутствует, resolver не запускается. Иначе
+разрешён только переход с известной базы RN 0.87.1 / Ads 8.5.0 на RN 0.88.1 /
+Reanimated 4.7.1 / Worklets 0.13.1 / Gesture Handler 3.4.0 / Ads 8.6.0 и адаптеры
+BIGO 5.0.6.6 / VK 5.45.0.0. Проверяется SHA-256 исходного lockfile с нормализацией CRLF.
 
-Скрипт передаёт CocoaPods список RN pods и их зависимостей через `pod update ...
---no-repo-update`. После resolver проверяются целевые версии и неизменность версий
-остальных pods, включая рекламные SDK, карты и MMKV. Затем обязательно выполняется
-`pod install --deployment`. Неизвестный исходный lockfile, иной набор версий или
-постороннее обновление останавливают сборку. Дополнительные Cloud variables не нужны.
+Скрипт передаёт CocoaPods список RN/Ads pods и их зависимостей через `pod update ...
+--no-repo-update`; удалённые Chartboost pods в команду не входят. После resolver
+проверяются целевые версии, отсутствие Chartboost и неизменность остальных pods,
+включая карты и MMKV. Затем обязательно выполняется `pod install --deployment`.
+Неизвестная база, иной набор версий или постороннее обновление останавливают сборку.
+Дополнительные Cloud variables не нужны. Это ограниченная миграция, а не полный `pod update`.
 
-После успешного Archive hook сохраняет фактически полученный **Podfile.lock в корне
-скачиваемого `.xcarchive`**, вне подписанного приложения. Его нужно перенести в
-`ios/Podfile.lock`, проверить diff и закоммитить. После этого последующие сборки
-автоматически используют обычную deployment-установку без resolver. Пока новый
-lockfile не закоммичен, чистые Cloud checkout повторяют переход с проверенной базы.
-Это переходный механизм конкретной миграции RN, а не разрешение полного `pod update`.
+### Получение точного Podfile.lock без локального CocoaPods
+
+Сразу после deployment install, до xcodebuild, hook выводит в **ci_post_clone.log**
+полный lockfile через [pod-lockfile.cjs](../../scripts/pod-lockfile.cjs): gzip/base64,
+нумерованные фрагменты, исходную длину и SHA-256. Маркеры —
+`MPEIAPP_PODLOCK_BEGIN`, `MPEIAPP_PODLOCK_DATA`, `MPEIAPP_PODLOCK_END`.
+Данные не зависят от подписания/экспорта архива; переменные окружения с секретами
+не выводятся. Достаточно скачать лог одной задачи Build или Archive и выполнить
+из корня проекта на Windows или macOS:
+
+```powershell
+node scripts/pod-lockfile.cjs recover "путь к ci_post_clone.log" ios/Podfile.lock
+git diff -- ios/Podfile.lock
+```
+
+Инструмент проверяет полноту, порядок, длину, SHA-256 и структуру CocoaPods;
+до проверки существующий файл не меняется. Содержимое восстанавливается побайтно,
+включая checksums. После проверки diff и коммита Cloud использует deployment install
+без resolver. Пока результата нет в Git, чистый checkout повторяет миграцию с базы.
+
+В Build 16 миграция RN и Build/Archive прошли успешно, но прежнее копирование
+lockfile в `$CI_ARCHIVE_PATH` не добавило его в скачанный `.xcarchive`.
+В тех логах полного lockfile также нет; одних строк `Installing ...` недостаточно
+для восстановления checksums/графа. Копирование в архив заменено резервной копией
+в логе. Результат новой миграции Ads требует отдельного реального Cloud-прогона.
 
 ## Проверенные инструменты и установка на Mac
 
@@ -82,6 +103,7 @@ Bundler **2.4.10**. Исходный resolver релиза 2.6.0 выполне�
 export BUNDLE_FROZEN=true
 bundle _2.4.10_ install
 yarn install --frozen-lockfile --non-interactive --production=false
+node scripts/migrate-rn-pods.cjs 2.4.10
 bundle _2.4.10_ exec pod --version
 cd ios
 bundle _2.4.10_ exec pod install --deployment
@@ -96,10 +118,11 @@ Ruby metadata 3.2.2p53 в lockfile не ограничивают runtime ров�
 Gemfile допускает Ruby >= 3.2 и < 3.5. [Ruby 3.3](https://formulae.brew.sh/formula/ruby@3.3),
 [Node 24](https://formulae.brew.sh/formula/node@24).
 
-SDK медиации сохранены; устаревший bitcode_strip для отсутствующих
+Текущая медиация описана в [отдельной инструкции](../../docs/ads-mediation.md).
+Устаревший bitcode_strip для отсутствующих
 LogRocket/старых путей Hermes удалён, React Native post_install сохранён.
-Simulator и подписанный Cloud Archive проверены; итоговая сборка прошла
-внешнее тестирование и опубликована. При проблемах доступа используйте
+Для опубликованной 2.6.0 Simulator, подписанный Cloud Archive и внешнее
+тестирование были пройдены. Последующие изменения требуют собственной приёмки. При проблемах доступа используйте
 инструкцию владельца, не повторяя onboarding для обычной сборки.
 
 ## Настройки распространения и запуска
