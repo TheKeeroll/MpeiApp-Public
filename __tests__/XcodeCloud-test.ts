@@ -9,6 +9,12 @@ import ts from 'typescript';
 const cloud = require('../scripts/xcode-cloud.cjs');
 const repository = resolve(__dirname, '..');
 const version = JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')).version;
+const sceneManifest = {
+  UIApplicationSupportsMultipleScenes: false,
+  UISceneConfigurations: {
+    UIWindowSceneSessionRoleApplication: [{UISceneDelegateClassName: 'MpeiApp.SceneDelegate'}],
+  },
+};
 const projectFile = 'ios/MpeiApp.xcodeproj/project.pbxproj';
 let root: string;
 const write = (name: string, content: string) => {
@@ -153,13 +159,25 @@ test('release metadata rejects a preview version or a mismatched native target',
 });
 
 test('archive metadata verifies both targets, marketing/build numbers and the minimum iOS', () => {
-  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6.0'};
-  const widget = {...app, CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidgets', MinimumOSVersion: '17.0'};
+  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6.0', UIApplicationSceneManifest: sceneManifest};
+  const widget = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidgets', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '17.0'};
   expect(() => cloud.validateArchiveMetadata(app, widget, version, '122')).not.toThrow();
   expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleVersion: '1'}, version, '122')).toThrow('widget version/build');
   expect(() => cloud.validateArchiveMetadata({...app, MinimumOSVersion: '16.0'}, widget, version, '122')).toThrow('MinimumOSVersion');
   expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleIdentifier: 'another.bundle'}, version, '122')).toThrow('bundle identifier');
   expect(() => cloud.validateArchiveMetadata(app, {...widget, CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidget'}, version, '122')).toThrow('bundle identifier');
+});
+
+test.each([
+  undefined,
+  {...sceneManifest, UIApplicationSupportsMultipleScenes: true},
+  {...sceneManifest, UISceneConfigurations: {UIWindowSceneSessionRoleApplication: []}},
+  {...sceneManifest, UISceneConfigurations: {UIWindowSceneSessionRoleApplication: [{UISceneDelegateClassName: '$(PRODUCT_MODULE_NAME).SceneDelegate'}]}},
+  {...sceneManifest, UISceneConfigurations: {UIWindowSceneSessionRoleApplication: [{UISceneDelegateClassName: 'MpeiApp.AppDelegate'}]}},
+])('archive verification rejects a missing, unsupported or unexpanded scene configuration (%#)', manifest => {
+  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6', UIApplicationSceneManifest: manifest};
+  const widget = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp.ScheduleWidgets', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '17.0'};
+  expect(() => cloud.validateArchiveMetadata(app, widget, version, '122')).toThrow('single MpeiApp.SceneDelegate scene');
 });
 
 test('the widget runtime suite, app/extension entitlements and Cloud archive check agree with the native project', () => {
@@ -175,7 +193,7 @@ test('the widget runtime suite, app/extension entitlements and Cloud archive che
   const project = readFileSync(join(repository, projectFile), 'utf8');
   const widgetIDs = [...project.matchAll(/\bPRODUCT_BUNDLE_IDENTIFIER\s*=\s*"?(ru\.NoobDragons\.MpeiApp\.[^;"\s]+)"?;/g)].map(match => match[1]);
   expect(widgetIDs).toHaveLength(2); // Debug and Release must both pass post-archive verification.
-  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6'};
+  const app = {CFBundleIdentifier: 'ru.NoobDragons.MpeiApp', CFBundleShortVersionString: version, CFBundleVersion: '122', MinimumOSVersion: '15.6', UIApplicationSceneManifest: sceneManifest};
   for (const identifier of widgetIDs) {
     expect(() => cloud.validateArchiveMetadata(app, {...app, CFBundleIdentifier: identifier, MinimumOSVersion: '17.0'}, version, '122')).not.toThrow();
   }

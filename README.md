@@ -13,15 +13,15 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="./assets/images/README/badges/react-native.svg" alt="React Native 0.87.1" /></a>
-  <a href="package.json"><img src="./assets/images/README/badges/react.svg" alt="React 19.2.8" /></a>
+  <a href="package.json"><img src="./assets/images/README/badges/react-native.svg" alt="React Native 0.88.1" /></a>
+  <a href="package.json"><img src="./assets/images/README/badges/react.svg" alt="React 19.3.1" /></a>
   <a href="package.json"><img src="./assets/images/README/badges/typescript.svg" alt="TypeScript 6.0.3" /></a>
   <a href=".nvmrc"><img src="./assets/images/README/badges/node.svg" alt="Node.js 24" /></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/TheKeeroll/MpeiApp-Public/actions/workflows/ci.yml"><img src="./assets/images/README/badges/ci.svg" alt="GitHub Actions · ветка dev" /></a>
-  <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/jest.svg" alt="532 теста Jest в релизе 2.6.0" /></a>
+  <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/jest.svg" alt="552 теста Jest" /></a>
   <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/proxy-tests.svg" alt="93 теста proxy в релизе 2.6.0" /></a>
   <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/swift-tests.svg" alt="13 Swift-тестов виджета в релизе 2.6.0" /></a>
 </p>
@@ -96,7 +96,7 @@ MpeiApp остаётся бесплатным. Реклама и интегра�
 
 | Область | Технологии и назначение |
 | --- | --- |
-| **Клиент** | TypeScript 6.0.3, React 19.2.8, React Native 0.87.1; общий код Android и iOS. |
+| **Клиент** | TypeScript 6.0.3, React 19.3.1, React Native 0.88.1; общий код Android и iOS. |
 | **Интерфейс** | React Native Paper, React Navigation 7, Reanimated, Gesture Handler, Safe Area Context, Lottie и Vector Icons. |
 | **Состояние и хранение** | Redux Toolkit для учебных данных и статусов разделов; MMKV для локального кеша и настроек. |
 | **Разбор данных** | Отдельные HTML/JSON-парсеры, в том числе node-html-parser; явные состояния авторизации, загрузки и ошибок. |
@@ -133,7 +133,7 @@ flowchart TB
 
 ## Проверки и доставка
 
-Зафиксированная база проверок **релиза 2.6.0** — **532 теста Jest в 48 наборах**, **93 теста proxy** и **13 Swift-тестов модели iOS-виджета**. Эти числа относятся к результатам подготовки релиза; чип CI ведёт к результатам workflow ветки `dev`.
+Клиент проверен **552 тестами Jest в 49 наборах**. Для proxy и модели iOS-виджета зафиксированная база релиза 2.6.0 — **93 теста** и **13 Swift-тестов** соответственно. Чип CI ведёт к результатам workflow ветки `dev`.
 
 | Уровень | Что проверяется |
 | --- | --- |

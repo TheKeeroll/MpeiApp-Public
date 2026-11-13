@@ -44,6 +44,7 @@
 		D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
 		D26010200000000000000014 /* ScheduleWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000003 /* ScheduleWidgetData.swift */; };
 		D26010200000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D26010200000000000000004 /* PrivacyInfo.xcprivacy */; };
+		D26110100000000000000011 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26110100000000000000001 /* SceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,6 +126,7 @@
 		D26010200000000000000002 /* ScheduleWidgetBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScheduleWidgetBridge.m; path = MpeiApp/ScheduleWidgetBridge.m; sourceTree = "<group>"; };
 		D26010200000000000000003 /* ScheduleWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleWidgetData.swift; path = ScheduleWidgetCore/Sources/ScheduleWidgetCore/ScheduleWidgetData.swift; sourceTree = "<group>"; };
 		D26010200000000000000004 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D26110100000000000000001 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = MpeiApp/SceneDelegate.swift; sourceTree = "<group>"; };
 		E52CA6F25B9939630329EC68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = MpeiApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -186,6 +188,7 @@
 				E52CA6F25B9939630329EC68 /* PrivacyInfo.xcprivacy */,
 				495282AE2E477CF600050EFC /* main.m */,
 				495282B02E477D8C00050EFC /* AppDelegate.swift */,
+				D26110100000000000000001 /* SceneDelegate.swift */,
 				495282B22E477D9B00050EFC /* MpeiApp-Bridging-Header.h */,
 				495282B32E477F8700050EFC /* YandexMapsInitializer.swift */,
 				D26010200000000000000001 /* ScheduleWidgetBridge.swift */,
@@ -570,6 +573,7 @@
 				D26010200000000000000012 /* ScheduleWidgetBridge.m in Sources */,
 				D26010200000000000000013 /* ScheduleWidgetData.swift in Sources */,
 				495282B12E477D8C00050EFC /* AppDelegate.swift in Sources */,
+				D26110100000000000000011 /* SceneDelegate.swift in Sources */,
 				495282AF2E477CF600050EFC /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -627,7 +631,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				OTHER_LDFLAGS = (
 					"-ObjC",
 					"-lc++",
@@ -662,7 +666,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				OTHER_LDFLAGS = (
 					"-ObjC",
 					"-lc++",
@@ -698,7 +702,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -738,7 +742,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -784,7 +788,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.NoobDragons.MpeiApp.ScheduleWidgets;
@@ -828,7 +832,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 2.6.0;
+				MARKETING_VERSION = 2.6.1;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.NoobDragons.MpeiApp.ScheduleWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
