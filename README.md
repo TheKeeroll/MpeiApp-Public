@@ -21,7 +21,7 @@
 
 <p align="center">
   <a href="https://github.com/TheKeeroll/MpeiApp-Public/actions/workflows/ci.yml"><img src="./assets/images/README/badges/ci.svg" alt="GitHub Actions · ветка dev" /></a>
-  <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/jest.svg" alt="552 теста Jest" /></a>
+  <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/jest.svg" alt="562 теста Jest" /></a>
   <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/proxy-tests.svg" alt="93 теста proxy в релизе 2.6.0" /></a>
   <a href="#проверки-и-доставка"><img src="./assets/images/README/badges/swift-tests.svg" alt="13 Swift-тестов виджета в релизе 2.6.0" /></a>
 </p>
@@ -102,7 +102,7 @@ MpeiApp остаётся бесплатным. Реклама и интегра�
 | **Разбор данных** | Отдельные HTML/JSON-парсеры, в том числе node-html-parser; явные состояния авторизации, загрузки и ошибок. |
 | **Нативные возможности** | Яндекс Карты через react-native-yamap, Vision Camera для QR, геолокация и смена иконок. |
 | **Виджеты** | Android: Java, AppWidgetProvider и RemoteViews. iOS: Swift, WidgetKit, App Intents и общий App Group. |
-| **Реклама** | Yandex Mobile Ads 8.5.0; медиация BIGO Ads, VK Реклама и Chartboost; inline, sticky и rewarded. |
+| **Реклама** | Yandex Mobile Ads 8.6.0; медиация BIGO Ads и VK Реклама; inline, sticky и rewarded. |
 | **DragoNet proxy** | Node.js 24, TypeScript, Fastify, Zod, SQLite / better-sqlite3; HTTPS и systemd на VPS. |
 | **Инструменты** | Yarn Classic и lockfiles, Metro, patch-package; Gradle для Android, CocoaPods / Xcode для iOS. |
 
@@ -133,7 +133,7 @@ flowchart TB
 
 ## Проверки и доставка
 
-Клиент проверен **552 тестами Jest в 49 наборах**. Для proxy и модели iOS-виджета зафиксированная база релиза 2.6.0 — **93 теста** и **13 Swift-тестов** соответственно. Чип CI ведёт к результатам workflow ветки `dev`.
+Клиент проверен **562 тестами Jest в 50 наборах**. Для proxy и модели iOS-виджета зафиксированная база релиза 2.6.0 — **93 теста** и **13 Swift-тестов** соответственно. Чип CI ведёт к результатам workflow ветки `dev`.
 
 | Уровень | Что проверяется |
 | --- | --- |
@@ -157,7 +157,7 @@ swift test --package-path ios/ScheduleWidgetCore
 
 Тесты с подменёнными native SDK и transport дополняются сборками и проверкой на устройствах. Перед выпуском 2.6.0 подтверждены Android-поведение, новая Cloud-сборка, внешнее TestFlight-тестирование и работа приложения, персонализации и iOS-виджета.
 
-Подробности сопровождения: [CI](docs/v2.6.0-stage-7-ci.md), [Xcode Cloud](ios/ci_scripts/README.md), [медиация](docs/v2.6.0-ios-mediation.md), [установка proxy](vpn-subscription-proxy/README.md) и [обновление VPS](vpn-subscription-proxy/UPDATING.md).
+Подробности сопровождения: [CI](docs/v2.6.0-stage-7-ci.md), [Xcode Cloud](ios/ci_scripts/README.md), [медиация](docs/ads-mediation.md), [установка proxy](vpn-subscription-proxy/README.md) и [обновление VPS](vpn-subscription-proxy/UPDATING.md).
 
 ## Disclaimer
 
