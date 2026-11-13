@@ -29,12 +29,14 @@ Entitlements, App IDs в Developer Account, общий ScheduleWidgetContract
 
 - ci_post_clone устанавливает Node 24, Yarn 1.22.22, Ruby 3.3/Bundler,
   зависимости из frozen lockfiles и запускает `pod install --deployment`.
+  Переход на RN 0.88.1 с прежнего Podfile.lock обрабатывается разовым resolver ниже.
 - Генератор создаёт локальные Secrets.ts/Swift initializer и Node env из Cloud
   Secret variables; сообщения не содержат значений.
 - verify-source диагностирует CI event/branch/tag и доступную локальную историю.
   Это предупреждения, без fetch и без запрета разрешённых workflow событий.
 - Перед xcodebuild общий CI_BUILD_NUMBER записывается в app/extension/tests;
-  после Archive сверяются IDs, marketing/build versions и minimum OS.
+  после Archive сверяются IDs, marketing/build versions, minimum OS и manifest
+  единственной сцены `MpeiApp.SceneDelegate` для запуска на iOS 27.
 - Hooks используют выбранный Xcode workflow image без подмены DEVELOPER_DIR,
   выводят `xcodebuild -version` и `sw_vers` для воспроизводимой диагностики.
 
@@ -43,10 +45,31 @@ Podfile post_install после React Native поднимает до 15.6 бол
 Более высокие минимумы сохраняются. Старый bitcode_strip отсутствующих библиотек
 удалён; native SDK медиации закреплены в Podfile.lock.
 
-## Проверенные lockfiles и установка на Mac
+## Разовая миграция Pods на React Native 0.88.1 в Cloud
 
-Gemfile и lockfiles согласованы: CocoaPods **1.17.0**, xcodeproj **1.28.1**,
-Bundler **2.4.10**. Resolver выполнен пользователем на Mac и сохранён в
+После frozen-установки Yarn hook вызывает [migrate-rn-pods.cjs](../../scripts/migrate-rn-pods.cjs).
+Если React-Core, Reanimated, Worklets и Gesture Handler уже согласованы с package.json,
+resolver не запускается. В остальных случаях разрешён только переход с известного
+Podfile.lock на закреплённые RN 0.88.1 / Reanimated 4.7.1 / Worklets 0.13.1 /
+Gesture Handler 3.4.0. Проверяется SHA-256 исходного lockfile с нормализацией CRLF.
+
+Скрипт передаёт CocoaPods список RN pods и их зависимостей через `pod update ...
+--no-repo-update`. После resolver проверяются целевые версии и неизменность версий
+остальных pods, включая рекламные SDK, карты и MMKV. Затем обязательно выполняется
+`pod install --deployment`. Неизвестный исходный lockfile, иной набор версий или
+постороннее обновление останавливают сборку. Дополнительные Cloud variables не нужны.
+
+После успешного Archive hook сохраняет фактически полученный **Podfile.lock в корне
+скачиваемого `.xcarchive`**, вне подписанного приложения. Его нужно перенести в
+`ios/Podfile.lock`, проверить diff и закоммитить. После этого последующие сборки
+автоматически используют обычную deployment-установку без resolver. Пока новый
+lockfile не закоммичен, чистые Cloud checkout повторяют переход с проверенной базы.
+Это переходный механизм конкретной миграции RN, а не разрешение полного `pod update`.
+
+## Проверенные инструменты и установка на Mac
+
+Ruby-инструменты закреплены: CocoaPods **1.17.0**, xcodeproj **1.28.1**,
+Bundler **2.4.10**. Исходный resolver релиза 2.6.0 выполнен пользователем на Mac и сохранён в
 `049ad61` от 23.10.2026; приложение собрано и запущено в Simulator с
 **Xcode 26.4 (17E192)**, preflight успешен.
 

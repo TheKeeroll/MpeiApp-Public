@@ -10,4 +10,7 @@ if [[ "${CI_XCODEBUILD_EXIT_CODE:-1}" != 0 ]]; then
 fi
 if [[ "${CI_XCODEBUILD_ACTION:-}" == archive ]]; then
   node scripts/xcode-cloud.cjs verify-archive
+  # Keep the real macOS resolver output in the downloadable .xcarchive, outside
+  # the signed app bundle. Commit this lockfile to end the one-time RN migration.
+  cp ios/Podfile.lock "$CI_ARCHIVE_PATH/Podfile.lock"
 fi

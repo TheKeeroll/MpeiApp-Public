@@ -40,7 +40,8 @@ export PATH="$HOME/.mpeiapp-cloud/node/bin:$PATH"
 yarn install --frozen-lockfile --non-interactive --production=false
 node scripts/xcode-cloud.cjs prepare
 
-printf '\n[5/5] Install committed Pods\n'
+printf '\n[5/5] Synchronize React Native Pods and install locked dependencies\n'
+node scripts/migrate-rn-pods.cjs "$MPEIAPP_BUNDLER_VERSION"
 cd ios
 bundle "_${MPEIAPP_BUNDLER_VERSION}_" exec pod install --deployment
 printf '[OK] Cloud dependencies and client configuration ready.\n'

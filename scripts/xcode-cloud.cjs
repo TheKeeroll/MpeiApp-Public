@@ -203,6 +203,12 @@ function validateArchiveMetadata(app, widget, version, number) {
     }
     if (normalizeOS(info.MinimumOSVersion) !== normalizeOS(minimum)) throw new Error(`The archived ${label} MinimumOSVersion must be ${minimum}.`);
   }
+  const manifest = app.UIApplicationSceneManifest;
+  const scenes = manifest?.UISceneConfigurations?.UIWindowSceneSessionRoleApplication;
+  if (manifest?.UIApplicationSupportsMultipleScenes !== false || !Array.isArray(scenes) || scenes.length !== 1 ||
+      scenes[0]?.UISceneDelegateClassName !== 'MpeiApp.SceneDelegate') {
+    throw new Error('The archived app must configure a single MpeiApp.SceneDelegate scene for iOS 27.');
+  }
 }
 
 function verifyArchive(root, env) {
@@ -243,7 +249,7 @@ if (require.main === module) {
       console.log(`Prepared MpeiApp ${result.version} (${result.build}); app and widget share the Cloud build number.`);
     } else if (command === 'verify-archive') {
       verifyArchive(cloudRoot(process.env), process.env);
-      console.log('Archive versions, shared build number and minimum iOS verified.');
+      console.log('Archive versions, shared build number, minimum iOS and single-scene lifecycle verified.');
     } else throw new Error('Usage: node scripts/xcode-cloud.cjs variables|preflight|prepare|verify-archive');
   } catch (error) {
     console.error(`[Xcode Cloud] ${error.message}`);

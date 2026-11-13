@@ -118,8 +118,8 @@ android {
         applicationId "com.mpeiapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 82
-        versionName "2.6.0"
+        versionCode 83
+        versionName "2.6.1"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
