@@ -8,7 +8,9 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "test:ci": "jest --ci --runInBand",
+    "test:ci": "node scripts/project-docs.cjs test",
+    "docs:sync": "node scripts/project-docs.cjs sync",
+    "docs:check": "node scripts/project-docs.cjs check",
     "typecheck": "tsc --noEmit",
     "postinstall": "patch-package"
   },

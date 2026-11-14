@@ -31,7 +31,7 @@ jest.mock('../src/Screens/CommonComponents/OfflineDataNotification', () => () =>
 jest.mock('../src/Screens/CommonComponents/Holidays', () => () => null);
 jest.mock('../src/Screens/Schedule/ScheduleSearchPanel', () => () => null);
 jest.mock('../src/Loyalty/LoyaltyProvider', () => ({useLoyalty: () => ({recordSuccessfulFeatureUse: mockRecordUse})}));
-jest.mock('../src/Loading/LoadingProgressService', () => ({loadingProgressService: {start: () => ({}), advance: jest.fn(), complete: jest.fn(), fail: jest.fn()}}));
+jest.mock('../src/Loading/LoadingProgressService', () => ({loadingProgressService: {start: () => ({}), advance: jest.fn(), complete: jest.fn(), fail: jest.fn(), clear: jest.fn()}}));
 jest.mock('../src/Ads/InlineBannerAd', () => (props: Record<string, unknown>) => require('react').createElement('InlineBannerAdMock', props));
 jest.mock('lottie-react-native', () => () => null);
 

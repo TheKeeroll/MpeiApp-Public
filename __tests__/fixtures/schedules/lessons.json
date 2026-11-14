@@ -1,0 +1,15 @@
+[
+  {
+    "date": "2026.11.16", "beginLesson": "09:20", "endLesson": "10:55",
+    "discipline": "Учебная дисциплина", "kindOfWork": "Практическое занятие",
+    "building": "Корпус М", "auditorium": "М-802", "group": null, "subGroup": null,
+    "stream": "ГП-04-26; ГПэ-04-26", "listGroups": [],
+    "listOfLecturers": [{"lecturer": "доц. Иванова А.Б.", "lecturer_title": "Иванова Анна Борисовна", "lecturerUID": null, "lecturerOid": 15421}]
+  },
+  {
+    "date": "2026.11.18", "beginLesson": "11:10", "endLesson": "12:45",
+    "discipline": "Другая дисциплина", "kindOfWork": "Лекция",
+    "building": null, "auditorium": null, "group": null, "stream": null,
+    "listGroups": [{"group": "ГП-04-26"}, {"name": "ГПэ-04-26"}], "listOfLecturers": []
+  }
+]

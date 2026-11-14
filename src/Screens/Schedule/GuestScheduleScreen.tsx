@@ -24,7 +24,7 @@ const GuestScheduleScreen: React.FC<{navigation: any}> = ({navigation}) => {
         </Text>
       </View>
       <ScheduleSearchPanel
-        onSearch={query => navigation.push('scheduleMain', createScheduleSearchParams(query))}
+        onSearch={(query, type) => navigation.push('scheduleMain', createScheduleSearchParams(query, type))}
         onQueryChange={setNormalizedQuery}
       />
       {!normalizedQuery ? (

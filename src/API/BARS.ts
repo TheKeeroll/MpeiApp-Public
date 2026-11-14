@@ -5,6 +5,7 @@ import {
   BARSDiscipline,
   BARSMarks,
   BARSSchedule,
+  ScheduleRequestType,
   BARSScheduleCell,
   BARSScheduleLesson,
   BARSStudentInfo, OWAMail,
@@ -61,7 +62,8 @@ import OrdersParser from "./Parsers/OrdersParser";
 import * as HTMLParser from 'fast-html-parser'
 import BooksParser from "./Parsers/BooksParser";
 import MailParser from "./Parsers/MailParser";
-import { CalculateRange, DealWithMeal, ParseTsMPEISchedule } from "./Parsers/ScheduleParser.ts";
+import {normalizeSavedSchedule} from "./Parsers/ScheduleParser";
+import {searchSchedule, ScheduleRequestError} from "./ScheduleClient";
 import { ParseBARSRequestVerificationToken } from "./Parsers/AuthFormParser";
 import {
   ParseMandatoryQuestionnaires, isBlockingQuestionnaire, isQuestionnaireCompleted,
@@ -274,6 +276,7 @@ export default class BARS{
   private mLastRequested2FAProvider?: TwoFactorProviderTid
   private m2FACodeRequestPromise?: Promise<TwoFactorProviderTid | undefined>
   private mBARSBrowserProfile?: BARSBrowserProfile
+  private mScheduleRequests = new Set<AbortController>()
   private mSessionGeneration = 0
   private mStudentAccountLoginAttempt?: StudentAccountLoginAttempt
   private mAuthenticationPromise?: Promise<LoginResult>
@@ -388,6 +391,8 @@ export default class BARS{
   }
 
   private BeginSessionGeneration(): number {
+    for (const request of this.mScheduleRequests) request.abort()
+    this.mScheduleRequests.clear()
     this.mMandatoryAbortController?.abort()
     this.mMandatoryOperation += 1
     this.mMandatoryActionPromise = undefined
@@ -2028,9 +2033,9 @@ export default class BARS{
       console.log(this.mCurrentData.student)
     }
     if (typeof schedule == 'undefined'){
-      Store.dispatch(updateSchedule({status: "FAILED", data: typeof schedule != 'undefined' ? JSON.parse(schedule) : null}))
+      Store.dispatch(updateSchedule({status: "FAILED", data: typeof schedule != 'undefined' ? normalizeSavedSchedule(JSON.parse(schedule)) : null}))
     } else {
-      Store.dispatch(updateSchedule({status: "OFFLINE", data: typeof schedule != 'undefined' ? JSON.parse(schedule) : null}))
+      Store.dispatch(updateSchedule({status: "OFFLINE", data: typeof schedule != 'undefined' ? normalizeSavedSchedule(JSON.parse(schedule)) : null}))
     }
     Store.dispatch(updateMarkTable({status: "OFFLINE", data: typeof marks != 'undefined' ? JSON.parse(marks) : null}))
     Store.dispatch(updateMail({status: "OFFLINE", data: typeof mail != 'undefined' ? JSON.parse(mail) : null}))
@@ -2050,205 +2055,51 @@ export default class BARS{
     return this.mCurrentData
   }
 
-  public FetchRequestedSchedule(target: Teacher): Promise<BARSSchedule>{
-    console.log('Trying to fetch requested schedule: ' + target.lec_oid)
-    console.time('ScheduleRequest')
-    const CheckInternet = () => {
-      return NetInfo.fetch()
+  // OSS was rechecked on 13.11.2026: directory entries exist, but all tested
+  // schedules (2024-2026) were empty. Keep it disabled until fresh lessons are verified.
+  private async RequestPublicSchedule(query: string, personal: boolean, options: {signal?: AbortSignal; type?: ScheduleRequestType} = {}): Promise<BARSSchedule> {
+    const controller = new AbortController()
+    const generation = this.mSessionGeneration
+    const cancel = () => controller.abort()
+    if (options.signal?.aborted) controller.abort()
+    options.signal?.addEventListener('abort', cancel, {once: true})
+    this.mScheduleRequests.add(controller)
+    try {
+      const result = await searchSchedule({query, personal, type: options.type,
+        browserProfile: this.GetBARSBrowserProfile(), signal: controller.signal})
+      if (generation !== this.mSessionGeneration || controller.signal.aborted) throw new ScheduleRequestError('cancelled')
+      return result
+    } finally {
+      options.signal?.removeEventListener('abort', cancel)
+      this.mScheduleRequests.delete(controller)
     }
+  }
 
-    function classifyString(input: string): "person" | "group" | "auditorium" {
-      if (!/\d/.test(input)) {
-        return "person";
+  public async FetchRequestedSchedule(query: string, options: {signal?: AbortSignal; type?: ScheduleRequestType} = {}): Promise<BARSSchedule> {
+    try {
+      return await this.RequestPublicSchedule(query, false, options)
+    } catch (error) {
+      if (error instanceof ScheduleRequestError && error.kind !== 'cancelled') {
+        throw CreateBARSError('INVALID_REQUEST_SCHEDULE', error.message)
       }
-
-      if (/\d{3}/.test(input)) {
-        return "auditorium";
-      }
-
-      return "group";
+      throw error
     }
-
-    const dateRange = CalculateRange()
-    // const form = new FormData()
-    let request_type = classifyString(target.lec_oid)
-    // if (request_type == 'auditorium') {
-      return CheckInternet().then((response)=> {
-        if (!response.isConnected) {
-          return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
-        }
-        else {
-          try {
-            let ts_mpei_link = 'http://ts.mpei.ru/api/search?term=' + encodeURI(target.lec_oid)  + '&type=' + request_type
-            return this.FetchUniversity(ts_mpei_link, {
-              method: 'GET',
-              headers: {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate',
-                'accept-language': 'ru,en;q=0.9',
-                'dnt': '1',
-                'host': 'ts.mpei.ru',
-                'referer': 'http://ts.mpei.ru/ruz/main',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36'
-              },
-              credentials: 'include'
-            }).then(r => r.json()).then(r => {
-                const dateStart = moment(new Date()).format('YYYY.MM.DD')
-                const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
-                const linkTargetSchedule = `http://ts.mpei.ru/api/schedule/${request_type}/${r[0]?.id || ''}?start=${dateStart}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-                return this.FetchUniversity(linkTargetSchedule, {
-                  method: 'GET',
-                  headers: {},
-                  credentials: 'include'
-                }).then(r=>r.json()).then(r=> {
-                  let scheduleWithDinner = DealWithMeal(ParseTsMPEISchedule(r))
-                  switch (request_type) {
-                    case 'person':
-                      scheduleWithDinner.fullTeacherName = (r[0]?.lecturer || r[1]?.lecturer) ? (r[0]?.listOfLecturers[0].lecturer_title || r[1]?.listOfLecturers[0].lecturer_title || target.lec_oid) : "Запрошенный преподаватель не найден"
-                      break
-                    case "group":
-                      scheduleWithDinner.fullTeacherName = r[0]?.group || r[1]?.group || r[2]?.group || r[5]?.group || r[8]?.group || target.lec_oid || "Запрошенная группа не найдена"
-                      break
-                    case "auditorium":
-                      scheduleWithDinner.fullTeacherName = r[0]?.auditorium || r[1]?.auditorium  || target.lec_oid || "Запрошенная аудитория не найдена"
-                      break
-                  }
-                  console.timeEnd('ScheduleRequest')
-                  return scheduleWithDinner
-                })
-              })
-            } catch (error) {
-              throw CreateBARSError("INVALID_REQUEST_SCHEDULE", "По указанным данным ни группа, ни преподаватель, ни аудитория не обнаружены! Скорректируйте ввод и попробуйте ещё раз.");
-            }
-        }
-      })
-    /*} else {
-      let normal_name = ''
-      form.append('search', target.lec_oid)
-      // end.addDays(APP_CONFIG.DATE_RANGE)
-
-      return CheckInternet().then((response)=> {
-        if (!response.isConnected)
-          return Promise.reject(CreateBARSError('INVALID_REQUEST_SCHEDULE', 'Нет подключения к интернету!'))
-        else {
-        //TODO У oss.mpei.ru почему-то больше нет расписания - подобрать другой альтернативный источник расписания!
-         return fetch('https://oss.mpei.ru/api/schedule/search', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/josn',
-              'Content-Type': 'multipart/form-data'
-            },
-            body: form
-          }).then(r => r.json()).then(r => {
-            const fform = new FormData()
-            try {
-              fform.append('oid', r.groups[0].groupOid);
-              request_type = 'group'
-              normal_name = r.groups[0].name
-            } catch (e) {
-              try {
-                fform.append('oid', r.teachers[0].lecturerOid);
-                request_type = 'teacher'
-                normal_name = r.teachers[0].fio
-              } catch (error) {
-                throw CreateBARSError("INVALID_REQUEST_SCHEDULE", "По указанным данным ни группа, ни преподаватель, ни аудитория не обнаружены! Скорректируйте ввод и попробуйте ещё раз.");
-              }
-            }
-            fform.append('type', request_type);
-            fform.append('fromDate', moment(new Date()).format('YYYY.MM.DD'))
-            fform.append('toDate', moment(dateRange[1]).format('YYYY.MM.DD'))
-            if (request_type == 'teacher') {
-              if (r.teachers.length == 0)
-                throw 'Error'
-            } else if (r.groups.length == 0)
-              throw 'Error'
-            return fetch('https://oss.mpei.ru/api/schedule', {
-              headers: {
-                'Accept': 'application/josn',
-                'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body: fform
-            }).then(d => d.json()).then(data => {
-              const res: BARSSchedule = {
-                todayIndex: 0,
-                fullTeacherName: normal_name,
-                days: []
-              }
-              let f = true
-              //console.log(data);
-
-              for (const [date, lessons] of Object.entries(data)) {
-                //console.log('LL', [date, lessons]);
-                const ll = (lessons as any[]).map((lesson, k) => {
-                  return {
-                    name: lesson.discipline,
-                    lessonIndex: lesson.beginLesson + '-' + lesson.endLesson,
-                    lessonType: lesson.kindOfWork,
-                    place: lesson.place,
-                    cabinet: lesson?.auditorium || '',
-                    teacher: { name: lesson.lecturer, lec_oid: lesson.lecturerOid },
-                    group: lesson.group,
-                    type: 'COMMON'
-                  } as BARSScheduleLesson
-                }) ?? []
-                const cell: BARSScheduleCell = {
-                  date: date.split('.').reverse().join('.'),
-                  lessons: ll,
-                  isToday: f,
-                  isEmpty: (lessons as any[]).length === 0
-                }
-                f = false
-                res.days.push(cell)
-                //console.log('CELL',cell);
-
-              }
-              console.timeEnd('ScheduleRequest')
-              return DealWithMeal(DealWithRepeated(res))
-            })
-          })
-        }
-      })
-    }*/
   }
 
   public async FetchSchedule(): Promise<void>{
-    console.log('Fetching schedule')
-    console.time('ScheduleParser')
     const generation = this.mSessionGeneration
     const student = this.mCurrentData.student
     if (!student) {
       Store.dispatch(updateSchedule({status: 'FAILED', data: null}))
       throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Не найдены данные студента для загрузки расписания.')
     }
-
-    const group = student.group.includes('не распарсилось') ? 'ЭР-11-21' : student.group
-    const dateRange = CalculateRange()
-    const dateStart = moment(dateRange[0], 'DD.MM.YYYY')
-    const dateEnd = moment(dateRange[1], 'DD.MM.YYYY')
-    const linkSearch = `http://ts.mpei.ru/api/search?term=${encodeURI(group)}&type=group`
-
     try {
-      const schedule = await Timeout(15000, this.FetchUniversity(linkSearch, {
-        method: 'GET',
-        headers: {},
-        credentials: 'include',
-      }).then(response => response.json()).then(result => {
-        if (!result?.length) {
-          throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Группа не найдена на сервере расписания!')
-        }
-        const link = `http://ts.mpei.ru/api/schedule/group/${result[0]?.id || ''}?start=${dateStart.format('YYYY.MM.DD')}&finish=${dateEnd.format('YYYY.MM.DD')}&lng=1`
-        return this.FetchUniversity(link, {
-          method: 'GET',
-          headers: {},
-          credentials: 'include',
-        }).then(response => response.json()).then(data => DealWithMeal(ParseTsMPEISchedule(data)))
-      }))
-      if (!this.IsCurrentDataGeneration(generation)) {
-        return
+      const group = student.group.trim()
+      if (!group || group.includes('не распарсилось')) {
+        throw CreateBARSError('SCHEDULE_PARSER_FAIL', 'Не удалось определить группу студента.')
       }
-
-      console.timeEnd('ScheduleParser')
+      const schedule = await this.RequestPublicSchedule(group, true)
+      if (!this.IsCurrentDataGeneration(generation)) return
       const currentMonth = parseInt(moment().format('M'))
       const isVacationPeriod = currentMonth === 1 || currentMonth === 2 || (currentMonth > 5 && currentMonth < 9)
       if (schedule.days.length === 0 && !isVacationPeriod) {
@@ -2257,24 +2108,19 @@ export default class BARS{
       this.mStorage.set(STORAGE_KEYS.SCHEDULE, JSON.stringify(schedule))
       Store.dispatch(updateSchedule({status: 'LOADED', data: schedule}))
     } catch (error) {
-      if (!this.IsCurrentDataGeneration(generation)) {
-        return
-      }
-      console.warn('Failed to fetch schedule; trying offline data', error)
+      if (!this.IsCurrentDataGeneration(generation)) return
+      console.warn('Failed to fetch schedule; trying offline data')
       const cached = this.mStorage.getString(STORAGE_KEYS.SCHEDULE)
       if (cached) {
         try {
-          Store.dispatch(updateSchedule({status: 'OFFLINE', data: JSON.parse(cached)}))
+          Store.dispatch(updateSchedule({status: 'OFFLINE', data: normalizeSavedSchedule(JSON.parse(cached))}))
           return
-        } catch (cachedError) {
-          console.warn('Saved schedule is invalid', cachedError)
-        }
+        } catch { console.warn('Saved schedule is invalid') }
       }
       Store.dispatch(updateSchedule({status: 'FAILED', data: null}))
       throw error
     }
   }
-
 
   public async FetchRecordBook(): Promise<void>{
     console.log('Fetching record book')
