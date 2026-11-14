@@ -64,13 +64,15 @@ ID VK `n9x2a789qt` и `r26jy69rpl` из [инструкции RN-плагина]
 
 ## Проверки
 
-На Windows прошли typecheck, **50 suites / 562 tests**, production JS-бандл iOS
+На Windows прошли typecheck, полный Jest-прогон, production JS-бандл iOS
 и применение нового патча к установленному npm-пакету 8.6.0. В Android
 `releaseRuntimeClasspath` разрешены целевые SDK/адаптеры; Chartboost и legacy
 `exoplayer-core` отсутствуют. Полный Android Release/R8 собран для всех четырёх ABI;
 APK имеет версию 2.6.1 (83), Chartboost отсутствует и в R8 mapping.
-Нативные CocoaPods/Swift compile и поведение рекламы
-на устройствах проверяются отдельно: JS-бандл и Jest не заменяют эти проверки.
+Владелец подтвердил успешный Xcode Cloud Build/Archive **17** и восстановил
+реальный Podfile.lock из лога; результат сохранён в `900e219`. Сборка передана
+на внешнее тестирование. Проверка рекламы на устройствах остаётся отдельной
+приёмкой; актуальные клиентские показатели генерируются в README.
 
 Для приёмки на обеих платформах: integration debugger и тестовые блоки BIGO/VK,
 inline/sticky/rewarded, закрытие, фон/foreground, unmount и повторные показы;

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "jest": {
+    "tests": 630,
+    "suites": 56
+  }
+}

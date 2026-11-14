@@ -1,5 +1,9 @@
+import type {ScheduleRequestType} from '../../API/DataTypes';
+import {isScheduleRequestType} from '../../API/Parsers/ScheduleDiscoveryParser';
+
 export type ScheduleSearchParams = Readonly<{
   searchQuery: string;
+  searchType?: ScheduleRequestType;
 }>;
 
 export type ScheduleStackParamList = {
@@ -7,9 +11,15 @@ export type ScheduleStackParamList = {
   scheduleMain: ScheduleSearchParams | undefined;
 };
 
-export const createScheduleSearchParams = (searchQuery: string): ScheduleSearchParams => ({
+export const createScheduleSearchParams = (searchQuery: string, searchType?: ScheduleRequestType): ScheduleSearchParams => ({
   searchQuery,
+  ...(searchType ? {searchType} : {}),
 });
+
+export const getScheduleSearchType = (params: unknown): ScheduleRequestType | undefined => {
+  const value = typeof params === 'object' && params !== null ? (params as ScheduleSearchParams).searchType : undefined;
+  return isScheduleRequestType(value) ? value : undefined;
+};
 
 /**
  * The string form is retained only for already-created legacy routes. All new

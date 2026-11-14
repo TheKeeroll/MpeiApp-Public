@@ -17,6 +17,12 @@ const WhatsNewScreen: React.FC<{navigation: any, route: any}> = (props) => {
             <NavigationHeader {...props} backable title={'Что нового ?'}/>
             <View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}]}>
                 <ScrollView style={{width: '90%'}} contentContainerStyle={{paddingBottom: Math.max(24, insets.bottom + 12)}}>
+                    <WhatsNewLogo title={'Хотфиксы и расписания'} version={'2.6.1'}/>
+                    <WhatsNewChange title={'Исправлен запуск приложения на iOS 27!'}/>
+                    <WhatsNewChange title={'Улучшен поиск расписаний: корректные названия и более релевантные результаты'}/>
+                    <WhatsNewChange title={'Добавлены последние и избранные расписания для быстрого повторного просмотра!'}/>
+                    <WhatsNewChange title={'Обновлены основные зависимости, изменены версии и состав рекламных сетей'}/>
+
                     <WhatsNewLogo title={'Борьба за доступность'} version={'2.6.0'}/>
                     <WhatsNewChange title={'Выявление блокировки БАРС обязательными анкетами и их экспериментальное автозаполнение!'}/>
                     <WhatsNewChange title={'Переработан виджет расписания: две недели и удобное переключение дней!'}/>

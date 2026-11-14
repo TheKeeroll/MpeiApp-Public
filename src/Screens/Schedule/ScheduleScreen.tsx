@@ -4,7 +4,7 @@ import { Alert, FlatList, Text, TouchableOpacity, useWindowDimensions, View } fr
 import { NavigationHeader } from "../CommonComponents/DrawerHeader";
 import { useSelector } from "react-redux";
 import { RootState } from "../../API/Redux/Store";
-import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson } from "../../API/DataTypes";
+import { BARSSchedule, BARSScheduleCell, BARSScheduleLesson, ScheduleRequestType } from "../../API/DataTypes";
 import moment from "moment";
 import { withOpacity, CustomTheme } from "../../Themes/Themes";
 import LottieView from "lottie-react-native";
@@ -16,15 +16,16 @@ import {useDeferredInlineAd} from "../../Ads/useDeferredInlineAd";
 import {YANDEX_INLINE_AD_PLACEMENTS} from "../../Ads/AdPlacements";
 import {useLoyalty} from "../../Loyalty/LoyaltyProvider";
 import ScheduleSearchPanel from "./ScheduleSearchPanel";
-import {createScheduleSearchParams, getScheduleSearchQuery} from "./ScheduleNavigation";
+import {createScheduleSearchParams, getScheduleSearchQuery, getScheduleSearchType} from "./ScheduleNavigation";
 import {loadingProgressService} from "../../Loading/LoadingProgressService";
 import {LOADING_PROGRESS_KEYS} from "../../Loading/LoadingProgressKeys";
 import {getMoscowDate, isNonTodayScheduleDate, useMoscowDate} from '../../Common/MoscowDate';
 import {useDragoNetPromo} from '../../Vpn/useDragoNetPromo';
 import {clampScheduleIndex, getInitialScheduleIndex} from './ScheduleSelection';
 
-let currentYear = String(new Date().getFullYear())
-let YearForFix = currentYear
+import {useIsFocused} from '@react-navigation/native';
+import {isValidScheduleQuery} from '../../API/Parsers/ScheduleDiscoveryParser';
+import {getScheduleSearchLibrary} from '../../Schedule/useScheduleSearchLibrary';
 
 const DateCell: React.FC<{
     item: BARSScheduleCell,
@@ -37,7 +38,7 @@ const DateCell: React.FC<{
     const isSelected = props.index == props.selectedIndex
     // console.log("initialDateString = " + props.item.date)
     // let dateYear = props.item.date.split('.')[2]
-    let date = new Date(parseInt(YearForFix), parseInt(props.item.date.split('.')[1]) - 1, parseInt(props.item.date.split('.')[0]))
+    let date = moment(props.item.date, 'DD.MM.YYYY', true).toDate()
     const {isEmpty, isToday} = props.item
     const {colors} = useTheme<CustomTheme>()
 
@@ -225,7 +226,7 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                     <TouchableOpacity
                         disabled={(requestMode && typeof group == "undefined") || (!requestMode && (place?.includes('-') || place?.includes('-|-') || _cabinet.includes('Стадион') || typeof place == "undefined"))}
                         // onPress={()=>setShowPlace(p=>!p)}
-                        onPress={()=> {requestMode ? setShowPlace(p=>!p) : props.navigation.push('scheduleMain', createScheduleSearchParams(_cabinet))}}
+                        onPress={()=> {requestMode ? setShowPlace(p=>!p) : props.navigation.push('scheduleMain', createScheduleSearchParams(_cabinet, 'auditorium'))}}
                         style={{borderRadius: 5, marginVertical: 5, alignItems: 'center', justifyContent: 'center', width: '90%', minHeight: 30, paddingVertical: 2, backgroundColor: IsNow() ? colors.notification : colors.surface}}>
                         <Text numberOfLines={2} style={{marginHorizontal: 5, textAlign: "center" ,color: IsNow() ? colors.highlight : colors.textUnderline}}>
                           {showPlace ? (requestMode ? group : place.split('|')[0]) : _cabinet}
@@ -250,14 +251,14 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
                 {!NoTeacher(props.item.teacher.name) &&
                     <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-evenly', minHeight: 50, padding: 4}}>
                     <TouchableOpacity
-                    onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_1_fullName ?? teacher.name.split('|')[0]))}
+                    onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_1_fullName ?? teacher.name.split('|')[0], 'person'))}
                     disabled={teacher.name.split('|')[0] == '-'}
                     style={{maxWidth: '100%', flexShrink: 1, borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
                     <Text style={{flexShrink: 1, color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[0]}</Text>
                     </TouchableOpacity>
                 { type == 'COMBINED' &&
                     <TouchableOpacity
-                    onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_2_fullName ?? teacher.name.split('|')[1]))}
+                    onPress={()=>props.navigation.push('scheduleMain', createScheduleSearchParams(teacher_2_fullName ?? teacher.name.split('|')[1], 'person'))}
                     disabled={teacher.name.split('|')[1] == '-'}
                     style={{maxWidth: '100%', flexShrink: 1, borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', minHeight: 40}}>
                     <Text style={{flexShrink: 1, color: colors.text, marginHorizontal: 5, fontSize: 16}}>{teacher.name.split('|')[1]}</Text>
@@ -269,9 +270,13 @@ const LessonCell: React.FC<{navigation: any, route: any, item: BARSScheduleLesso
     )
 }
 
-const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuery: string}> = (props) => {
+const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuery: string, searchType?: ScheduleRequestType}> = (props) => {
     const {colors} = useTheme<CustomTheme>()
     const {recordSuccessfulFeatureUse} = useLoyalty()
+    const isFocused = useIsFocused()
+    const queryKey = `${props.searchType ?? ''}:${props.searchQuery}`
+    const [requestRevision, retry] = useState(0)
+    const [errorMessage, setErrorMessage] = useState('Не удалось загрузить расписание.')
     const teacherSchedule = useRef<BARSSchedule | null>(null)
     const [loadingState, setLoadingState] = useState<'LOADING' | 'OK' | 'ERROR'>('LOADING')
     const [selectedDate, setSelectedDate] = useState(0)
@@ -280,9 +285,17 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
     const [resultRevision, setResultRevision] = useState(0)
     const promoDay = teacherSchedule.current?.days[selectedDate]
     const promo = useDragoNetPromo(`requested:${props.searchQuery}:${resultRevision}:${promoDay?.date ?? ''}`,
-        loadingState === 'OK' && loadedQuery.current === props.searchQuery && isNonTodayScheduleDate(promoDay?.date, moscowToday))
+        loadingState === 'OK' && loadedQuery.current === queryKey && isNonTodayScheduleDate(promoDay?.date, moscowToday))
 
     React.useEffect(() => {
+        if (!isFocused || loadedQuery.current === queryKey) return
+        if (!isValidScheduleQuery(props.searchQuery)) {
+            setErrorMessage('Для поиска расписания введите не менее 3 символов.')
+            setLoadingState('ERROR')
+            return
+        }
+        loadedQuery.current = undefined
+        teacherSchedule.current = null
         setLoadingState('LOADING')
         if(BARSAPI.TestMode){
             setLoadingState('ERROR')
@@ -291,19 +304,23 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
         }
 
         let isCancelled = false
+        const controller = new AbortController()
         const progress = loadingProgressService.start(
             LOADING_PROGRESS_KEYS.scheduleSearch,
             'Поиск расписания...',
         )
         const timer = setTimeout(() => {
             loadingProgressService.advance(progress, 'Загрузка занятий...')
-            BARSAPI.FetchRequestedSchedule({name: '', lec_oid: props.searchQuery}).then((result)=>{
+            BARSAPI.FetchRequestedSchedule(props.searchQuery, {signal: controller.signal, type: props.searchType}).then((result)=>{
                 if(isCancelled){
                     return
                 }
 
                 teacherSchedule.current = result
-                loadedQuery.current = props.searchQuery
+                loadedQuery.current = queryKey
+                if (result.scheduleName && result.scheduleTarget) {
+                    getScheduleSearchLibrary().remember({...result.scheduleTarget, name: result.scheduleName})
+                }
                 setResultRevision(previous => previous + 1)
                 setSelectedDate(getInitialScheduleIndex(result, getMoscowDate()))
                 recordSuccessfulFeatureUse('scheduleSearch')
@@ -314,11 +331,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
                     return
                 }
 
-                if(isBARSError(e)){
-                    Alert.alert('Ошибка', e.message, [{text: 'Ок', onPress: ()=> props.navigation.goBack()}])
-                } else {
-                    console.error(e)
-                }
+                setErrorMessage(isBARSError(e) || e instanceof Error ? e.message : 'Не удалось загрузить расписание. Попробуйте ещё раз.')
                 loadingProgressService.fail(progress)
                 setLoadingState('ERROR')
             })
@@ -326,23 +339,34 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
 
         return () => {
             isCancelled = true
+            controller.abort()
+            loadingProgressService.clear(progress)
             clearTimeout(timer)
         }
-    }, [props.navigation, props.searchQuery, recordSuccessfulFeatureUse])
+    }, [props.navigation, props.searchQuery, props.searchType, queryKey, isFocused, requestRevision, recordSuccessfulFeatureUse])
 
-    if(loadingState === 'LOADING'){
+    if(loadingState === 'LOADING' || (loadingState === 'OK' && loadedQuery.current !== queryKey)){
         return <LoadingScreen progressKey={LOADING_PROGRESS_KEYS.scheduleSearch} fallbackLabel={'Поиск расписания...'}/>
     }
 
     if(loadingState === 'ERROR' || !teacherSchedule.current){
-        return <></>
+        return <View style={{flex: 1, backgroundColor: colors.background}}>
+            <NavigationHeader backable {...props} title={props.searchQuery}/>
+            <View style={{flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center'}}>
+                <Text style={{color: colors.text, textAlign: 'center', fontSize: 17}}>{errorMessage}</Text>
+                {isValidScheduleQuery(props.searchQuery) && <TouchableOpacity accessibilityRole="button"
+                    onPress={() => retry(value => value + 1)} style={{padding: 14, marginTop: 12, borderRadius: 10, backgroundColor: colors.surface}}>
+                    <Text style={{color: colors.textUnderline}}>Попробовать снова</Text>
+                </TouchableOpacity>}
+            </View>
+        </View>
     }
 
     const requestedSchedule = teacherSchedule.current
     if(requestedSchedule.days.length === 0){
         return (
             <View style={{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}}>
-                <NavigationHeader backable {...props} title={requestedSchedule.fullTeacherName || props.searchQuery}/>
+                <NavigationHeader backable {...props} title={requestedSchedule.scheduleName || props.searchQuery}/>
                 <View style={{flex: 1, width: '90%', alignItems: 'center', justifyContent: 'center'}}>
                     <Text style={{fontSize: 18, textAlign: 'center', color: withOpacity(colors.text, 75)}}>
                         В выбранном диапазоне занятий пока нет.
@@ -358,7 +382,7 @@ const RequestedScheduleScreen: React.FC<{navigation: any, route: any, searchQuer
 
     return (
         <View collapsable={false} style={{alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: colors.background}}>
-            <NavigationHeader backable {...props} title={requestedSchedule.fullTeacherName || props.searchQuery}/>
+            <NavigationHeader backable {...props} title={requestedSchedule.scheduleName || props.searchQuery}/>
             <DateSelector
                 days={requestedSchedule.days}
                 selectedIndex={safeSelectedDate}
@@ -410,8 +434,8 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
         promo.viewportRef.current = view
         inlineAd.viewportRef.current = view
     }, [promo.viewportRef, inlineAd.viewportRef])
-    const openRequestedSchedule = (query: string) => {
-        props.navigation.push('scheduleMain', createScheduleSearchParams(query))
+    const openRequestedSchedule = (query: string, type?: ScheduleRequestType) => {
+        props.navigation.push('scheduleMain', createScheduleSearchParams(query, type))
     }
 
     React.useEffect(() => {
@@ -523,7 +547,7 @@ const PersonalScheduleScreen: React.FC<{navigation: any, route: any}> = (props) 
 const ScheduleScreen: React.FC<{navigation: any, route: any}> = (props) => {
     const searchQuery = getScheduleSearchQuery(props.route?.params)
     return searchQuery
-        ? <RequestedScheduleScreen {...props} searchQuery={searchQuery}/>
+        ? <RequestedScheduleScreen {...props} searchQuery={searchQuery} searchType={getScheduleSearchType(props.route?.params)}/>
         : <PersonalScheduleScreen {...props}/>
 }
 

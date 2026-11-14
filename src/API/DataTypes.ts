@@ -181,10 +181,18 @@ export interface BARSScheduleLesson{
   type: 'COMBINED' | 'DINNER' | 'COMMON' | 'PLACEHOLDER'
 }
 
+export type ScheduleRequestType = 'group' | 'person' | 'auditorium'
+
+export interface ScheduleTarget {
+  id: string
+  type: ScheduleRequestType
+}
+
 export interface BARSSchedule{
   todayIndex: number
   days: BARSScheduleCell[]
-  fullTeacherName?: string
+  scheduleName?: string
+  scheduleTarget?: ScheduleTarget
 }
 
 export interface BARSScheduleCell{
