@@ -1,6 +1,4 @@
-<p align="center" style="font-size: 3.5em; font-weight: bold; margin-bottom: 0.5em;">
-<strong>MpeiApp</strong>
-</p>
+<h1 align="center">MpeiApp</h1>
 
 <p align="center">
   <strong>БАРС, расписание, карта и виджеты — в кармане студента МЭИ.</strong><br />
@@ -10,7 +8,7 @@
 <p align="center">
   <a href="https://play.google.com/store/apps/details?id=com.mpeiapp"><img src="./assets/images/README/badges/android.svg" alt="Android 7.0 и новее · Google Play" /></a>
   <a href="https://apps.apple.com/ru/app/mpeiapp/id1618910681"><img src="./assets/images/README/badges/ios.svg" alt="iOS 15.6 и новее · App Store" /></a>
-  <a href="docs/v2.6.0-release.md"><img src="./assets/images/README/badges/release.svg" alt="Релиз 2.6.0" /></a>
+  <a href="docs/v2.6.1-release.md"><img src="./assets/images/README/badges/release.svg" alt="Релиз 2.6.1" /></a>
   <a href="LICENSE"><img src="./assets/images/README/badges/license.svg" alt="Лицензия MIT" /></a>
 </p>
 
@@ -53,12 +51,12 @@
 
 ## Последний релиз
 
-**MpeiApp 2.6.0 опубликован 11.11.2026 в Google Play и App Store.**
-Выпуск включает восстановление и развитие виджетов, работу с обязательными
-анкетами БАРС, обновлённую рекламу и DragoNet, раздельные настройки
-персонализации/геолокации и проверку обновлений магазинов.
-Сборка Xcode Cloud, внешнее TestFlight-тестирование и платформенная приёмка
-завершены. Подробности — в [итогах релиза](docs/v2.6.0-release.md).
+**MpeiApp 2.6.1 опубликован 15.11.2026 в Google Play и App Store.**
+Исправлен запуск на iOS 27, обновлён поиск расписаний групп, преподавателей
+и аудиторий, добавлены последние и избранные расписания. Рекламные SDK
+и адаптеры обновлены, Chartboost удалён.
+Сборка 18 прошла Xcode Cloud и принята тестировщиками; Android-поиск и оформление
+списков проверены владельцем проекта. Подробности — в [итогах релиза](docs/v2.6.1-release.md).
 
 ## Ключевые особенности
 
@@ -116,7 +114,7 @@ MpeiApp остаётся бесплатным. Реклама и интегра�
 `yarn docs:sync` обновляет их; `yarn test:ci` также автоматически записывает число
 пройденных тестов из полного результата Jest. В CI проверяется актуальность
 сгенерированных файлов. Частичный или неуспешный прогон счётчик не меняет.
-Чип релиза и исторические результаты proxy/Swift относятся к опубликованной 2.6.0.
+Чип релиза показывает опубликованную 2.6.1; исторические результаты proxy/Swift относятся к 2.6.0.
 [Устройство генератора README](docs/readme-metadata.md).
 
 ## Архитектура
@@ -172,7 +170,7 @@ node scripts/test-android-widget.cjs
 swift test --package-path ios/ScheduleWidgetCore
 ```
 
-Тесты с подменёнными native SDK и transport дополняются сборками и проверкой на устройствах. Перед выпуском 2.6.0 подтверждены Android-поведение, новая Cloud-сборка, внешнее TestFlight-тестирование и работа приложения, персонализации и iOS-виджета.
+Тесты с подменёнными native SDK и transport дополняются сборками и проверкой на устройствах. Для 2.6.1 подтверждены запуск на iOS 27, работа поиска и списков на Android, успешная Cloud-сборка 18 и её приёмка тестировщиками.
 
 Подробности сопровождения: [CI](docs/v2.6.0-stage-7-ci.md), [Xcode Cloud](ios/ci_scripts/README.md), [медиация](docs/ads-mediation.md), [установка proxy](vpn-subscription-proxy/README.md) и [обновление VPS](vpn-subscription-proxy/UPDATING.md).
 
